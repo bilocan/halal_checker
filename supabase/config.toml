@@ -1,0 +1,38 @@
+# Supabase local dev config — only the sections the CLI needs for deploy.
+# Full local stack (supabase start) is not required; this file is needed
+# so that `supabase functions deploy` can locate and bundle your functions.
+
+project_id = "your-project-ref"   # replace with your actual project ref
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 15
+
+[studio]
+enabled = true
+port = 54323
+
+[inbucket]
+enabled = true
+port = 54324
+
+[storage]
+enabled = true
+file_size_limit = "50MiB"
+
+[auth]
+enabled = true
+site_url = "http://127.0.0.1:3000"
+jwt_expiry = 3600
+enable_signup = true
+
+[functions.lookup-product]
+verify_jwt = false   # anon callers (your app) don't need a JWT

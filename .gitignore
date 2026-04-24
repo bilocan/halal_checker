@@ -1,3 +1,6 @@
+# Local secret defines (never commit)
+dart_defines.json
+
 # Miscellaneous
 *.class
 *.log

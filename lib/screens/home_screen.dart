@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import '../localization/app_localizations.dart';
+import '../services/database_service.dart';
 import '../services/product_service.dart';
 import 'result_screen.dart';
 
@@ -91,6 +92,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
     try {
       final product = await _productService.getProduct(barcode);
+      if (!mounted) return;
+      if (product != null) {
+        await DatabaseService.instance.insertScan(
+          barcode: barcode,
+          productName: product.name,
+          isHalal: product.isHalal,
+        );
+      }
       if (!mounted) return;
       await Navigator.push(
         context,

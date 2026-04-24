@@ -1,9 +1,6 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../main.dart';
-import '../models/product.dart';
+import '../services/database_service.dart';
 import '../services/product_service.dart';
 import '../localization/app_localizations.dart';
 import '../widgets/halal_scan_logo.dart';
@@ -33,64 +30,21 @@ class _StartScreenState extends State<StartScreen> {
   }
 
   Future<void> _loadRecentScans() async {
-    final prefs = await SharedPreferences.getInstance();
-    final scansJson = prefs.getStringList('recent_scans') ?? [];
-
-    final scans = <Map<String, dynamic>>[];
-    for (final json in scansJson) {
-      try {
-        final scan = Map<String, dynamic>.from(jsonDecode(json));
-        scans.add(scan);
-      } catch (e) {
-        // Skip invalid entries
-      }
+    final scans = await DatabaseService.instance.getRecentScans();
+    if (mounted) {
+      setState(() {
+        _recentScans = scans;
+        _isLoading = false;
+      });
     }
-
-    // Sort by timestamp, most recent first
-    scans.sort((a, b) => (b['timestamp'] as int).compareTo(a['timestamp'] as int));
-
-    // Limit to last 10 scans
-    if (scans.length > 10) {
-      scans.removeRange(10, scans.length);
-    }
-
-    setState(() {
-      _recentScans = scans;
-      _isLoading = false;
-    });
-  }
-
-  Future<void> _saveScan(String barcode, Product? product) async {
-    final prefs = await SharedPreferences.getInstance();
-    final scansJson = prefs.getStringList('recent_scans') ?? [];
-
-    final scan = {
-      'barcode': barcode,
-      'productName': product?.name ?? 'Unknown Product',
-      'timestamp': DateTime.now().millisecondsSinceEpoch,
-      'isHalal': product?.isHalal ?? false,
-    };
-
-    scansJson.insert(0, jsonEncode(scan)); // Add to beginning
-
-    // Keep only last 10
-    if (scansJson.length > 10) {
-      scansJson.removeRange(10, scansJson.length);
-    }
-
-    await prefs.setStringList('recent_scans', scansJson);
-    await _loadRecentScans(); // Refresh the list
   }
 
   Future<void> _openScan() async {
-    final result = await Navigator.push(
+    await Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => const HomeScreen()),
     );
-
-    if (result != null && result is Map<String, dynamic>) {
-      await _saveScan(result['barcode'], result['product']);
-    }
+    await _loadRecentScans();
   }
 
   Future<void> _openResult(Map<String, dynamic> scan) async {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import '../localization/app_localizations.dart';
 import '../models/product.dart';
 import '../models/feedback.dart';
 import '../services/feedback_service.dart';
@@ -43,7 +44,7 @@ class _ResultScreenState extends State<ResultScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not load feedback. Please try again.')),
+          SnackBar(content: Text(AppLocalizations.of(context).couldNotLoadFeedback)),
         );
       }
     } finally {
@@ -71,13 +72,13 @@ class _ResultScreenState extends State<ResultScreen> {
         );
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not refresh product data.')),
+          SnackBar(content: Text(AppLocalizations.of(context).couldNotRefreshProduct)),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not refresh product data.')),
+          SnackBar(content: Text(AppLocalizations.of(context).couldNotRefreshProduct)),
         );
       }
     } finally {
@@ -89,13 +90,14 @@ class _ResultScreenState extends State<ResultScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
     final product = widget.product;
     final barcode = widget.barcode;
 
     if (product == null) {
       return Scaffold(
         appBar: AppBar(
-          title: const Text('Result'),
+          title: Text(loc.resultTitle),
           backgroundColor: _green,
           foregroundColor: Colors.white,
         ),
@@ -105,13 +107,13 @@ class _ResultScreenState extends State<ResultScreen> {
             children: [
               const Icon(Icons.search_off, size: 80, color: Colors.grey),
               const SizedBox(height: 16),
-              const Text('Product not found', style: TextStyle(fontSize: 20)),
+              Text(loc.productNotFound, style: const TextStyle(fontSize: 20)),
               const SizedBox(height: 8),
               Text('Barcode: $barcode', style: const TextStyle(color: Colors.grey)),
               const SizedBox(height: 24),
               ElevatedButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('Scan Again'),
+                child: Text(loc.scanAgain),
               ),
             ],
           ),
@@ -125,7 +127,7 @@ class _ResultScreenState extends State<ResultScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Result'),
+        title: Text(loc.resultTitle),
         backgroundColor: _green,
         foregroundColor: Colors.white,
         actions: [
@@ -142,7 +144,7 @@ class _ResultScreenState extends State<ResultScreen> {
             IconButton(
               icon: const Icon(Icons.refresh),
               onPressed: _refreshProductData,
-              tooltip: 'Refresh product data',
+              tooltip: loc.refreshTooltip,
             ),
         ],
       ),
@@ -204,8 +206,8 @@ class _ResultScreenState extends State<ResultScreen> {
                           const SizedBox(width: 4),
                           Text(
                             product.analyzedByAI
-                                ? 'AI Analysis'
-                                : 'Keyword Analysis',
+                                ? loc.aiAnalysis
+                                : loc.keywordAnalysis,
                             style: const TextStyle(
                               color: Colors.white70,
                               fontSize: 12,
@@ -256,13 +258,13 @@ class _ResultScreenState extends State<ResultScreen> {
                     border: Border.all(color: Colors.grey.shade300),
                     color: Colors.grey.shade100,
                   ),
-                  child: const Center(
+                  child: Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.image, size: 48, color: Colors.grey),
-                        SizedBox(height: 8),
-                        Text('No product image available', style: TextStyle(color: Colors.grey)),
+                        const Icon(Icons.image, size: 48, color: Colors.grey),
+                        const SizedBox(height: 8),
+                        Text(loc.noProductImageAvailable, style: const TextStyle(color: Colors.grey)),
                       ],
                     ),
                   ),
@@ -270,7 +272,7 @@ class _ResultScreenState extends State<ResultScreen> {
               const SizedBox(height: 24),
               if (product.imageIngredientsUrl != null || product.imageNutritionUrl != null) ...[
                 Text(
-                  'Additional Images',
+                  loc.additionalImages,
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -279,7 +281,7 @@ class _ResultScreenState extends State<ResultScreen> {
                 ),
                 const SizedBox(height: 12),
                 if (product.imageIngredientsUrl != null)
-                  _buildLabelledImage(product.imageIngredientsUrl!, 'Ingredients'),
+                  _buildLabelledImage(product.imageIngredientsUrl!, loc.ingredients),
                 if (product.imageNutritionUrl != null)
                   _buildLabelledImage(product.imageNutritionUrl!, 'Nutrition'),
                 const SizedBox(height: 24),
@@ -287,7 +289,7 @@ class _ResultScreenState extends State<ResultScreen> {
               Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  'Ingredients',
+                  loc.ingredients,
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -297,7 +299,7 @@ class _ResultScreenState extends State<ResultScreen> {
               ),
               const SizedBox(height: 8),
               if (ingredients.isEmpty)
-                const Text('No ingredient data available.', style: TextStyle(color: Colors.grey))
+                Text(loc.noIngredientData, style: const TextStyle(color: Colors.grey))
               else
                 ...ingredients.map((ingredient) {
                   final warning = product.ingredientWarnings[ingredient];
@@ -319,7 +321,7 @@ class _ResultScreenState extends State<ResultScreen> {
                 Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
-                    'Flagged Ingredients',
+                    loc.flaggedIngredients,
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -333,7 +335,7 @@ class _ResultScreenState extends State<ResultScreen> {
                   return ListTile(
                     leading: const Icon(Icons.error, color: Colors.red),
                     title: Text(e),
-                    subtitle: warning == null ? const Text('Found in product ingredients.') : Text(warning),
+                    subtitle: Text(warning ?? loc.foundInIngredients),
                     dense: true,
                   );
                 }),
@@ -343,7 +345,7 @@ class _ResultScreenState extends State<ResultScreen> {
                 Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
-                    'May Be Animal-Derived',
+                    loc.mayBeAnimalDerived,
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -357,16 +359,18 @@ class _ResultScreenState extends State<ResultScreen> {
                   return ListTile(
                     leading: Icon(Icons.warning, color: Colors.orange.shade600),
                     title: Text(e),
-                    subtitle: warning == null ? const Text('May be animal-derived.') : Text(warning),
+                    subtitle: Text(warning ?? loc.mayBeAnimalDerivedNote),
                     dense: true,
                   );
                 }),
               ],
               const SizedBox(height: 16),
+              _buildTransparencySection(product, loc),
+              const SizedBox(height: 16),
               Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  'Community Feedback',
+                  loc.communityFeedback,
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -378,9 +382,9 @@ class _ResultScreenState extends State<ResultScreen> {
               if (_isLoadingFeedback)
                 const Center(child: CircularProgressIndicator())
               else if (_feedbacks.isEmpty)
-                const Text(
-                  'No feedback yet. Be the first to share your thoughts!',
-                  style: TextStyle(color: Colors.grey),
+                Text(
+                  loc.noFeedbackYet,
+                  style: const TextStyle(color: Colors.grey),
                 )
               else
                 ..._feedbacks.map((feedback) => Card(
@@ -395,7 +399,7 @@ class _ResultScreenState extends State<ResultScreen> {
                             const Icon(Icons.person, size: 16, color: Colors.grey),
                             const SizedBox(width: 4),
                             Text(
-                              'User Feedback',
+                              loc.userFeedback,
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: Colors.grey.shade700,
@@ -437,7 +441,7 @@ class _ResultScreenState extends State<ResultScreen> {
                                     const Icon(Icons.business, size: 16, color: _green),
                                     const SizedBox(width: 4),
                                     Text(
-                                      'Producer Reply',
+                                      loc.producerReply,
                                       style: TextStyle(
                                         fontWeight: FontWeight.bold,
                                         color: _greenMid,
@@ -462,7 +466,7 @@ class _ResultScreenState extends State<ResultScreen> {
                             child: TextButton.icon(
                               onPressed: () => _showProducerReplyDialog(feedback.id),
                               icon: const Icon(Icons.reply, size: 16),
-                              label: const Text('Reply as Producer'),
+                              label: Text(loc.replyAsProducer),
                               style: TextButton.styleFrom(
                                 foregroundColor: _greenMid,
                               ),
@@ -483,7 +487,7 @@ class _ResultScreenState extends State<ResultScreen> {
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('Scan Another Product', style: TextStyle(fontSize: 16)),
+                  child: Text(loc.scanAnotherProduct, style: const TextStyle(fontSize: 16)),
                 ),
               ),
               const SizedBox(height: 12),
@@ -496,12 +500,141 @@ class _ResultScreenState extends State<ResultScreen> {
                     padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
                   onPressed: () => _showFeedbackDialog(context),
-                  child: const Text('Provide Feedback', style: TextStyle(fontSize: 14)),
+                  child: Text(loc.provideFeedback, style: const TextStyle(fontSize: 14)),
                 ),
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildTransparencySection(Product product, AppLocalizations loc) {
+    final ingredients = product.ingredients;
+    final matchedHaram = <String>{};
+    final matchedSuspicious = <String>{};
+
+    for (final ingredient in ingredients) {
+      final lower = ingredient.toLowerCase();
+      for (final kw in ProductService.haramKeywords.keys) {
+        if (ProductService.matchesKeyword(lower, kw)) matchedHaram.add(kw);
+      }
+      for (final kw in ProductService.suspiciousKeywords.keys) {
+        if (ProductService.matchesKeyword(lower, kw)) matchedSuspicious.add(kw);
+      }
+    }
+
+    Widget keywordChip(String kw, String reason, bool found, Color foundColor) {
+      return Tooltip(
+        message: reason,
+        child: Chip(
+          label: Text(
+            kw,
+            style: TextStyle(
+              fontSize: 11,
+              color: found ? Colors.white : Colors.grey.shade700,
+            ),
+          ),
+          backgroundColor: found ? foundColor : Colors.grey.shade200,
+          avatar: found
+              ? Icon(
+                  foundColor == Colors.red.shade600
+                      ? Icons.close
+                      : Icons.warning_amber,
+                  size: 14,
+                  color: Colors.white,
+                )
+              : null,
+          padding: EdgeInsets.zero,
+          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        ),
+      );
+    }
+
+    return Card(
+      margin: EdgeInsets.zero,
+      child: ExpansionTile(
+        title: Text(
+          loc.analysisTransparency,
+          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+        ),
+        leading: const Icon(Icons.visibility_outlined),
+        tilePadding: const EdgeInsets.symmetric(horizontal: 16),
+        childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        children: [
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              loc.haramKeywordsChecked,
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+                color: Colors.red.shade700,
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: ProductService.haramKeywords.entries
+                .map((e) => keywordChip(
+                      e.key,
+                      e.value,
+                      matchedHaram.contains(e.key),
+                      Colors.red.shade600,
+                    ))
+                .toList(),
+          ),
+          const SizedBox(height: 14),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              loc.suspiciousKeywordsChecked,
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+                color: Colors.orange.shade700,
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: ProductService.suspiciousKeywords.entries
+                .map((e) => keywordChip(
+                      e.key,
+                      e.value,
+                      matchedSuspicious.contains(e.key),
+                      Colors.orange.shade600,
+                    ))
+                .toList(),
+          ),
+          const SizedBox(height: 14),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.blue.shade50,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.blue.shade200),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.info_outline, size: 16, color: Colors.blue.shade600),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    loc.transparencyNote,
+                    style: TextStyle(fontSize: 12, color: Colors.blue.shade700),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -777,12 +910,13 @@ class _ResultScreenState extends State<ResultScreen> {
   }
 
   String _formatDate(DateTime date) {
+    final loc = AppLocalizations.of(context);
     final now = DateTime.now();
     final difference = now.difference(date);
 
-    if (difference.inDays == 0) return 'Today';
-    if (difference.inDays == 1) return 'Yesterday';
-    if (difference.inDays < 7) return '${difference.inDays} days ago';
+    if (difference.inDays == 0) return loc.today;
+    if (difference.inDays == 1) return loc.yesterday;
+    if (difference.inDays < 7) return loc.daysAgo(difference.inDays);
 
     final y = date.year;
     final m = date.month.toString().padLeft(2, '0');
@@ -791,30 +925,28 @@ class _ResultScreenState extends State<ResultScreen> {
   }
 
   Future<void> _showFeedbackDialog(BuildContext context) async {
+    final loc = AppLocalizations.of(context);
     final TextEditingController feedbackController = TextEditingController();
     final List<String> selectedFiles = [];
 
     await showDialog<void>(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Provide Feedback'),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          title: Text(loc.provideFeedback),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
-                  'Help improve our halal assessment by providing feedback about this product.',
-                  style: TextStyle(fontSize: 14),
-                ),
+                Text(loc.feedbackDialogHint, style: const TextStyle(fontSize: 14)),
                 const SizedBox(height: 16),
                 TextField(
                   controller: feedbackController,
                   maxLines: 3,
                   onChanged: (_) => setDialogState(() {}),
-                  decoration: const InputDecoration(
-                    hintText: 'Your feedback...',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    hintText: loc.feedbackInputHint,
+                    border: const OutlineInputBorder(),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -837,7 +969,7 @@ class _ResultScreenState extends State<ResultScreen> {
                           }
                         },
                         icon: const Icon(Icons.attach_file),
-                        label: const Text('Attach Files'),
+                        label: Text(loc.attachFiles),
                       ),
                     ),
                   ],
@@ -857,14 +989,14 @@ class _ResultScreenState extends State<ResultScreen> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(loc.cancel),
             ),
             ElevatedButton(
               onPressed: feedbackController.text.trim().isEmpty
                   ? null
                   : () async {
-                      final navigator = Navigator.of(context);
+                      final navigator = Navigator.of(ctx);
                       final messenger = ScaffoldMessenger.of(context);
                       try {
                         await _feedbackService.addFeedback(
@@ -874,16 +1006,16 @@ class _ResultScreenState extends State<ResultScreen> {
                         );
                         navigator.pop();
                         messenger.showSnackBar(
-                          const SnackBar(content: Text('Feedback submitted successfully!')),
+                          SnackBar(content: Text(loc.thankYouFeedback)),
                         );
                         await _loadFeedbacks();
                       } catch (e) {
                         messenger.showSnackBar(
-                          const SnackBar(content: Text('Could not submit feedback. Please try again.')),
+                          SnackBar(content: Text(loc.couldNotSubmitFeedback)),
                         );
                       }
                     },
-              child: const Text('Submit'),
+              child: Text(loc.submit),
             ),
           ],
         ),
@@ -892,43 +1024,41 @@ class _ResultScreenState extends State<ResultScreen> {
   }
 
   Future<void> _showProducerReplyDialog(String feedbackId) async {
+    final loc = AppLocalizations.of(context);
     final TextEditingController replyController = TextEditingController();
 
     await showDialog<void>(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) {
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) {
           replyController.addListener(() => setDialogState(() {}));
           return AlertDialog(
-            title: const Text('Reply as Producer'),
+            title: Text(loc.replyAsProducer),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
-                  'Provide an official response to this feedback.',
-                  style: TextStyle(fontSize: 14),
-                ),
+                Text(loc.replyDialogHint, style: const TextStyle(fontSize: 14)),
                 const SizedBox(height: 16),
                 TextField(
                   controller: replyController,
                   maxLines: 3,
-                  decoration: const InputDecoration(
-                    hintText: 'Your reply...',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    hintText: loc.replyInputHint,
+                    border: const OutlineInputBorder(),
                   ),
                 ),
               ],
             ),
             actions: [
               TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Cancel'),
+                onPressed: () => Navigator.pop(ctx),
+                child: Text(loc.cancel),
               ),
               ElevatedButton(
                 onPressed: replyController.text.trim().isEmpty
                     ? null
                     : () async {
-                        final navigator = Navigator.of(context);
+                        final navigator = Navigator.of(ctx);
                         final messenger = ScaffoldMessenger.of(context);
                         try {
                           await _feedbackService.addProducerReply(
@@ -937,16 +1067,16 @@ class _ResultScreenState extends State<ResultScreen> {
                           );
                           navigator.pop();
                           messenger.showSnackBar(
-                            const SnackBar(content: Text('Reply submitted successfully!')),
+                            SnackBar(content: Text(loc.replySubmitted)),
                           );
                           await _loadFeedbacks();
                         } catch (e) {
                           messenger.showSnackBar(
-                            const SnackBar(content: Text('Could not submit reply. Please try again.')),
+                            SnackBar(content: Text(loc.couldNotSubmitReply)),
                           );
                         }
                       },
-                child: const Text('Submit Reply'),
+                child: Text(loc.submitReply),
               ),
             ],
           );
