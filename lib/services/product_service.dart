@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../config.dart';
 import '../models/product.dart';
 import 'cache_service.dart';
 import 'claude_service.dart';
@@ -124,12 +125,43 @@ class ProductService {
     );
   }
 
+  // Try the Supabase Edge Function. Returns null on any failure so the caller
+  // can fall back to direct OpenFoodFacts + Claude.
+  Future<Product?> _fetchFromBackend(String barcode) async {
+    if (!AppConfig.hasSupabase) return null;
+    try {
+      final response = await http
+          .post(
+            Uri.parse('${AppConfig.supabaseUrl}/functions/v1/lookup-product'),
+            headers: {
+              'Authorization': 'Bearer ${AppConfig.supabaseAnonKey}',
+              'Content-Type': 'application/json',
+            },
+            body: jsonEncode({'barcode': barcode}),
+          )
+          .timeout(const Duration(seconds: 30));
+      if (response.statusCode != 200) return null;
+      final data = json.decode(response.body) as Map<String, dynamic>;
+      if (data['product'] == null) return null;
+      return Product.fromJson(data['product'] as Map<String, dynamic>);
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<Product?> getProduct(String barcode) async {
-    // Step 1: Check cache
+    // Step 1: Check local cache (fast path — no network)
     final cached = await _cache.getProduct(barcode);
     if (cached != null) return cached;
 
-    // Step 2: Fetch from OpenFoodFacts
+    // Step 2: Try backend (handles OFf + Claude + shared DB)
+    final backendProduct = await _fetchFromBackend(barcode);
+    if (backendProduct != null) {
+      await _cache.saveProduct(barcode, backendProduct);
+      return backendProduct;
+    }
+
+    // Step 3: Fallback — fetch directly from OpenFoodFacts
     try {
       final response = await http.get(
         Uri.parse('$_baseUrl/$barcode.json'),
