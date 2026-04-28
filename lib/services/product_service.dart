@@ -11,23 +11,23 @@ class ProductService {
   final CacheService _cache = CacheService();
   final ClaudeService _claude = ClaudeService();
 
-  // Fallback haram keywords used when Claude is unavailable
+  // Canonical keyword → reason (used for transparency UI chips)
   static const Map<String, String> haramKeywords = {
-    'alcohol': 'Contains alcohol or alcohol-derived ingredient',
-    'ethanol': 'Contains alcohol or alcohol-derived ingredient',
-    'wine': 'Contains alcohol or alcohol-derived ingredient',
-    'beer': 'Contains alcohol or alcohol-derived ingredient',
-    'pork': 'Contains pork or pork-derived ingredient',
-    'lard': 'Contains pork fat',
-    'gelatin': 'Gelatin is typically animal-derived',
-    'bacon': 'Contains pork product',
-    'ham': 'Contains pork product',
-    'pepperoni': 'Contains pork product',
-    'salami': 'Contains pork product',
-    'chorizo': 'Contains pork product',
+    'alcohol':    'Contains alcohol or alcohol-derived ingredient',
+    'ethanol':    'Contains alcohol or alcohol-derived ingredient',
+    'wine':       'Contains alcohol or alcohol-derived ingredient',
+    'beer':       'Contains alcohol or alcohol-derived ingredient',
+    'pork':       'Contains pork or pork-derived ingredient',
+    'lard':       'Contains pork fat',
+    'gelatin':    'Gelatin is typically animal-derived',
+    'bacon':      'Contains pork product',
+    'ham':        'Contains pork product',
+    'pepperoni':  'Contains pork product',
+    'salami':     'Contains pork product',
+    'chorizo':    'Contains pork product',
     'prosciutto': 'Contains pork product',
-    'carmine': 'Carmine/cochineal is insect-derived',
-    'cochineal': 'Carmine/cochineal is insect-derived',
+    'carmine':    'Carmine/cochineal is insect-derived',
+    'cochineal':  'Carmine/cochineal is insect-derived',
     'e120': 'Carmine/cochineal color, animal-derived',
     'e441': 'Gelatin, animal-derived',
     'e542': 'Bone phosphate, animal-derived',
@@ -35,30 +35,90 @@ class ProductService {
   };
 
   static const Map<String, String> suspiciousKeywords = {
-    'e920': 'L-cysteine may be animal-derived',
-    'e322': 'Lecithin may be animal-derived',
-    'e471': 'Mono- and diglycerides may be animal-derived',
-    'e472': 'Emulsifiers may be animal-derived',
-    'e473': 'Sucrose esters may be animal-derived',
-    'e927': 'Glycine may be animal-derived',
-    'rennet': 'Rennet may be animal-derived',
-    'whey': 'Whey is a dairy ingredient',
-    'l-cysteine': 'L-cysteine may be animal-derived',
-    'natural flavour': 'Natural flavor may include animal-derived extracts',
-    'natural flavor': 'Natural flavor may include animal-derived extracts',
-    'flavouring': 'Flavouring may include animal-derived extracts',
-    'flavoring': 'Flavoring may include animal-derived extracts',
-    'enzymes': 'Enzymes may be extracted from animal sources',
-    'glycerol': 'Glycerol may be animal-derived',
+    'e920':           'L-cysteine may be animal-derived',
+    'e322':           'Lecithin may be animal-derived',
+    'e471':           'Mono- and diglycerides may be animal-derived',
+    'e472':           'Emulsifiers may be animal-derived',
+    'e473':           'Sucrose esters may be animal-derived',
+    'e927':           'Glycine may be animal-derived',
+    'rennet':         'Rennet may be animal-derived',
+    'whey':           'Whey is a dairy ingredient',
+    'l-cysteine':     'L-cysteine may be animal-derived',
+    'natural flavour':'Natural flavor may include animal-derived extracts',
+    'flavouring':     'Flavouring may include animal-derived extracts',
+    'enzymes':        'Enzymes may be extracted from animal sources',
+    'glycerol':       'Glycerol may be animal-derived',
   };
 
-  static bool matchesKeyword(String ingredient, String keyword) {
-    if (keyword == 'alcohol') {
-      return RegExp(r'\balcohol\b(?![-\s]*free)', caseSensitive: false)
+  // Multilingual variants per canonical keyword (EN / DE / TR / FR / IT / ES / NL)
+  static const Map<String, List<String>> _haramVariants = {
+    'alcohol':    ['alcohol', 'alkohol', 'alcool', 'alcol', 'alkol', 'álcool'],
+    'ethanol':    ['ethanol', 'äthanol', 'éthanol', 'etanolo', 'etanol'],
+    'wine':       ['wine', 'wein', 'vin', 'vino', 'şarap', 'wijn', 'vinho'],
+    'beer':       ['beer', 'bier', 'bière', 'birra', 'cerveza', 'bira', 'cerveja'],
+    'pork':       ['pork', 'schwein', 'schweinefleisch', 'porc', 'maiale', 'cerdo',
+                   'domuz', 'varkens', 'varkensvlees', 'porco'],
+    'lard':       ['lard', 'schmalz', 'schweineschmalz', 'saindoux', 'strutto',
+                   'manteca', 'domuz yağı', 'banha'],
+    'gelatin':    ['gelatin', 'gelatine', 'gelatina', 'jelatin', 'gélatine'],
+    'bacon':      ['bacon', 'speck', 'lardons', 'pancetta', 'domuz pastırması'],
+    'ham':        ['ham', 'schinken', 'jambon', 'prosciutto', 'jamón', 'presunto'],
+    'pepperoni':  ['pepperoni'],
+    'salami':     ['salami', 'salame'],
+    'chorizo':    ['chorizo'],
+    'prosciutto': ['prosciutto'],
+    'carmine':    ['carmine', 'karmin', 'carmín', 'karmín', 'carmin'],
+    'cochineal':  ['cochineal', 'cochenille', 'cocciniglia', 'cochinilla', 'koşnil'],
+    'e120':       ['e120', 'e-120'],
+    'e441':       ['e441', 'e-441'],
+    'e542':       ['e542', 'e-542'],
+    'e904':       ['e904', 'e-904'],
+  };
+
+  static const Map<String, List<String>> _suspiciousVariants = {
+    'e920':           ['e920', 'e-920'],
+    'e322':           ['e322', 'e-322'],
+    'e471':           ['e471', 'e-471'],
+    'e472':           ['e472', 'e-472'],
+    'e473':           ['e473', 'e-473'],
+    'e927':           ['e927', 'e-927'],
+    'rennet':         ['rennet', 'lab', 'labferment', 'présure', 'caglio', 'cuajo',
+                       'peynir mayası', 'stremsel'],
+    'whey':           ['whey', 'molke', 'lactosérum', 'siero di latte',
+                       'suero de leche', 'peynir suyu', 'wei'],
+    'l-cysteine':     ['l-cysteine', 'l-cystein', 'l-cystéine', 'l-cisteina',
+                       'l-sistein'],
+    'natural flavour':['natural flavour', 'natural flavor', 'natürliches aroma',
+                       'natürliche aromen', 'arôme naturel', 'aroma naturale',
+                       'aroma natural', 'doğal aroma', 'natuurlijk aroma'],
+    'flavouring':     ['flavouring', 'flavoring', 'aroma', 'arôme', 'aroma naturale',
+                       'doğal aroma', 'natürliches aroma', 'smaakstof'],
+    'enzymes':        ['enzymes', 'enzyme', 'enzimi', 'enzimas', 'enzim', 'enzymen'],
+    'glycerol':       ['glycerol', 'glycerin', 'glycérol', 'glicerina', 'gliserin',
+                       'glycerine'],
+  };
+
+  // All alcohol-family terms — these get the "alcohol-free" exclusion applied
+  static const _alcoholFamily = {
+    'alcohol', 'alkohol', 'alcool', 'alcol', 'alkol', 'álcool',
+    'ethanol', 'äthanol', 'éthanol', 'etanolo', 'etanol',
+  };
+
+  static bool _matchesVariant(String ingredient, String variant) {
+    if (variant.contains(' ')) {
+      return ingredient.toLowerCase().contains(variant.toLowerCase());
+    }
+    final escaped = RegExp.escape(variant);
+    if (_alcoholFamily.contains(variant.toLowerCase())) {
+      return RegExp('\\b$escaped\\b(?![-\\s]*free)', caseSensitive: false)
           .hasMatch(ingredient);
     }
-    return RegExp('\\b${RegExp.escape(keyword)}\\b', caseSensitive: false)
-        .hasMatch(ingredient);
+    return RegExp('\\b$escaped\\b', caseSensitive: false).hasMatch(ingredient);
+  }
+
+  static bool matchesKeyword(String ingredient, String keyword) {
+    final variants = _haramVariants[keyword] ?? _suspiciousVariants[keyword] ?? [keyword];
+    return variants.any((v) => _matchesVariant(ingredient, v));
   }
 
   // Keyword-based fallback analysis
