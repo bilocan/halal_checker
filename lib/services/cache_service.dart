@@ -31,4 +31,9 @@ class CacheService {
     map['_cachedAt'] = DateTime.now().toIso8601String();
     await prefs.setString('$_prefix$barcode', jsonEncode(map));
   }
+
+  Future<void> removeProduct(String barcode) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('$_prefix$barcode');
+  }
 }

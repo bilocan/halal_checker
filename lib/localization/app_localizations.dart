@@ -9,7 +9,8 @@ class AppLocalizations {
     'en': {
       'appTitle': 'HalalScan',
       'startTitle': 'HalalScan',
-      'tagline': 'Scan. Check. Trust.',
+      'tagline': 'Transparent halal, powered by community.',
+      'taglineSubtitle': 'Every ingredient checked and explained — shaped by your feedback.',
       'newScan': 'New Scan',
       'lastResults': 'Last Results',
       'noRecentResults': 'No recent scans saved yet.',
@@ -45,7 +46,7 @@ class AppLocalizations {
       'vegetarian': 'Vegetarian',
       'vegan': 'Vegan',
       'halal': 'HALAL',
-      'notHalal': 'NOT HALAL',
+      'notHalal': 'HARAM',
       'lastScanned': 'Last scanned',
       'today': 'Today',
       'yesterday': 'Yesterday',
@@ -84,11 +85,32 @@ class AppLocalizations {
       'haramKeywordsChecked': 'Haram Ingredients We Check',
       'suspiciousKeywordsChecked': 'Suspicious Ingredients We Check',
       'transparencyNote': 'Something missing from our list? Let us know via feedback!',
+      'recheck': 'Recheck',
+      'foundNotFlagged': 'Found in ingredients, but not flagged by the analysis (e.g. fatty alcohol, trace amount, or context-safe use).',
+      'fattyAlcoholNote': 'This is a fatty alcohol (e.g. cetyl or stearyl alcohol) — a plant-derived emulsifier. It has no relation to drinking alcohol and is halal.',
+      'keywords': 'Keywords',
+      'haramTab': 'Haram',
+      'suspiciousTab': 'Suspicious',
+      'suggestKeyword': 'Suggest a Keyword',
+      'suggestKeywordHint': 'Think we\'re missing something? Suggest a keyword and we\'ll review it.',
+      'keywordLabel': 'Keyword',
+      'keywordHint': 'e.g. lard, ethanol, cochineal',
+      'keywordRequired': 'Please enter a keyword.',
+      'categoryLabel': 'Category',
+      'haramCategory': 'Haram (definitively not permissible)',
+      'suspiciousCategory': 'Suspicious (may be animal-derived)',
+      'reasonLabel': 'Reason',
+      'reasonHint': 'Why should this keyword be added?',
+      'reasonRequired': 'Please provide a reason.',
+      'suggestionSubmitted': 'Thank you! Your suggestion has been submitted for review.',
+      'suggestionError': 'Could not submit suggestion. Please try again.',
+      'customBadge': 'custom',
     },
     'tr': {
       'appTitle': 'HalalScan',
       'startTitle': 'HalalScan',
-      'tagline': 'Tara. Kontrol et. Güven.',
+      'tagline': 'Şeffaf helal, topluluk gücüyle.',
+      'taglineSubtitle': 'Her içerik kontrol edilir ve açıklanır — geri bildirimlerinizle gelişir.',
       'newScan': 'Yeni Tara',
       'lastResults': 'Son Sonuçlar',
       'noRecentResults': 'Henüz kaydedilmiş tarama yok.',
@@ -124,7 +146,7 @@ class AppLocalizations {
       'vegetarian': 'Vejetaryen',
       'vegan': 'Vegan',
       'halal': 'HELAL',
-      'notHalal': 'HELAL DEĞİL',
+      'notHalal': 'HARAM',
       'lastScanned': 'Son tarama',
       'today': 'Bugün',
       'yesterday': 'Dün',
@@ -163,11 +185,32 @@ class AppLocalizations {
       'haramKeywordsChecked': 'Kontrol Ettiğimiz Haram İçerikler',
       'suspiciousKeywordsChecked': 'Kontrol Ettiğimiz Şüpheli İçerikler',
       'transparencyNote': 'Listemizde eksik mi? Geri bildirim gönderin!',
+      'recheck': 'Yeniden Kontrol Et',
+      'foundNotFlagged': 'İçeriklerde bulundu, ancak analiz tarafından işaretlenmedi (örn. yağ alkolü, iz miktarı veya bağlama güvenli kullanım).',
+      'fattyAlcoholNote': 'Bu bir yağ alkolüdür (örn. setil veya stearil alkol) — bitkisel kaynaklı bir emülgatördür. İçki alkolüyle hiçbir ilgisi yoktur ve helaldir.',
+      'keywords': 'Anahtar Kelimeler',
+      'haramTab': 'Haram',
+      'suspiciousTab': 'Şüpheli',
+      'suggestKeyword': 'Anahtar Kelime Öner',
+      'suggestKeywordHint': 'Bir şeyi atladığımızı mı düşünüyorsunuz? Önerin incelememize gönderin.',
+      'keywordLabel': 'Anahtar Kelime',
+      'keywordHint': 'örn. domuz yağı, etanol, karmin',
+      'keywordRequired': 'Lütfen bir anahtar kelime girin.',
+      'categoryLabel': 'Kategori',
+      'haramCategory': 'Haram (kesinlikle yasak)',
+      'suspiciousCategory': 'Şüpheli (hayvansal kaynaklı olabilir)',
+      'reasonLabel': 'Sebep',
+      'reasonHint': 'Bu anahtar kelime neden eklenmeli?',
+      'reasonRequired': 'Lütfen bir sebep belirtin.',
+      'suggestionSubmitted': 'Teşekkürler! Öneriniz incelenmek üzere gönderildi.',
+      'suggestionError': 'Öneri gönderilemedi. Lütfen tekrar deneyin.',
+      'customBadge': 'özel',
     },
     'de': {
       'appTitle': 'HalalScan',
       'startTitle': 'HalalScan',
-      'tagline': 'Scannen. Prüfen. Vertrauen.',
+      'tagline': 'Transparentes Halal, von der Community.',
+      'taglineSubtitle': 'Jede Zutat geprüft und erklärt — verbessert durch Ihr Feedback.',
       'newScan': 'Neu scannen',
       'lastResults': 'Letzte Ergebnisse',
       'noRecentResults': 'Noch keine letzten Scans gespeichert.',
@@ -203,7 +246,7 @@ class AppLocalizations {
       'vegetarian': 'Vegetarisch',
       'vegan': 'Vegan',
       'halal': 'HALAL',
-      'notHalal': 'NICHT HALAL',
+      'notHalal': 'HARAM',
       'lastScanned': 'Zuletzt gescannt',
       'today': 'Heute',
       'yesterday': 'Gestern',
@@ -242,6 +285,26 @@ class AppLocalizations {
       'haramKeywordsChecked': 'Haram-Zutaten, die wir prüfen',
       'suspiciousKeywordsChecked': 'Verdächtige Zutaten, die wir prüfen',
       'transparencyNote': 'Fehlt etwas? Teilen Sie es uns mit!',
+      'recheck': 'Erneut prüfen',
+      'foundNotFlagged': 'In Zutaten gefunden, aber nicht von der Analyse markiert (z. B. Fettalkohole, Spurenmengen oder kontextsichere Verwendung).',
+      'fattyAlcoholNote': 'Dies ist ein Fettalkohol (z. B. Cetyl- oder Stearylalkohol) – ein pflanzlicher Emulgator. Er hat keinen Bezug zu Trinkalkohol und ist halal.',
+      'keywords': 'Schlüsselwörter',
+      'haramTab': 'Haram',
+      'suspiciousTab': 'Verdächtig',
+      'suggestKeyword': 'Schlüsselwort vorschlagen',
+      'suggestKeywordHint': 'Fehlt etwas? Schlagen Sie ein Schlüsselwort vor – wir prüfen es.',
+      'keywordLabel': 'Schlüsselwort',
+      'keywordHint': 'z. B. Schmalz, Ethanol, Karmin',
+      'keywordRequired': 'Bitte ein Schlüsselwort eingeben.',
+      'categoryLabel': 'Kategorie',
+      'haramCategory': 'Haram (eindeutig verboten)',
+      'suspiciousCategory': 'Verdächtig (möglicherweise tierisch)',
+      'reasonLabel': 'Begründung',
+      'reasonHint': 'Warum sollte dieses Schlüsselwort aufgenommen werden?',
+      'reasonRequired': 'Bitte eine Begründung angeben.',
+      'suggestionSubmitted': 'Danke! Ihr Vorschlag wurde zur Prüfung eingereicht.',
+      'suggestionError': 'Vorschlag konnte nicht gesendet werden. Bitte erneut versuchen.',
+      'customBadge': 'benutzerdefiniert',
     },
   };
 
@@ -252,6 +315,7 @@ class AppLocalizations {
   String get appTitle => _translate('appTitle');
   String get startTitle => _translate('startTitle');
   String get tagline => _translate('tagline');
+  String get taglineSubtitle => _translate('taglineSubtitle');
   String get newScan => _translate('newScan');
   String get lastResults => _translate('lastResults');
   String get noRecentResults => _translate('noRecentResults');
@@ -324,6 +388,26 @@ class AppLocalizations {
   String get haramKeywordsChecked => _translate('haramKeywordsChecked');
   String get suspiciousKeywordsChecked => _translate('suspiciousKeywordsChecked');
   String get transparencyNote => _translate('transparencyNote');
+  String get recheck => _translate('recheck');
+  String get foundNotFlagged => _translate('foundNotFlagged');
+  String get fattyAlcoholNote => _translate('fattyAlcoholNote');
+  String get keywords => _translate('keywords');
+  String get haramTab => _translate('haramTab');
+  String get suspiciousTab => _translate('suspiciousTab');
+  String get suggestKeyword => _translate('suggestKeyword');
+  String get suggestKeywordHint => _translate('suggestKeywordHint');
+  String get keywordLabel => _translate('keywordLabel');
+  String get keywordHint => _translate('keywordHint');
+  String get keywordRequired => _translate('keywordRequired');
+  String get categoryLabel => _translate('categoryLabel');
+  String get haramCategory => _translate('haramCategory');
+  String get suspiciousCategory => _translate('suspiciousCategory');
+  String get reasonLabel => _translate('reasonLabel');
+  String get reasonHint => _translate('reasonHint');
+  String get reasonRequired => _translate('reasonRequired');
+  String get suggestionSubmitted => _translate('suggestionSubmitted');
+  String get suggestionError => _translate('suggestionError');
+  String get customBadge => _translate('customBadge');
 
   static AppLocalizations of(BuildContext context) {
     final localizations = Localizations.of<AppLocalizations>(context, AppLocalizations);

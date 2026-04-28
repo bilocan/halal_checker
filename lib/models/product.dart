@@ -31,6 +31,28 @@ class Product {
     this.analyzedByAI = false,
   });
 
+  Product copyWith({
+    bool? isHalal,
+    List<String>? haramIngredients,
+    Map<String, String>? ingredientWarnings,
+    String? explanation,
+  }) => Product(
+    barcode: barcode,
+    name: name,
+    ingredients: ingredients,
+    isHalal: isHalal ?? this.isHalal,
+    haramIngredients: haramIngredients ?? this.haramIngredients,
+    suspiciousIngredients: suspiciousIngredients,
+    ingredientWarnings: ingredientWarnings ?? this.ingredientWarnings,
+    labels: labels,
+    imageUrl: imageUrl,
+    imageFrontUrl: imageFrontUrl,
+    imageIngredientsUrl: imageIngredientsUrl,
+    imageNutritionUrl: imageNutritionUrl,
+    explanation: explanation ?? this.explanation,
+    analyzedByAI: analyzedByAI,
+  );
+
   Map<String, dynamic> toJson() => {
     'barcode': barcode,
     'name': name,
