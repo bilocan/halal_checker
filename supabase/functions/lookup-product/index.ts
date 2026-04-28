@@ -98,6 +98,9 @@ const ALCOHOL_FAMILY = new Set([
   'ethanol','äthanol','éthanol','etanolo','etanol',
 ])
 
+// Fatty alcohol prefixes — these are halal emulsifiers, not drinking alcohol
+const FATTY_ALCOHOL_PREFIX = /\b(cetyl|stearyl|behenyl|lauryl|myristyl|arachidyl|oleyl|cetostearyl|lanolin|isostearyl|octyldodecyl|decyl)\s+/i
+
 // Build canonical→reason lookup
 const HARAM_KW: Record<string, string> = Object.fromEntries(HARAM_ENTRIES.map(([c, r]) => [c, r]))
 const SUSPICIOUS_KW: Record<string, string> = Object.fromEntries(SUSPICIOUS_ENTRIES.map(([c, r]) => [c, r]))
@@ -106,7 +109,10 @@ function escape(s: string) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') }
 
 function matchesVariant(ingredient: string, variant: string): boolean {
   if (variant.includes(' ')) return ingredient.includes(variant)
-  if (ALCOHOL_FAMILY.has(variant)) return new RegExp(`\\b${escape(variant)}\\b(?![-\\s]*free)`, 'i').test(ingredient)
+  if (ALCOHOL_FAMILY.has(variant)) {
+    if (FATTY_ALCOHOL_PREFIX.test(ingredient)) return false  // cetyl alcohol etc. → halal
+    return new RegExp(`\\b${escape(variant)}\\b(?![-\\s]*free)`, 'i').test(ingredient)
+  }
   return new RegExp(`\\b${escape(variant)}\\b`, 'i').test(ingredient)
 }
 
@@ -115,21 +121,27 @@ function matchesEntry(ingredient: string, entry: [string, string, ...string[]]):
   return variants.some(v => matchesVariant(ingredient, v))
 }
 
-function keywordAnalysis(ingredients: string[]) {
+function keywordAnalysis(
+  ingredients: string[],
+  extraHaram: [string, string, ...string[]][] = [],
+  extraSuspicious: [string, string, ...string[]][] = [],
+) {
   const warnings: Record<string, string> = {}
   const haram: string[] = []
   const suspicious: string[] = []
+  const allHaram = [...HARAM_ENTRIES, ...extraHaram]
+  const allSuspicious = [...SUSPICIOUS_ENTRIES, ...extraSuspicious]
 
   for (const ing of ingredients) {
     const lower = ing.toLowerCase()
     let foundHaram = false
-    for (const entry of HARAM_ENTRIES) {
+    for (const entry of allHaram) {
       if (matchesEntry(lower, entry)) {
         warnings[ing] = entry[1]; haram.push(ing); foundHaram = true; break
       }
     }
     if (foundHaram) continue
-    for (const entry of SUSPICIOUS_ENTRIES) {
+    for (const entry of allSuspicious) {
       if (matchesEntry(lower, entry)) {
         warnings[ing] = entry[1]; suspicious.push(ing); break
       }
@@ -214,7 +226,24 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 2. Fetch OpenFoodFacts
+    // 2. Load custom approved keywords from DB
+    const customHaramEntries: [string, string, ...string[]][] = []
+    const customSuspiciousEntries: [string, string, ...string[]][] = []
+    const { data: customKeywords } = await supabase
+      .from('keywords')
+      .select('canonical, category, reason, variants')
+    if (customKeywords) {
+      for (const kw of customKeywords) {
+        const variants: string[] = Array.isArray(kw.variants) && kw.variants.length > 0
+          ? kw.variants as string[]
+          : [kw.canonical as string]
+        const entry: [string, string, ...string[]] = [kw.canonical as string, kw.reason as string, ...variants]
+        if (kw.category === 'haram') customHaramEntries.push(entry)
+        else customSuspiciousEntries.push(entry)
+      }
+    }
+
+    // 3. Fetch OpenFoodFacts
     const offRes = await fetch(`${OFF_BASE}/${barcode}.json`)
     if (!offRes.ok) throw new Error(`OpenFoodFacts HTTP ${offRes.status}`)
 
@@ -286,12 +315,22 @@ Deno.serve(async (req) => {
     }
 
     if (!analyzedByAI) {
-      const kw = keywordAnalysis(ingredients)
+      const kw = keywordAnalysis(ingredients, customHaramEntries, customSuspiciousEntries)
       isHalal             = kw.isHalal
       haramIngredients    = kw.haram
       suspiciousIngredients = kw.suspicious
       ingredientWarnings  = kw.warnings
       explanation         = kw.explanation
+    }
+
+    // Keyword safety override: haram keywords always win over AI verdict.
+    // Fatty alcohols are already excluded inside matchesVariant.
+    const kwCheck = keywordAnalysis(ingredients, customHaramEntries, customSuspiciousEntries)
+    if (!kwCheck.isHalal && isHalal) {
+      isHalal = false
+      haramIngredients = [...new Set([...haramIngredients, ...kwCheck.haram])]
+      ingredientWarnings = { ...ingredientWarnings, ...kwCheck.warnings }
+      explanation = kwCheck.explanation
     }
 
     // 4. Upsert to DB

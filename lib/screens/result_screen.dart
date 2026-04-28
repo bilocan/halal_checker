@@ -59,7 +59,7 @@ class _ResultScreenState extends State<ResultScreen> {
     setState(() => _isRefreshing = true);
 
     try {
-      final refreshedProduct = await _productService.getProduct(widget.barcode);
+      final refreshedProduct = await _productService.refreshProduct(widget.barcode);
       if (refreshedProduct != null && mounted) {
         Navigator.pushReplacement(
           context,
@@ -303,15 +303,34 @@ class _ResultScreenState extends State<ResultScreen> {
               else
                 ...ingredients.map((ingredient) {
                   final warning = product.ingredientWarnings[ingredient];
+                  final fattyAlcohol = warning == null &&
+                      ProductService.isFattyAlcohol(ingredient);
                   return Card(
                     margin: const EdgeInsets.symmetric(vertical: 4),
                     child: ListTile(
                       leading: Icon(
-                        warning == null ? Icons.check_circle_outline : Icons.warning,
-                        color: warning == null ? _green : Colors.red,
+                        warning != null
+                            ? Icons.warning
+                            : fattyAlcohol
+                                ? Icons.info_outline
+                                : Icons.check_circle_outline,
+                        color: warning != null
+                            ? Colors.red
+                            : fattyAlcohol
+                                ? Colors.blue.shade400
+                                : _green,
                       ),
                       title: Text(ingredient),
-                      subtitle: warning == null ? null : Text(warning),
+                      subtitle: warning != null
+                          ? Text(warning)
+                          : fattyAlcohol
+                              ? Text(
+                                  loc.fattyAlcoholNote,
+                                  style: TextStyle(
+                                      color: Colors.blue.shade700,
+                                      fontSize: 12),
+                                )
+                              : null,
                       dense: true,
                     ),
                   );
@@ -511,46 +530,68 @@ class _ResultScreenState extends State<ResultScreen> {
   }
 
   Widget _buildTransparencySection(Product product, AppLocalizations loc) {
-    final ingredients = product.ingredients;
-    final matchedHaram = <String>{};
-    final matchedSuspicious = <String>{};
+    // Keywords found anywhere in the ingredient text
+    final foundInText = <String>{};
+    // Keywords that were actually flagged by the analysis
+    final flaggedByAnalysis = <String>{};
 
-    for (final ingredient in ingredients) {
+    for (final ingredient in product.ingredients) {
       final lower = ingredient.toLowerCase();
       for (final kw in ProductService.haramKeywords.keys) {
-        if (ProductService.matchesKeyword(lower, kw)) matchedHaram.add(kw);
+        if (ProductService.matchesKeyword(lower, kw)) foundInText.add(kw);
       }
       for (final kw in ProductService.suspiciousKeywords.keys) {
-        if (ProductService.matchesKeyword(lower, kw)) matchedSuspicious.add(kw);
+        if (ProductService.matchesKeyword(lower, kw)) foundInText.add(kw);
+      }
+    }
+    for (final flagged in [...product.haramIngredients, ...product.suspiciousIngredients]) {
+      final lower = flagged.toLowerCase();
+      for (final kw in ProductService.haramKeywords.keys) {
+        if (ProductService.matchesKeyword(lower, kw)) flaggedByAnalysis.add(kw);
+      }
+      for (final kw in ProductService.suspiciousKeywords.keys) {
+        if (ProductService.matchesKeyword(lower, kw)) flaggedByAnalysis.add(kw);
       }
     }
 
-    Widget keywordChip(String kw, String reason, bool found, Color foundColor) {
+    // 3 states: flagged (red/orange) | found but cleared (amber) | not found (grey)
+    Widget keywordChip(String kw, String reason, Color flaggedColor, IconData flaggedIcon) {
+      final isFlagged = flaggedByAnalysis.contains(kw);
+      final isFoundOnly = !isFlagged && foundInText.contains(kw);
+
+      final Color bg = isFlagged
+          ? flaggedColor
+          : isFoundOnly
+              ? Colors.amber.shade600
+              : Colors.grey.shade200;
+      final Color textColor =
+          (isFlagged || isFoundOnly) ? Colors.white : Colors.grey.shade700;
+      final String tooltip = isFlagged
+          ? reason
+          : isFoundOnly
+              ? loc.foundNotFlagged
+              : reason;
+      final IconData? icon = isFlagged
+          ? flaggedIcon
+          : isFoundOnly
+              ? Icons.help_outline
+              : null;
+
       return Tooltip(
-        message: reason,
+        message: tooltip,
         child: Chip(
-          label: Text(
-            kw,
-            style: TextStyle(
-              fontSize: 11,
-              color: found ? Colors.white : Colors.grey.shade700,
-            ),
-          ),
-          backgroundColor: found ? foundColor : Colors.grey.shade200,
-          avatar: found
-              ? Icon(
-                  foundColor == Colors.red.shade600
-                      ? Icons.close
-                      : Icons.warning_amber,
-                  size: 14,
-                  color: Colors.white,
-                )
+          label: Text(kw, style: TextStyle(fontSize: 11, color: textColor)),
+          backgroundColor: bg,
+          avatar: icon != null
+              ? Icon(icon, size: 14, color: Colors.white)
               : null,
           padding: EdgeInsets.zero,
           materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
         ),
       );
     }
+
+    final hasAnyAmber = foundInText.any((kw) => !flaggedByAnalysis.contains(kw));
 
     return Card(
       margin: EdgeInsets.zero,
@@ -567,11 +608,7 @@ class _ResultScreenState extends State<ResultScreen> {
             alignment: Alignment.centerLeft,
             child: Text(
               loc.haramKeywordsChecked,
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 13,
-                color: Colors.red.shade700,
-              ),
+              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.red.shade700),
             ),
           ),
           const SizedBox(height: 8),
@@ -579,12 +616,7 @@ class _ResultScreenState extends State<ResultScreen> {
             spacing: 6,
             runSpacing: 6,
             children: ProductService.haramKeywords.entries
-                .map((e) => keywordChip(
-                      e.key,
-                      e.value,
-                      matchedHaram.contains(e.key),
-                      Colors.red.shade600,
-                    ))
+                .map((e) => keywordChip(e.key, e.value, Colors.red.shade600, Icons.close))
                 .toList(),
           ),
           const SizedBox(height: 14),
@@ -592,11 +624,7 @@ class _ResultScreenState extends State<ResultScreen> {
             alignment: Alignment.centerLeft,
             child: Text(
               loc.suspiciousKeywordsChecked,
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 13,
-                color: Colors.orange.shade700,
-              ),
+              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.orange.shade700),
             ),
           ),
           const SizedBox(height: 8),
@@ -604,15 +632,34 @@ class _ResultScreenState extends State<ResultScreen> {
             spacing: 6,
             runSpacing: 6,
             children: ProductService.suspiciousKeywords.entries
-                .map((e) => keywordChip(
-                      e.key,
-                      e.value,
-                      matchedSuspicious.contains(e.key),
-                      Colors.orange.shade600,
-                    ))
+                .map((e) => keywordChip(e.key, e.value, Colors.orange.shade600, Icons.warning_amber))
                 .toList(),
           ),
           const SizedBox(height: 14),
+          if (hasAnyAmber) ...[
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.amber.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.amber.shade300),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.help_outline, size: 16, color: Colors.amber.shade800),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      loc.foundNotFlagged,
+                      style: TextStyle(fontSize: 12, color: Colors.amber.shade900),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(10),

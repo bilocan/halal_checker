@@ -6,6 +6,7 @@ import '../localization/app_localizations.dart';
 import '../widgets/halal_scan_logo.dart';
 import 'result_screen.dart';
 import 'home_screen.dart';
+import 'keywords_screen.dart';
 
 const _green = Color(0xFF2E7D32);
 const _greenDark = Color(0xFF1B5E20);
@@ -47,20 +48,23 @@ class _StartScreenState extends State<StartScreen> {
     await _loadRecentScans();
   }
 
-  Future<void> _openResult(Map<String, dynamic> scan) async {
+  Future<void> _openResult(Map<String, dynamic> scan, {bool recheck = false}) async {
     setState(() => _isLoadingProduct = true);
     try {
-      final product = await _productService.getProduct(scan['barcode']);
+      final product = recheck
+          ? await _productService.refreshProduct(scan['barcode'] as String)
+          : await _productService.getProduct(scan['barcode'] as String);
       if (!mounted) return;
       await Navigator.push(
         context,
         MaterialPageRoute(
           builder: (_) => ResultScreen(
             product: product,
-            barcode: scan['barcode'],
+            barcode: scan['barcode'] as String,
           ),
         ),
       );
+      if (mounted) await _loadRecentScans();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -102,6 +106,14 @@ class _StartScreenState extends State<StartScreen> {
         backgroundColor: _green,
         foregroundColor: Colors.white,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.list_alt),
+            tooltip: localizations.keywords,
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const KeywordsScreen()),
+            ),
+          ),
           PopupMenuButton<String>(
             onSelected: (value) {
               HalalCheckerApp.of(context)?.setLocale(Locale(value));
@@ -149,11 +161,25 @@ class _StartScreenState extends State<StartScreen> {
                   const SizedBox(height: 8),
                   Text(
                     localizations.tagline,
-                    style: TextStyle(
-                      color: Colors.white.withAlpha(210),
-                      fontSize: 13,
-                      letterSpacing: 1.2,
-                      fontWeight: FontWeight.w500,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.4,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 4),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Text(
+                      localizations.taglineSubtitle,
+                      style: TextStyle(
+                        color: Colors.white.withAlpha(190),
+                        fontSize: 12,
+                        height: 1.4,
+                      ),
+                      textAlign: TextAlign.center,
                     ),
                   ),
                 ],
@@ -270,7 +296,18 @@ class _StartScreenState extends State<StartScreen> {
                                 subtitle: Text(
                                   '${localizations.lastScanned}: ${_formatDate(scan['timestamp'] as int)}',
                                 ),
-                                trailing: const Icon(Icons.chevron_right),
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(
+                                      icon: const Icon(Icons.refresh),
+                                      color: _green,
+                                      tooltip: localizations.recheck,
+                                      onPressed: () => _openResult(scan, recheck: true),
+                                    ),
+                                    const Icon(Icons.chevron_right),
+                                  ],
+                                ),
                                 onTap: () => _openResult(scan),
                               ),
                             );

@@ -4,12 +4,42 @@ import '../config.dart';
 import '../models/product.dart';
 import 'cache_service.dart';
 import 'claude_service.dart';
+import 'keyword_service.dart';
 
 class ProductService {
   static const String _baseUrl = 'https://world.openfoodfacts.org/api/v0/product';
 
   final CacheService _cache = CacheService();
   final ClaudeService _claude = ClaudeService();
+  final KeywordService _keywordService = KeywordService();
+
+  Map<String, String> _customHaramKeywords = {};
+  Map<String, String> _customSuspiciousKeywords = {};
+  Map<String, List<String>> _customHaramVariants = {};
+  Map<String, List<String>> _customSuspiciousVariants = {};
+  bool _customKeywordsLoaded = false;
+
+  Future<void> _loadCustomKeywords() async {
+    if (_customKeywordsLoaded) return;
+    _customKeywordsLoaded = true;
+    final entries = await _keywordService.fetchCustomKeywords();
+    for (final e in entries) {
+      final canonical = e['canonical'] as String;
+      final reason = e['reason'] as String;
+      final category = e['category'] as String;
+      final rawVariants = e['variants'];
+      final variants = rawVariants is List && rawVariants.isNotEmpty
+          ? List<String>.from(rawVariants)
+          : [canonical];
+      if (category == 'haram') {
+        _customHaramKeywords[canonical] = reason;
+        _customHaramVariants[canonical] = variants;
+      } else {
+        _customSuspiciousKeywords[canonical] = reason;
+        _customSuspiciousVariants[canonical] = variants;
+      }
+    }
+  }
 
   // Canonical keyword → reason (used for transparency UI chips)
   static const Map<String, String> haramKeywords = {
@@ -104,12 +134,24 @@ class ProductService {
     'ethanol', 'äthanol', 'éthanol', 'etanolo', 'etanol',
   };
 
+  // Fatty alcohol prefixes — these are NOT haram (cosmetic/food emulsifiers)
+  static final _fattyAlcoholPrefix = RegExp(
+    r'\b(cetyl|stearyl|behenyl|lauryl|myristyl|arachidyl|oleyl|cetostearyl|'
+    r'lanolin|isostearyl|octyldodecyl|decyl)\s+',
+    caseSensitive: false,
+  );
+
+  static bool isFattyAlcohol(String ingredient) =>
+      _fattyAlcoholPrefix.hasMatch(ingredient);
+
   static bool _matchesVariant(String ingredient, String variant) {
     if (variant.contains(' ')) {
       return ingredient.toLowerCase().contains(variant.toLowerCase());
     }
     final escaped = RegExp.escape(variant);
     if (_alcoholFamily.contains(variant.toLowerCase())) {
+      // Skip fatty alcohols — they are halal
+      if (_fattyAlcoholPrefix.hasMatch(ingredient)) return false;
       return RegExp('\\b$escaped\\b(?![-\\s]*free)', caseSensitive: false)
           .hasMatch(ingredient);
     }
@@ -185,6 +227,75 @@ class ProductService {
     );
   }
 
+  ({
+    bool isHalal,
+    List<String> haram,
+    List<String> suspicious,
+    Map<String, String> warnings,
+  }) _customKeywordAnalysis(List<String> ingredients) {
+    final Map<String, String> warnings = {};
+    final List<String> haram = [];
+    final List<String> suspicious = [];
+
+    for (final ingredient in ingredients) {
+      bool foundHaram = false;
+      for (final entry in _customHaramKeywords.entries) {
+        final variants = _customHaramVariants[entry.key] ?? [entry.key];
+        if (variants.any((v) => _matchesVariant(ingredient, v))) {
+          warnings[ingredient] = entry.value;
+          haram.add(ingredient);
+          foundHaram = true;
+          break;
+        }
+      }
+      if (foundHaram) continue;
+      for (final entry in _customSuspiciousKeywords.entries) {
+        final variants = _customSuspiciousVariants[entry.key] ?? [entry.key];
+        if (variants.any((v) => _matchesVariant(ingredient, v))) {
+          warnings[ingredient] = entry.value;
+          suspicious.add(ingredient);
+          break;
+        }
+      }
+    }
+
+    return (
+      isHalal: haram.isEmpty,
+      haram: haram,
+      suspicious: suspicious,
+      warnings: warnings,
+    );
+  }
+
+  Product _applyKeywordSafety(Product product) {
+    final kwCheck = _keywordAnalysis(product.ingredients);
+    final customCheck = _customKeywordAnalysis(product.ingredients);
+
+    final allHaram = {...product.haramIngredients, ...kwCheck.haram, ...customCheck.haram}.toList();
+    final allWarnings = {...product.ingredientWarnings, ...kwCheck.warnings, ...customCheck.warnings};
+    final isNowHaram = allHaram.isNotEmpty;
+
+    if (isNowHaram && product.isHalal) {
+      final explanation = kwCheck.haram.isNotEmpty
+          ? kwCheck.explanation
+          : 'This product contains ingredient(s) that are not permissible: '
+              '${customCheck.haram.join(', ')}. '
+              'Flagged by custom keyword.';
+      return product.copyWith(
+        isHalal: false,
+        haramIngredients: allHaram,
+        ingredientWarnings: allWarnings,
+        explanation: explanation,
+      );
+    }
+    return product;
+  }
+
+  Future<Product?> refreshProduct(String barcode) async {
+    await _cache.removeProduct(barcode);
+    return getProduct(barcode);
+  }
+
   // Try the Supabase Edge Function. Returns null on any failure so the caller
   // can fall back to direct OpenFoodFacts + Claude.
   Future<Product?> _fetchFromBackend(String barcode) async {
@@ -210,6 +321,8 @@ class ProductService {
   }
 
   Future<Product?> getProduct(String barcode) async {
+    await _loadCustomKeywords();
+
     // Step 1: Check local cache (fast path — no network)
     final cached = await _cache.getProduct(barcode);
     if (cached != null) return cached;
@@ -217,8 +330,9 @@ class ProductService {
     // Step 2: Try backend (handles OFf + Claude + shared DB)
     final backendProduct = await _fetchFromBackend(barcode);
     if (backendProduct != null) {
-      await _cache.saveProduct(barcode, backendProduct);
-      return backendProduct;
+      final safe = _applyKeywordSafety(backendProduct);
+      await _cache.saveProduct(barcode, safe);
+      return safe;
     }
 
     // Step 3: Fallback — fetch directly from OpenFoodFacts
@@ -313,7 +427,7 @@ class ProductService {
         analyzedByAI = false;
       }
 
-      final product = Product(
+      final product = _applyKeywordSafety(Product(
         barcode: barcode,
         name: name,
         ingredients: ingredients,
@@ -328,7 +442,7 @@ class ProductService {
         imageNutritionUrl: imageNutritionUrl,
         explanation: explanation,
         analyzedByAI: analyzedByAI,
-      );
+      ));
 
       // Step 6: Write to cache
       await _cache.saveProduct(barcode, product);
