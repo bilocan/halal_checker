@@ -1,0 +1,15 @@
+# Add barcodes here (one per line) to fetch and store them in the test DB on
+# the next debug launch. Products are fetched from the real pipeline (Supabase /
+# OpenFoodFacts + Claude) and saved to halal_test.db so subsequent runs are
+# instant and offline.
+#
+# Lines starting with # are ignored.
+
+# --- already covered by seed_products.json (kept here as reference) ---
+# 3068320114094   Evian Natural Mineral Water 1.5L
+# 0037600000871   Spam Classic 340g
+# 4001686300657   Haribo Goldbären 200g
+# 3017620429484   Nutella 400g
+# 7394376616127   Oatly Oat Drink 1L
+
+# --- add new barcodes below ---

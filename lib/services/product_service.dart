@@ -1,16 +1,16 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../config.dart';
 import '../models/product.dart';
 import 'cache_service.dart';
-import 'claude_service.dart';
 import 'keyword_service.dart';
+import 'test_product_repository.dart';
 
 class ProductService {
   static const String _baseUrl = 'https://world.openfoodfacts.org/api/v0/product';
 
   final CacheService _cache = CacheService();
-  final ClaudeService _claude = ClaudeService();
   final KeywordService _keywordService = KeywordService();
 
   Map<String, String> _customHaramKeywords = {};
@@ -163,14 +163,13 @@ class ProductService {
     return variants.any((v) => _matchesVariant(ingredient, v));
   }
 
-  // Keyword-based fallback analysis
   static ({
     bool isHalal,
     List<String> haram,
     List<String> suspicious,
     Map<String, String> warnings,
     String explanation,
-  }) _keywordAnalysis(List<String> ingredients) {
+  }) analyzeWithKeywords(List<String> ingredients) {
     final Map<String, String> warnings = {};
     final List<String> haram = [];
     final List<String> suspicious = [];
@@ -268,7 +267,7 @@ class ProductService {
   }
 
   Product _applyKeywordSafety(Product product) {
-    final kwCheck = _keywordAnalysis(product.ingredients);
+    final kwCheck = analyzeWithKeywords(product.ingredients);
     final customCheck = _customKeywordAnalysis(product.ingredients);
 
     final allHaram = {...product.haramIngredients, ...kwCheck.haram, ...customCheck.haram}.toList();
@@ -322,6 +321,12 @@ class ProductService {
 
   Future<Product?> getProduct(String barcode) async {
     await _loadCustomKeywords();
+
+    // Step 0 (debug only): return fixture from test DB without touching cache/network
+    if (kDebugMode) {
+      final fixture = await TestProductRepository.instance.getByBarcode(barcode);
+      if (fixture != null) return fixture;
+    }
 
     // Step 1: Check local cache (fast path — no network)
     final cached = await _cache.getProduct(barcode);
@@ -401,31 +406,14 @@ class ProductService {
           .where((e) => e.isNotEmpty)
           .toList();
 
-      // Step 4: Analyze with Claude (Step 5), fall back to keywords
-      bool isHalal;
-      List<String> haramIngredients;
-      List<String> suspiciousIngredients;
-      Map<String, String> ingredientWarnings;
-      String explanation;
-      bool analyzedByAI;
-
-      final claudeResult = await _claude.analyzeIngredients(ingredients);
-      if (claudeResult != null) {
-        isHalal = claudeResult.isHalal;
-        haramIngredients = claudeResult.haramIngredients;
-        suspiciousIngredients = claudeResult.suspiciousIngredients;
-        ingredientWarnings = claudeResult.ingredientWarnings;
-        explanation = claudeResult.explanation;
-        analyzedByAI = true;
-      } else {
-        final fallback = _keywordAnalysis(ingredients);
-        isHalal = fallback.isHalal;
-        haramIngredients = fallback.haram;
-        suspiciousIngredients = fallback.suspicious;
-        ingredientWarnings = fallback.warnings;
-        explanation = fallback.explanation;
-        analyzedByAI = false;
-      }
+      // Step 4: Keyword analysis (Claude runs server-side in the Edge Function)
+      final fallback = analyzeWithKeywords(ingredients);
+      final bool isHalal = fallback.isHalal;
+      final List<String> haramIngredients = fallback.haram;
+      final List<String> suspiciousIngredients = fallback.suspicious;
+      final Map<String, String> ingredientWarnings = fallback.warnings;
+      final String explanation = fallback.explanation;
+      const bool analyzedByAI = false;
 
       final product = _applyKeywordSafety(Product(
         barcode: barcode,

@@ -1,0 +1,101 @@
+[
+  {
+    "barcode": "3068320114094",
+    "name": "Evian Natural Mineral Water 1.5L",
+    "ingredients": ["natural mineral water"],
+    "isHalal": true,
+    "haramIngredients": [],
+    "suspiciousIngredients": [],
+    "ingredientWarnings": {},
+    "labels": [],
+    "imageUrl": null,
+    "imageFrontUrl": null,
+    "imageIngredientsUrl": null,
+    "imageNutritionUrl": null,
+    "explanation": "Contains only natural mineral water. No haram or suspicious ingredients. Clearly halal.",
+    "analyzedByAI": false
+  },
+  {
+    "barcode": "0037600000871",
+    "name": "Spam Classic 340g",
+    "ingredients": ["pork", "salt", "water", "potato starch", "sugar", "sodium nitrite"],
+    "isHalal": false,
+    "haramIngredients": ["pork"],
+    "suspiciousIngredients": [],
+    "ingredientWarnings": {
+      "pork": "Pork is explicitly forbidden in Islamic dietary law."
+    },
+    "labels": [],
+    "imageUrl": null,
+    "imageFrontUrl": null,
+    "imageIngredientsUrl": null,
+    "imageNutritionUrl": null,
+    "explanation": "Contains pork as primary ingredient. Definitively haram.",
+    "analyzedByAI": false
+  },
+  {
+    "barcode": "4001686300657",
+    "name": "Haribo Goldbären 200g",
+    "ingredients": [
+      "glucose syrup", "sugar", "gelatin", "dextrose", "citric acid",
+      "fruit and plant juice concentrates", "natural and artificial flavors",
+      "coconut oil", "beeswax", "carnauba wax"
+    ],
+    "isHalal": false,
+    "haramIngredients": ["gelatin"],
+    "suspiciousIngredients": ["natural and artificial flavors"],
+    "ingredientWarnings": {
+      "gelatin": "Gelatin is typically derived from pork and is haram unless certified halal.",
+      "natural and artificial flavors": "Flavor source not specified on label; may be animal-derived."
+    },
+    "labels": [],
+    "imageUrl": null,
+    "imageFrontUrl": null,
+    "imageIngredientsUrl": null,
+    "imageNutritionUrl": null,
+    "explanation": "Contains pork-derived gelatin. Haram.",
+    "analyzedByAI": false
+  },
+  {
+    "barcode": "3017620429484",
+    "name": "Nutella 400g",
+    "ingredients": [
+      "sugar", "palm oil", "hazelnuts", "skim milk powder", "cocoa powder",
+      "whey powder", "lecithin (soy)", "vanillin"
+    ],
+    "isHalal": true,
+    "haramIngredients": [],
+    "suspiciousIngredients": ["whey powder", "lecithin (soy)", "vanillin"],
+    "ingredientWarnings": {
+      "whey powder": "Whey is a dairy by-product. Halal if produced without pork-derived rennet.",
+      "lecithin (soy)": "Lecithin (E322) may be animal-derived; soy source is acceptable but requires verification.",
+      "vanillin": "Synthetic vanillin is generally halal, but natural vanillin can be alcohol-extracted."
+    },
+    "labels": [],
+    "imageUrl": null,
+    "imageFrontUrl": null,
+    "imageIngredientsUrl": null,
+    "imageNutritionUrl": null,
+    "explanation": "No definitively haram ingredients found. Whey powder, lecithin, and vanillin require source verification for full halal compliance.",
+    "analyzedByAI": false
+  },
+  {
+    "barcode": "7394376616127",
+    "name": "Oatly Oat Drink 1L",
+    "ingredients": [
+      "oat base (water, oats 10%)", "rapeseed oil", "dipotassium phosphate",
+      "calcium carbonate", "vitamins (D2, riboflavin, B12)", "salt", "iodised salt"
+    ],
+    "isHalal": true,
+    "haramIngredients": [],
+    "suspiciousIngredients": [],
+    "ingredientWarnings": {},
+    "labels": ["vegan", "en:no-lactose"],
+    "imageUrl": null,
+    "imageFrontUrl": null,
+    "imageIngredientsUrl": null,
+    "imageNutritionUrl": null,
+    "explanation": "Plant-based product with no animal-derived ingredients. Halal.",
+    "analyzedByAI": false
+  }
+]
