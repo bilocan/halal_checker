@@ -83,10 +83,16 @@ void main() {
       expect(ProductService.matchesKeyword('alcohol free', 'alcohol'), isFalse);
     });
     test('does not match cetyl alcohol as haram alcohol', () {
-      expect(ProductService.matchesKeyword('cetyl alcohol', 'alcohol'), isFalse);
+      expect(
+        ProductService.matchesKeyword('cetyl alcohol', 'alcohol'),
+        isFalse,
+      );
     });
     test('does not match stearyl alcohol as haram alcohol', () {
-      expect(ProductService.matchesKeyword('stearyl alcohol', 'alcohol'), isFalse);
+      expect(
+        ProductService.matchesKeyword('stearyl alcohol', 'alcohol'),
+        isFalse,
+      );
     });
   });
 
@@ -119,10 +125,16 @@ void main() {
       expect(ProductService.matchesKeyword('molke', 'whey'), isTrue);
     });
     test('matches natural flavour', () {
-      expect(ProductService.matchesKeyword('natural flavour', 'natural flavour'), isTrue);
+      expect(
+        ProductService.matchesKeyword('natural flavour', 'natural flavour'),
+        isTrue,
+      );
     });
     test('matches natural flavor (US spelling)', () {
-      expect(ProductService.matchesKeyword('natural flavor', 'natural flavour'), isTrue);
+      expect(
+        ProductService.matchesKeyword('natural flavor', 'natural flavour'),
+        isTrue,
+      );
     });
     test('matches enzymes', () {
       expect(ProductService.matchesKeyword('enzymes', 'enzymes'), isTrue);
@@ -196,7 +208,11 @@ void main() {
     });
 
     test('product with lard is haram', () {
-      final r = ProductService.analyzeWithKeywords(['wheat flour', 'lard', 'salt']);
+      final r = ProductService.analyzeWithKeywords([
+        'wheat flour',
+        'lard',
+        'salt',
+      ]);
       expect(r.isHalal, isFalse);
       expect(r.haram, contains('lard'));
     });
@@ -214,19 +230,32 @@ void main() {
     });
 
     test('product with e120 (carmine) is haram', () {
-      final r = ProductService.analyzeWithKeywords(['sugar', 'water', 'e120', 'citric acid']);
+      final r = ProductService.analyzeWithKeywords([
+        'sugar',
+        'water',
+        'e120',
+        'citric acid',
+      ]);
       expect(r.isHalal, isFalse);
       expect(r.haram, contains('e120'));
     });
 
     test('German pork ingredient is flagged', () {
-      final r = ProductService.analyzeWithKeywords(['schweinefleisch', 'salz', 'wasser']);
+      final r = ProductService.analyzeWithKeywords([
+        'schweinefleisch',
+        'salz',
+        'wasser',
+      ]);
       expect(r.isHalal, isFalse);
       expect(r.haram, contains('schweinefleisch'));
     });
 
     test('Turkish gelatin is flagged', () {
-      final r = ProductService.analyzeWithKeywords(['şeker', 'jelatin', 'sitrik asit']);
+      final r = ProductService.analyzeWithKeywords([
+        'şeker',
+        'jelatin',
+        'sitrik asit',
+      ]);
       expect(r.isHalal, isFalse);
       expect(r.haram, contains('jelatin'));
     });
@@ -255,41 +284,65 @@ void main() {
     });
 
     test('product with natural flavour is suspicious', () {
-      final r = ProductService.analyzeWithKeywords(['sugar', 'natural flavour', 'water']);
+      final r = ProductService.analyzeWithKeywords([
+        'sugar',
+        'natural flavour',
+        'water',
+      ]);
       expect(r.isHalal, isTrue);
       expect(r.suspicious, contains('natural flavour'));
     });
 
     test('product with enzymes is suspicious', () {
-      final r = ProductService.analyzeWithKeywords(['wheat flour', 'water', 'yeast', 'enzymes']);
+      final r = ProductService.analyzeWithKeywords([
+        'wheat flour',
+        'water',
+        'yeast',
+        'enzymes',
+      ]);
       expect(r.isHalal, isTrue);
       expect(r.suspicious, contains('enzymes'));
     });
   });
 
   group('analyzeWithKeywords — precedence rules', () {
-    test('haram takes precedence: pork ingredient not also added to suspicious', () {
-      final r = ProductService.analyzeWithKeywords(['pork', 'salt']);
-      expect(r.haram, contains('pork'));
-      expect(r.suspicious, isNot(contains('pork')));
-    });
+    test(
+      'haram takes precedence: pork ingredient not also added to suspicious',
+      () {
+        final r = ProductService.analyzeWithKeywords(['pork', 'salt']);
+        expect(r.haram, contains('pork'));
+        expect(r.suspicious, isNot(contains('pork')));
+      },
+    );
 
     test('mixed: both haram and suspicious ingredients coexist', () {
-      final r = ProductService.analyzeWithKeywords(['gelatin', 'whey', 'sugar']);
+      final r = ProductService.analyzeWithKeywords([
+        'gelatin',
+        'whey',
+        'sugar',
+      ]);
       expect(r.isHalal, isFalse);
       expect(r.haram, contains('gelatin'));
       expect(r.suspicious, contains('whey'));
     });
 
     test('cetyl alcohol is not flagged as haram', () {
-      final r = ProductService.analyzeWithKeywords(['water', 'cetyl alcohol', 'glycerin']);
+      final r = ProductService.analyzeWithKeywords([
+        'water',
+        'cetyl alcohol',
+        'glycerin',
+      ]);
       expect(r.haram, isEmpty);
       // glycerin/glycerol is suspicious
       expect(r.suspicious, contains('glycerin'));
     });
 
     test('alcohol-free label is not flagged', () {
-      final r = ProductService.analyzeWithKeywords(['water', 'citrus extract (alcohol-free)', 'fruit juice']);
+      final r = ProductService.analyzeWithKeywords([
+        'water',
+        'citrus extract (alcohol-free)',
+        'fruit juice',
+      ]);
       expect(r.haram, isEmpty);
     });
   });

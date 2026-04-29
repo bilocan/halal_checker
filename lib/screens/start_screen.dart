@@ -48,7 +48,10 @@ class _StartScreenState extends State<StartScreen> {
     await _loadRecentScans();
   }
 
-  Future<void> _openResult(Map<String, dynamic> scan, {bool recheck = false}) async {
+  Future<void> _openResult(
+    Map<String, dynamic> scan, {
+    bool recheck = false,
+  }) async {
     setState(() => _isLoadingProduct = true);
     try {
       final product = recheck
@@ -68,7 +71,11 @@ class _StartScreenState extends State<StartScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not load product. Please check your connection.')),
+          const SnackBar(
+            content: Text(
+              'Could not load product. Please check your connection.',
+            ),
+          ),
         );
       }
     } finally {
@@ -88,7 +95,8 @@ class _StartScreenState extends State<StartScreen> {
 
     if (difference.inDays == 0) return '${loc.today}, $time';
     if (difference.inDays == 1) return '${loc.yesterday}, $time';
-    if (difference.inDays < 7) return '${loc.daysAgo(difference.inDays)}, $time';
+    if (difference.inDays < 7)
+      return '${loc.daysAgo(difference.inDays)}, $time';
 
     final y = date.year;
     final mo = date.month.toString().padLeft(2, '0');
@@ -119,18 +127,9 @@ class _StartScreenState extends State<StartScreen> {
               HalalCheckerApp.of(context)?.setLocale(Locale(value));
             },
             itemBuilder: (context) => [
-              PopupMenuItem(
-                value: 'en',
-                child: Text(localizations.english),
-              ),
-              PopupMenuItem(
-                value: 'tr',
-                child: Text(localizations.turkish),
-              ),
-              PopupMenuItem(
-                value: 'de',
-                child: Text(localizations.german),
-              ),
+              PopupMenuItem(value: 'en', child: Text(localizations.english)),
+              PopupMenuItem(value: 'tr', child: Text(localizations.turkish)),
+              PopupMenuItem(value: 'de', child: Text(localizations.german)),
             ],
             icon: const Icon(Icons.language),
           ),
@@ -139,108 +138,112 @@ class _StartScreenState extends State<StartScreen> {
       body: Stack(
         children: [
           Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const SizedBox(height: 12),
-            // Logo + tagline header
-            Container(
-              padding: const EdgeInsets.symmetric(vertical: 20),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [_greenDark, _green],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Column(
-                children: [
-                  const HalalScanLogo(size: 72, color: Colors.white),
-                  const SizedBox(height: 8),
-                  Text(
-                    localizations.tagline,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.4,
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(height: 12),
+                // Logo + tagline header
+                Container(
+                  padding: const EdgeInsets.symmetric(vertical: 20),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [_greenDark, _green],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 4),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Text(
-                      localizations.taglineSubtitle,
-                      style: TextStyle(
-                        color: Colors.white.withAlpha(190),
-                        fontSize: 12,
-                        height: 1.4,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-            // Main scan button
-            Container(
-              height: 100,
-              decoration: BoxDecoration(
-                color: _green,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: _green.withAlpha(80),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: ElevatedButton(
-                onPressed: _openScan,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.transparent,
-                  shadowColor: Colors.transparent,
-                  shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                   ),
+                  child: Column(
+                    children: [
+                      const HalalScanLogo(size: 72, color: Colors.white),
+                      const SizedBox(height: 8),
+                      Text(
+                        localizations.tagline,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.4,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 4),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Text(
+                          localizations.taglineSubtitle,
+                          style: TextStyle(
+                            color: Colors.white.withAlpha(190),
+                            fontSize: 12,
+                            height: 1.4,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.qr_code_scanner, color: Colors.white, size: 40),
-                    const SizedBox(height: 6),
-                    Text(
-                      localizations.scanButton,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 17,
-                        fontWeight: FontWeight.bold,
+                const SizedBox(height: 20),
+                // Main scan button
+                Container(
+                  height: 100,
+                  decoration: BoxDecoration(
+                    color: _green,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: _green.withAlpha(80),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: ElevatedButton(
+                    onPressed: _openScan,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      shadowColor: Colors.transparent,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
                       ),
                     ),
-                  ],
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.qr_code_scanner,
+                          color: Colors.white,
+                          size: 40,
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          localizations.scanButton,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 17,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
-            ),
-            const SizedBox(height: 32),
-            // Recent scans section
-            Text(
-              localizations.lastResults,
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Expanded(
-              child: _isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : _recentScans.isEmpty
+                const SizedBox(height: 32),
+                // Recent scans section
+                Text(
+                  localizations.lastResults,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Expanded(
+                  child: _isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : _recentScans.isEmpty
                       ? Center(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -303,7 +306,8 @@ class _StartScreenState extends State<StartScreen> {
                                       icon: const Icon(Icons.refresh),
                                       color: _green,
                                       tooltip: localizations.recheck,
-                                      onPressed: () => _openResult(scan, recheck: true),
+                                      onPressed: () =>
+                                          _openResult(scan, recheck: true),
                                     ),
                                     const Icon(Icons.chevron_right),
                                   ],
@@ -313,10 +317,10 @@ class _StartScreenState extends State<StartScreen> {
                             );
                           },
                         ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
           if (_isLoadingProduct)
             Container(
               color: Colors.black45,

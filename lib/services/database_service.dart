@@ -64,11 +64,15 @@ class DatabaseService {
       orderBy: 'timestamp DESC',
       limit: limit,
     );
-    return rows.map((row) => {
-      'barcode': row['barcode'] as String,
-      'productName': row['product_name'] as String,
-      'isHalal': (row['is_halal'] as int) == 1,
-      'timestamp': row['timestamp'] as int,
-    }).toList();
+    return rows
+        .map(
+          (row) => {
+            'barcode': row['barcode'] as String,
+            'productName': row['product_name'] as String,
+            'isHalal': (row['is_halal'] as int) == 1,
+            'timestamp': row['timestamp'] as int,
+          },
+        )
+        .toList();
   }
 }

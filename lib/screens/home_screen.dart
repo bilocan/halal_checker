@@ -80,7 +80,9 @@ class _HomeScreenState extends State<HomeScreen> {
     if (!_isValidBarcode(barcode)) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context).pleaseEnterValidBarcode)),
+        SnackBar(
+          content: Text(AppLocalizations.of(context).pleaseEnterValidBarcode),
+        ),
       );
       return;
     }
@@ -110,7 +112,11 @@ class _HomeScreenState extends State<HomeScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context).productCouldNotBeRefreshed)),
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context).productCouldNotBeRefreshed,
+          ),
+        ),
       );
     } finally {
       if (mounted) {
@@ -176,10 +182,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       body: Stack(
         children: [
-          MobileScanner(
-            controller: _scannerController,
-            onDetect: _onDetect,
-          ),
+          MobileScanner(controller: _scannerController, onDetect: _onDetect),
           Center(
             child: Container(
               width: 280,
@@ -199,7 +202,10 @@ class _HomeScreenState extends State<HomeScreen> {
             right: 0,
             child: Center(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.black54,
                   borderRadius: BorderRadius.circular(20),
@@ -217,7 +223,10 @@ class _HomeScreenState extends State<HomeScreen> {
             right: 0,
             child: Center(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.black54,
                   borderRadius: BorderRadius.circular(20),

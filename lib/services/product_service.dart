@@ -8,7 +8,8 @@ import 'keyword_service.dart';
 import 'test_product_repository.dart';
 
 class ProductService {
-  static const String _baseUrl = 'https://world.openfoodfacts.org/api/v0/product';
+  static const String _baseUrl =
+      'https://world.openfoodfacts.org/api/v0/product';
 
   final CacheService _cache = CacheService();
   final KeywordService _keywordService = KeywordService();
@@ -43,21 +44,21 @@ class ProductService {
 
   // Canonical keyword → reason (used for transparency UI chips)
   static const Map<String, String> haramKeywords = {
-    'alcohol':    'Contains alcohol or alcohol-derived ingredient',
-    'ethanol':    'Contains alcohol or alcohol-derived ingredient',
-    'wine':       'Contains alcohol or alcohol-derived ingredient',
-    'beer':       'Contains alcohol or alcohol-derived ingredient',
-    'pork':       'Contains pork or pork-derived ingredient',
-    'lard':       'Contains pork fat',
-    'gelatin':    'Gelatin is typically animal-derived',
-    'bacon':      'Contains pork product',
-    'ham':        'Contains pork product',
-    'pepperoni':  'Contains pork product',
-    'salami':     'Contains pork product',
-    'chorizo':    'Contains pork product',
+    'alcohol': 'Contains alcohol or alcohol-derived ingredient',
+    'ethanol': 'Contains alcohol or alcohol-derived ingredient',
+    'wine': 'Contains alcohol or alcohol-derived ingredient',
+    'beer': 'Contains alcohol or alcohol-derived ingredient',
+    'pork': 'Contains pork or pork-derived ingredient',
+    'lard': 'Contains pork fat',
+    'gelatin': 'Gelatin is typically animal-derived',
+    'bacon': 'Contains pork product',
+    'ham': 'Contains pork product',
+    'pepperoni': 'Contains pork product',
+    'salami': 'Contains pork product',
+    'chorizo': 'Contains pork product',
     'prosciutto': 'Contains pork product',
-    'carmine':    'Carmine/cochineal is insect-derived',
-    'cochineal':  'Carmine/cochineal is insect-derived',
+    'carmine': 'Carmine/cochineal is insect-derived',
+    'cochineal': 'Carmine/cochineal is insect-derived',
     'e120': 'Carmine/cochineal color, animal-derived',
     'e441': 'Gelatin, animal-derived',
     'e542': 'Bone phosphate, animal-derived',
@@ -65,73 +66,148 @@ class ProductService {
   };
 
   static const Map<String, String> suspiciousKeywords = {
-    'e920':           'L-cysteine may be animal-derived',
-    'e322':           'Lecithin may be animal-derived',
-    'e471':           'Mono- and diglycerides may be animal-derived',
-    'e472':           'Emulsifiers may be animal-derived',
-    'e473':           'Sucrose esters may be animal-derived',
-    'e927':           'Glycine may be animal-derived',
-    'rennet':         'Rennet may be animal-derived',
-    'whey':           'Whey is a dairy ingredient',
-    'l-cysteine':     'L-cysteine may be animal-derived',
-    'natural flavour':'Natural flavor may include animal-derived extracts',
-    'flavouring':     'Flavouring may include animal-derived extracts',
-    'enzymes':        'Enzymes may be extracted from animal sources',
-    'glycerol':       'Glycerol may be animal-derived',
+    'e920': 'L-cysteine may be animal-derived',
+    'e322': 'Lecithin may be animal-derived',
+    'e471': 'Mono- and diglycerides may be animal-derived',
+    'e472': 'Emulsifiers may be animal-derived',
+    'e473': 'Sucrose esters may be animal-derived',
+    'e927': 'Glycine may be animal-derived',
+    'rennet': 'Rennet may be animal-derived',
+    'whey': 'Whey is a dairy ingredient',
+    'l-cysteine': 'L-cysteine may be animal-derived',
+    'natural flavour': 'Natural flavor may include animal-derived extracts',
+    'flavouring': 'Flavouring may include animal-derived extracts',
+    'enzymes': 'Enzymes may be extracted from animal sources',
+    'glycerol': 'Glycerol may be animal-derived',
   };
 
   // Multilingual variants per canonical keyword (EN / DE / TR / FR / IT / ES / NL)
   static const Map<String, List<String>> _haramVariants = {
-    'alcohol':    ['alcohol', 'alkohol', 'alcool', 'alcol', 'alkol', 'álcool'],
-    'ethanol':    ['ethanol', 'äthanol', 'éthanol', 'etanolo', 'etanol'],
-    'wine':       ['wine', 'wein', 'vin', 'vino', 'şarap', 'wijn', 'vinho'],
-    'beer':       ['beer', 'bier', 'bière', 'birra', 'cerveza', 'bira', 'cerveja'],
-    'pork':       ['pork', 'schwein', 'schweinefleisch', 'porc', 'maiale', 'cerdo',
-                   'domuz', 'varkens', 'varkensvlees', 'porco'],
-    'lard':       ['lard', 'schmalz', 'schweineschmalz', 'saindoux', 'strutto',
-                   'manteca', 'domuz yağı', 'banha'],
-    'gelatin':    ['gelatin', 'gelatine', 'gelatina', 'jelatin', 'gélatine'],
-    'bacon':      ['bacon', 'speck', 'lardons', 'pancetta', 'domuz pastırması'],
-    'ham':        ['ham', 'schinken', 'jambon', 'prosciutto', 'jamón', 'presunto'],
-    'pepperoni':  ['pepperoni'],
-    'salami':     ['salami', 'salame'],
-    'chorizo':    ['chorizo'],
+    'alcohol': ['alcohol', 'alkohol', 'alcool', 'alcol', 'alkol', 'álcool'],
+    'ethanol': ['ethanol', 'äthanol', 'éthanol', 'etanolo', 'etanol'],
+    'wine': ['wine', 'wein', 'vin', 'vino', 'şarap', 'wijn', 'vinho'],
+    'beer': ['beer', 'bier', 'bière', 'birra', 'cerveza', 'bira', 'cerveja'],
+    'pork': [
+      'pork',
+      'schwein',
+      'schweinefleisch',
+      'porc',
+      'maiale',
+      'cerdo',
+      'domuz',
+      'varkens',
+      'varkensvlees',
+      'porco',
+    ],
+    'lard': [
+      'lard',
+      'schmalz',
+      'schweineschmalz',
+      'saindoux',
+      'strutto',
+      'manteca',
+      'domuz yağı',
+      'banha',
+    ],
+    'gelatin': ['gelatin', 'gelatine', 'gelatina', 'jelatin', 'gélatine'],
+    'bacon': ['bacon', 'speck', 'lardons', 'pancetta', 'domuz pastırması'],
+    'ham': ['ham', 'schinken', 'jambon', 'prosciutto', 'jamón', 'presunto'],
+    'pepperoni': ['pepperoni'],
+    'salami': ['salami', 'salame'],
+    'chorizo': ['chorizo'],
     'prosciutto': ['prosciutto'],
-    'carmine':    ['carmine', 'karmin', 'carmín', 'karmín', 'carmin'],
-    'cochineal':  ['cochineal', 'cochenille', 'cocciniglia', 'cochinilla', 'koşnil'],
-    'e120':       ['e120', 'e-120'],
-    'e441':       ['e441', 'e-441'],
-    'e542':       ['e542', 'e-542'],
-    'e904':       ['e904', 'e-904'],
+    'carmine': ['carmine', 'karmin', 'carmín', 'karmín', 'carmin'],
+    'cochineal': [
+      'cochineal',
+      'cochenille',
+      'cocciniglia',
+      'cochinilla',
+      'koşnil',
+    ],
+    'e120': ['e120', 'e-120'],
+    'e441': ['e441', 'e-441'],
+    'e542': ['e542', 'e-542'],
+    'e904': ['e904', 'e-904'],
   };
 
   static const Map<String, List<String>> _suspiciousVariants = {
-    'e920':           ['e920', 'e-920'],
-    'e322':           ['e322', 'e-322'],
-    'e471':           ['e471', 'e-471'],
-    'e472':           ['e472', 'e-472'],
-    'e473':           ['e473', 'e-473'],
-    'e927':           ['e927', 'e-927'],
-    'rennet':         ['rennet', 'lab', 'labferment', 'présure', 'caglio', 'cuajo',
-                       'peynir mayası', 'stremsel'],
-    'whey':           ['whey', 'molke', 'lactosérum', 'siero di latte',
-                       'suero de leche', 'peynir suyu', 'wei'],
-    'l-cysteine':     ['l-cysteine', 'l-cystein', 'l-cystéine', 'l-cisteina',
-                       'l-sistein'],
-    'natural flavour':['natural flavour', 'natural flavor', 'natürliches aroma',
-                       'natürliche aromen', 'arôme naturel', 'aroma naturale',
-                       'aroma natural', 'doğal aroma', 'natuurlijk aroma'],
-    'flavouring':     ['flavouring', 'flavoring', 'aroma', 'arôme', 'aroma naturale',
-                       'doğal aroma', 'natürliches aroma', 'smaakstof'],
-    'enzymes':        ['enzymes', 'enzyme', 'enzimi', 'enzimas', 'enzim', 'enzymen'],
-    'glycerol':       ['glycerol', 'glycerin', 'glycérol', 'glicerina', 'gliserin',
-                       'glycerine'],
+    'e920': ['e920', 'e-920'],
+    'e322': ['e322', 'e-322'],
+    'e471': ['e471', 'e-471'],
+    'e472': ['e472', 'e-472'],
+    'e473': ['e473', 'e-473'],
+    'e927': ['e927', 'e-927'],
+    'rennet': [
+      'rennet',
+      'lab',
+      'labferment',
+      'présure',
+      'caglio',
+      'cuajo',
+      'peynir mayası',
+      'stremsel',
+    ],
+    'whey': [
+      'whey',
+      'molke',
+      'lactosérum',
+      'siero di latte',
+      'suero de leche',
+      'peynir suyu',
+      'wei',
+    ],
+    'l-cysteine': [
+      'l-cysteine',
+      'l-cystein',
+      'l-cystéine',
+      'l-cisteina',
+      'l-sistein',
+    ],
+    'natural flavour': [
+      'natural flavour',
+      'natural flavor',
+      'natürliches aroma',
+      'natürliche aromen',
+      'arôme naturel',
+      'aroma naturale',
+      'aroma natural',
+      'doğal aroma',
+      'natuurlijk aroma',
+    ],
+    'flavouring': [
+      'flavouring',
+      'flavoring',
+      'aroma',
+      'arôme',
+      'aroma naturale',
+      'doğal aroma',
+      'natürliches aroma',
+      'smaakstof',
+    ],
+    'enzymes': ['enzymes', 'enzyme', 'enzimi', 'enzimas', 'enzim', 'enzymen'],
+    'glycerol': [
+      'glycerol',
+      'glycerin',
+      'glycérol',
+      'glicerina',
+      'gliserin',
+      'glycerine',
+    ],
   };
 
   // All alcohol-family terms — these get the "alcohol-free" exclusion applied
   static const _alcoholFamily = {
-    'alcohol', 'alkohol', 'alcool', 'alcol', 'alkol', 'álcool',
-    'ethanol', 'äthanol', 'éthanol', 'etanolo', 'etanol',
+    'alcohol',
+    'alkohol',
+    'alcool',
+    'alcol',
+    'alkol',
+    'álcool',
+    'ethanol',
+    'äthanol',
+    'éthanol',
+    'etanolo',
+    'etanol',
   };
 
   // Fatty alcohol prefixes — these are NOT haram (cosmetic/food emulsifiers)
@@ -152,14 +228,17 @@ class ProductService {
     if (_alcoholFamily.contains(variant.toLowerCase())) {
       // Skip fatty alcohols — they are halal
       if (_fattyAlcoholPrefix.hasMatch(ingredient)) return false;
-      return RegExp('\\b$escaped\\b(?![-\\s]*free)', caseSensitive: false)
-          .hasMatch(ingredient);
+      return RegExp(
+        '\\b$escaped\\b(?![-\\s]*free)',
+        caseSensitive: false,
+      ).hasMatch(ingredient);
     }
     return RegExp('\\b$escaped\\b', caseSensitive: false).hasMatch(ingredient);
   }
 
   static bool matchesKeyword(String ingredient, String keyword) {
-    final variants = _haramVariants[keyword] ?? _suspiciousVariants[keyword] ?? [keyword];
+    final variants =
+        _haramVariants[keyword] ?? _suspiciousVariants[keyword] ?? [keyword];
     return variants.any((v) => _matchesVariant(ingredient, v));
   }
 
@@ -169,7 +248,8 @@ class ProductService {
     List<String> suspicious,
     Map<String, String> warnings,
     String explanation,
-  }) analyzeWithKeywords(List<String> ingredients) {
+  })
+  analyzeWithKeywords(List<String> ingredients) {
     final Map<String, String> warnings = {};
     final List<String> haram = [];
     final List<String> suspicious = [];
@@ -231,7 +311,8 @@ class ProductService {
     List<String> haram,
     List<String> suspicious,
     Map<String, String> warnings,
-  }) _customKeywordAnalysis(List<String> ingredients) {
+  })
+  _customKeywordAnalysis(List<String> ingredients) {
     final Map<String, String> warnings = {};
     final List<String> haram = [];
     final List<String> suspicious = [];
@@ -270,16 +351,24 @@ class ProductService {
     final kwCheck = analyzeWithKeywords(product.ingredients);
     final customCheck = _customKeywordAnalysis(product.ingredients);
 
-    final allHaram = {...product.haramIngredients, ...kwCheck.haram, ...customCheck.haram}.toList();
-    final allWarnings = {...product.ingredientWarnings, ...kwCheck.warnings, ...customCheck.warnings};
+    final allHaram = {
+      ...product.haramIngredients,
+      ...kwCheck.haram,
+      ...customCheck.haram,
+    }.toList();
+    final allWarnings = {
+      ...product.ingredientWarnings,
+      ...kwCheck.warnings,
+      ...customCheck.warnings,
+    };
     final isNowHaram = allHaram.isNotEmpty;
 
     if (isNowHaram && product.isHalal) {
       final explanation = kwCheck.haram.isNotEmpty
           ? kwCheck.explanation
           : 'This product contains ingredient(s) that are not permissible: '
-              '${customCheck.haram.join(', ')}. '
-              'Flagged by custom keyword.';
+                '${customCheck.haram.join(', ')}. '
+                'Flagged by custom keyword.';
       return product.copyWith(
         isHalal: false,
         haramIngredients: allHaram,
@@ -324,7 +413,9 @@ class ProductService {
 
     // Step 0 (debug only): return fixture from test DB without touching cache/network
     if (kDebugMode) {
-      final fixture = await TestProductRepository.instance.getByBarcode(barcode);
+      final fixture = await TestProductRepository.instance.getByBarcode(
+        barcode,
+      );
       if (fixture != null) return fixture;
     }
 
@@ -342,9 +433,7 @@ class ProductService {
 
     // Step 3: Fallback — fetch directly from OpenFoodFacts
     try {
-      final response = await http.get(
-        Uri.parse('$_baseUrl/$barcode.json'),
-      );
+      final response = await http.get(Uri.parse('$_baseUrl/$barcode.json'));
 
       if (response.statusCode != 200) {
         throw Exception('HTTP ${response.statusCode}');
@@ -355,8 +444,9 @@ class ProductService {
 
       final productData = data['product'];
       final name = productData['product_name'] ?? 'Unknown Product';
-      final ingredientsText =
-          (productData['ingredients_text'] ?? '').toString().toLowerCase();
+      final ingredientsText = (productData['ingredients_text'] ?? '')
+          .toString()
+          .toLowerCase();
 
       String? optimizeImageUrl(String? url) {
         if (url == null || url.isEmpty) return null;
@@ -366,14 +456,16 @@ class ProductService {
             .replaceAll('.300.', '.400.');
       }
 
-      final imageUrl =
-          optimizeImageUrl(productData['image_url']?.toString());
-      final imageFrontUrl =
-          optimizeImageUrl(productData['image_front_url']?.toString());
-      final imageIngredientsUrl =
-          optimizeImageUrl(productData['image_ingredients_url']?.toString());
-      final imageNutritionUrl =
-          optimizeImageUrl(productData['image_nutrition_url']?.toString());
+      final imageUrl = optimizeImageUrl(productData['image_url']?.toString());
+      final imageFrontUrl = optimizeImageUrl(
+        productData['image_front_url']?.toString(),
+      );
+      final imageIngredientsUrl = optimizeImageUrl(
+        productData['image_ingredients_url']?.toString(),
+      );
+      final imageNutritionUrl = optimizeImageUrl(
+        productData['image_nutrition_url']?.toString(),
+      );
 
       final labelSet = <String>{};
       void addLabelValue(Object? value) {
@@ -415,22 +507,24 @@ class ProductService {
       final String explanation = fallback.explanation;
       const bool analyzedByAI = false;
 
-      final product = _applyKeywordSafety(Product(
-        barcode: barcode,
-        name: name,
-        ingredients: ingredients,
-        isHalal: isHalal,
-        haramIngredients: haramIngredients,
-        suspiciousIngredients: suspiciousIngredients,
-        ingredientWarnings: ingredientWarnings,
-        labels: labels,
-        imageUrl: imageUrl,
-        imageFrontUrl: imageFrontUrl,
-        imageIngredientsUrl: imageIngredientsUrl,
-        imageNutritionUrl: imageNutritionUrl,
-        explanation: explanation,
-        analyzedByAI: analyzedByAI,
-      ));
+      final product = _applyKeywordSafety(
+        Product(
+          barcode: barcode,
+          name: name,
+          ingredients: ingredients,
+          isHalal: isHalal,
+          haramIngredients: haramIngredients,
+          suspiciousIngredients: suspiciousIngredients,
+          ingredientWarnings: ingredientWarnings,
+          labels: labels,
+          imageUrl: imageUrl,
+          imageFrontUrl: imageFrontUrl,
+          imageIngredientsUrl: imageIngredientsUrl,
+          imageNutritionUrl: imageNutritionUrl,
+          explanation: explanation,
+          analyzedByAI: analyzedByAI,
+        ),
+      );
 
       // Step 6: Write to cache
       await _cache.saveProduct(barcode, product);

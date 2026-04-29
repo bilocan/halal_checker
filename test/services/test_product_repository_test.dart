@@ -4,16 +4,16 @@ import 'package:halal_checker/models/product.dart';
 import 'package:halal_checker/services/test_product_repository.dart';
 
 Product _makeProduct(String barcode, {bool isHalal = true}) => Product(
-      barcode: barcode,
-      name: 'Test Product $barcode',
-      ingredients: ['water', 'salt'],
-      isHalal: isHalal,
-      haramIngredients: isHalal ? [] : ['pork'],
-      suspiciousIngredients: [],
-      ingredientWarnings: {},
-      labels: [],
-      explanation: 'Test fixture.',
-    );
+  barcode: barcode,
+  name: 'Test Product $barcode',
+  ingredients: ['water', 'salt'],
+  isHalal: isHalal,
+  haramIngredients: isHalal ? [] : ['pork'],
+  suspiciousIngredients: [],
+  ingredientWarnings: {},
+  labels: [],
+  explanation: 'Test fixture.',
+);
 
 void main() {
   setUpAll(() {
@@ -86,7 +86,9 @@ void main() {
     });
 
     test('metadata returns null for unknown key', () async {
-      final value = await TestProductRepository.instance.getMetadata('no_such_key');
+      final value = await TestProductRepository.instance.getMetadata(
+        'no_such_key',
+      );
       expect(value, isNull);
     });
 
@@ -135,7 +137,9 @@ void main() {
         isHalal: true,
         haramIngredients: [],
         suspiciousIngredients: ['whey powder'],
-        ingredientWarnings: {'whey powder': 'Whey requires source verification.'},
+        ingredientWarnings: {
+          'whey powder': 'Whey requires source verification.',
+        },
         labels: [],
         explanation: 'No haram ingredients; whey requires verification.',
       );

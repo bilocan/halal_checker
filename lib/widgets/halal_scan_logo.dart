@@ -5,11 +5,7 @@ class HalalScanLogo extends StatelessWidget {
   final double size;
   final Color color;
 
-  const HalalScanLogo({
-    super.key,
-    this.size = 80,
-    this.color = Colors.white,
-  });
+  const HalalScanLogo({super.key, this.size = 80, this.color = Colors.white});
 
   @override
   Widget build(BuildContext context) {
@@ -46,16 +42,21 @@ class _LogoPainter extends CustomPainter {
     final innerOffsetX = w * 0.12;
 
     final crescentPath = Path()
-      ..addOval(Rect.fromCircle(
-          center: Offset(cx, cy), radius: outerRadius));
+      ..addOval(Rect.fromCircle(center: Offset(cx, cy), radius: outerRadius));
 
     final cutPath = Path()
-      ..addOval(Rect.fromCircle(
+      ..addOval(
+        Rect.fromCircle(
           center: Offset(cx + innerOffsetX, cy - h * 0.02),
-          radius: innerRadius));
+          radius: innerRadius,
+        ),
+      );
 
-    final crescent =
-        Path.combine(PathOperation.difference, crescentPath, cutPath);
+    final crescent = Path.combine(
+      PathOperation.difference,
+      crescentPath,
+      cutPath,
+    );
 
     // --- Barcode lines clipped to the crescent ---
     final lineCount = 9;
@@ -74,8 +75,11 @@ class _LogoPainter extends CustomPainter {
     }
 
     // Only draw lines inside the crescent
-    final barcodeInCrescent =
-        Path.combine(PathOperation.intersect, barcodePath, crescent);
+    final barcodeInCrescent = Path.combine(
+      PathOperation.intersect,
+      barcodePath,
+      crescent,
+    );
 
     // Draw crescent outline, then overwrite with background-colored bars
     canvas.drawPath(crescent, paint);

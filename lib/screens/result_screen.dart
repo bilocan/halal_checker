@@ -37,14 +37,18 @@ class _ResultScreenState extends State<ResultScreen> {
   Future<void> _loadFeedbacks() async {
     setState(() => _isLoadingFeedback = true);
     try {
-      final feedbacks = await _feedbackService.getFeedbacksForBarcode(widget.barcode);
+      final feedbacks = await _feedbackService.getFeedbacksForBarcode(
+        widget.barcode,
+      );
       if (mounted) {
         setState(() => _feedbacks = feedbacks);
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context).couldNotLoadFeedback)),
+          SnackBar(
+            content: Text(AppLocalizations.of(context).couldNotLoadFeedback),
+          ),
         );
       }
     } finally {
@@ -59,7 +63,9 @@ class _ResultScreenState extends State<ResultScreen> {
     setState(() => _isRefreshing = true);
 
     try {
-      final refreshedProduct = await _productService.refreshProduct(widget.barcode);
+      final refreshedProduct = await _productService.refreshProduct(
+        widget.barcode,
+      );
       if (refreshedProduct != null && mounted) {
         Navigator.pushReplacement(
           context,
@@ -72,13 +78,17 @@ class _ResultScreenState extends State<ResultScreen> {
         );
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context).couldNotRefreshProduct)),
+          SnackBar(
+            content: Text(AppLocalizations.of(context).couldNotRefreshProduct),
+          ),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context).couldNotRefreshProduct)),
+          SnackBar(
+            content: Text(AppLocalizations.of(context).couldNotRefreshProduct),
+          ),
         );
       }
     } finally {
@@ -109,7 +119,10 @@ class _ResultScreenState extends State<ResultScreen> {
               const SizedBox(height: 16),
               Text(loc.productNotFound, style: const TextStyle(fontSize: 20)),
               const SizedBox(height: 8),
-              Text('Barcode: $barcode', style: const TextStyle(color: Colors.grey)),
+              Text(
+                'Barcode: $barcode',
+                style: const TextStyle(color: Colors.grey),
+              ),
               const SizedBox(height: 24),
               ElevatedButton(
                 onPressed: () => Navigator.pop(context),
@@ -137,7 +150,10 @@ class _ResultScreenState extends State<ResultScreen> {
               child: SizedBox(
                 width: 20,
                 height: 20,
-                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2,
+                ),
               ),
             )
           else
@@ -188,7 +204,10 @@ class _ResultScreenState extends State<ResultScreen> {
                     ),
                     const SizedBox(height: 12),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white24,
                         borderRadius: BorderRadius.circular(20),
@@ -222,11 +241,17 @@ class _ResultScreenState extends State<ResultScreen> {
               const SizedBox(height: 24),
               Text(
                 product.name,
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
-              Text('Barcode: $barcode', style: const TextStyle(color: Colors.grey)),
+              Text(
+                'Barcode: $barcode',
+                style: const TextStyle(color: Colors.grey),
+              ),
               const SizedBox(height: 12),
               if (product.labels.isNotEmpty)
                 Wrap(
@@ -264,13 +289,17 @@ class _ResultScreenState extends State<ResultScreen> {
                       children: [
                         const Icon(Icons.image, size: 48, color: Colors.grey),
                         const SizedBox(height: 8),
-                        Text(loc.noProductImageAvailable, style: const TextStyle(color: Colors.grey)),
+                        Text(
+                          loc.noProductImageAvailable,
+                          style: const TextStyle(color: Colors.grey),
+                        ),
                       ],
                     ),
                   ),
                 ),
               const SizedBox(height: 24),
-              if (product.imageIngredientsUrl != null || product.imageNutritionUrl != null) ...[
+              if (product.imageIngredientsUrl != null ||
+                  product.imageNutritionUrl != null) ...[
                 Text(
                   loc.additionalImages,
                   style: TextStyle(
@@ -281,7 +310,10 @@ class _ResultScreenState extends State<ResultScreen> {
                 ),
                 const SizedBox(height: 12),
                 if (product.imageIngredientsUrl != null)
-                  _buildLabelledImage(product.imageIngredientsUrl!, loc.ingredients),
+                  _buildLabelledImage(
+                    product.imageIngredientsUrl!,
+                    loc.ingredients,
+                  ),
                 if (product.imageNutritionUrl != null)
                   _buildLabelledImage(product.imageNutritionUrl!, 'Nutrition'),
                 const SizedBox(height: 24),
@@ -299,11 +331,15 @@ class _ResultScreenState extends State<ResultScreen> {
               ),
               const SizedBox(height: 8),
               if (ingredients.isEmpty)
-                Text(loc.noIngredientData, style: const TextStyle(color: Colors.grey))
+                Text(
+                  loc.noIngredientData,
+                  style: const TextStyle(color: Colors.grey),
+                )
               else
                 ...ingredients.map((ingredient) {
                   final warning = product.ingredientWarnings[ingredient];
-                  final fattyAlcohol = warning == null &&
+                  final fattyAlcohol =
+                      warning == null &&
                       ProductService.isFattyAlcohol(ingredient);
                   return Card(
                     margin: const EdgeInsets.symmetric(vertical: 4),
@@ -312,25 +348,26 @@ class _ResultScreenState extends State<ResultScreen> {
                         warning != null
                             ? Icons.warning
                             : fattyAlcohol
-                                ? Icons.info_outline
-                                : Icons.check_circle_outline,
+                            ? Icons.info_outline
+                            : Icons.check_circle_outline,
                         color: warning != null
                             ? Colors.red
                             : fattyAlcohol
-                                ? Colors.blue.shade400
-                                : _green,
+                            ? Colors.blue.shade400
+                            : _green,
                       ),
                       title: Text(ingredient),
                       subtitle: warning != null
                           ? Text(warning)
                           : fattyAlcohol
-                              ? Text(
-                                  loc.fattyAlcoholNote,
-                                  style: TextStyle(
-                                      color: Colors.blue.shade700,
-                                      fontSize: 12),
-                                )
-                              : null,
+                          ? Text(
+                              loc.fattyAlcoholNote,
+                              style: TextStyle(
+                                color: Colors.blue.shade700,
+                                fontSize: 12,
+                              ),
+                            )
+                          : null,
                       dense: true,
                     ),
                   );
@@ -406,96 +443,121 @@ class _ResultScreenState extends State<ResultScreen> {
                   style: const TextStyle(color: Colors.grey),
                 )
               else
-                ..._feedbacks.map((feedback) => Card(
-                  margin: const EdgeInsets.symmetric(vertical: 4),
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            const Icon(Icons.person, size: 16, color: Colors.grey),
-                            const SizedBox(width: 4),
-                            Text(
-                              loc.userFeedback,
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Colors.grey.shade700,
+                ..._feedbacks.map(
+                  (feedback) => Card(
+                    margin: const EdgeInsets.symmetric(vertical: 4),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.person,
+                                size: 16,
+                                color: Colors.grey,
                               ),
-                            ),
-                            const Spacer(),
-                            Text(
-                              _formatDate(feedback.submittedAt),
-                              style: const TextStyle(fontSize: 12, color: Colors.grey),
+                              const SizedBox(width: 4),
+                              Text(
+                                loc.userFeedback,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.grey.shade700,
+                                ),
+                              ),
+                              const Spacer(),
+                              Text(
+                                _formatDate(feedback.submittedAt),
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Text(feedback.userFeedback),
+                          if (feedback.attachments.isNotEmpty) ...[
+                            const SizedBox(height: 8),
+                            Wrap(
+                              spacing: 8,
+                              children: feedback.attachments
+                                  .map(
+                                    (attachment) => Chip(
+                                      label: Text(
+                                        '📎 ${attachment.split(RegExp(r'[/\\]')).last}',
+                                      ),
+                                      backgroundColor: Colors.blue.shade50,
+                                    ),
+                                  )
+                                  .toList(),
                             ),
                           ],
-                        ),
-                        const SizedBox(height: 8),
-                        Text(feedback.userFeedback),
-                        if (feedback.attachments.isNotEmpty) ...[
-                          const SizedBox(height: 8),
-                          Wrap(
-                            spacing: 8,
-                            children: feedback.attachments.map((attachment) => Chip(
-                              label: Text('📎 ${attachment.split(RegExp(r'[/\\]')).last}'),
-                              backgroundColor: Colors.blue.shade50,
-                            )).toList(),
-                          ),
-                        ],
-                        if (feedback.producerReply != null) ...[
-                          const SizedBox(height: 12),
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: _greenSurface,
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: _greenLight),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    const Icon(Icons.business, size: 16, color: _green),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      loc.producerReply,
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        color: _greenMid,
+                          if (feedback.producerReply != null) ...[
+                            const SizedBox(height: 12),
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: _greenSurface,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: _greenLight),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.business,
+                                        size: 16,
+                                        color: _green,
                                       ),
-                                    ),
-                                    const Spacer(),
-                                    Text(
-                                      feedback.repliedAt != null ? _formatDate(feedback.repliedAt!) : '',
-                                      style: const TextStyle(fontSize: 12, color: Colors.grey),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 4),
-                                Text(feedback.producerReply!),
-                              ],
-                            ),
-                          ),
-                        ] else ...[
-                          const SizedBox(height: 8),
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: TextButton.icon(
-                              onPressed: () => _showProducerReplyDialog(feedback.id),
-                              icon: const Icon(Icons.reply, size: 16),
-                              label: Text(loc.replyAsProducer),
-                              style: TextButton.styleFrom(
-                                foregroundColor: _greenMid,
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        loc.producerReply,
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: _greenMid,
+                                        ),
+                                      ),
+                                      const Spacer(),
+                                      Text(
+                                        feedback.repliedAt != null
+                                            ? _formatDate(feedback.repliedAt!)
+                                            : '',
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.grey,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(feedback.producerReply!),
+                                ],
                               ),
                             ),
-                          ),
+                          ] else ...[
+                            const SizedBox(height: 8),
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: TextButton.icon(
+                                onPressed: () =>
+                                    _showProducerReplyDialog(feedback.id),
+                                icon: const Icon(Icons.reply, size: 16),
+                                label: Text(loc.replyAsProducer),
+                                style: TextButton.styleFrom(
+                                  foregroundColor: _greenMid,
+                                ),
+                              ),
+                            ),
+                          ],
                         ],
-                      ],
+                      ),
                     ),
                   ),
-                )),
+                ),
               const SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,
@@ -506,7 +568,10 @@ class _ResultScreenState extends State<ResultScreen> {
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
                   onPressed: () => Navigator.pop(context),
-                  child: Text(loc.scanAnotherProduct, style: const TextStyle(fontSize: 16)),
+                  child: Text(
+                    loc.scanAnotherProduct,
+                    style: const TextStyle(fontSize: 16),
+                  ),
                 ),
               ),
               const SizedBox(height: 12),
@@ -519,7 +584,10 @@ class _ResultScreenState extends State<ResultScreen> {
                     padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
                   onPressed: () => _showFeedbackDialog(context),
-                  child: Text(loc.provideFeedback, style: const TextStyle(fontSize: 14)),
+                  child: Text(
+                    loc.provideFeedback,
+                    style: const TextStyle(fontSize: 14),
+                  ),
                 ),
               ),
             ],
@@ -544,7 +612,10 @@ class _ResultScreenState extends State<ResultScreen> {
         if (ProductService.matchesKeyword(lower, kw)) foundInText.add(kw);
       }
     }
-    for (final flagged in [...product.haramIngredients, ...product.suspiciousIngredients]) {
+    for (final flagged in [
+      ...product.haramIngredients,
+      ...product.suspiciousIngredients,
+    ]) {
       final lower = flagged.toLowerCase();
       for (final kw in ProductService.haramKeywords.keys) {
         if (ProductService.matchesKeyword(lower, kw)) flaggedByAnalysis.add(kw);
@@ -555,27 +626,33 @@ class _ResultScreenState extends State<ResultScreen> {
     }
 
     // 3 states: flagged (red/orange) | found but cleared (amber) | not found (grey)
-    Widget keywordChip(String kw, String reason, Color flaggedColor, IconData flaggedIcon) {
+    Widget keywordChip(
+      String kw,
+      String reason,
+      Color flaggedColor,
+      IconData flaggedIcon,
+    ) {
       final isFlagged = flaggedByAnalysis.contains(kw);
       final isFoundOnly = !isFlagged && foundInText.contains(kw);
 
       final Color bg = isFlagged
           ? flaggedColor
           : isFoundOnly
-              ? Colors.amber.shade600
-              : Colors.grey.shade200;
-      final Color textColor =
-          (isFlagged || isFoundOnly) ? Colors.white : Colors.grey.shade700;
+          ? Colors.amber.shade600
+          : Colors.grey.shade200;
+      final Color textColor = (isFlagged || isFoundOnly)
+          ? Colors.white
+          : Colors.grey.shade700;
       final String tooltip = isFlagged
           ? reason
           : isFoundOnly
-              ? loc.foundNotFlagged
-              : reason;
+          ? loc.foundNotFlagged
+          : reason;
       final IconData? icon = isFlagged
           ? flaggedIcon
           : isFoundOnly
-              ? Icons.help_outline
-              : null;
+          ? Icons.help_outline
+          : null;
 
       return Tooltip(
         message: tooltip,
@@ -591,7 +668,9 @@ class _ResultScreenState extends State<ResultScreen> {
       );
     }
 
-    final hasAnyAmber = foundInText.any((kw) => !flaggedByAnalysis.contains(kw));
+    final hasAnyAmber = foundInText.any(
+      (kw) => !flaggedByAnalysis.contains(kw),
+    );
 
     return Card(
       margin: EdgeInsets.zero,
@@ -608,7 +687,11 @@ class _ResultScreenState extends State<ResultScreen> {
             alignment: Alignment.centerLeft,
             child: Text(
               loc.haramKeywordsChecked,
-              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.red.shade700),
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+                color: Colors.red.shade700,
+              ),
             ),
           ),
           const SizedBox(height: 8),
@@ -616,7 +699,14 @@ class _ResultScreenState extends State<ResultScreen> {
             spacing: 6,
             runSpacing: 6,
             children: ProductService.haramKeywords.entries
-                .map((e) => keywordChip(e.key, e.value, Colors.red.shade600, Icons.close))
+                .map(
+                  (e) => keywordChip(
+                    e.key,
+                    e.value,
+                    Colors.red.shade600,
+                    Icons.close,
+                  ),
+                )
                 .toList(),
           ),
           const SizedBox(height: 14),
@@ -624,7 +714,11 @@ class _ResultScreenState extends State<ResultScreen> {
             alignment: Alignment.centerLeft,
             child: Text(
               loc.suspiciousKeywordsChecked,
-              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.orange.shade700),
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+                color: Colors.orange.shade700,
+              ),
             ),
           ),
           const SizedBox(height: 8),
@@ -632,7 +726,14 @@ class _ResultScreenState extends State<ResultScreen> {
             spacing: 6,
             runSpacing: 6,
             children: ProductService.suspiciousKeywords.entries
-                .map((e) => keywordChip(e.key, e.value, Colors.orange.shade600, Icons.warning_amber))
+                .map(
+                  (e) => keywordChip(
+                    e.key,
+                    e.value,
+                    Colors.orange.shade600,
+                    Icons.warning_amber,
+                  ),
+                )
                 .toList(),
           ),
           const SizedBox(height: 14),
@@ -647,12 +748,19 @@ class _ResultScreenState extends State<ResultScreen> {
               ),
               child: Row(
                 children: [
-                  Icon(Icons.help_outline, size: 16, color: Colors.amber.shade800),
+                  Icon(
+                    Icons.help_outline,
+                    size: 16,
+                    color: Colors.amber.shade800,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       loc.foundNotFlagged,
-                      style: TextStyle(fontSize: 12, color: Colors.amber.shade900),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.amber.shade900,
+                      ),
                     ),
                   ),
                 ],
@@ -714,9 +822,7 @@ class _ResultScreenState extends State<ResultScreen> {
               right: 12,
               child: SafeArea(
                 child: IconButton(
-                  style: IconButton.styleFrom(
-                    backgroundColor: Colors.black54,
-                  ),
+                  style: IconButton.styleFrom(backgroundColor: Colors.black54),
                   icon: const Icon(Icons.close, color: Colors.white, size: 24),
                   onPressed: () => Navigator.pop(ctx),
                 ),
@@ -728,7 +834,10 @@ class _ResultScreenState extends State<ResultScreen> {
                 left: 16,
                 child: SafeArea(
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 5,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.black54,
                       borderRadius: BorderRadius.circular(12),
@@ -779,7 +888,7 @@ class _ResultScreenState extends State<ResultScreen> {
                 child: CircularProgressIndicator(
                   value: loadingProgress.expectedTotalBytes != null
                       ? loadingProgress.cumulativeBytesLoaded /
-                          loadingProgress.expectedTotalBytes!
+                            loadingProgress.expectedTotalBytes!
                       : null,
                 ),
               );
@@ -795,9 +904,16 @@ class _ResultScreenState extends State<ResultScreen> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.image_not_supported, size: 48, color: Colors.grey),
+                          Icon(
+                            Icons.image_not_supported,
+                            size: 48,
+                            color: Colors.grey,
+                          ),
                           SizedBox(height: 8),
-                          Text('Image not available', style: TextStyle(color: Colors.grey)),
+                          Text(
+                            'Image not available',
+                            style: TextStyle(color: Colors.grey),
+                          ),
                         ],
                       ),
                     ),
@@ -808,9 +924,16 @@ class _ResultScreenState extends State<ResultScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.image_not_supported, size: 48, color: Colors.grey),
+                    Icon(
+                      Icons.image_not_supported,
+                      size: 48,
+                      color: Colors.grey,
+                    ),
                     SizedBox(height: 8),
-                    Text('Image not available', style: TextStyle(color: Colors.grey)),
+                    Text(
+                      'Image not available',
+                      style: TextStyle(color: Colors.grey),
+                    ),
                   ],
                 ),
               );
@@ -851,7 +974,7 @@ class _ResultScreenState extends State<ResultScreen> {
                     child: CircularProgressIndicator(
                       value: loadingProgress.expectedTotalBytes != null
                           ? loadingProgress.cumulativeBytesLoaded /
-                              loadingProgress.expectedTotalBytes!
+                                loadingProgress.expectedTotalBytes!
                           : null,
                     ),
                   );
@@ -864,7 +987,10 @@ class _ResultScreenState extends State<ResultScreen> {
                 top: 8,
                 left: 8,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.black54,
                     borderRadius: BorderRadius.circular(12),
@@ -896,13 +1022,23 @@ class _ResultScreenState extends State<ResultScreen> {
     } else if (lowerLabels.any((l) => l.contains('vegetarian'))) {
       normalized.add('Vegetarian');
     }
-    if (lowerLabels.any((l) => l.contains('fair trade') || l.contains('fair-trade') || l.contains('fairtrade'))) {
+    if (lowerLabels.any(
+      (l) =>
+          l.contains('fair trade') ||
+          l.contains('fair-trade') ||
+          l.contains('fairtrade'),
+    )) {
       normalized.add('Fair Trade');
     }
     if (lowerLabels.any((l) => l.contains('organic'))) {
       normalized.add('Organic');
     }
-    if (lowerLabels.any((l) => l.contains('gluten free') || l.contains('gluten-free') || l.contains('glutenfree'))) {
+    if (lowerLabels.any(
+      (l) =>
+          l.contains('gluten free') ||
+          l.contains('gluten-free') ||
+          l.contains('glutenfree'),
+    )) {
       normalized.add('Gluten Free');
     }
 
@@ -937,7 +1073,11 @@ class _ResultScreenState extends State<ResultScreen> {
         );
       case 'Gluten Free':
         return Chip(
-          avatar: const Icon(Icons.health_and_safety, size: 18, color: Colors.orange),
+          avatar: const Icon(
+            Icons.health_and_safety,
+            size: 18,
+            color: Colors.orange,
+          ),
           label: const Text('Gluten Free'),
           backgroundColor: Colors.orange.shade50,
         );
@@ -985,7 +1125,10 @@ class _ResultScreenState extends State<ResultScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(loc.feedbackDialogHint, style: const TextStyle(fontSize: 14)),
+                Text(
+                  loc.feedbackDialogHint,
+                  style: const TextStyle(fontSize: 14),
+                ),
                 const SizedBox(height: 16),
                 TextField(
                   controller: feedbackController,
@@ -1025,10 +1168,16 @@ class _ResultScreenState extends State<ResultScreen> {
                   const SizedBox(height: 8),
                   Wrap(
                     spacing: 8,
-                    children: selectedFiles.map((file) => Chip(
-                      label: Text(file.split(RegExp(r'[/\\]')).last),
-                      onDeleted: () => setDialogState(() => selectedFiles.remove(file)),
-                    )).toList(),
+                    children: selectedFiles
+                        .map(
+                          (file) => Chip(
+                            label: Text(file.split(RegExp(r'[/\\]')).last),
+                            onDeleted: () => setDialogState(
+                              () => selectedFiles.remove(file),
+                            ),
+                          ),
+                        )
+                        .toList(),
                   ),
                 ],
               ],

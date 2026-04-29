@@ -10,7 +10,8 @@ class AppLocalizations {
       'appTitle': 'HalalScan',
       'startTitle': 'HalalScan',
       'tagline': 'Transparent halal, powered by community.',
-      'taglineSubtitle': 'Every ingredient checked and explained — shaped by your feedback.',
+      'taglineSubtitle':
+          'Every ingredient checked and explained — shaped by your feedback.',
       'newScan': 'New Scan',
       'lastResults': 'Last Results',
       'noRecentResults': 'No recent scans saved yet.',
@@ -25,7 +26,8 @@ class AppLocalizations {
       'readyToScan': 'Ready to scan',
       'analyzingBarcode': 'Analyzing barcode...',
       'pointCameraAtBarcode': 'Point camera at barcode on product packaging',
-      'barcodeNotSupported': 'Barcode detected but format not supported. Try manual entry.',
+      'barcodeNotSupported':
+          'Barcode detected but format not supported. Try manual entry.',
       'pleaseEnterValidBarcode': 'Please enter a valid barcode.',
       'productNotFound': 'Product not found',
       'noProductImageAvailable': 'No product image available',
@@ -77,22 +79,27 @@ class AppLocalizations {
       'replyInputHint': 'Your reply...',
       'submitReply': 'Submit Reply',
       'refreshTooltip': 'Refresh product data',
-      'feedbackDialogHint': 'Help improve our halal assessment by providing feedback about this product.',
+      'feedbackDialogHint':
+          'Help improve our halal assessment by providing feedback about this product.',
       'replyDialogHint': 'Provide an official response to this feedback.',
       'aiAnalysis': 'AI Analysis',
       'keywordAnalysis': 'Keyword Analysis',
       'analysisTransparency': 'Analysis Transparency',
       'haramKeywordsChecked': 'Haram Ingredients We Check',
       'suspiciousKeywordsChecked': 'Suspicious Ingredients We Check',
-      'transparencyNote': 'Something missing from our list? Let us know via feedback!',
+      'transparencyNote':
+          'Something missing from our list? Let us know via feedback!',
       'recheck': 'Recheck',
-      'foundNotFlagged': 'Found in ingredients, but not flagged by the analysis (e.g. fatty alcohol, trace amount, or context-safe use).',
-      'fattyAlcoholNote': 'This is a fatty alcohol (e.g. cetyl or stearyl alcohol) — a plant-derived emulsifier. It has no relation to drinking alcohol and is halal.',
+      'foundNotFlagged':
+          'Found in ingredients, but not flagged by the analysis (e.g. fatty alcohol, trace amount, or context-safe use).',
+      'fattyAlcoholNote':
+          'This is a fatty alcohol (e.g. cetyl or stearyl alcohol) — a plant-derived emulsifier. It has no relation to drinking alcohol and is halal.',
       'keywords': 'Keywords',
       'haramTab': 'Haram',
       'suspiciousTab': 'Suspicious',
       'suggestKeyword': 'Suggest a Keyword',
-      'suggestKeywordHint': 'Think we\'re missing something? Suggest a keyword and we\'ll review it.',
+      'suggestKeywordHint':
+          'Think we\'re missing something? Suggest a keyword and we\'ll review it.',
       'keywordLabel': 'Keyword',
       'keywordHint': 'e.g. lard, ethanol, cochineal',
       'keywordRequired': 'Please enter a keyword.',
@@ -102,7 +109,8 @@ class AppLocalizations {
       'reasonLabel': 'Reason',
       'reasonHint': 'Why should this keyword be added?',
       'reasonRequired': 'Please provide a reason.',
-      'suggestionSubmitted': 'Thank you! Your suggestion has been submitted for review.',
+      'suggestionSubmitted':
+          'Thank you! Your suggestion has been submitted for review.',
       'suggestionError': 'Could not submit suggestion. Please try again.',
       'customBadge': 'custom',
     },
@@ -110,11 +118,13 @@ class AppLocalizations {
       'appTitle': 'HalalScan',
       'startTitle': 'HalalScan',
       'tagline': 'Şeffaf helal, topluluk gücüyle.',
-      'taglineSubtitle': 'Her içerik kontrol edilir ve açıklanır — geri bildirimlerinizle gelişir.',
+      'taglineSubtitle':
+          'Her içerik kontrol edilir ve açıklanır — geri bildirimlerinizle gelişir.',
       'newScan': 'Yeni Tara',
       'lastResults': 'Son Sonuçlar',
       'noRecentResults': 'Henüz kaydedilmiş tarama yok.',
-      'noRecentResultsHint': 'Başlamak için yukarıdaki tarama düğmesine dokunun.',
+      'noRecentResultsHint':
+          'Başlamak için yukarıdaki tarama düğmesine dokunun.',
       'scanButton': 'Taramayı Başlat',
       'scanAnotherProduct': 'Başka ürün tara',
       'manualEntry': 'Barkodu elle gir',
@@ -125,7 +135,8 @@ class AppLocalizations {
       'readyToScan': 'Tarama için hazır',
       'analyzingBarcode': 'Barkod analiz ediliyor...',
       'pointCameraAtBarcode': 'Kamerayı ürün ambalajındaki barkoda doğrultun',
-      'barcodeNotSupported': 'Barkod algılandı ama format desteklenmiyor. Lütfen manuel girin.',
+      'barcodeNotSupported':
+          'Barkod algılandı ama format desteklenmiyor. Lütfen manuel girin.',
       'pleaseEnterValidBarcode': 'Lütfen geçerli bir barkod girin.',
       'productNotFound': 'Ürün bulunamadı',
       'noProductImageAvailable': 'Ürün resmi yok',
@@ -177,7 +188,8 @@ class AppLocalizations {
       'replyInputHint': 'Yanıtınız...',
       'submitReply': 'Yanıtı Gönder',
       'refreshTooltip': 'Ürün verisini yenile',
-      'feedbackDialogHint': 'Geri bildiriminizle helal değerlendirmemizi geliştirin.',
+      'feedbackDialogHint':
+          'Geri bildiriminizle helal değerlendirmemizi geliştirin.',
       'replyDialogHint': 'Bu geri bildirime resmi bir yanıt verin.',
       'aiAnalysis': 'Yapay Zeka Analizi',
       'keywordAnalysis': 'Anahtar Kelime Analizi',
@@ -186,13 +198,16 @@ class AppLocalizations {
       'suspiciousKeywordsChecked': 'Kontrol Ettiğimiz Şüpheli İçerikler',
       'transparencyNote': 'Listemizde eksik mi? Geri bildirim gönderin!',
       'recheck': 'Yeniden Kontrol Et',
-      'foundNotFlagged': 'İçeriklerde bulundu, ancak analiz tarafından işaretlenmedi (örn. yağ alkolü, iz miktarı veya bağlama güvenli kullanım).',
-      'fattyAlcoholNote': 'Bu bir yağ alkolüdür (örn. setil veya stearil alkol) — bitkisel kaynaklı bir emülgatördür. İçki alkolüyle hiçbir ilgisi yoktur ve helaldir.',
+      'foundNotFlagged':
+          'İçeriklerde bulundu, ancak analiz tarafından işaretlenmedi (örn. yağ alkolü, iz miktarı veya bağlama güvenli kullanım).',
+      'fattyAlcoholNote':
+          'Bu bir yağ alkolüdür (örn. setil veya stearil alkol) — bitkisel kaynaklı bir emülgatördür. İçki alkolüyle hiçbir ilgisi yoktur ve helaldir.',
       'keywords': 'Anahtar Kelimeler',
       'haramTab': 'Haram',
       'suspiciousTab': 'Şüpheli',
       'suggestKeyword': 'Anahtar Kelime Öner',
-      'suggestKeywordHint': 'Bir şeyi atladığımızı mı düşünüyorsunuz? Önerin incelememize gönderin.',
+      'suggestKeywordHint':
+          'Bir şeyi atladığımızı mı düşünüyorsunuz? Önerin incelememize gönderin.',
       'keywordLabel': 'Anahtar Kelime',
       'keywordHint': 'örn. domuz yağı, etanol, karmin',
       'keywordRequired': 'Lütfen bir anahtar kelime girin.',
@@ -202,7 +217,8 @@ class AppLocalizations {
       'reasonLabel': 'Sebep',
       'reasonHint': 'Bu anahtar kelime neden eklenmeli?',
       'reasonRequired': 'Lütfen bir sebep belirtin.',
-      'suggestionSubmitted': 'Teşekkürler! Öneriniz incelenmek üzere gönderildi.',
+      'suggestionSubmitted':
+          'Teşekkürler! Öneriniz incelenmek üzere gönderildi.',
       'suggestionError': 'Öneri gönderilemedi. Lütfen tekrar deneyin.',
       'customBadge': 'özel',
     },
@@ -210,11 +226,13 @@ class AppLocalizations {
       'appTitle': 'HalalScan',
       'startTitle': 'HalalScan',
       'tagline': 'Transparentes Halal, von der Community.',
-      'taglineSubtitle': 'Jede Zutat geprüft und erklärt — verbessert durch Ihr Feedback.',
+      'taglineSubtitle':
+          'Jede Zutat geprüft und erklärt — verbessert durch Ihr Feedback.',
       'newScan': 'Neu scannen',
       'lastResults': 'Letzte Ergebnisse',
       'noRecentResults': 'Noch keine letzten Scans gespeichert.',
-      'noRecentResultsHint': 'Tippen Sie auf die Schaltfläche oben, um loszulegen.',
+      'noRecentResultsHint':
+          'Tippen Sie auf die Schaltfläche oben, um loszulegen.',
       'scanButton': 'Scan starten',
       'scanAnotherProduct': 'Anderes Produkt scannen',
       'manualEntry': 'Barcode manuell eingeben',
@@ -224,8 +242,10 @@ class AppLocalizations {
       'scanAgain': 'Erneut scannen',
       'readyToScan': 'Bereit zum Scannen',
       'analyzingBarcode': 'Barkod wird analysiert...',
-      'pointCameraAtBarcode': 'Richten Sie die Kamera auf den Barcode auf der Verpackung',
-      'barcodeNotSupported': 'Barcode erkannt, Format wird aber nicht unterstützt. Versuchen Sie die manuelle Eingabe.',
+      'pointCameraAtBarcode':
+          'Richten Sie die Kamera auf den Barcode auf der Verpackung',
+      'barcodeNotSupported':
+          'Barcode erkannt, Format wird aber nicht unterstützt. Versuchen Sie die manuelle Eingabe.',
       'pleaseEnterValidBarcode': 'Bitte geben Sie einen gültigen Barcode ein.',
       'productNotFound': 'Produkt nicht gefunden',
       'noProductImageAvailable': 'Kein Produktbild verfügbar',
@@ -252,7 +272,8 @@ class AppLocalizations {
       'yesterday': 'Gestern',
       'daysAgo': 'vor {count} Tagen',
       'errorFetchingProduct': 'Fehler beim Laden des Produkts: {error}',
-      'productCouldNotBeRefreshed': 'Produktdaten konnten nicht aktualisiert werden',
+      'productCouldNotBeRefreshed':
+          'Produktdaten konnten nicht aktualisiert werden',
       'thankYouFeedback': 'Danke für Ihr Feedback!',
       'errorSubmittingFeedback': 'Fehler beim Absenden des Feedbacks: {error}',
       'replySubmitted': 'Antwort erfolgreich gesendet!',
@@ -271,14 +292,17 @@ class AppLocalizations {
       'couldNotLoadFeedback': 'Feedback konnte nicht geladen werden.',
       'couldNotSubmitFeedback': 'Feedback konnte nicht gesendet werden.',
       'couldNotSubmitReply': 'Antwort konnte nicht gesendet werden.',
-      'couldNotRefreshProduct': 'Produktdaten konnten nicht aktualisiert werden.',
+      'couldNotRefreshProduct':
+          'Produktdaten konnten nicht aktualisiert werden.',
       'attachFiles': 'Dateien anhängen',
       'feedbackInputHint': 'Ihr Feedback...',
       'replyInputHint': 'Ihre Antwort...',
       'submitReply': 'Antwort senden',
       'refreshTooltip': 'Produktdaten aktualisieren',
-      'feedbackDialogHint': 'Helfen Sie uns, unsere Halal-Bewertung zu verbessern.',
-      'replyDialogHint': 'Geben Sie eine offizielle Antwort auf dieses Feedback.',
+      'feedbackDialogHint':
+          'Helfen Sie uns, unsere Halal-Bewertung zu verbessern.',
+      'replyDialogHint':
+          'Geben Sie eine offizielle Antwort auf dieses Feedback.',
       'aiAnalysis': 'KI-Analyse',
       'keywordAnalysis': 'Schlüsselwortanalyse',
       'analysisTransparency': 'Analysetransparenz',
@@ -286,13 +310,16 @@ class AppLocalizations {
       'suspiciousKeywordsChecked': 'Verdächtige Zutaten, die wir prüfen',
       'transparencyNote': 'Fehlt etwas? Teilen Sie es uns mit!',
       'recheck': 'Erneut prüfen',
-      'foundNotFlagged': 'In Zutaten gefunden, aber nicht von der Analyse markiert (z. B. Fettalkohole, Spurenmengen oder kontextsichere Verwendung).',
-      'fattyAlcoholNote': 'Dies ist ein Fettalkohol (z. B. Cetyl- oder Stearylalkohol) – ein pflanzlicher Emulgator. Er hat keinen Bezug zu Trinkalkohol und ist halal.',
+      'foundNotFlagged':
+          'In Zutaten gefunden, aber nicht von der Analyse markiert (z. B. Fettalkohole, Spurenmengen oder kontextsichere Verwendung).',
+      'fattyAlcoholNote':
+          'Dies ist ein Fettalkohol (z. B. Cetyl- oder Stearylalkohol) – ein pflanzlicher Emulgator. Er hat keinen Bezug zu Trinkalkohol und ist halal.',
       'keywords': 'Schlüsselwörter',
       'haramTab': 'Haram',
       'suspiciousTab': 'Verdächtig',
       'suggestKeyword': 'Schlüsselwort vorschlagen',
-      'suggestKeywordHint': 'Fehlt etwas? Schlagen Sie ein Schlüsselwort vor – wir prüfen es.',
+      'suggestKeywordHint':
+          'Fehlt etwas? Schlagen Sie ein Schlüsselwort vor – wir prüfen es.',
       'keywordLabel': 'Schlüsselwort',
       'keywordHint': 'z. B. Schmalz, Ethanol, Karmin',
       'keywordRequired': 'Bitte ein Schlüsselwort eingeben.',
@@ -302,14 +329,18 @@ class AppLocalizations {
       'reasonLabel': 'Begründung',
       'reasonHint': 'Warum sollte dieses Schlüsselwort aufgenommen werden?',
       'reasonRequired': 'Bitte eine Begründung angeben.',
-      'suggestionSubmitted': 'Danke! Ihr Vorschlag wurde zur Prüfung eingereicht.',
-      'suggestionError': 'Vorschlag konnte nicht gesendet werden. Bitte erneut versuchen.',
+      'suggestionSubmitted':
+          'Danke! Ihr Vorschlag wurde zur Prüfung eingereicht.',
+      'suggestionError':
+          'Vorschlag konnte nicht gesendet werden. Bitte erneut versuchen.',
       'customBadge': 'benutzerdefiniert',
     },
   };
 
   String _translate(String key) {
-    return _localizedValues[locale.languageCode]?[key] ?? _localizedValues['en']![key] ?? key;
+    return _localizedValues[locale.languageCode]?[key] ??
+        _localizedValues['en']![key] ??
+        key;
   }
 
   String get appTitle => _translate('appTitle');
@@ -355,11 +386,15 @@ class AppLocalizations {
   String get lastScanned => _translate('lastScanned');
   String get today => _translate('today');
   String get yesterday => _translate('yesterday');
-  String daysAgo(int count) => _translate('daysAgo').replaceAll('{count}', count.toString());
-  String errorFetchingProduct(String error) => _translate('errorFetchingProduct').replaceAll('{error}', error);
-  String get productCouldNotBeRefreshed => _translate('productCouldNotBeRefreshed');
+  String daysAgo(int count) =>
+      _translate('daysAgo').replaceAll('{count}', count.toString());
+  String errorFetchingProduct(String error) =>
+      _translate('errorFetchingProduct').replaceAll('{error}', error);
+  String get productCouldNotBeRefreshed =>
+      _translate('productCouldNotBeRefreshed');
   String get thankYouFeedback => _translate('thankYouFeedback');
-  String errorSubmittingFeedback(String error) => _translate('errorSubmittingFeedback').replaceAll('{error}', error);
+  String errorSubmittingFeedback(String error) =>
+      _translate('errorSubmittingFeedback').replaceAll('{error}', error);
   String get replySubmitted => _translate('replySubmitted');
   String get noResultsSaved => _translate('noResultsSaved');
   String get language => _translate('language');
@@ -386,7 +421,8 @@ class AppLocalizations {
   String get keywordAnalysis => _translate('keywordAnalysis');
   String get analysisTransparency => _translate('analysisTransparency');
   String get haramKeywordsChecked => _translate('haramKeywordsChecked');
-  String get suspiciousKeywordsChecked => _translate('suspiciousKeywordsChecked');
+  String get suspiciousKeywordsChecked =>
+      _translate('suspiciousKeywordsChecked');
   String get transparencyNote => _translate('transparencyNote');
   String get recheck => _translate('recheck');
   String get foundNotFlagged => _translate('foundNotFlagged');
@@ -410,7 +446,10 @@ class AppLocalizations {
   String get customBadge => _translate('customBadge');
 
   static AppLocalizations of(BuildContext context) {
-    final localizations = Localizations.of<AppLocalizations>(context, AppLocalizations);
+    final localizations = Localizations.of<AppLocalizations>(
+      context,
+      AppLocalizations,
+    );
     assert(localizations != null, 'No AppLocalizations found in context');
     return localizations!;
   }
@@ -420,11 +459,14 @@ class AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
   const AppLocalizationsDelegate();
 
   @override
-  bool isSupported(Locale locale) => ['en', 'tr', 'de'].contains(locale.languageCode);
+  bool isSupported(Locale locale) =>
+      ['en', 'tr', 'de'].contains(locale.languageCode);
 
   @override
-  Future<AppLocalizations> load(Locale locale) => Future.value(AppLocalizations(locale));
+  Future<AppLocalizations> load(Locale locale) =>
+      Future.value(AppLocalizations(locale));
 
   @override
-  bool shouldReload(covariant LocalizationsDelegate<AppLocalizations> old) => false;
+  bool shouldReload(covariant LocalizationsDelegate<AppLocalizations> old) =>
+      false;
 }

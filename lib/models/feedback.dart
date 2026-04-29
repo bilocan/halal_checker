@@ -31,9 +31,13 @@ class FeedbackItem {
     id: json['id'],
     barcode: json['barcode'],
     userFeedback: json['userFeedback'],
-    submittedAt: DateTime.tryParse(json['submittedAt']?.toString() ?? '') ?? DateTime.now(),
+    submittedAt:
+        DateTime.tryParse(json['submittedAt']?.toString() ?? '') ??
+        DateTime.now(),
     producerReply: json['producerReply'],
-    repliedAt: json['repliedAt'] != null ? DateTime.tryParse(json['repliedAt'].toString()) : null,
+    repliedAt: json['repliedAt'] != null
+        ? DateTime.tryParse(json['repliedAt'].toString())
+        : null,
     attachments: List<String>.from(json['attachments'] ?? []),
   );
 }
