@@ -120,6 +120,12 @@ class AppLocalizations {
       'proceedAnyway': 'Proceed Anyway',
       'deletedFromHistory': 'Removed from history',
       'undo': 'Undo',
+      'explanationClean':
+          'No ingredients matched known animal-derived or alcohol-related keywords. This is an automated assessment based on ingredient text.',
+      'explanationSuspiciousOnly':
+          'No definitely haram ingredients found, but some ingredients may be animal-derived. This is an automated assessment based on ingredient text.',
+      'explanationHaram':
+          'This product contains one or more ingredients that may be animal-derived or alcohol-related. Review the flagged ingredients below for details.',
     },
     'tr': {
       'appTitle': 'HalalScan',
@@ -235,6 +241,12 @@ class AppLocalizations {
       'proceedAnyway': 'Yine de Devam Et',
       'deletedFromHistory': 'Geçmişten silindi',
       'undo': 'Geri Al',
+      'explanationClean':
+          'Bilinen hayvansal kaynaklı veya alkol içerikli anahtar kelimelerle eşleşen içerik bulunamadı. Bu, içerik metnine dayalı otomatik bir değerlendirmedir.',
+      'explanationSuspiciousOnly':
+          'Kesinlikle haram içerik bulunamadı, ancak bazı içerikler hayvansal kaynaklı olabilir. Bu, içerik metnine dayalı otomatik bir değerlendirmedir.',
+      'explanationHaram':
+          'Bu ürün, hayvansal kaynaklı veya alkol içerikli olabilecek bir veya daha fazla içerik barındırmaktadır. Ayrıntılar için işaretlenen içerikleri inceleyin.',
     },
     'de': {
       'appTitle': 'HalalScan',
@@ -355,6 +367,12 @@ class AppLocalizations {
       'proceedAnyway': 'Trotzdem fortfahren',
       'deletedFromHistory': 'Aus Verlauf entfernt',
       'undo': 'Rückgängig',
+      'explanationClean':
+          'Keine Zutaten stimmten mit bekannten tierischen oder alkoholbezogenen Begriffen überein. Dies ist eine automatische Bewertung anhand des Zutatentexts.',
+      'explanationSuspiciousOnly':
+          'Keine eindeutig verbotenen Zutaten gefunden, aber einige könnten tierischen Ursprungs sein. Dies ist eine automatische Bewertung anhand des Zutatentexts.',
+      'explanationHaram':
+          'Dieses Produkt enthält eine oder mehrere Zutaten, die tierischen Ursprungs oder alkoholbezogen sein könnten. Prüfen Sie die markierten Zutaten.',
     },
   };
 
@@ -472,6 +490,10 @@ class AppLocalizations {
   String get proceedAnyway => _translate('proceedAnyway');
   String get deletedFromHistory => _translate('deletedFromHistory');
   String get undo => _translate('undo');
+  String get explanationClean => _translate('explanationClean');
+  String get explanationSuspiciousOnly =>
+      _translate('explanationSuspiciousOnly');
+  String get explanationHaram => _translate('explanationHaram');
 
   static AppLocalizations of(BuildContext context) {
     final localizations = Localizations.of<AppLocalizations>(

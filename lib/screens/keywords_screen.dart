@@ -23,11 +23,12 @@ class _KeywordsScreenState extends State<KeywordsScreen> {
 
   Future<void> _loadCustom() async {
     final result = await KeywordService().fetchCustomKeywords();
-    if (mounted)
+    if (mounted) {
       setState(() {
         _custom = result;
         _loading = false;
       });
+    }
   }
 
   Map<String, String> get _customHaram => {
@@ -50,7 +51,7 @@ class _KeywordsScreenState extends State<KeywordsScreen> {
       child: Scaffold(
         appBar: AppBar(
           title: Text(loc.keywords),
-          backgroundColor: _green,
+          backgroundColor: kGreen,
           foregroundColor: Colors.white,
           bottom: TabBar(
             labelColor: Colors.white,
@@ -81,7 +82,7 @@ class _KeywordsScreenState extends State<KeywordsScreen> {
                 ],
               ),
         floatingActionButton: FloatingActionButton.extended(
-          backgroundColor: _green,
+          backgroundColor: kGreen,
           foregroundColor: Colors.white,
           icon: const Icon(Icons.add),
           label: Text(loc.suggestKeyword),
@@ -144,14 +145,14 @@ class _KeywordList extends StatelessWidget {
                     vertical: 2,
                   ),
                   decoration: BoxDecoration(
-                    color: _green.withAlpha(30),
+                    color: kGreen.withAlpha(30),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
                     loc.customBadge,
                     style: TextStyle(
                       fontSize: 10,
-                      color: _green,
+                      color: kGreen,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -202,7 +203,7 @@ class _SuggestKeywordSheetState extends State<_SuggestKeywordSheet> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(ok ? loc.suggestionSubmitted : loc.suggestionError),
-        backgroundColor: ok ? _green : Colors.red,
+        backgroundColor: ok ? kGreen : Colors.red,
       ),
     );
   }
@@ -305,7 +306,7 @@ class _SuggestKeywordSheetState extends State<_SuggestKeywordSheet> {
             ElevatedButton(
               onPressed: _submitting ? null : _submit,
               style: ElevatedButton.styleFrom(
-                backgroundColor: _green,
+                backgroundColor: kGreen,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
