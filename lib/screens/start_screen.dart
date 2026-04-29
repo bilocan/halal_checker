@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../app_colors.dart';
+import '../config.dart';
 import '../main.dart';
+import '../services/auth_service.dart';
 import '../services/database_service.dart';
 import '../services/product_service.dart';
 import '../localization/app_localizations.dart';
@@ -103,6 +106,70 @@ class _StartScreenState extends State<StartScreen> {
     return '$y-$mo-$d, $time';
   }
 
+  Widget _buildAuthButton(BuildContext context) {
+    return StreamBuilder<AuthState>(
+      stream: AuthService.authStateChanges,
+      builder: (context, snapshot) {
+        final user = AuthService.currentUser;
+        if (user == null) {
+          return IconButton(
+            icon: const Icon(Icons.person_outline),
+            tooltip: 'Sign in',
+            onPressed: () => _signIn(context),
+          );
+        }
+        final avatarUrl = AuthService.avatarUrl;
+        return PopupMenuButton<String>(
+          offset: const Offset(0, 40),
+          onSelected: (value) async {
+            if (value == 'signout') await AuthService.signOut();
+          },
+          itemBuilder: (_) => [
+            PopupMenuItem(
+              enabled: false,
+              child: Text(
+                AuthService.displayName ?? user.email ?? 'Signed in',
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
+            const PopupMenuDivider(),
+            const PopupMenuItem(
+              value: 'signout',
+              child: Row(
+                children: [
+                  Icon(Icons.logout, size: 18),
+                  SizedBox(width: 8),
+                  Text('Sign out'),
+                ],
+              ),
+            ),
+          ],
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: avatarUrl != null
+                ? CircleAvatar(
+                    radius: 16,
+                    backgroundImage: NetworkImage(avatarUrl),
+                  )
+                : const Icon(Icons.person),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _signIn(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await AuthService.signInWithGoogle();
+    } catch (e) {
+      if (!mounted) return;
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Sign-in failed. Please try again.')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context);
@@ -132,6 +199,7 @@ class _StartScreenState extends State<StartScreen> {
             ],
             icon: const Icon(Icons.language),
           ),
+          if (AppConfig.hasSupabase) _buildAuthButton(context),
         ],
       ),
       body: Stack(

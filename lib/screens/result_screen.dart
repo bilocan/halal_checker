@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import '../app_colors.dart';
+import '../config.dart';
 import '../localization/app_localizations.dart';
 import '../models/product.dart';
 import '../models/feedback.dart';
+import '../services/auth_service.dart';
 import '../services/feedback_service.dart';
 import '../services/product_service.dart';
 
@@ -628,7 +630,7 @@ class _ResultScreenState extends State<ResultScreen> {
                     foregroundColor: kGreen,
                     padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
-                  onPressed: () => _showFeedbackDialog(context),
+                  onPressed: () => _onFeedbackTap(context),
                   child: Text(
                     loc.provideFeedback,
                     style: const TextStyle(fontSize: 14),
@@ -1133,6 +1135,65 @@ class _ResultScreenState extends State<ResultScreen> {
     final m = date.month.toString().padLeft(2, '0');
     final d = date.day.toString().padLeft(2, '0');
     return '$y-$m-$d';
+  }
+
+  void _onFeedbackTap(BuildContext context) {
+    if (AppConfig.hasSupabase && AuthService.currentUser == null) {
+      _showSignInRequired(context);
+      return;
+    }
+    _showFeedbackDialog(context);
+  }
+
+  void _showSignInRequired(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => Padding(
+        padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.lock_outline, size: 48, color: kGreen),
+            const SizedBox(height: 16),
+            const Text(
+              'Sign in required',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'You need to be signed in to submit feedback or suggestions.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.login),
+                label: const Text('Sign in with Google'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: kGreen,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                onPressed: () async {
+                  Navigator.pop(context);
+                  try {
+                    await AuthService.signInWithGoogle();
+                  } catch (_) {}
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Future<void> _showFeedbackDialog(BuildContext context) async {

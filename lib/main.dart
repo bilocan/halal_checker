@@ -2,12 +2,20 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'config.dart';
 import 'localization/app_localizations.dart';
 import 'screens/start_screen.dart';
 import 'services/seed_data_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  if (AppConfig.hasSupabase) {
+    await Supabase.initialize(
+      url: AppConfig.supabaseUrl,
+      anonKey: AppConfig.supabaseAnonKey,
+    );
+  }
   await SeedDataService.seedIfNeeded(); // fast: JSON fixtures only
   unawaited(
     SeedDataService.seedFromBarcodes(),

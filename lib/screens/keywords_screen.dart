@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../app_colors.dart';
+import '../config.dart';
 import '../localization/app_localizations.dart';
+import '../services/auth_service.dart';
 import '../services/keyword_service.dart';
 import '../services/product_service.dart';
 
@@ -87,6 +89,60 @@ class _KeywordsScreenState extends State<KeywordsScreen> {
           icon: const Icon(Icons.add),
           label: Text(loc.suggestKeyword),
           onPressed: () async {
+            if (AppConfig.hasSupabase && AuthService.currentUser == null) {
+              await showModalBottomSheet(
+                context: context,
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                ),
+                builder: (_) => Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.lock_outline, size: 48, color: kGreen),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Sign in required',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'You need to be signed in to submit feedback or suggestions.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                      const SizedBox(height: 24),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          icon: const Icon(Icons.login),
+                          label: const Text('Sign in with Google'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: kGreen,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          onPressed: () async {
+                            Navigator.pop(context);
+                            try {
+                              await AuthService.signInWithGoogle();
+                            } catch (_) {}
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+              return;
+            }
             await showModalBottomSheet(
               context: context,
               isScrollControlled: true,
