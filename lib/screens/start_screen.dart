@@ -331,12 +331,17 @@ class _StartScreenState extends State<StartScreen> {
                               child: Card(
                                 margin: const EdgeInsets.only(bottom: 8),
                                 child: ListTile(
-                                  leading: Container(
-                                    width: 16,
-                                    height: 16,
-                                    decoration: BoxDecoration(
-                                      color: isHalal ? kGreen : Colors.red,
-                                      shape: BoxShape.circle,
+                                  leading: Semantics(
+                                    label: isHalal
+                                        ? localizations.halal
+                                        : localizations.notHalal,
+                                    child: Container(
+                                      width: 16,
+                                      height: 16,
+                                      decoration: BoxDecoration(
+                                        color: isHalal ? kGreen : Colors.red,
+                                        shape: BoxShape.circle,
+                                      ),
                                     ),
                                   ),
                                   title: Text(

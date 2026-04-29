@@ -220,12 +220,16 @@ class _ResultScreenState extends State<ResultScreen> {
                       size: 64,
                     ),
                     const SizedBox(height: 12),
-                    Text(
-                      isHalal ? '✅ HALAL' : '❌ NOT HALAL',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
+                    Semantics(
+                      label: isHalal ? loc.halal : loc.notHalal,
+                      child: Text(
+                        isHalal ? '✅ HALAL' : '❌ NOT HALAL',
+                        semanticsLabel: '',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 12),
