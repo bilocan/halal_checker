@@ -25,17 +25,23 @@ class _KeywordsScreenState extends State<KeywordsScreen> {
 
   Future<void> _loadCustom() async {
     final result = await KeywordService().fetchCustomKeywords();
-    if (mounted) setState(() { _custom = result; _loading = false; });
+    if (mounted)
+      setState(() {
+        _custom = result;
+        _loading = false;
+      });
   }
 
   Map<String, String> get _customHaram => {
     for (final e in _custom)
-      if (e['category'] == 'haram') e['canonical'] as String: e['reason'] as String,
+      if (e['category'] == 'haram')
+        e['canonical'] as String: e['reason'] as String,
   };
 
   Map<String, String> get _customSuspicious => {
     for (final e in _custom)
-      if (e['category'] == 'suspicious') e['canonical'] as String: e['reason'] as String,
+      if (e['category'] == 'suspicious')
+        e['canonical'] as String: e['reason'] as String,
   };
 
   @override
@@ -115,10 +121,7 @@ class _KeywordList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context);
-    final allEntries = [
-      ...builtIn.entries,
-      ...custom.entries,
-    ];
+    final allEntries = [...builtIn.entries, ...custom.entries];
 
     return ListView.separated(
       padding: const EdgeInsets.only(top: 8, bottom: 80),
@@ -138,7 +141,10 @@ class _KeywordList extends StatelessWidget {
               if (isCustom) ...[
                 const SizedBox(width: 6),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: _green.withAlpha(30),
                     borderRadius: BorderRadius.circular(4),
@@ -221,7 +227,10 @@ class _SuggestKeywordSheetState extends State<_SuggestKeywordSheet> {
                 Expanded(
                   child: Text(
                     loc.suggestKeyword,
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
                 IconButton(
@@ -257,19 +266,27 @@ class _SuggestKeywordSheetState extends State<_SuggestKeywordSheet> {
               items: [
                 DropdownMenuItem(
                   value: 'haram',
-                  child: Row(children: [
-                    Icon(Icons.block, color: Colors.red.shade700, size: 18),
-                    const SizedBox(width: 8),
-                    Text(loc.haramCategory),
-                  ]),
+                  child: Row(
+                    children: [
+                      Icon(Icons.block, color: Colors.red.shade700, size: 18),
+                      const SizedBox(width: 8),
+                      Text(loc.haramCategory),
+                    ],
+                  ),
                 ),
                 DropdownMenuItem(
                   value: 'suspicious',
-                  child: Row(children: [
-                    Icon(Icons.warning_amber_rounded, color: _amber, size: 18),
-                    const SizedBox(width: 8),
-                    Text(loc.suspiciousCategory),
-                  ]),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.warning_amber_rounded,
+                        color: _amber,
+                        size: 18,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(loc.suspiciousCategory),
+                    ],
+                  ),
                 ),
               ],
               onChanged: (v) => setState(() => _category = v!),
@@ -302,7 +319,9 @@ class _SuggestKeywordSheetState extends State<_SuggestKeywordSheet> {
                       height: 20,
                       width: 20,
                       child: CircularProgressIndicator(
-                          color: Colors.white, strokeWidth: 2),
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
                     )
                   : Text(loc.submit),
             ),

@@ -18,7 +18,8 @@ class TestProductRepository {
   static String? dbPathOverride;
 
   Future<Database> _open() async {
-    final path = dbPathOverride ?? join(await getDatabasesPath(), 'halal_test.db');
+    final path =
+        dbPathOverride ?? join(await getDatabasesPath(), 'halal_test.db');
     return openDatabase(
       path,
       version: 1,
@@ -49,11 +50,10 @@ class TestProductRepository {
 
   Future<void> setMetadata(String key, String value) async {
     final db = await _database;
-    await db.insert(
-      'metadata',
-      {'key': key, 'value': value},
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
+    await db.insert('metadata', {
+      'key': key,
+      'value': value,
+    }, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
   Future<Product?> getByBarcode(String barcode) async {
@@ -71,15 +71,11 @@ class TestProductRepository {
 
   Future<void> upsert(Product product) async {
     final db = await _database;
-    await db.insert(
-      'test_products',
-      {
-        'barcode': product.barcode,
-        'product_json': jsonEncode(product.toJson()),
-        'seeded_at': DateTime.now().millisecondsSinceEpoch,
-      },
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
+    await db.insert('test_products', {
+      'barcode': product.barcode,
+      'product_json': jsonEncode(product.toJson()),
+      'seeded_at': DateTime.now().millisecondsSinceEpoch,
+    }, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
   Future<void> closeForTesting() async {
@@ -91,9 +87,11 @@ class TestProductRepository {
     final db = await _database;
     final rows = await db.query('test_products', orderBy: 'seeded_at DESC');
     return rows
-        .map((row) => Product.fromJson(
-              jsonDecode(row['product_json'] as String) as Map<String, dynamic>,
-            ))
+        .map(
+          (row) => Product.fromJson(
+            jsonDecode(row['product_json'] as String) as Map<String, dynamic>,
+          ),
+        )
         .toList();
   }
 }

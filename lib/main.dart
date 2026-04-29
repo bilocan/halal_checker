@@ -8,8 +8,10 @@ import 'services/seed_data_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await SeedDataService.seedIfNeeded();           // fast: JSON fixtures only
-  unawaited(SeedDataService.seedFromBarcodes());  // slow: network fetches, non-blocking
+  await SeedDataService.seedIfNeeded(); // fast: JSON fixtures only
+  unawaited(
+    SeedDataService.seedFromBarcodes(),
+  ); // slow: network fetches, non-blocking
   final prefs = await SharedPreferences.getInstance();
   final savedLocale = prefs.getString('locale') ?? 'en';
   runApp(HalalCheckerApp(initialLocale: Locale(savedLocale)));
@@ -54,11 +56,7 @@ class HalalCheckerAppState extends State<HalalCheckerApp> {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      supportedLocales: const [
-        Locale('en'),
-        Locale('tr'),
-        Locale('de'),
-      ],
+      supportedLocales: const [Locale('en'), Locale('tr'), Locale('de')],
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
           seedColor: const Color(0xFF2E7D32),

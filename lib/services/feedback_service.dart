@@ -17,7 +17,11 @@ class FeedbackService {
       ..sort((a, b) => b.submittedAt.compareTo(a.submittedAt));
   }
 
-  Future<void> addFeedback(String barcode, String userFeedback, {List<String> attachments = const []}) async {
+  Future<void> addFeedback(
+    String barcode,
+    String userFeedback, {
+    List<String> attachments = const [],
+  }) async {
     final prefs = await SharedPreferences.getInstance();
     final nextId = prefs.getInt(_nextIdKey) ?? 1;
 
@@ -43,15 +47,17 @@ class FeedbackService {
     final updatedFeedbacks = feedbacksJson.map((json) {
       final feedback = FeedbackItem.fromJson(jsonDecode(json));
       if (feedback.id == feedbackId) {
-        return jsonEncode(FeedbackItem(
-          id: feedback.id,
-          barcode: feedback.barcode,
-          userFeedback: feedback.userFeedback,
-          submittedAt: feedback.submittedAt,
-          producerReply: reply,
-          repliedAt: DateTime.now(),
-          attachments: feedback.attachments,
-        ).toJson());
+        return jsonEncode(
+          FeedbackItem(
+            id: feedback.id,
+            barcode: feedback.barcode,
+            userFeedback: feedback.userFeedback,
+            submittedAt: feedback.submittedAt,
+            producerReply: reply,
+            repliedAt: DateTime.now(),
+            attachments: feedback.attachments,
+          ).toJson(),
+        );
       }
       return json;
     }).toList();
@@ -66,16 +72,19 @@ class FeedbackService {
     final updatedFeedbacks = feedbacksJson.map((json) {
       final feedback = FeedbackItem.fromJson(jsonDecode(json));
       if (feedback.id == feedbackId) {
-        final newAttachments = List<String>.from(feedback.attachments)..add(attachmentPath);
-        return jsonEncode(FeedbackItem(
-          id: feedback.id,
-          barcode: feedback.barcode,
-          userFeedback: feedback.userFeedback,
-          submittedAt: feedback.submittedAt,
-          producerReply: feedback.producerReply,
-          repliedAt: feedback.repliedAt,
-          attachments: newAttachments,
-        ).toJson());
+        final newAttachments = List<String>.from(feedback.attachments)
+          ..add(attachmentPath);
+        return jsonEncode(
+          FeedbackItem(
+            id: feedback.id,
+            barcode: feedback.barcode,
+            userFeedback: feedback.userFeedback,
+            submittedAt: feedback.submittedAt,
+            producerReply: feedback.producerReply,
+            repliedAt: feedback.repliedAt,
+            attachments: newAttachments,
+          ).toJson(),
+        );
       }
       return json;
     }).toList();

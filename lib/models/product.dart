@@ -76,8 +76,12 @@ class Product {
     ingredients: List<String>.from(json['ingredients'] as List),
     isHalal: json['isHalal'] as bool,
     haramIngredients: List<String>.from(json['haramIngredients'] as List),
-    suspiciousIngredients: List<String>.from(json['suspiciousIngredients'] as List),
-    ingredientWarnings: Map<String, String>.from(json['ingredientWarnings'] as Map),
+    suspiciousIngredients: List<String>.from(
+      json['suspiciousIngredients'] as List,
+    ),
+    ingredientWarnings: Map<String, String>.from(
+      json['ingredientWarnings'] as Map,
+    ),
     labels: List<String>.from(json['labels'] as List),
     imageUrl: json['imageUrl'] as String?,
     imageFrontUrl: json['imageFrontUrl'] as String?,
