@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import '../app_colors.dart';
 import '../localization/app_localizations.dart';
 import '../services/database_service.dart';
 import '../services/product_service.dart';
 import 'result_screen.dart';
-
-const _green = Color(0xFF2E7D32);
-const _greenDark = Color(0xFF1B5E20);
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -177,7 +175,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(loc.appTitle),
-        backgroundColor: _green,
+        backgroundColor: kGreen,
         foregroundColor: Colors.white,
       ),
       body: Stack(
@@ -188,11 +186,11 @@ class _HomeScreenState extends State<HomeScreen> {
               width: 280,
               height: 280,
               decoration: BoxDecoration(
-                border: Border.all(color: _green, width: 3),
+                border: Border.all(color: kGreen, width: 3),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Center(
-                child: Icon(Icons.qr_code_scanner, color: _green, size: 48),
+                child: Icon(Icons.qr_code_scanner, color: kGreen, size: 48),
               ),
             ),
           ),
@@ -246,7 +244,7 @@ class _HomeScreenState extends State<HomeScreen> {
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.white70,
-                foregroundColor: _greenDark,
+                foregroundColor: kGreenDark,
               ),
               onPressed: _showManualEntryDialog,
               child: Text(loc.manualEntry),
@@ -256,7 +254,7 @@ class _HomeScreenState extends State<HomeScreen> {
             Container(
               color: Colors.black45,
               child: const Center(
-                child: CircularProgressIndicator(color: _green),
+                child: CircularProgressIndicator(color: kGreen),
               ),
             ),
         ],

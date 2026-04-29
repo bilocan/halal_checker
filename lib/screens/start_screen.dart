@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../app_colors.dart';
 import '../main.dart';
 import '../services/database_service.dart';
 import '../services/product_service.dart';
@@ -7,9 +8,6 @@ import '../widgets/halal_scan_logo.dart';
 import 'result_screen.dart';
 import 'home_screen.dart';
 import 'keywords_screen.dart';
-
-const _green = Color(0xFF2E7D32);
-const _greenDark = Color(0xFF1B5E20);
 
 class StartScreen extends StatefulWidget {
   const StartScreen({super.key});
@@ -72,7 +70,9 @@ class _StartScreenState extends State<StartScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(AppLocalizations.of(context).productCouldNotBeRefreshed),
+            content: Text(
+              AppLocalizations.of(context).productCouldNotBeRefreshed,
+            ),
           ),
         );
       }
@@ -110,7 +110,7 @@ class _StartScreenState extends State<StartScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(localizations.startTitle),
-        backgroundColor: _green,
+        backgroundColor: kGreen,
         foregroundColor: Colors.white,
         actions: [
           IconButton(
@@ -147,7 +147,7 @@ class _StartScreenState extends State<StartScreen> {
                   padding: const EdgeInsets.symmetric(vertical: 20),
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
-                      colors: [_greenDark, _green],
+                      colors: [kGreenDark, kGreen],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
@@ -188,11 +188,11 @@ class _StartScreenState extends State<StartScreen> {
                 Container(
                   height: 100,
                   decoration: BoxDecoration(
-                    color: _green,
+                    color: kGreen,
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: _green.withAlpha(80),
+                        color: kGreen.withAlpha(80),
                         blurRadius: 12,
                         offset: const Offset(0, 4),
                       ),
@@ -291,25 +291,37 @@ class _StartScreenState extends State<StartScreen> {
                                   color: Colors.red.shade400,
                                   borderRadius: BorderRadius.circular(12),
                                 ),
-                                child: const Icon(Icons.delete_outline, color: Colors.white),
+                                child: const Icon(
+                                  Icons.delete_outline,
+                                  color: Colors.white,
+                                ),
                               ),
                               onDismissed: (_) async {
                                 final removed = scan;
                                 final messenger = ScaffoldMessenger.of(context);
                                 setState(() => _recentScans.removeAt(index));
-                                await DatabaseService.instance.deleteScan(barcode);
+                                await DatabaseService.instance.deleteScan(
+                                  barcode,
+                                );
                                 if (!mounted) return;
                                 messenger.showSnackBar(
                                   SnackBar(
-                                    content: Text(localizations.deletedFromHistory),
+                                    content: Text(
+                                      localizations.deletedFromHistory,
+                                    ),
                                     action: SnackBarAction(
                                       label: localizations.undo,
                                       onPressed: () async {
-                                        await DatabaseService.instance.insertScan(
-                                          barcode: removed['barcode'] as String,
-                                          productName: removed['productName'] as String,
-                                          isHalal: removed['isHalal'] as bool,
-                                        );
+                                        await DatabaseService.instance
+                                            .insertScan(
+                                              barcode:
+                                                  removed['barcode'] as String,
+                                              productName:
+                                                  removed['productName']
+                                                      as String,
+                                              isHalal:
+                                                  removed['isHalal'] as bool,
+                                            );
                                         await _loadRecentScans();
                                       },
                                     ),
@@ -323,7 +335,7 @@ class _StartScreenState extends State<StartScreen> {
                                     width: 16,
                                     height: 16,
                                     decoration: BoxDecoration(
-                                      color: isHalal ? _green : Colors.red,
+                                      color: isHalal ? kGreen : Colors.red,
                                       shape: BoxShape.circle,
                                     ),
                                   ),
@@ -340,7 +352,7 @@ class _StartScreenState extends State<StartScreen> {
                                     children: [
                                       IconButton(
                                         icon: const Icon(Icons.refresh),
-                                        color: _green,
+                                        color: kGreen,
                                         tooltip: localizations.recheck,
                                         onPressed: () =>
                                             _openResult(scan, recheck: true),
@@ -362,7 +374,7 @@ class _StartScreenState extends State<StartScreen> {
             Container(
               color: Colors.black45,
               child: const Center(
-                child: CircularProgressIndicator(color: _green),
+                child: CircularProgressIndicator(color: kGreen),
               ),
             ),
         ],
