@@ -232,7 +232,7 @@ class _ResultScreenState extends State<ResultScreen> {
                     Text(
                       product.explanation.isNotEmpty
                           ? product.explanation
-                          : _halalReasonText(isHalal, suspiciousIngredients),
+                          : _halalReasonText(isHalal, suspiciousIngredients, loc),
                       style: const TextStyle(color: Colors.white, fontSize: 14),
                       textAlign: TextAlign.center,
                     ),
@@ -674,7 +674,6 @@ class _ResultScreenState extends State<ResultScreen> {
               ? Icon(icon, size: 14, color: Colors.white)
               : null,
           padding: EdgeInsets.zero,
-          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
         ),
       );
     }
@@ -1100,14 +1099,17 @@ class _ResultScreenState extends State<ResultScreen> {
     }
   }
 
-  String _halalReasonText(bool isHalal, List<String> suspiciousIngredients) {
+  String _halalReasonText(
+    bool isHalal,
+    List<String> suspiciousIngredients,
+    AppLocalizations loc,
+  ) {
     if (isHalal) {
-      if (suspiciousIngredients.isEmpty) {
-        return 'No ingredients matched known animal-derived or alcohol-related keywords. This is an automated assessment based on ingredient text.';
-      }
-      return 'No definitely haram ingredients found, but some ingredients may be animal-derived. This is an automated assessment based on ingredient text.';
+      return suspiciousIngredients.isEmpty
+          ? loc.explanationClean
+          : loc.explanationSuspiciousOnly;
     }
-    return 'This product contains one or more ingredients that may be animal-derived or alcohol-related. Review the flagged ingredients below for details.';
+    return loc.explanationHaram;
   }
 
   String _formatDate(DateTime date) {

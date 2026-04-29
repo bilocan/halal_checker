@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show HapticFeedback;
 import 'package:mobile_scanner/mobile_scanner.dart';
 import '../app_colors.dart';
 import '../localization/app_localizations.dart';
@@ -90,6 +91,8 @@ class _HomeScreenState extends State<HomeScreen> {
       _isLoading = true;
     });
 
+    HapticFeedback.mediumImpact();
+
     try {
       final product = await _productService.getProduct(barcode);
       if (!mounted) return;
@@ -180,7 +183,13 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       body: Stack(
         children: [
-          MobileScanner(controller: _scannerController, onDetect: _onDetect),
+          Semantics(
+            label: 'Barcode scanner camera view',
+            child: MobileScanner(
+              controller: _scannerController,
+              onDetect: _onDetect,
+            ),
+          ),
           Center(
             child: Container(
               width: 280,

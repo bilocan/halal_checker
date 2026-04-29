@@ -62,7 +62,7 @@ class DatabaseService {
     await db.delete('scans', where: 'barcode = ?', whereArgs: [barcode]);
   }
 
-  Future<List<Map<String, dynamic>>> getRecentScans({int limit = 20}) async {
+  Future<List<Map<String, dynamic>>> getRecentScans({int limit = 50}) async {
     final db = await database;
     final rows = await db.query(
       'scans',
