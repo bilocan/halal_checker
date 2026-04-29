@@ -113,6 +113,13 @@ class AppLocalizations {
           'Thank you! Your suggestion has been submitted for review.',
       'suggestionError': 'Could not submit suggestion. Please try again.',
       'customBadge': 'custom',
+      'nutritionLabel': 'Nutrition',
+      'producerReplyWarningTitle': 'Unverified Action',
+      'producerReplyWarning':
+          'Anyone can post using this button — replies are not verified as coming from the actual manufacturer. Proceed only if you are the producer.',
+      'proceedAnyway': 'Proceed Anyway',
+      'deletedFromHistory': 'Removed from history',
+      'undo': 'Undo',
     },
     'tr': {
       'appTitle': 'HalalScan',
@@ -221,6 +228,13 @@ class AppLocalizations {
           'Teşekkürler! Öneriniz incelenmek üzere gönderildi.',
       'suggestionError': 'Öneri gönderilemedi. Lütfen tekrar deneyin.',
       'customBadge': 'özel',
+      'nutritionLabel': 'Beslenme Değerleri',
+      'producerReplyWarningTitle': 'Doğrulanmamış İşlem',
+      'producerReplyWarning':
+          'Bu düğmeyi herkes kullanabilir — yanıtların gerçek üreticiden geldiği doğrulanmaz. Yalnızca üreticiyseniz devam edin.',
+      'proceedAnyway': 'Yine de Devam Et',
+      'deletedFromHistory': 'Geçmişten silindi',
+      'undo': 'Geri Al',
     },
     'de': {
       'appTitle': 'HalalScan',
@@ -334,6 +348,13 @@ class AppLocalizations {
       'suggestionError':
           'Vorschlag konnte nicht gesendet werden. Bitte erneut versuchen.',
       'customBadge': 'benutzerdefiniert',
+      'nutritionLabel': 'Nährwerte',
+      'producerReplyWarningTitle': 'Nicht verifiziert',
+      'producerReplyWarning':
+          'Jeder kann diese Schaltfläche verwenden — Antworten werden nicht als vom tatsächlichen Hersteller stammend verifiziert. Fahren Sie nur fort, wenn Sie der Hersteller sind.',
+      'proceedAnyway': 'Trotzdem fortfahren',
+      'deletedFromHistory': 'Aus Verlauf entfernt',
+      'undo': 'Rückgängig',
     },
   };
 
@@ -444,6 +465,13 @@ class AppLocalizations {
   String get suggestionSubmitted => _translate('suggestionSubmitted');
   String get suggestionError => _translate('suggestionError');
   String get customBadge => _translate('customBadge');
+  String get nutritionLabel => _translate('nutritionLabel');
+  String get producerReplyWarningTitle =>
+      _translate('producerReplyWarningTitle');
+  String get producerReplyWarning => _translate('producerReplyWarning');
+  String get proceedAnyway => _translate('proceedAnyway');
+  String get deletedFromHistory => _translate('deletedFromHistory');
+  String get undo => _translate('undo');
 
   static AppLocalizations of(BuildContext context) {
     final localizations = Localizations.of<AppLocalizations>(

@@ -71,10 +71,8 @@ class _StartScreenState extends State<StartScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Could not load product. Please check your connection.',
-            ),
+          SnackBar(
+            content: Text(AppLocalizations.of(context).productCouldNotBeRefreshed),
           ),
         );
       }
@@ -95,8 +93,9 @@ class _StartScreenState extends State<StartScreen> {
 
     if (difference.inDays == 0) return '${loc.today}, $time';
     if (difference.inDays == 1) return '${loc.yesterday}, $time';
-    if (difference.inDays < 7)
+    if (difference.inDays < 7) {
       return '${loc.daysAgo(difference.inDays)}, $time';
+    }
 
     final y = date.year;
     final mo = date.month.toString().padLeft(2, '0');
@@ -279,40 +278,78 @@ class _StartScreenState extends State<StartScreen> {
                           itemBuilder: (context, index) {
                             final scan = _recentScans[index];
                             final isHalal = scan['isHalal'] as bool;
+                            final barcode = scan['barcode'] as String;
 
-                            return Card(
-                              margin: const EdgeInsets.only(bottom: 8),
-                              child: ListTile(
-                                leading: Container(
-                                  width: 16,
-                                  height: 16,
-                                  decoration: BoxDecoration(
-                                    color: isHalal ? _green : Colors.red,
-                                    shape: BoxShape.circle,
-                                  ),
+                            return Dismissible(
+                              key: ValueKey(barcode),
+                              direction: DismissDirection.endToStart,
+                              background: Container(
+                                alignment: Alignment.centerRight,
+                                padding: const EdgeInsets.only(right: 20),
+                                margin: const EdgeInsets.only(bottom: 8),
+                                decoration: BoxDecoration(
+                                  color: Colors.red.shade400,
+                                  borderRadius: BorderRadius.circular(12),
                                 ),
-                                title: Text(
-                                  scan['productName'] as String,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                subtitle: Text(
-                                  '${localizations.lastScanned}: ${_formatDate(scan['timestamp'] as int)}',
-                                ),
-                                trailing: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    IconButton(
-                                      icon: const Icon(Icons.refresh),
-                                      color: _green,
-                                      tooltip: localizations.recheck,
-                                      onPressed: () =>
-                                          _openResult(scan, recheck: true),
+                                child: const Icon(Icons.delete_outline, color: Colors.white),
+                              ),
+                              onDismissed: (_) async {
+                                final removed = scan;
+                                final messenger = ScaffoldMessenger.of(context);
+                                setState(() => _recentScans.removeAt(index));
+                                await DatabaseService.instance.deleteScan(barcode);
+                                if (!mounted) return;
+                                messenger.showSnackBar(
+                                  SnackBar(
+                                    content: Text(localizations.deletedFromHistory),
+                                    action: SnackBarAction(
+                                      label: localizations.undo,
+                                      onPressed: () async {
+                                        await DatabaseService.instance.insertScan(
+                                          barcode: removed['barcode'] as String,
+                                          productName: removed['productName'] as String,
+                                          isHalal: removed['isHalal'] as bool,
+                                        );
+                                        await _loadRecentScans();
+                                      },
                                     ),
-                                    const Icon(Icons.chevron_right),
-                                  ],
+                                  ),
+                                );
+                              },
+                              child: Card(
+                                margin: const EdgeInsets.only(bottom: 8),
+                                child: ListTile(
+                                  leading: Container(
+                                    width: 16,
+                                    height: 16,
+                                    decoration: BoxDecoration(
+                                      color: isHalal ? _green : Colors.red,
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                  title: Text(
+                                    scan['productName'] as String,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  subtitle: Text(
+                                    '${localizations.lastScanned}: ${_formatDate(scan['timestamp'] as int)}',
+                                  ),
+                                  trailing: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      IconButton(
+                                        icon: const Icon(Icons.refresh),
+                                        color: _green,
+                                        tooltip: localizations.recheck,
+                                        onPressed: () =>
+                                            _openResult(scan, recheck: true),
+                                      ),
+                                      const Icon(Icons.chevron_right),
+                                    ],
+                                  ),
+                                  onTap: () => _openResult(scan),
                                 ),
-                                onTap: () => _openResult(scan),
                               ),
                             );
                           },

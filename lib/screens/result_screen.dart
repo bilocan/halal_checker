@@ -28,10 +28,48 @@ class _ResultScreenState extends State<ResultScreen> {
   bool _isLoadingFeedback = false;
   bool _isRefreshing = false;
 
+  // Pre-computed once in initState to avoid regex work during build.
+  Set<String> _foundInText = {};
+  Set<String> _flaggedByAnalysis = {};
+
   @override
   void initState() {
     super.initState();
     _loadFeedbacks();
+    _computeTransparency();
+  }
+
+  void _computeTransparency() {
+    final product = widget.product;
+    if (product == null) return;
+
+    final foundInText = <String>{};
+    final flaggedByAnalysis = <String>{};
+
+    for (final ingredient in product.ingredients) {
+      final lower = ingredient.toLowerCase();
+      for (final kw in ProductService.haramKeywords.keys) {
+        if (ProductService.matchesKeyword(lower, kw)) foundInText.add(kw);
+      }
+      for (final kw in ProductService.suspiciousKeywords.keys) {
+        if (ProductService.matchesKeyword(lower, kw)) foundInText.add(kw);
+      }
+    }
+    for (final flagged in [
+      ...product.haramIngredients,
+      ...product.suspiciousIngredients,
+    ]) {
+      final lower = flagged.toLowerCase();
+      for (final kw in ProductService.haramKeywords.keys) {
+        if (ProductService.matchesKeyword(lower, kw)) flaggedByAnalysis.add(kw);
+      }
+      for (final kw in ProductService.suspiciousKeywords.keys) {
+        if (ProductService.matchesKeyword(lower, kw)) flaggedByAnalysis.add(kw);
+      }
+    }
+
+    _foundInText = foundInText;
+    _flaggedByAnalysis = flaggedByAnalysis;
   }
 
   Future<void> _loadFeedbacks() async {
@@ -271,7 +309,7 @@ class _ResultScreenState extends State<ResultScreen> {
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(12),
-                    child: _buildProductImage(product),
+                    child: _buildProductImage(product, loc),
                   ),
                 )
               else
@@ -315,7 +353,7 @@ class _ResultScreenState extends State<ResultScreen> {
                     loc.ingredients,
                   ),
                 if (product.imageNutritionUrl != null)
-                  _buildLabelledImage(product.imageNutritionUrl!, 'Nutrition'),
+                  _buildLabelledImage(product.imageNutritionUrl!, loc.nutritionLabel),
                 const SizedBox(height: 24),
               ],
               Align(
@@ -598,42 +636,16 @@ class _ResultScreenState extends State<ResultScreen> {
   }
 
   Widget _buildTransparencySection(Product product, AppLocalizations loc) {
-    // Keywords found anywhere in the ingredient text
-    final foundInText = <String>{};
-    // Keywords that were actually flagged by the analysis
-    final flaggedByAnalysis = <String>{};
-
-    for (final ingredient in product.ingredients) {
-      final lower = ingredient.toLowerCase();
-      for (final kw in ProductService.haramKeywords.keys) {
-        if (ProductService.matchesKeyword(lower, kw)) foundInText.add(kw);
-      }
-      for (final kw in ProductService.suspiciousKeywords.keys) {
-        if (ProductService.matchesKeyword(lower, kw)) foundInText.add(kw);
-      }
-    }
-    for (final flagged in [
-      ...product.haramIngredients,
-      ...product.suspiciousIngredients,
-    ]) {
-      final lower = flagged.toLowerCase();
-      for (final kw in ProductService.haramKeywords.keys) {
-        if (ProductService.matchesKeyword(lower, kw)) flaggedByAnalysis.add(kw);
-      }
-      for (final kw in ProductService.suspiciousKeywords.keys) {
-        if (ProductService.matchesKeyword(lower, kw)) flaggedByAnalysis.add(kw);
-      }
-    }
-
     // 3 states: flagged (red/orange) | found but cleared (amber) | not found (grey)
+    // _foundInText and _flaggedByAnalysis are pre-computed in initState.
     Widget keywordChip(
       String kw,
       String reason,
       Color flaggedColor,
       IconData flaggedIcon,
     ) {
-      final isFlagged = flaggedByAnalysis.contains(kw);
-      final isFoundOnly = !isFlagged && foundInText.contains(kw);
+      final isFlagged = _flaggedByAnalysis.contains(kw);
+      final isFoundOnly = !isFlagged && _foundInText.contains(kw);
 
       final Color bg = isFlagged
           ? flaggedColor
@@ -668,8 +680,8 @@ class _ResultScreenState extends State<ResultScreen> {
       );
     }
 
-    final hasAnyAmber = foundInText.any(
-      (kw) => !flaggedByAnalysis.contains(kw),
+    final hasAnyAmber = _foundInText.any(
+      (kw) => !_flaggedByAnalysis.contains(kw),
     );
 
     return Card(
@@ -855,20 +867,20 @@ class _ResultScreenState extends State<ResultScreen> {
     );
   }
 
-  Widget _buildProductImage(Product product) {
+  Widget _buildProductImage(Product product, AppLocalizations loc) {
     final imageUrls = [
       product.imageFrontUrl,
       product.imageUrl,
     ].where((url) => url != null && url.isNotEmpty).cast<String>().toList();
 
     if (imageUrls.isEmpty) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.image_not_supported, size: 48, color: Colors.grey),
-            SizedBox(height: 8),
-            Text('Image not available', style: TextStyle(color: Colors.grey)),
+            const Icon(Icons.image_not_supported, size: 48, color: Colors.grey),
+            const SizedBox(height: 8),
+            Text(loc.imageNotAvailable, style: const TextStyle(color: Colors.grey)),
           ],
         ),
       );
@@ -900,19 +912,19 @@ class _ResultScreenState extends State<ResultScreen> {
                   child: Image.network(
                     imageUrls[1],
                     fit: BoxFit.contain,
-                    errorBuilder: (_, _, _) => const Center(
+                    errorBuilder: (_, _, _) => Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(
+                          const Icon(
                             Icons.image_not_supported,
                             size: 48,
                             color: Colors.grey,
                           ),
-                          SizedBox(height: 8),
+                          const SizedBox(height: 8),
                           Text(
-                            'Image not available',
-                            style: TextStyle(color: Colors.grey),
+                            loc.imageNotAvailable,
+                            style: const TextStyle(color: Colors.grey),
                           ),
                         ],
                       ),
@@ -920,19 +932,19 @@ class _ResultScreenState extends State<ResultScreen> {
                   ),
                 );
               }
-              return const Center(
+              return Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.image_not_supported,
                       size: 48,
                       color: Colors.grey,
                     ),
-                    SizedBox(height: 8),
+                    const SizedBox(height: 8),
                     Text(
-                      'Image not available',
-                      style: TextStyle(color: Colors.grey),
+                      loc.imageNotAvailable,
+                      style: const TextStyle(color: Colors.grey),
                     ),
                   ],
                 ),
@@ -1118,6 +1130,7 @@ class _ResultScreenState extends State<ResultScreen> {
 
     await showDialog<void>(
       context: context,
+      barrierDismissible: false,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
           title: Text(loc.provideFeedback),
@@ -1133,6 +1146,7 @@ class _ResultScreenState extends State<ResultScreen> {
                 TextField(
                   controller: feedbackController,
                   maxLines: 3,
+                  maxLength: 500,
                   onChanged: (_) => setDialogState(() {}),
                   decoration: InputDecoration(
                     hintText: loc.feedbackInputHint,
@@ -1153,7 +1167,9 @@ class _ResultScreenState extends State<ResultScreen> {
                           if (result != null) {
                             setDialogState(() {
                               selectedFiles.addAll(
-                                result.files.map((f) => f.path!),
+                                result.files
+                                    .map((f) => f.path)
+                                    .whereType<String>(),
                               );
                             });
                           }
@@ -1217,67 +1233,91 @@ class _ResultScreenState extends State<ResultScreen> {
         ),
       ),
     );
+    feedbackController.dispose();
   }
 
   Future<void> _showProducerReplyDialog(String feedbackId) async {
     final loc = AppLocalizations.of(context);
-    final TextEditingController replyController = TextEditingController();
 
-    await showDialog<void>(
+    // Warn users that producer replies are unverified before proceeding.
+    final confirmed = await showDialog<bool>(
       context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) {
-          replyController.addListener(() => setDialogState(() {}));
-          return AlertDialog(
-            title: Text(loc.replyAsProducer),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(loc.replyDialogHint, style: const TextStyle(fontSize: 14)),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: replyController,
-                  maxLines: 3,
-                  decoration: InputDecoration(
-                    hintText: loc.replyInputHint,
-                    border: const OutlineInputBorder(),
-                  ),
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: Text(loc.cancel),
-              ),
-              ElevatedButton(
-                onPressed: replyController.text.trim().isEmpty
-                    ? null
-                    : () async {
-                        final navigator = Navigator.of(ctx);
-                        final messenger = ScaffoldMessenger.of(context);
-                        try {
-                          await _feedbackService.addProducerReply(
-                            feedbackId,
-                            replyController.text.trim(),
-                          );
-                          navigator.pop();
-                          messenger.showSnackBar(
-                            SnackBar(content: Text(loc.replySubmitted)),
-                          );
-                          await _loadFeedbacks();
-                        } catch (e) {
-                          messenger.showSnackBar(
-                            SnackBar(content: Text(loc.couldNotSubmitReply)),
-                          );
-                        }
-                      },
-                child: Text(loc.submitReply),
-              ),
-            ],
-          );
-        },
+      builder: (ctx) => AlertDialog(
+        title: Text(loc.producerReplyWarningTitle),
+        content: Text(loc.producerReplyWarning),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(loc.cancel),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(loc.proceedAnyway),
+          ),
+        ],
       ),
     );
+    if (confirmed != true || !mounted) return;
+
+    final TextEditingController replyController = TextEditingController();
+
+    // Use ValueListenableBuilder instead of StatefulBuilder + addListener to
+    // avoid accumulating duplicate listeners on every rebuild.
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(loc.replyAsProducer),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(loc.replyDialogHint, style: const TextStyle(fontSize: 14)),
+            const SizedBox(height: 16),
+            TextField(
+              controller: replyController,
+              maxLines: 3,
+              maxLength: 500,
+              decoration: InputDecoration(
+                hintText: loc.replyInputHint,
+                border: const OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(loc.cancel),
+          ),
+          ValueListenableBuilder<TextEditingValue>(
+            valueListenable: replyController,
+            builder: (_, value, _) => ElevatedButton(
+              onPressed: value.text.trim().isEmpty
+                  ? null
+                  : () async {
+                      final navigator = Navigator.of(ctx);
+                      final messenger = ScaffoldMessenger.of(context);
+                      try {
+                        await _feedbackService.addProducerReply(
+                          feedbackId,
+                          replyController.text.trim(),
+                        );
+                        navigator.pop();
+                        messenger.showSnackBar(
+                          SnackBar(content: Text(loc.replySubmitted)),
+                        );
+                        await _loadFeedbacks();
+                      } catch (e) {
+                        messenger.showSnackBar(
+                          SnackBar(content: Text(loc.couldNotSubmitReply)),
+                        );
+                      }
+                    },
+              child: Text(loc.submitReply),
+            ),
+          ),
+        ],
+      ),
+    );
+    replyController.dispose();
   }
 }

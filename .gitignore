@@ -1,6 +1,9 @@
 # Local secret defines (never commit)
 dart_defines.json
 
+# Android signing credentials (never commit)
+android/key.properties
+
 # Miscellaneous
 *.class
 *.log
