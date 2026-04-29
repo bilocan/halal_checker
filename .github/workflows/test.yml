@@ -47,6 +47,9 @@ jobs:
           channel: stable
           cache: true
 
+      - name: Install CMake via SDK Manager
+        run: yes | sudo ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager "cmake;3.30.5"
+
       - name: Install dependencies
         run: flutter pub get
 
