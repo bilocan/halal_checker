@@ -50,6 +50,9 @@ jobs:
       - name: Install CMake via SDK Manager
         run: yes | sudo ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager "cmake;3.30.5"
 
+      - name: Create Android config directory
+        run: mkdir -p ~/.config/.android
+
       - name: Install dependencies
         run: flutter pub get
 
