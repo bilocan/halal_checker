@@ -50,10 +50,11 @@ jobs:
       - name: Install CMake via SDK Manager
         run: yes | sudo ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager "cmake;3.30.5"
 
-      - name: Create Android config directories
+      - name: Fix Android keystore directories
         run: |
+          sudo mkdir -p /home/runner/.config/.android
+          sudo chown -R runner:runner /home/runner/.config
           mkdir -p ~/.android
-          mkdir -p ~/.config/.android
 
       - name: Install dependencies
         run: flutter pub get
