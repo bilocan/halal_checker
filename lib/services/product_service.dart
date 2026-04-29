@@ -8,16 +8,20 @@ import 'keyword_service.dart';
 import 'test_product_repository.dart';
 
 class ProductService {
+  static final ProductService _instance = ProductService._internal();
+  ProductService._internal();
+  factory ProductService() => _instance;
+
   static const String _baseUrl =
       'https://world.openfoodfacts.org/api/v0/product';
 
   final CacheService _cache = CacheService();
   final KeywordService _keywordService = KeywordService();
 
-  Map<String, String> _customHaramKeywords = {};
-  Map<String, String> _customSuspiciousKeywords = {};
-  Map<String, List<String>> _customHaramVariants = {};
-  Map<String, List<String>> _customSuspiciousVariants = {};
+  final Map<String, String> _customHaramKeywords = {};
+  final Map<String, String> _customSuspiciousKeywords = {};
+  final Map<String, List<String>> _customHaramVariants = {};
+  final Map<String, List<String>> _customSuspiciousVariants = {};
   bool _customKeywordsLoaded = false;
 
   Future<void> _loadCustomKeywords() async {
@@ -433,7 +437,9 @@ class ProductService {
 
     // Step 3: Fallback — fetch directly from OpenFoodFacts
     try {
-      final response = await http.get(Uri.parse('$_baseUrl/$barcode.json'));
+      final response = await http
+          .get(Uri.parse('$_baseUrl/$barcode.json'))
+          .timeout(const Duration(seconds: 15));
 
       if (response.statusCode != 200) {
         throw Exception('HTTP ${response.statusCode}');

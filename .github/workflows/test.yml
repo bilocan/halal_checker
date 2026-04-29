@@ -28,7 +28,13 @@ jobs:
         run: flutter analyze --no-fatal-infos
 
       - name: Run tests
-        run: flutter test test/services/ --reporter=github
+        run: flutter test test/services/ --coverage --reporter=github
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: coverage/lcov.info
+          fail_ci_if_error: false
 
   # ── Android APK ──────────────────────────────────────────────────────────────
   build-android:
