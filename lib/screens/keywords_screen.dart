@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
+import '../app_colors.dart';
 import '../localization/app_localizations.dart';
 import '../services/keyword_service.dart';
 import '../services/product_service.dart';
-
-const _green = Color(0xFF2E7D32);
-const _amber = Color(0xFFF57F17);
 
 class KeywordsScreen extends StatefulWidget {
   const KeywordsScreen({super.key});
@@ -77,7 +75,7 @@ class _KeywordsScreenState extends State<KeywordsScreen> {
                   _KeywordList(
                     builtIn: ProductService.suspiciousKeywords,
                     custom: _customSuspicious,
-                    color: _amber,
+                    color: kAmber,
                     icon: Icons.warning_amber_rounded,
                   ),
                 ],
@@ -280,7 +278,7 @@ class _SuggestKeywordSheetState extends State<_SuggestKeywordSheet> {
                     children: [
                       Icon(
                         Icons.warning_amber_rounded,
-                        color: _amber,
+                        color: kAmber,
                         size: 18,
                       ),
                       const SizedBox(width: 8),

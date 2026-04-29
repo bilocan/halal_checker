@@ -1,15 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import '../app_colors.dart';
 import '../localization/app_localizations.dart';
 import '../models/product.dart';
 import '../models/feedback.dart';
 import '../services/feedback_service.dart';
 import '../services/product_service.dart';
-
-const _green = Color(0xFF2E7D32);
-const _greenMid = Color(0xFF388E3C);
-const _greenLight = Color(0xFFA5D6A7);
-const _greenSurface = Color(0xFFE8F5E9);
 
 class ResultScreen extends StatefulWidget {
   final Product? product;
@@ -146,7 +142,7 @@ class _ResultScreenState extends State<ResultScreen> {
       return Scaffold(
         appBar: AppBar(
           title: Text(loc.resultTitle),
-          backgroundColor: _green,
+          backgroundColor: kGreen,
           foregroundColor: Colors.white,
         ),
         body: Center(
@@ -179,7 +175,7 @@ class _ResultScreenState extends State<ResultScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(loc.resultTitle),
-        backgroundColor: _green,
+        backgroundColor: kGreen,
         foregroundColor: Colors.white,
         actions: [
           if (_isRefreshing)
@@ -213,7 +209,7 @@ class _ResultScreenState extends State<ResultScreen> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: isHalal ? _green : Colors.red,
+                  color: isHalal ? kGreen : Colors.red,
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Column(
@@ -353,7 +349,10 @@ class _ResultScreenState extends State<ResultScreen> {
                     loc.ingredients,
                   ),
                 if (product.imageNutritionUrl != null)
-                  _buildLabelledImage(product.imageNutritionUrl!, loc.nutritionLabel),
+                  _buildLabelledImage(
+                    product.imageNutritionUrl!,
+                    loc.nutritionLabel,
+                  ),
                 const SizedBox(height: 24),
               ],
               Align(
@@ -392,7 +391,7 @@ class _ResultScreenState extends State<ResultScreen> {
                             ? Colors.red
                             : fattyAlcohol
                             ? Colors.blue.shade400
-                            : _green,
+                            : kGreen,
                       ),
                       title: Text(ingredient),
                       subtitle: warning != null
@@ -537,9 +536,9 @@ class _ResultScreenState extends State<ResultScreen> {
                             Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: _greenSurface,
+                                color: kGreenSurface,
                                 borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: _greenLight),
+                                border: Border.all(color: kGreenLight),
                               ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -549,14 +548,14 @@ class _ResultScreenState extends State<ResultScreen> {
                                       const Icon(
                                         Icons.business,
                                         size: 16,
-                                        color: _green,
+                                        color: kGreen,
                                       ),
                                       const SizedBox(width: 4),
                                       Text(
                                         loc.producerReply,
                                         style: TextStyle(
                                           fontWeight: FontWeight.bold,
-                                          color: _greenMid,
+                                          color: kGreenMid,
                                         ),
                                       ),
                                       const Spacer(),
@@ -586,7 +585,7 @@ class _ResultScreenState extends State<ResultScreen> {
                                 icon: const Icon(Icons.reply, size: 16),
                                 label: Text(loc.replyAsProducer),
                                 style: TextButton.styleFrom(
-                                  foregroundColor: _greenMid,
+                                  foregroundColor: kGreenMid,
                                 ),
                               ),
                             ),
@@ -601,7 +600,7 @@ class _ResultScreenState extends State<ResultScreen> {
                 width: double.infinity,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: _green,
+                    backgroundColor: kGreen,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
@@ -617,8 +616,8 @@ class _ResultScreenState extends State<ResultScreen> {
                 width: double.infinity,
                 child: OutlinedButton(
                   style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: _green),
-                    foregroundColor: _green,
+                    side: const BorderSide(color: kGreen),
+                    foregroundColor: kGreen,
                     padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
                   onPressed: () => _showFeedbackDialog(context),
@@ -880,7 +879,10 @@ class _ResultScreenState extends State<ResultScreen> {
           children: [
             const Icon(Icons.image_not_supported, size: 48, color: Colors.grey),
             const SizedBox(height: 8),
-            Text(loc.imageNotAvailable, style: const TextStyle(color: Colors.grey)),
+            Text(
+              loc.imageNotAvailable,
+              style: const TextStyle(color: Colors.grey),
+            ),
           ],
         ),
       );
@@ -1061,15 +1063,15 @@ class _ResultScreenState extends State<ResultScreen> {
     switch (label) {
       case 'Vegan':
         return Chip(
-          avatar: const Icon(Icons.eco, size: 18, color: _green),
+          avatar: const Icon(Icons.eco, size: 18, color: kGreen),
           label: const Text('Vegan'),
-          backgroundColor: _greenSurface,
+          backgroundColor: kGreenSurface,
         );
       case 'Vegetarian':
         return Chip(
-          avatar: const Icon(Icons.grass, size: 18, color: _green),
+          avatar: const Icon(Icons.grass, size: 18, color: kGreen),
           label: const Text('Vegetarian'),
-          backgroundColor: _greenSurface,
+          backgroundColor: kGreenSurface,
         );
       case 'Fair Trade':
         return Chip(
