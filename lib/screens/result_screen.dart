@@ -232,7 +232,11 @@ class _ResultScreenState extends State<ResultScreen> {
                     Text(
                       product.explanation.isNotEmpty
                           ? product.explanation
-                          : _halalReasonText(isHalal, suspiciousIngredients, loc),
+                          : _halalReasonText(
+                              isHalal,
+                              suspiciousIngredients,
+                              loc,
+                            ),
                       style: const TextStyle(color: Colors.white, fontSize: 14),
                       textAlign: TextAlign.center,
                     ),
