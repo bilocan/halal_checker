@@ -63,7 +63,7 @@ class AuthService {
     try {
       await Supabase.instance.client.auth.signInWithOAuth(
         OAuthProvider.google,
-        redirectTo: 'com.halal_checker.app://callback',
+        redirectTo: 'com.halal_checker.app://callback/',
       );
       return true;
     } catch (e) {
