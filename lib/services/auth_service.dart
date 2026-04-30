@@ -41,10 +41,15 @@ class AuthService {
         anonKey: AppConfig.supabaseAnonKey,
       );
       _initialized = true;
-      Supabase.instance.client.auth.onAuthStateChange.listen(
-        _authController.add,
-        onError: _authController.addError,
-      );
+      Supabase.instance.client.auth.onAuthStateChange.listen((state) async {
+        _authController.add(state);
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool(
+          _sessionKey,
+          state.event == AuthChangeEvent.signedIn ||
+              state.event == AuthChangeEvent.tokenRefreshed,
+        );
+      }, onError: _authController.addError);
       return true;
     } catch (e) {
       debugPrint('Supabase initialization failed: $e');
@@ -60,8 +65,6 @@ class AuthService {
         OAuthProvider.google,
         redirectTo: 'com.halal_checker.app://callback',
       );
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool(_sessionKey, true);
       return true;
     } catch (e) {
       debugPrint('Google OAuth Sign In error: $e');
