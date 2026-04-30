@@ -3,19 +3,31 @@ import 'package:http/http.dart' as http;
 import '../config.dart';
 
 class KeywordService {
+  final http.Client _client;
+  final bool _hasSupabase;
+  final String _supabaseUrl;
+  final String _anonKey;
+
+  KeywordService({
+    http.Client? client,
+    bool? hasSupabase,
+    String? supabaseUrl,
+    String? anonKey,
+  }) : _client = client ?? http.Client(),
+       _hasSupabase = hasSupabase ?? AppConfig.hasSupabase,
+       _supabaseUrl = supabaseUrl ?? AppConfig.supabaseUrl,
+       _anonKey = anonKey ?? AppConfig.supabaseAnonKey;
+
   Future<List<Map<String, dynamic>>> fetchCustomKeywords() async {
-    if (!AppConfig.hasSupabase) return [];
+    if (!_hasSupabase) return [];
     try {
-      final response = await http
+      final response = await _client
           .get(
             Uri.parse(
-              '${AppConfig.supabaseUrl}/rest/v1/keywords'
+              '$_supabaseUrl/rest/v1/keywords'
               '?select=canonical,reason,category,variants',
             ),
-            headers: {
-              'apikey': AppConfig.supabaseAnonKey,
-              'Authorization': 'Bearer ${AppConfig.supabaseAnonKey}',
-            },
+            headers: {'apikey': _anonKey, 'Authorization': 'Bearer $_anonKey'},
           )
           .timeout(const Duration(seconds: 10));
       if (response.statusCode != 200) return [];
@@ -32,14 +44,14 @@ class KeywordService {
     required String category,
     required String reason,
   }) async {
-    if (!AppConfig.hasSupabase) return false;
+    if (!_hasSupabase) return false;
     try {
-      final response = await http
+      final response = await _client
           .post(
-            Uri.parse('${AppConfig.supabaseUrl}/rest/v1/keyword_suggestions'),
+            Uri.parse('$_supabaseUrl/rest/v1/keyword_suggestions'),
             headers: {
-              'apikey': AppConfig.supabaseAnonKey,
-              'Authorization': 'Bearer ${AppConfig.supabaseAnonKey}',
+              'apikey': _anonKey,
+              'Authorization': 'Bearer $_anonKey',
               'Content-Type': 'application/json',
               'Prefer': 'return=minimal',
             },
