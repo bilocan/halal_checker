@@ -16,29 +16,74 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final ProductService _productService = ProductService();
-  final MobileScannerController _scannerController = MobileScannerController(
-    detectionSpeed: DetectionSpeed.normal,
-    formats: const [
-      BarcodeFormat.ean8,
-      BarcodeFormat.ean13,
-      BarcodeFormat.upcA,
-      BarcodeFormat.upcE,
-      BarcodeFormat.code128,
-      BarcodeFormat.code39,
-      BarcodeFormat.code93,
-      BarcodeFormat.itf14,
-      BarcodeFormat.codabar,
-      BarcodeFormat.dataMatrix,
-      BarcodeFormat.qrCode,
-      BarcodeFormat.pdf417,
-      BarcodeFormat.aztec,
-    ],
-    facing: CameraFacing.back,
-    torchEnabled: false,
-  );
+  MobileScannerController? _scannerController;
   final TextEditingController _barcodeController = TextEditingController();
   bool _isLoading = false;
   bool _scanned = false;
+  bool _scannerInitialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeScanner();
+  }
+
+  Future<void> _initializeScanner() async {
+    try {
+      // Try to initialize scanner - this may fail on devices without Google Play Services
+      _scannerController = MobileScannerController(
+        detectionSpeed: DetectionSpeed.normal,
+        formats: const [
+          BarcodeFormat.ean8,
+          BarcodeFormat.ean13,
+          BarcodeFormat.upcA,
+          BarcodeFormat.upcE,
+          BarcodeFormat.code128,
+          BarcodeFormat.code39,
+          BarcodeFormat.code93,
+          BarcodeFormat.itf14,
+          BarcodeFormat.codabar,
+          BarcodeFormat.dataMatrix,
+          BarcodeFormat.qrCode,
+          BarcodeFormat.pdf417,
+          BarcodeFormat.aztec,
+        ],
+        facing: CameraFacing.back,
+        torchEnabled: false,
+      );
+      _scannerInitialized = true;
+      if (mounted) setState(() {});
+    } catch (e, stackTrace) {
+      print('Scanner initialization failed: $e');
+      print('Stack trace: $stackTrace');
+      // Scanner failed to initialize - app will work with manual entry only
+      _scannerInitialized = false;
+      if (mounted) setState(() {});
+    }
+  }
+
+  Widget _buildScannerWidget() {
+    try {
+      if (_scannerController == null) {
+        return Container(color: Colors.black);
+      }
+      return MobileScanner(
+        controller: _scannerController!,
+        onDetect: _onDetect,
+      );
+    } catch (e) {
+      print('Scanner widget failed: $e');
+      // If scanner widget fails, show fallback
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {
+            _scannerInitialized = false;
+          });
+        }
+      });
+      return Container(color: Colors.black);
+    }
+  }
 
   bool _isValidBarcode(String value) {
     final code = value.trim();
@@ -166,7 +211,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void dispose() {
-    _scannerController.dispose();
+    _scannerController?.dispose();
     _barcodeController.dispose();
     super.dispose();
   }
@@ -175,6 +220,59 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context);
 
+    // If scanner failed to initialize, show manual entry screen
+    if (!_scannerInitialized) {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text(loc.appTitle),
+          backgroundColor: kGreen,
+          foregroundColor: Colors.white,
+        ),
+        body: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.camera_alt,
+                size: 80,
+                color: Colors.grey,
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'Camera scanner unavailable',
+                style: Theme.of(context).textTheme.headlineSmall,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'Please enter barcode manually',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Colors.grey,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 40),
+              ElevatedButton.icon(
+                onPressed: _showManualEntryDialog,
+                icon: const Icon(Icons.edit),
+                label: Text(loc.manualEntry),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: kGreen,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 32,
+                    vertical: 16,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Normal scanner UI
     return Scaffold(
       appBar: AppBar(
         title: Text(loc.appTitle),
@@ -185,10 +283,7 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           Semantics(
             label: 'Barcode scanner camera view',
-            child: MobileScanner(
-              controller: _scannerController,
-              onDetect: _onDetect,
-            ),
+            child: _buildScannerWidget(),
           ),
           Center(
             child: Container(
