@@ -132,7 +132,17 @@ class _KeywordsScreenState extends State<KeywordsScreen> {
                           onPressed: () async {
                             Navigator.pop(context);
                             try {
-                              await AuthService.signInWithGoogle();
+                              final success = await AuthService.signInWithGoogle();
+                              if (!success && mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'Sign-in failed. Please try again.',
+                                    ),
+                                    duration: Duration(seconds: 3),
+                                  ),
+                                );
+                              }
                             } catch (_) {}
                           },
                         ),

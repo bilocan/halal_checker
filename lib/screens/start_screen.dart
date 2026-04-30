@@ -161,7 +161,17 @@ class _StartScreenState extends State<StartScreen> {
   Future<void> _signIn(BuildContext context) async {
     final messenger = ScaffoldMessenger.of(context);
     try {
-      await AuthService.signInWithGoogle();
+      final success = await AuthService.signInWithGoogle();
+      if (!success && mounted) {
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Sign-in failed. Please try again.',
+            ),
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
     } catch (e) {
       if (!mounted) return;
       messenger.showSnackBar(
