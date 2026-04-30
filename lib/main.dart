@@ -121,10 +121,7 @@ class _ErrorBoundaryState extends State<ErrorBoundary> {
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 SizedBox(height: 10),
-                Text(
-                  'Please restart the app.',
-                  textAlign: TextAlign.center,
-                ),
+                Text('Please restart the app.', textAlign: TextAlign.center),
               ],
             ),
           ),
@@ -137,9 +134,7 @@ class _ErrorBoundaryState extends State<ErrorBoundary> {
   Widget build(BuildContext context) {
     if (_hasError) {
       return const Scaffold(
-        body: Center(
-          child: Text('An error occurred. Please restart the app.'),
-        ),
+        body: Center(child: Text('An error occurred. Please restart the app.')),
       );
     }
 

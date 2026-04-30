@@ -132,7 +132,8 @@ class _KeywordsScreenState extends State<KeywordsScreen> {
                           onPressed: () async {
                             Navigator.pop(context);
                             try {
-                              final success = await AuthService.signInWithGoogle();
+                              final success =
+                                  await AuthService.signInWithGoogle();
                               if (!success && mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(

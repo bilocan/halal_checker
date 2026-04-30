@@ -41,8 +41,10 @@ class AuthService {
         anonKey: AppConfig.supabaseAnonKey,
       );
       _initialized = true;
-      Supabase.instance.client.auth.onAuthStateChange
-          .listen(_authController.add, onError: _authController.addError);
+      Supabase.instance.client.auth.onAuthStateChange.listen(
+        _authController.add,
+        onError: _authController.addError,
+      );
       return true;
     } catch (e) {
       debugPrint('Supabase initialization failed: $e');
