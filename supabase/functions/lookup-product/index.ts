@@ -41,6 +41,18 @@ const HARAM_ENTRIES: [string, string, ...string[]][] = [
    'wine', 'wein', 'vin', 'vino', 'şarap', 'wijn', 'vinho'],
   ['beer',       'Contains alcohol or alcohol-derived ingredient',
    'beer', 'bier', 'bière', 'birra', 'cerveza', 'bira', 'cerveja'],
+  ['cognac',    'Contains cognac (alcoholic spirit)',   'cognac', 'kognak'],
+  ['brandy',    'Contains brandy (alcoholic spirit)',   'brandy', 'branntwein', 'brandewijn'],
+  ['whisky',    'Contains whisky (alcoholic spirit)',   'whisky', 'whiskey', 'whiskie', 'viski'],
+  ['vodka',     'Contains vodka (alcoholic spirit)',    'vodka', 'wodka'],
+  ['rum',       'Contains rum (alcoholic spirit)',      'rum', 'rhum', 'ron'],
+  ['gin',       'Contains gin (alcoholic spirit)',      'gin'],
+  ['liqueur',   'Contains liqueur (alcoholic)',         'liqueur', 'likör', 'licor', 'likeur', 'liquore'],
+  ['schnapps',  'Contains schnapps (alcoholic spirit)', 'schnapps', 'schnaps'],
+  ['champagne', 'Contains champagne (alcoholic)',       'champagne', 'sekt', 'cava', 'spumante'],
+  ['prosecco',  'Contains prosecco (alcoholic)',        'prosecco'],
+  ['bourbon',   'Contains bourbon (alcoholic spirit)',  'bourbon'],
+  ['sake',      'Contains sake (alcoholic)',            'sake', 'saké'],
   ['pork',       'Contains pork or pork-derived ingredient',
    'pork', 'schwein', 'schweinefleisch', 'porc', 'maiale', 'cerdo',
    'domuz', 'varkens', 'varkensvlees', 'porco'],
@@ -250,7 +262,8 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { barcode } = await req.json()
+    const body = await req.json()
+    const { barcode, force = false } = body
     if (!barcode || typeof barcode !== 'string') {
       return new Response(
         JSON.stringify({ error: 'barcode is required' }),
@@ -270,7 +283,7 @@ Deno.serve(async (req) => {
       .eq('barcode', barcode)
       .single()
 
-    if (cached) {
+    if (cached && !force) {
       const age = Date.now() - new Date(cached.fetched_at).getTime()
       if (age < CACHE_TTL_MS) {
         return new Response(
@@ -326,9 +339,17 @@ Deno.serve(async (req) => {
     addLabels(pd.labels_hierarchy); addLabels(pd.labels_en)
     const labels = [...labelSet]
 
+    // Category-based detection: OFf categories that unambiguously indicate alcohol
+    const HARAM_CATEGORIES = new Set([
+      'en:alcoholic-beverages', 'en:beers', 'en:wines',
+      'en:spirits', 'en:champagnes', 'en:ciders', 'en:sake',
+    ])
+    const rawCategories: string[] = Array.isArray(pd.categories_tags) ? pd.categories_tags : []
+    const haramCategory = rawCategories.find(c => HARAM_CATEGORIES.has(c.toLowerCase())) ?? null
+
     // 4. Claude analysis (with keyword fallback)
     let isHalal = false
-    let isUnknown = ingredients.length === 0
+    let isUnknown = ingredients.length === 0 && !haramCategory
     let haramIngredients: string[] = []
     let suspiciousIngredients: string[] = []
     let ingredientWarnings: Record<string, string> = {}
@@ -382,11 +403,32 @@ Deno.serve(async (req) => {
     // Keyword safety override: haram keywords always win over AI verdict.
     const kwCheck = keywordAnalysis(ingredients, customHaramEntries, customSuspiciousEntries)
     if (!kwCheck.isHalal && isHalal) {
-      isHalal           = false
-      isUnknown         = false
-      haramIngredients  = [...new Set([...haramIngredients, ...kwCheck.haram])]
+      isHalal            = false
+      isUnknown          = false
+      haramIngredients   = [...new Set([...haramIngredients, ...kwCheck.haram])]
       ingredientWarnings = { ...ingredientWarnings, ...kwCheck.warnings }
-      explanation       = kwCheck.explanation
+      explanation        = kwCheck.explanation
+    }
+
+    // Category-based override: known alcoholic categories always win.
+    if (haramCategory && isHalal) {
+      isHalal     = false
+      isUnknown   = false
+      explanation = `This product belongs to a category that is not permissible: ${haramCategory}.`
+    }
+
+    // Name-based fallback: when no ingredients were found, check the product
+    // name itself. Names like "Wieselburger Bier" or "Rosé Wine" contain haram
+    // keywords that make the verdict unambiguous without ingredient data.
+    if (isUnknown) {
+      const nameCheck = keywordAnalysis([name.toLowerCase()], customHaramEntries, customSuspiciousEntries)
+      if (!nameCheck.isHalal) {
+        isHalal            = false
+        isUnknown          = false
+        haramIngredients   = nameCheck.haram
+        ingredientWarnings = nameCheck.warnings
+        explanation        = `No ingredient list found, but the product name contains a haram indicator: ${nameCheck.haram.join(', ')}.`
+      }
     }
 
     // 5. Upsert to DB

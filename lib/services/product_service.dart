@@ -56,6 +56,18 @@ class ProductService {
     'ethanol': 'Contains alcohol or alcohol-derived ingredient',
     'wine': 'Contains alcohol or alcohol-derived ingredient',
     'beer': 'Contains alcohol or alcohol-derived ingredient',
+    'cognac': 'Contains cognac (alcoholic spirit)',
+    'brandy': 'Contains brandy (alcoholic spirit)',
+    'whisky': 'Contains whisky (alcoholic spirit)',
+    'vodka': 'Contains vodka (alcoholic spirit)',
+    'rum': 'Contains rum (alcoholic spirit)',
+    'gin': 'Contains gin (alcoholic spirit)',
+    'liqueur': 'Contains liqueur (alcoholic)',
+    'schnapps': 'Contains schnapps (alcoholic spirit)',
+    'champagne': 'Contains champagne (alcoholic)',
+    'prosecco': 'Contains prosecco (alcoholic)',
+    'bourbon': 'Contains bourbon (alcoholic spirit)',
+    'sake': 'Contains sake (alcoholic)',
     'pork': 'Contains pork or pork-derived ingredient',
     'lard': 'Contains pork fat',
     'gelatin': 'Gelatin is typically animal-derived',
@@ -95,6 +107,18 @@ class ProductService {
     'ethanol': ['ethanol', 'äthanol', 'éthanol', 'etanolo', 'etanol'],
     'wine': ['wine', 'wein', 'vin', 'vino', 'şarap', 'wijn', 'vinho'],
     'beer': ['beer', 'bier', 'bière', 'birra', 'cerveza', 'bira', 'cerveja'],
+    'cognac': ['cognac', 'kognak'],
+    'brandy': ['brandy', 'branntwein', 'brandewijn'],
+    'whisky': ['whisky', 'whiskey', 'whiskie', 'viski'],
+    'vodka': ['vodka', 'wodka'],
+    'rum': ['rum', 'rhum', 'ron'],
+    'gin': ['gin'],
+    'liqueur': ['liqueur', 'likör', 'licor', 'likeur', 'liquore'],
+    'schnapps': ['schnapps', 'schnaps'],
+    'champagne': ['champagne', 'sekt', 'cava', 'spumante'],
+    'prosecco': ['prosecco'],
+    'bourbon': ['bourbon'],
+    'sake': ['sake', 'saké'],
     'pork': [
       'pork',
       'schwein',
@@ -389,12 +413,15 @@ class ProductService {
 
   Future<Product?> refreshProduct(String barcode) async {
     await _cache.removeProduct(barcode);
-    return getProduct(barcode);
+    return _getProduct(barcode, forceBackendRefresh: true);
   }
 
   // Try the Supabase Edge Function. Returns null on any failure so the caller
-  // can fall back to direct OpenFoodFacts + Claude.
-  Future<Product?> _fetchFromBackend(String barcode) async {
+  // can fall back to direct OpenFoodFacts + keyword analysis.
+  Future<Product?> _fetchFromBackend(
+    String barcode, {
+    bool force = false,
+  }) async {
     if (!AppConfig.hasSupabase) return null;
     try {
       final response = await http
@@ -404,7 +431,7 @@ class ProductService {
               'Authorization': 'Bearer ${AppConfig.supabaseAnonKey}',
               'Content-Type': 'application/json',
             },
-            body: jsonEncode({'barcode': barcode}),
+            body: jsonEncode({'barcode': barcode, if (force) 'force': true}),
           )
           .timeout(const Duration(seconds: 30));
       if (response.statusCode != 200) return null;
@@ -416,7 +443,13 @@ class ProductService {
     }
   }
 
-  Future<Product?> getProduct(String barcode) async {
+  Future<Product?> getProduct(String barcode) =>
+      _getProduct(barcode, forceBackendRefresh: false);
+
+  Future<Product?> _getProduct(
+    String barcode, {
+    required bool forceBackendRefresh,
+  }) async {
     await _loadCustomKeywords();
 
     // Step 0 (debug only): return fixture from test DB without touching cache/network
@@ -428,11 +461,16 @@ class ProductService {
     }
 
     // Step 1: Check local cache (fast path — no network)
-    final cached = await _cache.getProduct(barcode);
-    if (cached != null) return cached;
+    if (!forceBackendRefresh) {
+      final cached = await _cache.getProduct(barcode);
+      if (cached != null) return cached;
+    }
 
     // Step 2: Try backend (handles OFf + Claude + shared DB)
-    final backendProduct = await _fetchFromBackend(barcode);
+    final backendProduct = await _fetchFromBackend(
+      barcode,
+      force: forceBackendRefresh,
+    );
     if (backendProduct != null) {
       final safe = _applyKeywordSafety(backendProduct);
       await _cache.saveProduct(barcode, safe);
@@ -563,23 +601,74 @@ class ProductService {
           .where((e) => e.isNotEmpty)
           .toList();
 
-      final bool isUnknown = ingredients.isEmpty;
+      // OFf categories that unambiguously indicate an alcoholic product.
+      const haramCategories = {
+        'en:alcoholic-beverages',
+        'en:beers',
+        'en:wines',
+        'en:spirits',
+        'en:champagnes',
+        'en:ciders',
+        'en:sake',
+      };
+      final rawCategories = productData['categories_tags'];
+      final bool haramByCategory =
+          rawCategories is List &&
+          rawCategories.any(
+            (c) => haramCategories.contains(c.toString().toLowerCase()),
+          );
 
       final fallback = analyzeWithKeywords(ingredients);
 
-      final explanation = isUnknown
-          ? 'No ingredient data found. Halal status cannot be determined.'
-          : fallback.explanation;
+      // When no ingredients are available, check the product name itself.
+      // Names like "Wieselburger Bier" or "Rosé Wine" contain haram keywords
+      // that make the verdict unambiguous without needing ingredient data.
+      final nameCheck = ingredients.isEmpty
+          ? analyzeWithKeywords([name.toLowerCase()])
+          : null;
+
+      final bool isUnknown =
+          ingredients.isEmpty &&
+          (nameCheck?.isHalal ?? true) &&
+          !haramByCategory;
+      final List<String> haramIngredients = fallback.haram.isNotEmpty
+          ? fallback.haram
+          : (nameCheck?.haram ?? []);
+      final List<String> suspiciousIngredients = fallback.suspicious.isNotEmpty
+          ? fallback.suspicious
+          : (nameCheck?.suspicious ?? []);
+      final Map<String, String> ingredientWarnings =
+          fallback.warnings.isNotEmpty
+          ? fallback.warnings
+          : (nameCheck?.warnings ?? {});
+
+      final String explanation;
+      if (haramByCategory &&
+          fallback.haram.isEmpty &&
+          (nameCheck?.isHalal ?? true)) {
+        explanation =
+            'This product belongs to a category that is not permissible: '
+            '${rawCategories.firstWhere((c) => haramCategories.contains(c.toString().toLowerCase()))}.';
+      } else if (isUnknown) {
+        explanation =
+            'No ingredient data found. Halal status cannot be determined — check the packaging directly.';
+      } else if (nameCheck != null && !nameCheck.isHalal) {
+        explanation =
+            'No ingredient list found, but the product name contains a haram indicator: '
+            '${nameCheck.haram.join(', ')}.';
+      } else {
+        explanation = fallback.explanation;
+      }
 
       return Product(
         barcode: barcode,
         name: name,
         ingredients: ingredients,
-        isHalal: !isUnknown && fallback.isHalal,
+        isHalal: !isUnknown && !haramByCategory && haramIngredients.isEmpty,
         isUnknown: isUnknown,
-        haramIngredients: fallback.haram,
-        suspiciousIngredients: fallback.suspicious,
-        ingredientWarnings: fallback.warnings,
+        haramIngredients: haramIngredients,
+        suspiciousIngredients: suspiciousIngredients,
+        ingredientWarnings: ingredientWarnings,
         labels: labels,
         imageUrl: imageUrl,
         imageFrontUrl: imageFrontUrl,

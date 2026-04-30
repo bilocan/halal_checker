@@ -1,5 +1,10 @@
 # Barcode list for halal lookup integration test
-# One barcode per line, or comma-separated on a single line
-# Lines starting with # are comments
+# Format:  <barcode> [expected: halal|haram|unknown]  # optional comment
+# - expected is optional; omit it for a lookup-only run with no assertion
+# - One entry per line or comma-separated (comma entries cannot have expected)
+# - Lines starting with # are comments; inline # starts a comment too
 
-90031656 # bier -> haram
+90031656 haram # Wieselburger Bier
+90459016 haram # Gold Bräu
+5014379008630 haram # Budweiser
+4000539003004 haram # Chocolate Cognac
