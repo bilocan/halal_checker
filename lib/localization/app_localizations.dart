@@ -126,6 +126,9 @@ class AppLocalizations {
           'No definitely haram ingredients found, but some ingredients may be animal-derived. This is an automated assessment based on ingredient text.',
       'explanationHaram':
           'This product contains one or more ingredients that may be animal-derived or alcohol-related. Review the flagged ingredients below for details.',
+      'unknown': '? UNKNOWN',
+      'explanationUnknown':
+          'No ingredient data was found for this product. Halal status cannot be determined — check the packaging directly.',
     },
     'tr': {
       'appTitle': 'HalalScan',
@@ -247,6 +250,9 @@ class AppLocalizations {
           'Kesinlikle haram içerik bulunamadı, ancak bazı içerikler hayvansal kaynaklı olabilir. Bu, içerik metnine dayalı otomatik bir değerlendirmedir.',
       'explanationHaram':
           'Bu ürün, hayvansal kaynaklı veya alkol içerikli olabilecek bir veya daha fazla içerik barındırmaktadır. Ayrıntılar için işaretlenen içerikleri inceleyin.',
+      'unknown': '? BİLİNMİYOR',
+      'explanationUnknown':
+          'Bu ürün için içerik bilgisi bulunamadı. Helal durumu belirlenemiyor — lütfen ambalajı doğrudan kontrol edin.',
     },
     'de': {
       'appTitle': 'HalalScan',
@@ -373,6 +379,9 @@ class AppLocalizations {
           'Keine eindeutig verbotenen Zutaten gefunden, aber einige könnten tierischen Ursprungs sein. Dies ist eine automatische Bewertung anhand des Zutatentexts.',
       'explanationHaram':
           'Dieses Produkt enthält eine oder mehrere Zutaten, die tierischen Ursprungs oder alkoholbezogen sein könnten. Prüfen Sie die markierten Zutaten.',
+      'unknown': '? UNBEKANNT',
+      'explanationUnknown':
+          'Für dieses Produkt wurden keine Zutatendaten gefunden. Der Halal-Status kann nicht bestimmt werden — bitte prüfen Sie die Verpackung direkt.',
     },
   };
 
@@ -494,6 +503,8 @@ class AppLocalizations {
   String get explanationSuspiciousOnly =>
       _translate('explanationSuspiciousOnly');
   String get explanationHaram => _translate('explanationHaram');
+  String get unknown => _translate('unknown');
+  String get explanationUnknown => _translate('explanationUnknown');
 
   static AppLocalizations of(BuildContext context) {
     final localizations = Localizations.of<AppLocalizations>(

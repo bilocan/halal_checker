@@ -7,6 +7,8 @@ const corsHeaders = {
 
 const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000
 const OFF_BASE = 'https://world.openfoodfacts.org/api/v0/product'
+const OBF_BASE = 'https://world.openbeautyfacts.org/api/v0/product'
+const OPF_BASE = 'https://world.openproductsfacts.org/api/v0/product'
 const CLAUDE_URL = 'https://api.anthropic.com/v1/messages'
 const CLAUDE_MODEL = 'claude-haiku-4-5'
 
@@ -15,6 +17,7 @@ const CLAUDE_SYSTEM = `You are an expert in Islamic dietary laws (halal). Analyz
 Respond with a raw JSON object only — no markdown, no prose outside the JSON:
 {
   "isHalal": boolean,
+  "isUnknown": boolean,
   "haramIngredients": ["ingredient names that are definitively haram"],
   "suspiciousIngredients": ["ingredient names that may be non-halal"],
   "ingredientWarnings": {"ingredient name": "reason why haram or suspicious"},
@@ -25,12 +28,10 @@ Haram: pork and derivatives (lard, bacon, ham, pepperoni, salami, chorizo, prosc
 
 Suspicious: gelatin (source unspecified), L-cysteine (E920), mono- and diglycerides (E471), rennet (non-microbial), enzymes (source unspecified), natural flavors (source unspecified), emulsifiers that may be animal-derived.
 
-If the ingredients list is empty, respond with isHalal true, empty arrays, and explanation "No ingredient data available to analyze."`
+If the ingredients list is empty, set isHalal to false, isUnknown to true, and explanation to "No ingredient data found. Halal status cannot be determined — check the packaging directly."`
 
-// ── keyword fallback (mirrors ProductService.dart) ──────────────────────────
+// ── keyword analysis (mirrors ProductService.dart) ───────────────────────────
 
-// Each entry: [canonical, reason, ...variants (all languages)]
-// EN / DE / TR / FR / IT / ES / NL
 const HARAM_ENTRIES: [string, string, ...string[]][] = [
   ['alcohol',    'Contains alcohol or alcohol-derived ingredient',
    'alcohol', 'alkohol', 'alcool', 'alcol', 'alkol', 'álcool'],
@@ -98,27 +99,21 @@ const ALCOHOL_FAMILY = new Set([
   'ethanol','äthanol','éthanol','etanolo','etanol',
 ])
 
-// Fatty alcohol prefixes — these are halal emulsifiers, not drinking alcohol
 const FATTY_ALCOHOL_PREFIX = /\b(cetyl|stearyl|behenyl|lauryl|myristyl|arachidyl|oleyl|cetostearyl|lanolin|isostearyl|octyldodecyl|decyl)\s+/i
-
-// Build canonical→reason lookup
-const HARAM_KW: Record<string, string> = Object.fromEntries(HARAM_ENTRIES.map(([c, r]) => [c, r]))
-const SUSPICIOUS_KW: Record<string, string> = Object.fromEntries(SUSPICIOUS_ENTRIES.map(([c, r]) => [c, r]))
 
 function escape(s: string) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') }
 
 function matchesVariant(ingredient: string, variant: string): boolean {
   if (variant.includes(' ')) return ingredient.includes(variant)
   if (ALCOHOL_FAMILY.has(variant)) {
-    if (FATTY_ALCOHOL_PREFIX.test(ingredient)) return false  // cetyl alcohol etc. → halal
+    if (FATTY_ALCOHOL_PREFIX.test(ingredient)) return false
     return new RegExp(`\\b${escape(variant)}\\b(?![-\\s]*free)`, 'i').test(ingredient)
   }
   return new RegExp(`\\b${escape(variant)}\\b`, 'i').test(ingredient)
 }
 
 function matchesEntry(ingredient: string, entry: [string, string, ...string[]]): boolean {
-  const variants = entry.slice(2) as string[]
-  return variants.some(v => matchesVariant(ingredient, v))
+  return (entry.slice(2) as string[]).some(v => matchesVariant(ingredient, v))
 }
 
 function keywordAnalysis(
@@ -148,15 +143,16 @@ function keywordAnalysis(
     }
   }
 
+  const isUnknown = ingredients.length === 0
   const explanation = haram.length > 0
     ? `This product contains ingredient(s) that are not permissible: ${haram.join(', ')}. Assessed by keyword matching.`
     : suspicious.length > 0
       ? `No definitively haram ingredients found, but the following may be animal-derived: ${suspicious.join(', ')}. Assessed by keyword matching.`
-      : ingredients.length === 0
-        ? 'No ingredient data available to analyze.'
+      : isUnknown
+        ? 'No ingredient data found. Halal status cannot be determined — check the packaging directly.'
         : 'No haram or suspicious ingredients detected. Assessed by keyword matching.'
 
-  return { isHalal: haram.length === 0, haram, suspicious, warnings, explanation }
+  return { isHalal: !isUnknown && haram.length === 0, isUnknown, haram, suspicious, warnings, explanation }
 }
 
 // ── image URL optimizer ──────────────────────────────────────────────────────
@@ -164,6 +160,63 @@ function keywordAnalysis(
 function optImg(url?: string): string | null {
   if (!url) return null
   return url.replace('.100.', '.400.').replace('.200.', '.400.').replace('.300.', '.400.')
+}
+
+// ── resolve image with selected_images fallback ──────────────────────────────
+
+// deno-lint-ignore no-explicit-any
+function resolveImg(pd: any, directField: string, selectedKey: string): string | null {
+  const direct = optImg(pd[directField])
+  if (direct) return direct
+  const sel = pd['selected_images']
+  if (sel && typeof sel === 'object') {
+    const section = sel[selectedKey]
+    if (section?.display && typeof section.display === 'object') {
+      const first = Object.values(section.display)[0]
+      if (typeof first === 'string') return optImg(first)
+    }
+  }
+  return null
+}
+
+// ── fetch product data from one Open*Facts base URL ─────────────────────────
+
+// deno-lint-ignore no-explicit-any
+async function fetchFromFoodApi(barcode: string, baseUrl: string): Promise<any | null> {
+  try {
+    const res = await fetch(`${baseUrl}/${barcode}.json`)
+    if (!res.ok) return null
+    const data = await res.json()
+    if (data.status === 0) return null
+    return data.product
+  } catch {
+    return null
+  }
+}
+
+// ── extract ingredients text with language + structured fallbacks ─────────────
+
+// deno-lint-ignore no-explicit-any
+function extractIngredientsText(pd: any): string {
+  let text: string = (pd['ingredients_text'] ?? '').trim()
+  if (!text) {
+    for (const lang of ['en', 'nl', 'de', 'fr', 'tr', 'es', 'it']) {
+      const t = (pd[`ingredients_text_${lang}`] ?? '').trim()
+      if (t) { text = t; break }
+    }
+  }
+  if (!text) {
+    const structured = pd['ingredients']
+    if (Array.isArray(structured) && structured.length > 0) {
+      text = structured
+        // deno-lint-ignore no-explicit-any
+        .filter((i: any) => typeof i?.text === 'string')
+        // deno-lint-ignore no-explicit-any
+        .map((i: any) => i.text as string)
+        .join(', ')
+    }
+  }
+  return text.toLowerCase()
 }
 
 // ── snake_case DB row → camelCase Flutter Product ────────────────────────────
@@ -175,6 +228,7 @@ function toProduct(row: Record<string, any>) {
     name:                  row.name,
     ingredients:           row.ingredients,
     isHalal:               row.is_halal,
+    isUnknown:             row.is_unknown ?? false,
     haramIngredients:      row.haram_ingredients,
     suspiciousIngredients: row.suspicious_ingredients,
     ingredientWarnings:    row.ingredient_warnings,
@@ -243,21 +297,20 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 3. Fetch OpenFoodFacts
-    const offRes = await fetch(`${OFF_BASE}/${barcode}.json`)
-    if (!offRes.ok) throw new Error(`OpenFoodFacts HTTP ${offRes.status}`)
+    // 3. Fetch product from Open*Facts databases in order
+    let pd = await fetchFromFoodApi(barcode, OFF_BASE)
+    if (!pd) pd = await fetchFromFoodApi(barcode, OBF_BASE)
+    if (!pd) pd = await fetchFromFoodApi(barcode, OPF_BASE)
 
-    const offData = await offRes.json()
-    if (offData.status === 0) {
+    if (!pd) {
       return new Response(
         JSON.stringify({ product: null }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       )
     }
 
-    const pd = offData.product
-    const name: string = pd.product_name || 'Unknown Product'
-    const ingredientsText: string = (pd.ingredients_text ?? '').toLowerCase()
+    const name: string = (pd.product_name?.trim() || pd.product_name_en?.trim() || pd.abbreviated_product_name?.trim() || 'Unknown Product')
+    const ingredientsText = extractIngredientsText(pd)
     const ingredients: string[] = ingredientsText
       .split(/[,;]/)
       .map((s: string) => s.trim())
@@ -273,8 +326,9 @@ Deno.serve(async (req) => {
     addLabels(pd.labels_hierarchy); addLabels(pd.labels_en)
     const labels = [...labelSet]
 
-    // 3. Claude analysis (with keyword fallback)
-    let isHalal = true
+    // 4. Claude analysis (with keyword fallback)
+    let isHalal = false
+    let isUnknown = ingredients.length === 0
     let haramIngredients: string[] = []
     let suspiciousIngredients: string[] = []
     let ingredientWarnings: Record<string, string> = {}
@@ -304,49 +358,52 @@ Deno.serve(async (req) => {
         const text: string = cd.content?.find((c: { type: string }) => c.type === 'text')?.text ?? ''
         try {
           const p = JSON.parse(text.trim())
-          isHalal             = p.isHalal ?? true
-          haramIngredients    = p.haramIngredients ?? []
+          isHalal               = p.isHalal ?? false
+          isUnknown             = p.isUnknown ?? (ingredients.length === 0)
+          haramIngredients      = p.haramIngredients ?? []
           suspiciousIngredients = p.suspiciousIngredients ?? []
-          ingredientWarnings  = p.ingredientWarnings ?? {}
-          explanation         = p.explanation ?? ''
-          analyzedByAI        = true
+          ingredientWarnings    = p.ingredientWarnings ?? {}
+          explanation           = p.explanation ?? ''
+          analyzedByAI          = true
         } catch { /* fall through to keyword analysis */ }
       }
     }
 
     if (!analyzedByAI) {
       const kw = keywordAnalysis(ingredients, customHaramEntries, customSuspiciousEntries)
-      isHalal             = kw.isHalal
-      haramIngredients    = kw.haram
+      isHalal               = kw.isHalal
+      isUnknown             = kw.isUnknown
+      haramIngredients      = kw.haram
       suspiciousIngredients = kw.suspicious
-      ingredientWarnings  = kw.warnings
-      explanation         = kw.explanation
+      ingredientWarnings    = kw.warnings
+      explanation           = kw.explanation
     }
 
     // Keyword safety override: haram keywords always win over AI verdict.
-    // Fatty alcohols are already excluded inside matchesVariant.
     const kwCheck = keywordAnalysis(ingredients, customHaramEntries, customSuspiciousEntries)
     if (!kwCheck.isHalal && isHalal) {
-      isHalal = false
-      haramIngredients = [...new Set([...haramIngredients, ...kwCheck.haram])]
+      isHalal           = false
+      isUnknown         = false
+      haramIngredients  = [...new Set([...haramIngredients, ...kwCheck.haram])]
       ingredientWarnings = { ...ingredientWarnings, ...kwCheck.warnings }
-      explanation = kwCheck.explanation
+      explanation       = kwCheck.explanation
     }
 
-    // 4. Upsert to DB
+    // 5. Upsert to DB
     const row = {
       barcode,
       name,
       ingredients,
       is_halal:               isHalal,
+      is_unknown:             isUnknown,
       haram_ingredients:      haramIngredients,
       suspicious_ingredients: suspiciousIngredients,
       ingredient_warnings:    ingredientWarnings,
       labels,
-      image_url:              optImg(pd.image_url),
-      image_front_url:        optImg(pd.image_front_url),
-      image_ingredients_url:  optImg(pd.image_ingredients_url),
-      image_nutrition_url:    optImg(pd.image_nutrition_url),
+      image_url:              resolveImg(pd, 'image_url', 'front'),
+      image_front_url:        resolveImg(pd, 'image_front_url', 'front'),
+      image_ingredients_url:  resolveImg(pd, 'image_ingredients_url', 'ingredients'),
+      image_nutrition_url:    resolveImg(pd, 'image_nutrition_url', 'nutrition'),
       explanation,
       analyzed_by_ai:         analyzedByAI,
       fetched_at:             new Date().toISOString(),

@@ -12,8 +12,12 @@ class ProductService {
   ProductService._internal();
   factory ProductService() => _instance;
 
-  static const String _baseUrl =
+  static const String _offBaseUrl =
       'https://world.openfoodfacts.org/api/v0/product';
+  static const String _obfBaseUrl =
+      'https://world.openbeautyfacts.org/api/v0/product';
+  static const String _opfBaseUrl =
+      'https://world.openproductsfacts.org/api/v0/product';
 
   final CacheService _cache = CacheService();
   final KeywordService _keywordService = KeywordService();
@@ -435,24 +439,63 @@ class ProductService {
       return safe;
     }
 
-    // Step 3: Fallback — fetch directly from OpenFoodFacts
+    // Step 3: Fallback — try each open food database in order
+    for (final baseUrl in [_offBaseUrl, _obfBaseUrl, _opfBaseUrl]) {
+      final product = await _fetchFromFoodApi(barcode, baseUrl);
+      if (product != null) {
+        final safe = _applyKeywordSafety(product);
+        await _cache.saveProduct(barcode, safe);
+        return safe;
+      }
+    }
+    return null;
+  }
+
+  Future<Product?> _fetchFromFoodApi(String barcode, String baseUrl) async {
     try {
       final response = await http
-          .get(Uri.parse('$_baseUrl/$barcode.json'))
+          .get(Uri.parse('$baseUrl/$barcode.json'))
           .timeout(const Duration(seconds: 15));
 
-      if (response.statusCode != 200) {
-        throw Exception('HTTP ${response.statusCode}');
-      }
+      if (response.statusCode != 200) return null;
 
       final data = json.decode(response.body);
       if (data['status'] == 0) return null;
 
-      final productData = data['product'];
-      final name = productData['product_name'] ?? 'Unknown Product';
-      final ingredientsText = (productData['ingredients_text'] ?? '')
+      final productData = data['product'] as Map<String, dynamic>;
+      final name =
+          (productData['product_name']?.toString() ?? '').trim().isEmpty
+          ? (productData['product_name_en']?.toString() ??
+                productData['abbreviated_product_name']?.toString() ??
+                'Unknown Product')
+          : productData['product_name'].toString();
+
+      // Ingredient text — try multiple language fields and structured array
+      String ingredientsText = (productData['ingredients_text'] ?? '')
           .toString()
-          .toLowerCase();
+          .trim();
+      if (ingredientsText.isEmpty) {
+        for (final lang in ['en', 'nl', 'de', 'fr', 'tr', 'es', 'it']) {
+          final langText = (productData['ingredients_text_$lang'] ?? '')
+              .toString()
+              .trim();
+          if (langText.isNotEmpty) {
+            ingredientsText = langText;
+            break;
+          }
+        }
+      }
+      if (ingredientsText.isEmpty) {
+        final structured = productData['ingredients'];
+        if (structured is List && structured.isNotEmpty) {
+          ingredientsText = structured
+              .whereType<Map>()
+              .map((i) => i['text']?.toString() ?? '')
+              .where((t) => t.isNotEmpty)
+              .join(', ');
+        }
+      }
+      ingredientsText = ingredientsText.toLowerCase();
 
       String? optimizeImageUrl(String? url) {
         if (url == null || url.isEmpty) return null;
@@ -462,15 +505,32 @@ class ProductService {
             .replaceAll('.300.', '.400.');
       }
 
-      final imageUrl = optimizeImageUrl(productData['image_url']?.toString());
-      final imageFrontUrl = optimizeImageUrl(
-        productData['image_front_url']?.toString(),
+      // Images — prefer direct fields, fall back to selected_images
+      String? resolveImage(String directField, String selectedKey) {
+        final direct = optimizeImageUrl(productData[directField]?.toString());
+        if (direct != null) return direct;
+        final sel = productData['selected_images'];
+        if (sel is Map) {
+          final section = sel[selectedKey];
+          if (section is Map) {
+            final display = section['display'];
+            if (display is Map && display.isNotEmpty) {
+              return optimizeImageUrl(display.values.first?.toString());
+            }
+          }
+        }
+        return null;
+      }
+
+      final imageUrl = resolveImage('image_url', 'front');
+      final imageFrontUrl = resolveImage('image_front_url', 'front');
+      final imageIngredientsUrl = resolveImage(
+        'image_ingredients_url',
+        'ingredients',
       );
-      final imageIngredientsUrl = optimizeImageUrl(
-        productData['image_ingredients_url']?.toString(),
-      );
-      final imageNutritionUrl = optimizeImageUrl(
-        productData['image_nutrition_url']?.toString(),
+      final imageNutritionUrl = resolveImage(
+        'image_nutrition_url',
+        'nutrition',
       );
 
       final labelSet = <String>{};
@@ -497,47 +557,39 @@ class ProductService {
       addLabelValue(productData['labels_en']);
       final labels = labelSet.toList();
 
-      // Step 3: Extract ingredients
       final ingredients = ingredientsText
           .split(RegExp(r'[,;]'))
           .map((e) => e.trim())
           .where((e) => e.isNotEmpty)
           .toList();
 
-      // Step 4: Keyword analysis (Claude runs server-side in the Edge Function)
+      final bool isUnknown = ingredients.isEmpty;
+
       final fallback = analyzeWithKeywords(ingredients);
-      final bool isHalal = fallback.isHalal;
-      final List<String> haramIngredients = fallback.haram;
-      final List<String> suspiciousIngredients = fallback.suspicious;
-      final Map<String, String> ingredientWarnings = fallback.warnings;
-      final String explanation = fallback.explanation;
-      const bool analyzedByAI = false;
 
-      final product = _applyKeywordSafety(
-        Product(
-          barcode: barcode,
-          name: name,
-          ingredients: ingredients,
-          isHalal: isHalal,
-          haramIngredients: haramIngredients,
-          suspiciousIngredients: suspiciousIngredients,
-          ingredientWarnings: ingredientWarnings,
-          labels: labels,
-          imageUrl: imageUrl,
-          imageFrontUrl: imageFrontUrl,
-          imageIngredientsUrl: imageIngredientsUrl,
-          imageNutritionUrl: imageNutritionUrl,
-          explanation: explanation,
-          analyzedByAI: analyzedByAI,
-        ),
+      final explanation = isUnknown
+          ? 'No ingredient data found. Halal status cannot be determined.'
+          : fallback.explanation;
+
+      return Product(
+        barcode: barcode,
+        name: name,
+        ingredients: ingredients,
+        isHalal: !isUnknown && fallback.isHalal,
+        isUnknown: isUnknown,
+        haramIngredients: fallback.haram,
+        suspiciousIngredients: fallback.suspicious,
+        ingredientWarnings: fallback.warnings,
+        labels: labels,
+        imageUrl: imageUrl,
+        imageFrontUrl: imageFrontUrl,
+        imageIngredientsUrl: imageIngredientsUrl,
+        imageNutritionUrl: imageNutritionUrl,
+        explanation: explanation,
+        analyzedByAI: false,
       );
-
-      // Step 6: Write to cache
-      await _cache.saveProduct(barcode, product);
-
-      return product;
-    } catch (e) {
-      throw Exception('Failed to fetch product: $e');
+    } catch (_) {
+      return null;
     }
   }
 }

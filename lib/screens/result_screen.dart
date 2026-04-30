@@ -171,8 +171,19 @@ class _ResultScreenState extends State<ResultScreen> {
     }
 
     final isHalal = product.isHalal;
+    final isUnknown = product.isUnknown;
     final ingredients = product.ingredients;
     final suspiciousIngredients = product.suspiciousIngredients;
+
+    final Color statusColor = isUnknown
+        ? Colors.orange.shade700
+        : (isHalal ? kGreen : Colors.red);
+    final IconData statusIcon = isUnknown
+        ? Icons.help_outline
+        : (isHalal ? Icons.check_circle : Icons.cancel);
+    final String statusLabel = isUnknown
+        ? loc.unknown
+        : (isHalal ? '✅ HALAL' : '❌ NOT HALAL');
 
     return Scaffold(
       appBar: AppBar(
@@ -211,21 +222,17 @@ class _ResultScreenState extends State<ResultScreen> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: isHalal ? kGreen : Colors.red,
+                  color: statusColor,
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Column(
                   children: [
-                    Icon(
-                      isHalal ? Icons.check_circle : Icons.cancel,
-                      color: Colors.white,
-                      size: 64,
-                    ),
+                    Icon(statusIcon, color: Colors.white, size: 64),
                     const SizedBox(height: 12),
                     Semantics(
-                      label: isHalal ? loc.halal : loc.notHalal,
+                      label: statusLabel,
                       child: Text(
-                        isHalal ? '✅ HALAL' : '❌ NOT HALAL',
+                        statusLabel,
                         semanticsLabel: '',
                         style: const TextStyle(
                           color: Colors.white,
@@ -240,6 +247,7 @@ class _ResultScreenState extends State<ResultScreen> {
                           ? product.explanation
                           : _halalReasonText(
                               isHalal,
+                              isUnknown,
                               suspiciousIngredients,
                               loc,
                             ),
@@ -1111,9 +1119,11 @@ class _ResultScreenState extends State<ResultScreen> {
 
   String _halalReasonText(
     bool isHalal,
+    bool isUnknown,
     List<String> suspiciousIngredients,
     AppLocalizations loc,
   ) {
+    if (isUnknown) return loc.explanationUnknown;
     if (isHalal) {
       return suspiciousIngredients.isEmpty
           ? loc.explanationClean
