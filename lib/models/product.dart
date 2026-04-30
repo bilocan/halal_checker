@@ -3,6 +3,7 @@ class Product {
   final String name;
   final List<String> ingredients;
   final bool isHalal;
+  final bool isUnknown;
   final List<String> haramIngredients;
   final List<String> suspiciousIngredients;
   final Map<String, String> ingredientWarnings;
@@ -19,6 +20,7 @@ class Product {
     required this.name,
     required this.ingredients,
     required this.isHalal,
+    this.isUnknown = false,
     required this.haramIngredients,
     required this.suspiciousIngredients,
     required this.ingredientWarnings,
@@ -36,6 +38,7 @@ class Product {
     String? name,
     List<String>? ingredients,
     bool? isHalal,
+    bool? isUnknown,
     List<String>? haramIngredients,
     List<String>? suspiciousIngredients,
     Map<String, String>? ingredientWarnings,
@@ -51,6 +54,7 @@ class Product {
     name: name ?? this.name,
     ingredients: ingredients ?? this.ingredients,
     isHalal: isHalal ?? this.isHalal,
+    isUnknown: isUnknown ?? this.isUnknown,
     haramIngredients: haramIngredients ?? this.haramIngredients,
     suspiciousIngredients: suspiciousIngredients ?? this.suspiciousIngredients,
     ingredientWarnings: ingredientWarnings ?? this.ingredientWarnings,
@@ -68,6 +72,7 @@ class Product {
     'name': name,
     'ingredients': ingredients,
     'isHalal': isHalal,
+    'isUnknown': isUnknown,
     'haramIngredients': haramIngredients,
     'suspiciousIngredients': suspiciousIngredients,
     'ingredientWarnings': ingredientWarnings,
@@ -85,6 +90,7 @@ class Product {
     name: json['name'] as String,
     ingredients: List<String>.from(json['ingredients'] as List),
     isHalal: json['isHalal'] as bool,
+    isUnknown: json['isUnknown'] as bool? ?? false,
     haramIngredients: List<String>.from(json['haramIngredients'] as List),
     suspiciousIngredients: List<String>.from(
       json['suspiciousIngredients'] as List,

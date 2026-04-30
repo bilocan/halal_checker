@@ -1,0 +1,5 @@
+# Barcode list for halal lookup integration test
+# One barcode per line, or comma-separated on a single line
+# Lines starting with # are comments
+
+90031656 # bier -> haram
