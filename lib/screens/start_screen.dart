@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:in_app_update/in_app_update.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../app_colors.dart';
 import '../config.dart';
@@ -29,6 +32,31 @@ class _StartScreenState extends State<StartScreen> {
   void initState() {
     super.initState();
     _loadRecentScans();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _checkForUpdate());
+  }
+
+  Future<void> _checkForUpdate() async {
+    if (!Platform.isAndroid) return;
+    try {
+      final info = await InAppUpdate.checkForUpdate();
+      if (info.updateAvailability != UpdateAvailability.updateAvailable) return;
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('A new version is available'),
+          action: SnackBarAction(
+            label: 'Update',
+            onPressed: () async {
+              try {
+                await InAppUpdate.startFlexibleUpdate();
+                await InAppUpdate.completeFlexibleUpdate();
+              } catch (_) {}
+            },
+          ),
+          duration: const Duration(seconds: 10),
+        ),
+      );
+    } catch (_) {}
   }
 
   Future<void> _loadRecentScans() async {
