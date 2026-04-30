@@ -1,4 +1,4 @@
-package com.example.halal_checker
+package com.halal_checker.app
 
 import io.flutter.embedding.android.FlutterActivity
 
