@@ -1189,9 +1189,7 @@ class _ResultScreenState extends State<ResultScreen> {
                     if (!success && mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text(
-                            'Sign-in failed. Please try again.',
-                          ),
+                          content: Text('Sign-in failed. Please try again.'),
                           duration: Duration(seconds: 3),
                         ),
                       );

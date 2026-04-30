@@ -233,11 +233,7 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
-                Icons.camera_alt,
-                size: 80,
-                color: Colors.grey,
-              ),
+              const Icon(Icons.camera_alt, size: 80, color: Colors.grey),
               const SizedBox(height: 20),
               Text(
                 'Camera scanner unavailable',
@@ -247,9 +243,9 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: 10),
               Text(
                 'Please enter barcode manually',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.grey,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(color: Colors.grey),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 40),

@@ -165,9 +165,7 @@ class _StartScreenState extends State<StartScreen> {
       if (!success && mounted) {
         messenger.showSnackBar(
           const SnackBar(
-            content: Text(
-              'Sign-in failed. Please try again.',
-            ),
+            content: Text('Sign-in failed. Please try again.'),
             duration: Duration(seconds: 3),
           ),
         );
