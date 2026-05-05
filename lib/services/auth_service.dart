@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../config.dart';
 
 class AuthService {
@@ -64,6 +65,7 @@ class AuthService {
       await Supabase.instance.client.auth.signInWithOAuth(
         OAuthProvider.google,
         redirectTo: 'com.halalchecker.app://callback/',
+        authScreenLaunchMode: LaunchMode.externalApplication,
       );
       return true;
     } catch (e) {
