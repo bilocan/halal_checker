@@ -64,7 +64,7 @@ class AuthService {
     try {
       await Supabase.instance.client.auth.signInWithOAuth(
         OAuthProvider.google,
-        redirectTo: 'com.halalscan.app://callback/',
+        redirectTo: 'app.halalscan://callback/',
         authScreenLaunchMode: LaunchMode.externalApplication,
       );
       return true;

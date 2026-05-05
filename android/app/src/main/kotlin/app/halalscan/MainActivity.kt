@@ -1,4 +1,4 @@
-package com.halalscan.app
+package app.halalscan
 
 import android.util.Log
 import io.flutter.embedding.android.FlutterActivity
