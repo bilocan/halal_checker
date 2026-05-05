@@ -129,6 +129,11 @@ class AppLocalizations {
       'unknown': '? UNKNOWN',
       'explanationUnknown':
           'No ingredient data was found for this product. Halal status cannot be determined — check the packaging directly.',
+      'about': 'About',
+      'version': 'Version',
+      'releaseNotes': 'Release Notes',
+      'checkForUpdates': 'Check for Updates',
+      'upToDate': "You're up to date!",
     },
     'tr': {
       'appTitle': 'HalalScan',
@@ -253,6 +258,11 @@ class AppLocalizations {
       'unknown': '? BİLİNMİYOR',
       'explanationUnknown':
           'Bu ürün için içerik bilgisi bulunamadı. Helal durumu belirlenemiyor — lütfen ambalajı doğrudan kontrol edin.',
+      'about': 'Hakkında',
+      'version': 'Versiyon',
+      'releaseNotes': 'Sürüm Notları',
+      'checkForUpdates': 'Güncellemeleri Kontrol Et',
+      'upToDate': 'Güncel durumdasınız!',
     },
     'de': {
       'appTitle': 'HalalScan',
@@ -382,6 +392,11 @@ class AppLocalizations {
       'unknown': '? UNBEKANNT',
       'explanationUnknown':
           'Für dieses Produkt wurden keine Zutatendaten gefunden. Der Halal-Status kann nicht bestimmt werden — bitte prüfen Sie die Verpackung direkt.',
+      'about': 'Über',
+      'version': 'Version',
+      'releaseNotes': 'Versionshinweise',
+      'checkForUpdates': 'Nach Updates suchen',
+      'upToDate': 'Sie sind auf dem neuesten Stand!',
     },
   };
 
@@ -505,6 +520,11 @@ class AppLocalizations {
   String get explanationHaram => _translate('explanationHaram');
   String get unknown => _translate('unknown');
   String get explanationUnknown => _translate('explanationUnknown');
+  String get about => _translate('about');
+  String get version => _translate('version');
+  String get releaseNotes => _translate('releaseNotes');
+  String get checkForUpdates => _translate('checkForUpdates');
+  String get upToDate => _translate('upToDate');
 
   static AppLocalizations of(BuildContext context) {
     final localizations = Localizations.of<AppLocalizations>(
