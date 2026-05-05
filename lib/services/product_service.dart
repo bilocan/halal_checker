@@ -12,6 +12,11 @@ class ProductService {
   ProductService._internal();
   factory ProductService() => _instance;
 
+  http.Client _httpClient = http.Client();
+
+  @visibleForTesting
+  void setHttpClientForTesting(http.Client client) => _httpClient = client;
+
   static const String _offBaseUrl =
       'https://world.openfoodfacts.org/api/v0/product';
   static const String _obfBaseUrl =
@@ -424,7 +429,7 @@ class ProductService {
   }) async {
     if (!AppConfig.hasSupabase) return null;
     try {
-      final response = await http
+      final response = await _httpClient
           .post(
             Uri.parse('${AppConfig.supabaseUrl}/functions/v1/lookup-product'),
             headers: {
@@ -491,7 +496,7 @@ class ProductService {
 
   Future<Product?> _fetchFromFoodApi(String barcode, String baseUrl) async {
     try {
-      final response = await http
+      final response = await _httpClient
           .get(Uri.parse('$baseUrl/$barcode.json'))
           .timeout(const Duration(seconds: 15));
 
