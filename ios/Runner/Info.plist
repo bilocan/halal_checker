@@ -31,7 +31,7 @@
 			<string>Editor</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>com.halalchecker.app</string>
+				<string>com.halalscan.app</string>
 			</array>
 		</dict>
 	</array>

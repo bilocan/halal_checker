@@ -165,7 +165,7 @@ To add a real product as a fixture, append its barcode to `test_data/seed_barcod
 
 ### Parallel install (debug + release)
 
-Debug builds use the app ID `com.example.halal_checker.dev`, so they coexist with a release install as two separate apps on the same device.
+Debug builds use the app ID `com.halalscan.app.dev`, so they coexist with a release install as two separate apps on the same device.
 
 ---
 
