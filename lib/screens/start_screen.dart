@@ -13,6 +13,7 @@ import '../localization/app_localizations.dart';
 import '../widgets/halal_scan_logo.dart';
 import 'result_screen.dart';
 import 'home_screen.dart';
+import 'about_screen.dart';
 import 'keywords_screen.dart';
 
 class StartScreen extends StatefulWidget {
@@ -216,6 +217,14 @@ class _StartScreenState extends State<StartScreen> {
         backgroundColor: kGreen,
         foregroundColor: Colors.white,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.info_outline),
+            tooltip: localizations.about,
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const AboutScreen()),
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.list_alt),
             tooltip: localizations.keywords,
