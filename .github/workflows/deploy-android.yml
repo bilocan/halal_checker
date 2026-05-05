@@ -69,7 +69,7 @@ jobs:
         uses: r0adkll/upload-google-play@v1
         with:
           serviceAccountJson: ${{ steps.auth.outputs.credentials_file_path }}
-          packageName: com.halalscan.app
+          packageName: app.halalscan
           releaseFiles: build/app/outputs/bundle/release/*.aab
           track: internal
           status: completed
