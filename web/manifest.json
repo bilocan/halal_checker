@@ -1,6 +1,6 @@
 {
-    "name": "halal_checker",
-    "short_name": "halal_checker",
+    "name": "HalalScan",
+    "short_name": "HalalScan",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
