@@ -25,6 +25,7 @@ class _ResultScreenState extends State<ResultScreen> {
   List<FeedbackItem> _feedbacks = [];
   bool _isLoadingFeedback = false;
   bool _isRefreshing = false;
+  bool _showTranslated = false;
 
   // Pre-computed once in initState to avoid regex work during build.
   Set<String> _foundInText = {};
@@ -380,16 +381,40 @@ class _ResultScreenState extends State<ResultScreen> {
                   ),
                 const SizedBox(height: 24),
               ],
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  loc.ingredients,
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.grey.shade900,
+              Row(
+                children: [
+                  Text(
+                    loc.ingredients,
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey.shade900,
+                    ),
                   ),
-                ),
+                  if (product.ingredientTranslations.isNotEmpty) ...[
+                    const Spacer(),
+                    TextButton.icon(
+                      onPressed: () =>
+                          setState(() => _showTranslated = !_showTranslated),
+                      icon: Icon(
+                        _showTranslated ? Icons.language : Icons.translate,
+                        size: 16,
+                      ),
+                      label: Text(
+                        _showTranslated
+                            ? 'Original'
+                            : Localizations.localeOf(
+                                context,
+                              ).languageCode.toUpperCase(),
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                      style: TextButton.styleFrom(
+                        visualDensity: VisualDensity.compact,
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                      ),
+                    ),
+                  ],
+                ],
               ),
               const SizedBox(height: 8),
               if (ingredients.isEmpty)
@@ -418,7 +443,11 @@ class _ResultScreenState extends State<ResultScreen> {
                             ? Colors.blue.shade400
                             : kGreen,
                       ),
-                      title: Text(ingredient),
+                      title: _ingredientTitle(
+                        ingredient,
+                        product.ingredientTranslations[ingredient],
+                        showTranslated: _showTranslated,
+                      ),
                       subtitle: warning != null
                           ? Text(warning)
                           : fattyAlcohol
@@ -452,7 +481,11 @@ class _ResultScreenState extends State<ResultScreen> {
                   final warning = product.ingredientWarnings[e];
                   return ListTile(
                     leading: const Icon(Icons.error, color: Colors.red),
-                    title: Text(e),
+                    title: _ingredientTitle(
+                      e,
+                      product.ingredientTranslations[e],
+                      showTranslated: _showTranslated,
+                    ),
                     subtitle: Text(warning ?? loc.foundInIngredients),
                     dense: true,
                   );
@@ -476,7 +509,11 @@ class _ResultScreenState extends State<ResultScreen> {
                   final warning = product.ingredientWarnings[e];
                   return ListTile(
                     leading: Icon(Icons.warning, color: Colors.orange.shade600),
-                    title: Text(e),
+                    title: _ingredientTitle(
+                      e,
+                      product.ingredientTranslations[e],
+                      showTranslated: _showTranslated,
+                    ),
                     subtitle: Text(warning ?? loc.mayBeAnimalDerivedNote),
                     dense: true,
                   );
@@ -655,6 +692,34 @@ class _ResultScreenState extends State<ResultScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _ingredientTitle(
+    String ingredient,
+    String? canonical, {
+    bool showTranslated = false,
+  }) {
+    if (canonical == null) return Text(ingredient);
+    String norm(String s) => s.toLowerCase().replaceAll(RegExp(r'[-\s]'), '');
+    final locale = Localizations.localeOf(context).languageCode;
+    final display = ProductService.canonicalDisplay(canonical, locale);
+    if (norm(ingredient).contains(norm(display))) return Text(ingredient);
+    if (showTranslated) return Text(display);
+    return Text.rich(
+      TextSpan(
+        children: [
+          TextSpan(text: ingredient),
+          TextSpan(
+            text: '  ($display)',
+            style: const TextStyle(
+              color: Colors.grey,
+              fontSize: 12,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+        ],
       ),
     );
   }

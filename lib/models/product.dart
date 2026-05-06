@@ -8,6 +8,7 @@ class Product {
   final List<String> haramIngredients;
   final List<String> suspiciousIngredients;
   final Map<String, String> ingredientWarnings;
+  final Map<String, String> ingredientTranslations;
   final List<String> labels;
   final String? imageUrl;
   final String? imageFrontUrl;
@@ -26,6 +27,7 @@ class Product {
     required this.haramIngredients,
     required this.suspiciousIngredients,
     required this.ingredientWarnings,
+    this.ingredientTranslations = const {},
     required this.labels,
     this.imageUrl,
     this.imageFrontUrl,
@@ -45,6 +47,7 @@ class Product {
     List<String>? haramIngredients,
     List<String>? suspiciousIngredients,
     Map<String, String>? ingredientWarnings,
+    Map<String, String>? ingredientTranslations,
     List<String>? labels,
     String? imageUrl,
     String? imageFrontUrl,
@@ -62,6 +65,8 @@ class Product {
     haramIngredients: haramIngredients ?? this.haramIngredients,
     suspiciousIngredients: suspiciousIngredients ?? this.suspiciousIngredients,
     ingredientWarnings: ingredientWarnings ?? this.ingredientWarnings,
+    ingredientTranslations:
+        ingredientTranslations ?? this.ingredientTranslations,
     labels: labels ?? this.labels,
     imageUrl: imageUrl ?? this.imageUrl,
     imageFrontUrl: imageFrontUrl ?? this.imageFrontUrl,
@@ -81,6 +86,7 @@ class Product {
     'haramIngredients': haramIngredients,
     'suspiciousIngredients': suspiciousIngredients,
     'ingredientWarnings': ingredientWarnings,
+    'ingredientTranslations': ingredientTranslations,
     'labels': labels,
     'imageUrl': imageUrl,
     'imageFrontUrl': imageFrontUrl,
@@ -104,6 +110,9 @@ class Product {
     ingredientWarnings: Map<String, String>.from(
       json['ingredientWarnings'] as Map,
     ),
+    ingredientTranslations: json['ingredientTranslations'] != null
+        ? Map<String, String>.from(json['ingredientTranslations'] as Map)
+        : const {},
     labels: List<String>.from(json['labels'] as List),
     imageUrl: json['imageUrl'] as String?,
     imageFrontUrl: json['imageFrontUrl'] as String?,
