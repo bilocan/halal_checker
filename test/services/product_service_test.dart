@@ -446,6 +446,162 @@ void main() {
     );
   });
 
+  // ── isFattyAlcohol ────────────────────────────────────────────────────────
+
+  group('isFattyAlcohol', () {
+    test('cetyl alcohol → true', () {
+      expect(ProductService.isFattyAlcohol('cetyl alcohol'), isTrue);
+    });
+
+    test('stearyl alcohol → true', () {
+      expect(ProductService.isFattyAlcohol('stearyl alcohol'), isTrue);
+    });
+
+    test('behenyl alcohol → true', () {
+      expect(ProductService.isFattyAlcohol('behenyl alcohol'), isTrue);
+    });
+
+    test('cetostearyl alcohol → true', () {
+      expect(ProductService.isFattyAlcohol('cetostearyl alcohol'), isTrue);
+    });
+
+    test('plain alcohol → false', () {
+      expect(ProductService.isFattyAlcohol('alcohol'), isFalse);
+    });
+
+    test('ethanol → false', () {
+      expect(ProductService.isFattyAlcohol('ethanol'), isFalse);
+    });
+
+    test('case-insensitive: CETYL ALCOHOL → true', () {
+      expect(ProductService.isFattyAlcohol('CETYL ALCOHOL'), isTrue);
+    });
+  });
+
+  // ── matchesKeyword ────────────────────────────────────────────────────────
+
+  group('matchesKeyword', () {
+    test('exact match → true', () {
+      expect(ProductService.matchesKeyword('pork', 'pork'), isTrue);
+    });
+
+    test('no match → false', () {
+      expect(ProductService.matchesKeyword('water', 'pork'), isFalse);
+    });
+
+    test('multilingual variant: schweinefleisch matches pork keyword', () {
+      expect(ProductService.matchesKeyword('schweinefleisch', 'pork'), isTrue);
+    });
+
+    test('multilingual variant: gelatine matches gelatin keyword', () {
+      expect(ProductService.matchesKeyword('gelatine', 'gelatin'), isTrue);
+    });
+
+    test('hyphenated e-number variant: e-120 matches e120 keyword', () {
+      expect(ProductService.matchesKeyword('e-120', 'e120'), isTrue);
+    });
+
+    test('alcohol-free is not matched by alcohol keyword', () {
+      expect(
+        ProductService.matchesKeyword('malt (alcohol-free)', 'alcohol'),
+        isFalse,
+      );
+    });
+
+    test('cetyl alcohol is not matched by alcohol keyword', () {
+      expect(
+        ProductService.matchesKeyword('cetyl alcohol', 'alcohol'),
+        isFalse,
+      );
+    });
+
+    test('word boundary: alcoholic is not matched by alcohol keyword', () {
+      expect(
+        ProductService.matchesKeyword('alcoholic extract', 'alcohol'),
+        isFalse,
+      );
+    });
+
+    test(
+      'multi-word variant: natural flavor matches natural flavour keyword',
+      () {
+        expect(
+          ProductService.matchesKeyword('natural flavor', 'natural flavour'),
+          isTrue,
+        );
+      },
+    );
+  });
+
+  // ── analyzeWithKeywords ───────────────────────────────────────────────────
+
+  group('analyzeWithKeywords', () {
+    test('empty list → isHalal true, explanation says no data', () {
+      final result = ProductService.analyzeWithKeywords([]);
+      expect(result.isHalal, isTrue);
+      expect(result.haram, isEmpty);
+      expect(result.suspicious, isEmpty);
+      expect(result.explanation, contains('No ingredient data'));
+    });
+
+    test('clean ingredients → isHalal true, no flags', () {
+      final result = ProductService.analyzeWithKeywords([
+        'water',
+        'salt',
+        'sugar',
+      ]);
+      expect(result.isHalal, isTrue);
+      expect(result.haram, isEmpty);
+      expect(result.suspicious, isEmpty);
+    });
+
+    test('haram ingredient → isHalal false, haram list populated', () {
+      final result = ProductService.analyzeWithKeywords(['pork', 'salt']);
+      expect(result.isHalal, isFalse);
+      expect(result.haram, contains('pork'));
+      expect(result.warnings['pork'], isNotNull);
+    });
+
+    test('suspicious ingredient → isHalal true, suspicious list populated', () {
+      final result = ProductService.analyzeWithKeywords([
+        'flour',
+        'enzymes',
+        'water',
+      ]);
+      expect(result.isHalal, isTrue);
+      expect(result.suspicious, contains('enzymes'));
+      expect(result.warnings['enzymes'], isNotNull);
+    });
+
+    test('haram takes priority over suspicious for same ingredient', () {
+      // gelatin is haram; it should not also appear in suspicious
+      final result = ProductService.analyzeWithKeywords(['gelatin']);
+      expect(result.haram, contains('gelatin'));
+      expect(result.suspicious, isEmpty);
+    });
+
+    test('haram explanation mentions the ingredient', () {
+      final result = ProductService.analyzeWithKeywords(['wine', 'water']);
+      expect(result.explanation, contains('wine'));
+      expect(result.explanation, contains('not permissible'));
+    });
+
+    test('suspicious-only explanation mentions verification', () {
+      final result = ProductService.analyzeWithKeywords(['whey', 'water']);
+      expect(result.explanation, contains('verification'));
+    });
+
+    test('clean ingredients explanation confirms no haram detected', () {
+      final result = ProductService.analyzeWithKeywords(['water', 'salt']);
+      expect(result.explanation, contains('No haram'));
+    });
+
+    test('warnings map has correct reason for carmine (e120)', () {
+      final result = ProductService.analyzeWithKeywords(['e120']);
+      expect(result.warnings['e120'], contains('animal-derived'));
+    });
+  });
+
   // ── explanation text ──────────────────────────────────────────────────────
 
   group('explanation text', () {
