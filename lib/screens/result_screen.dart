@@ -172,16 +172,23 @@ class _ResultScreenState extends State<ResultScreen> {
 
     final isHalal = product.isHalal;
     final isUnknown = product.isUnknown;
+    final isNonFood = product.isNonFood;
     final ingredients = product.ingredients;
     final suspiciousIngredients = product.suspiciousIngredients;
 
-    final Color statusColor = isUnknown
+    final Color statusColor = isNonFood
+        ? Colors.blueGrey.shade600
+        : isUnknown
         ? Colors.orange.shade700
         : (isHalal ? kGreen : Colors.red);
-    final IconData statusIcon = isUnknown
+    final IconData statusIcon = isNonFood
+        ? Icons.info_outline
+        : isUnknown
         ? Icons.help_outline
         : (isHalal ? Icons.check_circle : Icons.cancel);
-    final String statusLabel = isUnknown
+    final String statusLabel = isNonFood
+        ? loc.nonFood
+        : isUnknown
         ? loc.unknown
         : (isHalal ? '✅ HALAL' : '❌ NOT HALAL');
 
