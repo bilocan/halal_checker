@@ -589,7 +589,18 @@ class ProductService {
           .toString()
           .trim();
       if (ingredientsText.isEmpty) {
-        for (final lang in ['en', 'nl', 'de', 'fr', 'tr', 'es', 'it']) {
+        for (final lang in [
+          'en',
+          'nl',
+          'de',
+          'fr',
+          'tr',
+          'es',
+          'it',
+          'sr',
+          'hu',
+          'cs',
+        ]) {
           final langText = (productData['ingredients_text_$lang'] ?? '')
               .toString()
               .trim();
