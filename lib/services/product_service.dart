@@ -110,17 +110,54 @@ class ProductService {
   static const Map<String, List<String>> _haramVariants = {
     'alcohol': ['alcohol', 'alkohol', 'alcool', 'alcol', 'alkol', 'álcool'],
     'ethanol': ['ethanol', 'äthanol', 'éthanol', 'etanolo', 'etanol'],
-    'wine': ['wine', 'wein', 'vin', 'vino', 'şarap', 'wijn', 'vinho'],
-    'beer': ['beer', 'bier', 'bière', 'birra', 'cerveza', 'bira', 'cerveja'],
-    'cognac': ['cognac', 'kognak'],
+    'wine': [
+      'wine',
+      'wein',
+      'vin',
+      'vino',
+      'şarap',
+      'wijn',
+      'vinho',
+      'víno',
+      'bor',
+    ],
+    'beer': [
+      'beer',
+      'bier',
+      'bière',
+      'birra',
+      'cerveza',
+      'bira',
+      'cerveja',
+      'pivo', // SR / CS
+      'sör', // HU
+    ],
+    'cognac': ['cognac', 'kognak', 'konjak', 'konyak', 'koňak'],
     'brandy': ['brandy', 'branntwein', 'brandewijn'],
     'whisky': ['whisky', 'whiskey', 'whiskie', 'viski'],
-    'vodka': ['vodka', 'wodka'],
+    'vodka': ['vodka', 'wodka', 'votka'], // SR
     'rum': ['rum', 'rhum', 'ron'],
-    'gin': ['gin'],
-    'liqueur': ['liqueur', 'likör', 'licor', 'likeur', 'liquore'],
-    'schnapps': ['schnapps', 'schnaps'],
-    'champagne': ['champagne', 'sekt', 'cava', 'spumante'],
+    'gin': ['gin', 'džin'], // SR
+    'liqueur': [
+      'liqueur',
+      'likör',
+      'licor',
+      'likeur',
+      'liquore',
+      'liker',
+      'likőr',
+      'likér',
+    ],
+    'schnapps': ['schnapps', 'schnaps', 'šnaps'], // SR
+    'champagne': [
+      'champagne',
+      'sekt',
+      'cava',
+      'spumante',
+      'šampanjac',
+      'pezsgő',
+      'šampaňské',
+    ],
     'prosecco': ['prosecco'],
     'bourbon': ['bourbon'],
     'sake': ['sake', 'saké'],
@@ -135,6 +172,12 @@ class ProductService {
       'varkens',
       'varkensvlees',
       'porco',
+      'svinjetina', // SR
+      'svinjsko', // SR
+      'sertéshús', // HU
+      'sertés', // HU
+      'vepřové', // CS
+      'vepřová', // CS
     ],
     'lard': [
       'lard',
@@ -145,12 +188,40 @@ class ProductService {
       'manteca',
       'domuz yağı',
       'banha',
+      'svinjska mast', // SR
+      'sertészsír', // HU
+      'sádlo', // CS
     ],
-    'gelatin': ['gelatin', 'gelatine', 'gelatina', 'jelatin', 'gélatine'],
-    'bacon': ['bacon', 'speck', 'lardons', 'pancetta', 'domuz pastırması'],
-    'ham': ['ham', 'schinken', 'jambon', 'prosciutto', 'jamón', 'presunto'],
+    'gelatin': [
+      'gelatin',
+      'gelatine',
+      'gelatina',
+      'jelatin',
+      'gélatine',
+      'želatina', // SR / CS
+      'zselatin', // HU
+    ],
+    'bacon': [
+      'bacon',
+      'speck',
+      'lardons',
+      'pancetta',
+      'domuz pastırması',
+      'slanina', // SR / CS
+      'szalonna', // HU
+    ],
+    'ham': [
+      'ham',
+      'schinken',
+      'jambon',
+      'prosciutto',
+      'jamón',
+      'presunto',
+      'šunka', // SR / CS
+      'sonka', // HU
+    ],
     'pepperoni': ['pepperoni'],
-    'salami': ['salami', 'salame'],
+    'salami': ['salami', 'salame', 'szalámi', 'salám'], // HU / CS
     'chorizo': ['chorizo'],
     'prosciutto': ['prosciutto'],
     'carmine': ['carmine', 'karmin', 'carmín', 'karmín', 'carmin'],
@@ -160,6 +231,8 @@ class ProductService {
       'cocciniglia',
       'cochinilla',
       'koşnil',
+      'košenil', // SR
+      'košenila', // CS
     ],
     'e120': ['e120', 'e-120'],
     'e441': ['e441', 'e-441'],
@@ -183,6 +256,9 @@ class ProductService {
       'cuajo',
       'peynir mayası',
       'stremsel',
+      'sirilo', // SR
+      'oltóanyag', // HU
+      'syřidlo', // CS
     ],
     'whey': [
       'whey',
@@ -192,6 +268,9 @@ class ProductService {
       'suero de leche',
       'peynir suyu',
       'wei',
+      'surutka', // SR
+      'tejsavó', // HU
+      'syrovátka', // CS
     ],
     'l-cysteine': [
       'l-cysteine',
@@ -199,6 +278,8 @@ class ProductService {
       'l-cystéine',
       'l-cisteina',
       'l-sistein',
+      'l-cistein', // SR
+      'l-cisztein', // HU
     ],
     'natural flavour': [
       'natural flavour',
@@ -210,6 +291,9 @@ class ProductService {
       'aroma natural',
       'doğal aroma',
       'natuurlijk aroma',
+      'prirodna aroma', // SR
+      'természetes aroma', // HU
+      'přírodní aroma', // CS
     ],
     'flavouring': [
       'flavouring',
@@ -220,8 +304,17 @@ class ProductService {
       'doğal aroma',
       'natürliches aroma',
       'smaakstof',
+      'ízesítő', // HU
     ],
-    'enzymes': ['enzymes', 'enzyme', 'enzimi', 'enzimas', 'enzim', 'enzymen'],
+    'enzymes': [
+      'enzymes',
+      'enzyme',
+      'enzimi',
+      'enzimas',
+      'enzim',
+      'enzymen',
+      'enzymy', // CS
+    ],
     'glycerol': [
       'glycerol',
       'glycerin',
@@ -229,8 +322,233 @@ class ProductService {
       'glicerina',
       'gliserin',
       'glycerine',
+      'glicerol', // SR
     ],
   };
+
+  // Canonical keyword → locale → display name for the translated view.
+  // Covers the app's supported UI locales (tr, de, fr, es, it, nl, sr, hu, cs).
+  // Falls back to the canonical English key when a locale is absent.
+  static const Map<String, Map<String, String>> _canonicalDisplayNames = {
+    'alcohol': {
+      'de': 'Alkohol',
+      'tr': 'alkol',
+      'fr': 'alcool',
+      'es': 'alcohol',
+      'it': 'alcol',
+      'nl': 'alcohol',
+      'sr': 'alkohol',
+      'hu': 'alkohol',
+      'cs': 'alkohol',
+    },
+    'ethanol': {
+      'de': 'Äthanol',
+      'tr': 'etanol',
+      'fr': 'éthanol',
+      'es': 'etanol',
+      'it': 'etanolo',
+      'nl': 'ethanol',
+      'sr': 'etanol',
+      'hu': 'etanol',
+      'cs': 'etanol',
+    },
+    'wine': {
+      'de': 'Wein',
+      'tr': 'şarap',
+      'fr': 'vin',
+      'es': 'vino',
+      'it': 'vino',
+      'nl': 'wijn',
+      'sr': 'vino',
+      'hu': 'bor',
+      'cs': 'víno',
+    },
+    'beer': {
+      'de': 'Bier',
+      'tr': 'bira',
+      'fr': 'bière',
+      'es': 'cerveza',
+      'it': 'birra',
+      'nl': 'bier',
+      'sr': 'pivo',
+      'hu': 'sör',
+      'cs': 'pivo',
+    },
+    'cognac': {
+      'de': 'Kognak',
+      'tr': 'konyak',
+      'sr': 'konjak',
+      'hu': 'konyak',
+      'cs': 'koňak',
+    },
+    'brandy': {'de': 'Weinbrand', 'nl': 'brandewijn'},
+    'whisky': {'tr': 'viski'},
+    'vodka': {'de': 'Wodka', 'sr': 'votka'},
+    'rum': {'fr': 'rhum', 'es': 'ron'},
+    'gin': {'sr': 'džin'},
+    'liqueur': {
+      'de': 'Likör',
+      'fr': 'liqueur',
+      'es': 'licor',
+      'it': 'liquore',
+      'nl': 'likeur',
+      'sr': 'liker',
+      'hu': 'likőr',
+      'cs': 'likér',
+    },
+    'schnapps': {'de': 'Schnaps', 'sr': 'šnaps'},
+    'champagne': {
+      'de': 'Sekt',
+      'es': 'cava',
+      'it': 'spumante',
+      'sr': 'šampanjac',
+      'hu': 'pezsgő',
+      'cs': 'šampaňské',
+    },
+    'pork': {
+      'de': 'Schweinefleisch',
+      'tr': 'domuz',
+      'fr': 'porc',
+      'es': 'cerdo',
+      'it': 'maiale',
+      'nl': 'varkensvlees',
+      'sr': 'svinjetina',
+      'hu': 'sertéshús',
+      'cs': 'vepřové',
+    },
+    'lard': {
+      'de': 'Schmalz',
+      'tr': 'domuz yağı',
+      'fr': 'saindoux',
+      'es': 'manteca',
+      'it': 'strutto',
+      'sr': 'svinjska mast',
+      'hu': 'sertészsír',
+      'cs': 'sádlo',
+    },
+    'gelatin': {
+      'de': 'Gelatine',
+      'tr': 'jelatin',
+      'fr': 'gélatine',
+      'es': 'gelatina',
+      'it': 'gelatina',
+      'sr': 'želatina',
+      'hu': 'zselatin',
+      'cs': 'želatina',
+    },
+    'bacon': {
+      'de': 'Speck',
+      'tr': 'domuz pastırması',
+      'fr': 'lardons',
+      'it': 'pancetta',
+      'sr': 'slanina',
+      'hu': 'szalonna',
+      'cs': 'slanina',
+    },
+    'ham': {
+      'de': 'Schinken',
+      'fr': 'jambon',
+      'es': 'jamón',
+      'it': 'prosciutto',
+      'nl': 'ham',
+      'sr': 'šunka',
+      'hu': 'sonka',
+      'cs': 'šunka',
+    },
+    'salami': {'it': 'salame', 'hu': 'szalámi', 'cs': 'salám'},
+    'carmine': {
+      'de': 'Karmin',
+      'tr': 'karmin',
+      'fr': 'carmin',
+      'es': 'carmín',
+      'sr': 'karmin',
+      'hu': 'karmin',
+      'cs': 'karmin',
+    },
+    'cochineal': {
+      'de': 'Cochenille',
+      'tr': 'koşnil',
+      'fr': 'cochenille',
+      'es': 'cochinilla',
+      'it': 'cocciniglia',
+      'sr': 'košenil',
+      'cs': 'košenila',
+    },
+    'rennet': {
+      'de': 'Lab',
+      'tr': 'peynir mayası',
+      'fr': 'présure',
+      'es': 'cuajo',
+      'it': 'caglio',
+      'nl': 'stremsel',
+      'sr': 'sirilo',
+      'hu': 'oltóanyag',
+      'cs': 'syřidlo',
+    },
+    'whey': {
+      'de': 'Molke',
+      'tr': 'peynir suyu',
+      'fr': 'lactosérum',
+      'es': 'suero de leche',
+      'it': 'siero di latte',
+      'nl': 'wei',
+      'sr': 'surutka',
+      'hu': 'tejsavó',
+      'cs': 'syrovátka',
+    },
+    'l-cysteine': {
+      'de': 'L-Cystein',
+      'tr': 'l-sistein',
+      'fr': 'l-cystéine',
+      'es': 'l-cisteina',
+      'it': 'l-cisteina',
+      'sr': 'l-cistein',
+      'hu': 'l-cisztein',
+      'cs': 'l-cystein',
+    },
+    'natural flavour': {
+      'de': 'natürliches Aroma',
+      'tr': 'doğal aroma',
+      'fr': 'arôme naturel',
+      'es': 'aroma natural',
+      'it': 'aroma naturale',
+      'nl': 'natuurlijk aroma',
+      'sr': 'prirodna aroma',
+      'hu': 'természetes aroma',
+      'cs': 'přírodní aroma',
+    },
+    'flavouring': {
+      'de': 'Aroma',
+      'tr': 'aroma',
+      'fr': 'arôme',
+      'nl': 'smaakstof',
+      'hu': 'ízesítő',
+    },
+    'enzymes': {
+      'de': 'Enzyme',
+      'tr': 'enzim',
+      'es': 'enzimas',
+      'it': 'enzimi',
+      'nl': 'enzymen',
+      'sr': 'enzimi',
+      'hu': 'enzim',
+      'cs': 'enzymy',
+    },
+    'glycerol': {
+      'de': 'Glycerin',
+      'tr': 'gliserin',
+      'fr': 'glycérol',
+      'es': 'glicerina',
+      'it': 'glicerina',
+      'nl': 'glycerine',
+      'sr': 'glicerol',
+    },
+  };
+
+  /// Returns the display name for [canonical] in the given [locale],
+  /// falling back to the canonical English key if the locale is not covered.
+  static String canonicalDisplay(String canonical, String locale) =>
+      _canonicalDisplayNames[canonical]?[locale] ?? canonical;
 
   // All alcohol-family terms — these get the "alcohol-free" exclusion applied
   static const _alcoholFamily = {
@@ -284,10 +602,12 @@ class ProductService {
     List<String> haram,
     List<String> suspicious,
     Map<String, String> warnings,
+    Map<String, String> translations,
     String explanation,
   })
   analyzeWithKeywords(List<String> ingredients) {
     final Map<String, String> warnings = {};
+    final Map<String, String> translations = {};
     final List<String> haram = [];
     final List<String> suspicious = [];
 
@@ -298,6 +618,7 @@ class ProductService {
       for (final entry in haramKeywords.entries) {
         if (matchesKeyword(lower, entry.key)) {
           warnings[ingredient] = entry.value;
+          translations[ingredient] = entry.key;
           haram.add(ingredient);
           foundHaram = true;
           break;
@@ -308,6 +629,7 @@ class ProductService {
       for (final entry in suspiciousKeywords.entries) {
         if (matchesKeyword(lower, entry.key)) {
           warnings[ingredient] = entry.value;
+          translations[ingredient] = entry.key;
           suspicious.add(ingredient);
           break;
         }
@@ -339,6 +661,7 @@ class ProductService {
       haram: haram,
       suspicious: suspicious,
       warnings: warnings,
+      translations: translations,
       explanation: explanation,
     );
   }
@@ -348,9 +671,11 @@ class ProductService {
     List<String> haram,
     List<String> suspicious,
     Map<String, String> warnings,
+    Map<String, String> translations,
   })
   _customKeywordAnalysis(List<String> ingredients) {
     final Map<String, String> warnings = {};
+    final Map<String, String> translations = {};
     final List<String> haram = [];
     final List<String> suspicious = [];
 
@@ -360,6 +685,7 @@ class ProductService {
         final variants = _customHaramVariants[entry.key] ?? [entry.key];
         if (variants.any((v) => _matchesVariant(ingredient, v))) {
           warnings[ingredient] = entry.value;
+          translations[ingredient] = entry.key;
           haram.add(ingredient);
           foundHaram = true;
           break;
@@ -370,6 +696,7 @@ class ProductService {
         final variants = _customSuspiciousVariants[entry.key] ?? [entry.key];
         if (variants.any((v) => _matchesVariant(ingredient, v))) {
           warnings[ingredient] = entry.value;
+          translations[ingredient] = entry.key;
           suspicious.add(ingredient);
           break;
         }
@@ -381,6 +708,7 @@ class ProductService {
       haram: haram,
       suspicious: suspicious,
       warnings: warnings,
+      translations: translations,
     );
   }
 
@@ -398,6 +726,11 @@ class ProductService {
       ...kwCheck.warnings,
       ...customCheck.warnings,
     };
+    final allTranslations = {
+      ...product.ingredientTranslations,
+      ...kwCheck.translations,
+      ...customCheck.translations,
+    };
     final isNowHaram = allHaram.isNotEmpty;
 
     if (isNowHaram && product.isHalal) {
@@ -410,8 +743,12 @@ class ProductService {
         isHalal: false,
         haramIngredients: allHaram,
         ingredientWarnings: allWarnings,
+        ingredientTranslations: allTranslations,
         explanation: explanation,
       );
+    }
+    if (allTranslations.isNotEmpty) {
+      return product.copyWith(ingredientTranslations: allTranslations);
     }
     return product;
   }
@@ -796,6 +1133,10 @@ class ProductService {
         haramIngredients: haramIngredients,
         suspiciousIngredients: suspiciousIngredients,
         ingredientWarnings: ingredientWarnings,
+        ingredientTranslations: {
+          ...fallback.translations,
+          ...(nameCheck?.translations ?? {}),
+        },
         labels: labels,
         imageUrl: imageUrl,
         imageFrontUrl: imageFrontUrl,
