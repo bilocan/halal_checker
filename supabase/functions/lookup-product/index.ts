@@ -5,12 +5,14 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000
+const CACHE_TTL_MS = 30 * 24 * 60 * 60 * 1000
 const OFF_BASE = 'https://world.openfoodfacts.org/api/v0/product'
 const OBF_BASE = 'https://world.openbeautyfacts.org/api/v0/product'
 const OPF_BASE = 'https://world.openproductsfacts.org/api/v0/product'
 const CLAUDE_URL = 'https://api.anthropic.com/v1/messages'
 const CLAUDE_MODEL = 'claude-haiku-4-5'
+const GEMINI_URL_BASE = 'https://generativelanguage.googleapis.com/v1beta/models'
+const GEMINI_MODEL = 'gemini-2.0-flash'
 
 const CLAUDE_SYSTEM = `You are an expert in Islamic dietary laws (halal). Analyze ingredient lists and determine if a product is halal.
 
@@ -347,67 +349,101 @@ Deno.serve(async (req) => {
     const rawCategories: string[] = Array.isArray(pd.categories_tags) ? pd.categories_tags : []
     const haramCategory = rawCategories.find(c => HARAM_CATEGORIES.has(c.toLowerCase())) ?? null
 
-    // 4. Claude analysis (with keyword fallback)
-    let isHalal = false
-    let isUnknown = ingredients.length === 0 && !haramCategory
-    let haramIngredients: string[] = []
-    let suspiciousIngredients: string[] = []
-    let ingredientWarnings: Record<string, string> = {}
-    let explanation = ''
-    let analyzedByAI = false
+    // 4. Tiered AI analysis — keyword-first to minimize cost.
+    // Run keywords upfront; skip AI entirely when the result is already determined.
+    const kwFirst = keywordAnalysis(ingredients, customHaramEntries, customSuspiciousEntries)
+    let isHalal               = kwFirst.isHalal
+    let isUnknown             = kwFirst.isUnknown
+    let haramIngredients      = kwFirst.haram
+    let suspiciousIngredients = kwFirst.suspicious
+    let ingredientWarnings    = kwFirst.warnings
+    let explanation           = kwFirst.explanation
+    let analyzedByAI          = false
 
-    const claudeKey = Deno.env.get('CLAUDE_API_KEY')
-    if (claudeKey) {
-      const claudeRes = await fetch(CLAUDE_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': claudeKey,
-          'anthropic-version': '2023-06-01',
-          'anthropic-beta': 'prompt-caching-2024-07-31',
-        },
-        body: JSON.stringify({
-          model: CLAUDE_MODEL,
-          max_tokens: 1024,
-          system: [{ type: 'text', text: CLAUDE_SYSTEM, cache_control: { type: 'ephemeral' } }],
-          messages: [{ role: 'user', content: `Analyze these ingredients:\n${ingredients.join(', ')}` }],
-        }),
-      })
-
-      if (claudeRes.ok) {
-        const cd = await claudeRes.json()
-        const text: string = cd.content?.find((c: { type: string }) => c.type === 'text')?.text ?? ''
+    // Skip AI when keywords already found haram, product is in a haram category,
+    // or there are no ingredients — AI cannot improve on any of these cases.
+    const skipAI = kwFirst.haram.length > 0 || haramCategory !== null || ingredients.length === 0
+    if (!skipAI) {
+      // Tier 1: Gemini Flash — free 1,500 req/day; handles the vast majority of scans
+      const geminiKey = Deno.env.get('GEMINI_API_KEY')
+      if (geminiKey) {
         try {
-          const p = JSON.parse(text.trim())
-          isHalal               = p.isHalal ?? false
-          isUnknown             = p.isUnknown ?? (ingredients.length === 0)
-          haramIngredients      = p.haramIngredients ?? []
-          suspiciousIngredients = p.suspiciousIngredients ?? []
-          ingredientWarnings    = p.ingredientWarnings ?? {}
-          explanation           = p.explanation ?? ''
-          analyzedByAI          = true
-        } catch { /* fall through to keyword analysis */ }
+          const geminiRes = await fetch(
+            `${GEMINI_URL_BASE}/${GEMINI_MODEL}:generateContent?key=${geminiKey}`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                contents: [{ parts: [{ text: `Analyze these ingredients:\n${ingredients.join(', ')}` }] }],
+                systemInstruction: { parts: [{ text: CLAUDE_SYSTEM }] },
+                generationConfig: { maxOutputTokens: 1024, temperature: 0 },
+              }),
+            },
+          )
+          if (geminiRes.ok) {
+            const gd = await geminiRes.json()
+            const text: string = gd.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
+            try {
+              const p = JSON.parse(text.replace(/```json\n?|\n?```/g, '').trim())
+              isHalal               = p.isHalal ?? false
+              isUnknown             = p.isUnknown ?? (ingredients.length === 0)
+              haramIngredients      = p.haramIngredients ?? []
+              suspiciousIngredients = p.suspiciousIngredients ?? []
+              ingredientWarnings    = p.ingredientWarnings ?? {}
+              explanation           = p.explanation ?? ''
+              analyzedByAI          = true
+            } catch { /* fall through to Claude */ }
+          }
+        } catch { /* fall through to Claude */ }
+      }
+
+      // Tier 2: Claude Haiku — paid fallback when Gemini is unavailable or fails
+      if (!analyzedByAI) {
+        const claudeKey = Deno.env.get('CLAUDE_API_KEY')
+        if (claudeKey) {
+          try {
+            const claudeRes = await fetch(CLAUDE_URL, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'x-api-key': claudeKey,
+                'anthropic-version': '2023-06-01',
+                'anthropic-beta': 'prompt-caching-2024-07-31',
+              },
+              body: JSON.stringify({
+                model: CLAUDE_MODEL,
+                max_tokens: 1024,
+                system: [{ type: 'text', text: CLAUDE_SYSTEM, cache_control: { type: 'ephemeral' } }],
+                messages: [{ role: 'user', content: `Analyze these ingredients:\n${ingredients.join(', ')}` }],
+              }),
+            })
+            if (claudeRes.ok) {
+              const cd = await claudeRes.json()
+              const text: string = cd.content?.find((c: { type: string }) => c.type === 'text')?.text ?? ''
+              try {
+                const p = JSON.parse(text.trim())
+                isHalal               = p.isHalal ?? false
+                isUnknown             = p.isUnknown ?? (ingredients.length === 0)
+                haramIngredients      = p.haramIngredients ?? []
+                suspiciousIngredients = p.suspiciousIngredients ?? []
+                ingredientWarnings    = p.ingredientWarnings ?? {}
+                explanation           = p.explanation ?? ''
+                analyzedByAI          = true
+              } catch { /* stay with keyword result */ }
+            }
+          } catch { /* stay with keyword result */ }
+        }
       }
     }
 
-    if (!analyzedByAI) {
-      const kw = keywordAnalysis(ingredients, customHaramEntries, customSuspiciousEntries)
-      isHalal               = kw.isHalal
-      isUnknown             = kw.isUnknown
-      haramIngredients      = kw.haram
-      suspiciousIngredients = kw.suspicious
-      ingredientWarnings    = kw.warnings
-      explanation           = kw.explanation
-    }
-
     // Keyword safety override: haram keywords always win over AI verdict.
-    const kwCheck = keywordAnalysis(ingredients, customHaramEntries, customSuspiciousEntries)
-    if (!kwCheck.isHalal && isHalal) {
+    // Reuses kwFirst — no need to re-run keyword analysis.
+    if (kwFirst.haram.length > 0 && isHalal) {
       isHalal            = false
       isUnknown          = false
-      haramIngredients   = [...new Set([...haramIngredients, ...kwCheck.haram])]
-      ingredientWarnings = { ...ingredientWarnings, ...kwCheck.warnings }
-      explanation        = kwCheck.explanation
+      haramIngredients   = [...new Set([...haramIngredients, ...kwFirst.haram])]
+      ingredientWarnings = { ...ingredientWarnings, ...kwFirst.warnings }
+      explanation        = kwFirst.explanation
     }
 
     // Category-based override: known alcoholic categories always win.
