@@ -243,6 +243,7 @@ function toProduct(row: Record<string, any>) {
     ingredients:           row.ingredients,
     isHalal:               row.is_halal,
     isUnknown:             row.is_unknown ?? false,
+    isNonFood:             row.is_non_food ?? false,
     haramIngredients:      row.haram_ingredients,
     suspiciousIngredients: row.suspicious_ingredients,
     ingredientWarnings:    row.ingredient_warnings,
@@ -312,10 +313,12 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 3. Fetch product from Open*Facts databases in order
+    // 3. Fetch product from Open*Facts databases in order.
+    // Products found via OBF (beauty) or OPF (general products) are non-food.
     let pd = await fetchFromFoodApi(barcode, OFF_BASE)
-    if (!pd) pd = await fetchFromFoodApi(barcode, OBF_BASE)
-    if (!pd) pd = await fetchFromFoodApi(barcode, OPF_BASE)
+    let isNonFood = false
+    if (!pd) { pd = await fetchFromFoodApi(barcode, OBF_BASE); if (pd) isNonFood = true }
+    if (!pd) { pd = await fetchFromFoodApi(barcode, OPF_BASE); if (pd) isNonFood = true }
 
     if (!pd) {
       return new Response(
@@ -346,23 +349,38 @@ Deno.serve(async (req) => {
       'en:alcoholic-beverages', 'en:beers', 'en:wines',
       'en:spirits', 'en:champagnes', 'en:ciders', 'en:sake',
     ])
+    // Categories that are inherently halal — mark halal even with no ingredients.
+    const HALAL_CATEGORIES = new Set([
+      'en:waters', 'en:bottled-waters', 'en:mineral-waters', 'en:spring-waters',
+      'en:carbonated-waters', 'en:sparkling-waters', 'en:natural-mineral-waters',
+      'en:still-natural-mineral-waters', 'en:still-waters', 'en:sparkling-mineral-waters',
+      'en:flavoured-waters', 'en:table-waters', 'en:drinking-water',
+      'en:salts', 'en:table-salt', 'en:sea-salt',
+      'en:sugars', 'en:white-sugar', 'en:cane-sugar', 'en:granulated-sugar',
+      'en:vinegars',
+    ])
     const rawCategories: string[] = Array.isArray(pd.categories_tags) ? pd.categories_tags : []
     const haramCategory = rawCategories.find(c => HARAM_CATEGORIES.has(c.toLowerCase())) ?? null
+    const isHalalByCategory = !haramCategory && rawCategories.some(c => HALAL_CATEGORIES.has(c.toLowerCase()))
 
     // 4. Tiered AI analysis — keyword-first to minimize cost.
     // Run keywords upfront; skip AI entirely when the result is already determined.
     const kwFirst = keywordAnalysis(ingredients, customHaramEntries, customSuspiciousEntries)
-    let isHalal               = kwFirst.isHalal
-    let isUnknown             = kwFirst.isUnknown
+    let isHalal               = isNonFood ? false : (isHalalByCategory && ingredients.length === 0 ? true : kwFirst.isHalal)
+    let isUnknown             = isNonFood ? false : (isHalalByCategory && ingredients.length === 0 ? false : kwFirst.isUnknown)
     let haramIngredients      = kwFirst.haram
     let suspiciousIngredients = kwFirst.suspicious
     let ingredientWarnings    = kwFirst.warnings
-    let explanation           = kwFirst.explanation
+    let explanation           = isNonFood
+      ? 'This is a non-food product. Islamic dietary rules do not apply.'
+      : (isHalalByCategory && ingredients.length === 0
+          ? 'This product is in an inherently halal category (e.g. water, salt). No harmful ingredients expected.'
+          : kwFirst.explanation)
     let analyzedByAI          = false
 
     // Skip AI when keywords already found haram, product is in a haram category,
-    // or there are no ingredients — AI cannot improve on any of these cases.
-    const skipAI = kwFirst.haram.length > 0 || haramCategory !== null || ingredients.length === 0
+    // is non-food, halal-by-category, or there are no ingredients.
+    const skipAI = isNonFood || isHalalByCategory || kwFirst.haram.length > 0 || haramCategory !== null || ingredients.length === 0
     if (!skipAI) {
       // Tier 1: Gemini Flash — free 1,500 req/day; handles the vast majority of scans
       const geminiKey = Deno.env.get('GEMINI_API_KEY')
@@ -474,6 +492,7 @@ Deno.serve(async (req) => {
       ingredients,
       is_halal:               isHalal,
       is_unknown:             isUnknown,
+      is_non_food:            isNonFood,
       haram_ingredients:      haramIngredients,
       suspicious_ingredients: suspiciousIngredients,
       ingredient_warnings:    ingredientWarnings,

@@ -1,0 +1,2 @@
+ALTER TABLE products
+  ADD COLUMN IF NOT EXISTS is_non_food BOOLEAN NOT NULL DEFAULT false;

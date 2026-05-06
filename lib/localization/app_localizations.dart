@@ -129,6 +129,9 @@ class AppLocalizations {
       'unknown': '? UNKNOWN',
       'explanationUnknown':
           'No ingredient data was found for this product. Halal status cannot be determined — check the packaging directly.',
+      'nonFood': 'ℹ️ NOT FOOD',
+      'explanationNonFood':
+          'This is a non-food product. Islamic dietary rules do not apply.',
       'about': 'About',
       'version': 'Version',
       'releaseNotes': 'Release Notes',
@@ -258,6 +261,9 @@ class AppLocalizations {
       'unknown': '? BİLİNMİYOR',
       'explanationUnknown':
           'Bu ürün için içerik bilgisi bulunamadı. Helal durumu belirlenemiyor — lütfen ambalajı doğrudan kontrol edin.',
+      'nonFood': 'ℹ️ GIDA DEĞİL',
+      'explanationNonFood':
+          'Bu bir gıda ürünü değildir. İslami beslenme kuralları bu ürün için geçerli değildir.',
       'about': 'Hakkında',
       'version': 'Versiyon',
       'releaseNotes': 'Sürüm Notları',
@@ -392,6 +398,9 @@ class AppLocalizations {
       'unknown': '? UNBEKANNT',
       'explanationUnknown':
           'Für dieses Produkt wurden keine Zutatendaten gefunden. Der Halal-Status kann nicht bestimmt werden — bitte prüfen Sie die Verpackung direkt.',
+      'nonFood': 'ℹ️ KEIN LEBENSMITTEL',
+      'explanationNonFood':
+          'Dies ist kein Lebensmittelprodukt. Islamische Ernährungsregeln gelten nicht für dieses Produkt.',
       'about': 'Über',
       'version': 'Version',
       'releaseNotes': 'Versionshinweise',
@@ -520,6 +529,8 @@ class AppLocalizations {
   String get explanationHaram => _translate('explanationHaram');
   String get unknown => _translate('unknown');
   String get explanationUnknown => _translate('explanationUnknown');
+  String get nonFood => _translate('nonFood');
+  String get explanationNonFood => _translate('explanationNonFood');
   String get about => _translate('about');
   String get version => _translate('version');
   String get releaseNotes => _translate('releaseNotes');

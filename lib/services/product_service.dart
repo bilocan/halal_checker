@@ -453,6 +453,7 @@ class ProductService {
         'ingredients': row['ingredients'],
         'isHalal': row['is_halal'],
         'isUnknown': row['is_unknown'] ?? false,
+        'isNonFood': row['is_non_food'] ?? false,
         'haramIngredients': row['haram_ingredients'],
         'suspiciousIngredients': row['suspicious_ingredients'],
         'ingredientWarnings': row['ingredient_warnings'],
@@ -541,10 +542,21 @@ class ProductService {
       return safe;
     }
 
-    // Step 4: Fallback — try each open food database in order
+    // Step 4: Fallback — try each open food database in order.
+    // OBF (beauty) and OPF (general products) are non-food databases.
+    const nonFoodUrls = {_obfBaseUrl, _opfBaseUrl};
     for (final baseUrl in [_offBaseUrl, _obfBaseUrl, _opfBaseUrl]) {
-      final product = await _fetchFromFoodApi(barcode, baseUrl);
+      var product = await _fetchFromFoodApi(barcode, baseUrl);
       if (product != null) {
+        if (nonFoodUrls.contains(baseUrl)) {
+          product = product.copyWith(
+            isNonFood: true,
+            isHalal: false,
+            isUnknown: false,
+            explanation:
+                'This is a non-food product. Islamic dietary rules do not apply.',
+          );
+        }
         final safe = _applyKeywordSafety(product);
         await _cache.saveProduct(barcode, safe);
         return safe;
@@ -675,11 +687,41 @@ class ProductService {
         'en:ciders',
         'en:sake',
       };
+      // Categories where the product is inherently halal even with no ingredient list.
+      const halalCategories = {
+        'en:waters',
+        'en:bottled-waters',
+        'en:mineral-waters',
+        'en:spring-waters',
+        'en:carbonated-waters',
+        'en:sparkling-waters',
+        'en:natural-mineral-waters',
+        'en:still-natural-mineral-waters',
+        'en:still-waters',
+        'en:sparkling-mineral-waters',
+        'en:flavoured-waters',
+        'en:table-waters',
+        'en:drinking-water',
+        'en:salts',
+        'en:table-salt',
+        'en:sea-salt',
+        'en:sugars',
+        'en:white-sugar',
+        'en:cane-sugar',
+        'en:granulated-sugar',
+        'en:vinegars',
+      };
       final rawCategories = productData['categories_tags'];
       final bool haramByCategory =
           rawCategories is List &&
           rawCategories.any(
             (c) => haramCategories.contains(c.toString().toLowerCase()),
+          );
+      final bool halalByCategory =
+          !haramByCategory &&
+          rawCategories is List &&
+          rawCategories.any(
+            (c) => halalCategories.contains(c.toString().toLowerCase()),
           );
 
       final fallback = analyzeWithKeywords(ingredients);
@@ -691,10 +733,6 @@ class ProductService {
           ? analyzeWithKeywords([name.toLowerCase()])
           : null;
 
-      final bool isUnknown =
-          ingredients.isEmpty &&
-          (nameCheck?.isHalal ?? true) &&
-          !haramByCategory;
       final List<String> haramIngredients = fallback.haram.isNotEmpty
           ? fallback.haram
           : (nameCheck?.haram ?? []);
@@ -706,6 +744,15 @@ class ProductService {
           ? fallback.warnings
           : (nameCheck?.warnings ?? {});
 
+      // Halal-by-category overrides unknown when no ingredients are listed.
+      final bool isHalalByCategory =
+          halalByCategory && ingredients.isEmpty && haramIngredients.isEmpty;
+      final bool isUnknown =
+          ingredients.isEmpty &&
+          (nameCheck?.isHalal ?? true) &&
+          !haramByCategory &&
+          !isHalalByCategory;
+
       final String explanation;
       if (haramByCategory &&
           fallback.haram.isEmpty &&
@@ -713,6 +760,9 @@ class ProductService {
         explanation =
             'This product belongs to a category that is not permissible: '
             '${rawCategories.firstWhere((c) => haramCategories.contains(c.toString().toLowerCase()))}.';
+      } else if (isHalalByCategory) {
+        explanation =
+            'This product is in an inherently halal category (e.g. water, salt). No harmful ingredients expected.';
       } else if (isUnknown) {
         explanation =
             'No ingredient data found. Halal status cannot be determined — check the packaging directly.';
@@ -728,7 +778,9 @@ class ProductService {
         barcode: barcode,
         name: name,
         ingredients: ingredients,
-        isHalal: !isUnknown && !haramByCategory && haramIngredients.isEmpty,
+        isHalal:
+            isHalalByCategory ||
+            (!isUnknown && !haramByCategory && haramIngredients.isEmpty),
         isUnknown: isUnknown,
         haramIngredients: haramIngredients,
         suspiciousIngredients: suspiciousIngredients,
