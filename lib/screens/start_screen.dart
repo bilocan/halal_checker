@@ -15,6 +15,7 @@ import 'result_screen.dart';
 import 'home_screen.dart';
 import 'about_screen.dart';
 import 'keywords_screen.dart';
+import 'directory_screen.dart';
 
 class StartScreen extends StatefulWidget {
   const StartScreen({super.key});
@@ -341,7 +342,27 @@ class _StartScreenState extends State<StartScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const DirectoryScreen()),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: kGreen,
+                    side: const BorderSide(color: kGreenLight),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  icon: const Icon(Icons.store),
+                  label: const Text(
+                    'Halal Directory',
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                  ),
+                ),
+                const SizedBox(height: 24),
                 // Recent scans section
                 Text(
                   localizations.lastResults,
