@@ -575,6 +575,14 @@ class ProductService {
   static bool isFattyAlcohol(String ingredient) =>
       _fattyAlcoholPrefix.hasMatch(ingredient);
 
+  // Unicode-aware word boundary: not preceded/followed by any letter or digit,
+  // including Latin characters with diacritics (U+00C0–U+024F).
+  // Standard \b only recognises [a-zA-Z0-9_], so words like "šunka", "vepřové",
+  // "şarap", or "pezsgő" would never trigger a boundary when preceded/followed
+  // by a space or comma.
+  static const _wPre = '(?<![a-zA-Z\\dÀ-ɏ])';
+  static const _wPost = '(?![a-zA-Z\\dÀ-ɏ])';
+
   static bool _matchesVariant(String ingredient, String variant) {
     if (variant.contains(' ')) {
       return ingredient.toLowerCase().contains(variant.toLowerCase());
@@ -584,17 +592,27 @@ class ProductService {
       // Skip fatty alcohols — they are halal
       if (_fattyAlcoholPrefix.hasMatch(ingredient)) return false;
       return RegExp(
-        '\\b$escaped\\b(?![-\\s]*free)',
+        '$_wPre$escaped$_wPost(?![-\\s]*free)',
         caseSensitive: false,
       ).hasMatch(ingredient);
     }
-    return RegExp('\\b$escaped\\b', caseSensitive: false).hasMatch(ingredient);
+    return RegExp(
+      '$_wPre$escaped$_wPost',
+      caseSensitive: false,
+    ).hasMatch(ingredient);
   }
 
   static bool matchesKeyword(String ingredient, String keyword) {
     final variants =
         _haramVariants[keyword] ?? _suspiciousVariants[keyword] ?? [keyword];
     return variants.any((v) => _matchesVariant(ingredient, v));
+  }
+
+  // Returns true only when the ingredient text doesn't already contain the
+  // canonical keyword — i.e. a translation label would actually add information.
+  static bool _needsTranslation(String ingredient, String canonical) {
+    String norm(String s) => s.toLowerCase().replaceAll(RegExp(r'[-\s]'), '');
+    return !norm(ingredient).contains(norm(canonical));
   }
 
   static ({
@@ -618,7 +636,9 @@ class ProductService {
       for (final entry in haramKeywords.entries) {
         if (matchesKeyword(lower, entry.key)) {
           warnings[ingredient] = entry.value;
-          translations[ingredient] = entry.key;
+          if (_needsTranslation(ingredient, entry.key)) {
+            translations[ingredient] = entry.key;
+          }
           haram.add(ingredient);
           foundHaram = true;
           break;
@@ -629,7 +649,9 @@ class ProductService {
       for (final entry in suspiciousKeywords.entries) {
         if (matchesKeyword(lower, entry.key)) {
           warnings[ingredient] = entry.value;
-          translations[ingredient] = entry.key;
+          if (_needsTranslation(ingredient, entry.key)) {
+            translations[ingredient] = entry.key;
+          }
           suspicious.add(ingredient);
           break;
         }
@@ -685,7 +707,9 @@ class ProductService {
         final variants = _customHaramVariants[entry.key] ?? [entry.key];
         if (variants.any((v) => _matchesVariant(ingredient, v))) {
           warnings[ingredient] = entry.value;
-          translations[ingredient] = entry.key;
+          if (_needsTranslation(ingredient, entry.key)) {
+            translations[ingredient] = entry.key;
+          }
           haram.add(ingredient);
           foundHaram = true;
           break;
@@ -696,7 +720,9 @@ class ProductService {
         final variants = _customSuspiciousVariants[entry.key] ?? [entry.key];
         if (variants.any((v) => _matchesVariant(ingredient, v))) {
           warnings[ingredient] = entry.value;
-          translations[ingredient] = entry.key;
+          if (_needsTranslation(ingredient, entry.key)) {
+            translations[ingredient] = entry.key;
+          }
           suspicious.add(ingredient);
           break;
         }
