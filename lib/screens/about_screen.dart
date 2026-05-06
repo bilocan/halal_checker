@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
 import 'package:in_app_update/in_app_update.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
@@ -108,16 +109,34 @@ class _AboutScreenState extends State<AboutScreen> {
         'assets/release_notes.json',
       );
       final data = jsonDecode(jsonString) as List<dynamic>;
-      if (mounted) {
+      if (data.isNotEmpty) {
+        if (mounted) {
+          setState(() {
+            _releaseNotes = data
+                .map((e) => _ReleaseNote.fromJson(e as Map<String, dynamic>))
+                .toList();
+          });
+        }
+        return;
+      }
+    } catch (_) {}
+    // Bundle is empty (local build) — fall back to GitHub API
+    try {
+      final response = await http.get(
+        Uri.parse(
+          'https://api.github.com/repos/bilocan/halal_checker/releases',
+        ),
+        headers: {'Accept': 'application/vnd.github+json'},
+      );
+      if (response.statusCode == 200 && mounted) {
+        final data = jsonDecode(response.body) as List<dynamic>;
         setState(() {
           _releaseNotes = data
               .map((e) => _ReleaseNote.fromJson(e as Map<String, dynamic>))
               .toList();
         });
       }
-    } catch (_) {
-      // silently fail — no release notes shown
-    }
+    } catch (_) {}
   }
 
   Future<void> _checkForUpdate() async {
@@ -232,7 +251,16 @@ class _AboutScreenState extends State<AboutScreen> {
             ),
           ),
           const SizedBox(height: 12),
-          ..._releaseNotes.map(_buildReleaseNoteCard),
+          if (_releaseNotes.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Text(
+                'Release notes are available in production builds.',
+                style: TextStyle(color: Colors.grey.shade500, fontSize: 14),
+              ),
+            )
+          else
+            ..._releaseNotes.map(_buildReleaseNoteCard),
           const SizedBox(height: 12),
         ],
       ),
