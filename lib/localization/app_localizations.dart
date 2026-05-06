@@ -138,6 +138,7 @@ class AppLocalizations {
       'checkForUpdates': 'Check for Updates',
       'upToDate': "You're up to date!",
       'installed': 'Installed',
+      'store': 'Store',
       'latest': 'Latest',
       'updateAvailable': 'Update Available',
       'updateNow': 'Update Now',
@@ -274,6 +275,7 @@ class AppLocalizations {
       'checkForUpdates': 'Güncellemeleri Kontrol Et',
       'upToDate': 'Güncel durumdasınız!',
       'installed': 'Kurulu',
+      'store': 'Mağaza',
       'latest': 'En Son',
       'updateAvailable': 'Güncelleme Mevcut',
       'updateNow': 'Şimdi Güncelle',
@@ -415,6 +417,7 @@ class AppLocalizations {
       'checkForUpdates': 'Nach Updates suchen',
       'upToDate': 'Sie sind auf dem neuesten Stand!',
       'installed': 'Installiert',
+      'store': 'Store',
       'latest': 'Neueste',
       'updateAvailable': 'Update verfügbar',
       'updateNow': 'Jetzt aktualisieren',
@@ -549,6 +552,7 @@ class AppLocalizations {
   String get checkForUpdates => _translate('checkForUpdates');
   String get upToDate => _translate('upToDate');
   String get installed => _translate('installed');
+  String get store => _translate('store');
   String get latest => _translate('latest');
   String get updateAvailable => _translate('updateAvailable');
   String get updateNow => _translate('updateNow');
