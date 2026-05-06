@@ -99,13 +99,15 @@ class _AboutScreenState extends State<AboutScreen> {
   }
 
   Future<void> _loadVersion() async {
-    final info = await PackageInfo.fromPlatform();
-    if (mounted) {
-      setState(() {
-        _version = info.version;
-        _buildNumber = info.buildNumber;
-      });
-    }
+    try {
+      final info = await PackageInfo.fromPlatform();
+      if (mounted) {
+        setState(() {
+          _version = info.version;
+          _buildNumber = info.buildNumber;
+        });
+      }
+    } catch (_) {}
   }
 
   Future<void> _loadReleaseNotes() async {
