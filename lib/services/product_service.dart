@@ -421,6 +421,54 @@ class ProductService {
     return _getProduct(barcode, forceBackendRefresh: true);
   }
 
+  // Read from the shared products table directly, bypassing the Edge Function.
+  // This saves an invocation (Supabase free tier: 500K/month) for barcodes that
+  // are already cached in the shared DB — no OFf fetch, no AI call needed.
+  Future<Product?> _fetchFromSharedDb(String barcode) async {
+    if (!AppConfig.hasSupabase) return null;
+    try {
+      final response = await _httpClient
+          .get(
+            Uri.parse(
+              '${AppConfig.supabaseUrl}/rest/v1/products'
+              '?barcode=eq.${Uri.encodeComponent(barcode)}&select=*&limit=1',
+            ),
+            headers: {
+              'Authorization': 'Bearer ${AppConfig.supabaseAnonKey}',
+              'apikey': AppConfig.supabaseAnonKey,
+            },
+          )
+          .timeout(const Duration(seconds: 10));
+      if (response.statusCode != 200) return null;
+      final list = json.decode(response.body) as List<dynamic>;
+      if (list.isEmpty) return null;
+      final row = list.first as Map<String, dynamic>;
+      final fetchedAt = DateTime.tryParse(row['fetched_at'] as String? ?? '');
+      if (fetchedAt == null) return null;
+      if (DateTime.now().difference(fetchedAt) > const Duration(days: 30))
+        return null;
+      return Product.fromJson({
+        'barcode': row['barcode'],
+        'name': row['name'],
+        'ingredients': row['ingredients'],
+        'isHalal': row['is_halal'],
+        'isUnknown': row['is_unknown'] ?? false,
+        'haramIngredients': row['haram_ingredients'],
+        'suspiciousIngredients': row['suspicious_ingredients'],
+        'ingredientWarnings': row['ingredient_warnings'],
+        'labels': row['labels'],
+        'imageUrl': row['image_url'],
+        'imageFrontUrl': row['image_front_url'],
+        'imageIngredientsUrl': row['image_ingredients_url'],
+        'imageNutritionUrl': row['image_nutrition_url'],
+        'explanation': row['explanation'] ?? '',
+        'analyzedByAI': row['analyzed_by_ai'] ?? false,
+      });
+    } catch (_) {
+      return null;
+    }
+  }
+
   // Try the Supabase Edge Function. Returns null on any failure so the caller
   // can fall back to direct OpenFoodFacts + keyword analysis.
   Future<Product?> _fetchFromBackend(
@@ -471,7 +519,18 @@ class ProductService {
       if (cached != null) return cached;
     }
 
-    // Step 2: Try backend (handles OFf + Claude + shared DB)
+    // Step 2: Shared DB read — cheaper than an Edge Function invocation for
+    // barcodes another user has already scanned (no AI, no OFf fetch needed).
+    if (!forceBackendRefresh) {
+      final dbProduct = await _fetchFromSharedDb(barcode);
+      if (dbProduct != null) {
+        final safe = _applyKeywordSafety(dbProduct);
+        await _cache.saveProduct(barcode, safe);
+        return safe;
+      }
+    }
+
+    // Step 3: Edge Function (fetches OFf + runs AI + saves to shared DB)
     final backendProduct = await _fetchFromBackend(
       barcode,
       force: forceBackendRefresh,
@@ -482,7 +541,7 @@ class ProductService {
       return safe;
     }
 
-    // Step 3: Fallback — try each open food database in order
+    // Step 4: Fallback — try each open food database in order
     for (final baseUrl in [_offBaseUrl, _obfBaseUrl, _opfBaseUrl]) {
       final product = await _fetchFromFoodApi(barcode, baseUrl);
       if (product != null) {
