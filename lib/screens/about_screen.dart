@@ -87,12 +87,15 @@ class _AboutScreenState extends State<AboutScreen> {
   String _buildNumber = '';
   bool _checkingUpdate = false;
   List<_ReleaseNote> _releaseNotes = [];
+  AppUpdateInfo? _updateInfo;
+  bool _autoCheckDone = false;
 
   @override
   void initState() {
     super.initState();
     _loadVersion();
     _loadReleaseNotes();
+    if (Platform.isAndroid) _autoCheckForUpdate();
   }
 
   Future<void> _loadVersion() async {
@@ -140,34 +143,176 @@ class _AboutScreenState extends State<AboutScreen> {
     } catch (_) {}
   }
 
+  Future<void> _autoCheckForUpdate() async {
+    try {
+      final info = await InAppUpdate.checkForUpdate();
+      if (mounted) {
+        setState(() {
+          _updateInfo = info;
+          _autoCheckDone = true;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _autoCheckDone = true);
+    }
+  }
+
   Future<void> _checkForUpdate() async {
     setState(() => _checkingUpdate = true);
     try {
       final info = await InAppUpdate.checkForUpdate();
       if (!mounted) return;
+      setState(() {
+        _updateInfo = info;
+        _autoCheckDone = true;
+      });
       if (info.updateAvailability == UpdateAvailability.updateAvailable) {
         await InAppUpdate.startFlexibleUpdate();
         await InAppUpdate.completeFlexibleUpdate();
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context).upToDate),
-            duration: const Duration(seconds: 3),
-          ),
-        );
       }
     } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context).upToDate),
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      }
     } finally {
       if (mounted) setState(() => _checkingUpdate = false);
     }
+  }
+
+  Widget _buildVersionInfo(AppLocalizations loc) {
+    final updateAvailable =
+        _updateInfo?.updateAvailability == UpdateAvailability.updateAvailable;
+    final latestVersion = _releaseNotes.isNotEmpty
+        ? _releaseNotes.first.version
+        : null;
+
+    Widget latestValue;
+    if (!_autoCheckDone) {
+      latestValue = Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            width: 11,
+            height: 11,
+            child: CircularProgressIndicator(
+              strokeWidth: 1.5,
+              color: Colors.grey.shade400,
+            ),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            '...',
+            style: TextStyle(color: Colors.grey.shade400, fontSize: 13),
+          ),
+        ],
+      );
+    } else if (updateAvailable) {
+      latestValue = Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (latestVersion != null) ...[
+            Text(
+              'v$latestVersion',
+              style: const TextStyle(
+                color: kGreenDark,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(width: 6),
+          ],
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(
+              color: kGreenSurface,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: kGreenLight),
+            ),
+            child: Text(
+              loc.updateAvailable,
+              style: const TextStyle(
+                color: kGreenDark,
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      );
+    } else {
+      latestValue = Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            latestVersion != null ? 'v$latestVersion' : 'v$_version',
+            style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+          ),
+          const SizedBox(width: 4),
+          const Icon(Icons.check_circle_outline, color: kGreen, size: 15),
+        ],
+      );
+    }
+
+    return DefaultTextStyle(
+      style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
+      child: Table(
+        defaultColumnWidth: const IntrinsicColumnWidth(),
+        children: [
+          TableRow(
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(right: 8, bottom: 4),
+                child: Text('${loc.installed}:'),
+              ),
+              Text(
+                'v$_version (build $_buildNumber)',
+                style: TextStyle(
+                  color: Colors.grey.shade700,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          if (Platform.isAndroid)
+            TableRow(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: Text('${loc.latest}:'),
+                ),
+                latestValue,
+              ],
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUpdateButton(AppLocalizations loc) {
+    final updateAvailable =
+        _updateInfo?.updateAvailability == UpdateAvailability.updateAvailable;
+    return ElevatedButton.icon(
+      onPressed: _checkingUpdate ? null : _checkForUpdate,
+      icon: _checkingUpdate
+          ? const SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Colors.white,
+              ),
+            )
+          : Icon(
+              updateAvailable
+                  ? Icons.system_update_outlined
+                  : Icons.refresh_outlined,
+            ),
+      label: Text(updateAvailable ? loc.updateNow : loc.checkForUpdates),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: kGreen,
+        foregroundColor: Colors.white,
+        disabledBackgroundColor: kGreenMid,
+        minimumSize: const Size(double.infinity, 50),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
   }
 
   @override
@@ -208,39 +353,13 @@ class _AboutScreenState extends State<AboutScreen> {
                   ),
                 ),
                 const SizedBox(height: 4),
-                if (_version.isNotEmpty)
-                  Text(
-                    '${loc.version} $_version+$_buildNumber',
-                    style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
-                  ),
+                if (_version.isNotEmpty) _buildVersionInfo(loc),
               ],
             ),
           ),
           const SizedBox(height: 28),
           if (Platform.isAndroid) ...[
-            ElevatedButton.icon(
-              onPressed: _checkingUpdate ? null : _checkForUpdate,
-              icon: _checkingUpdate
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                      ),
-                    )
-                  : const Icon(Icons.system_update_outlined),
-              label: Text(loc.checkForUpdates),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: kGreen,
-                foregroundColor: Colors.white,
-                disabledBackgroundColor: kGreenMid,
-                minimumSize: const Size(double.infinity, 50),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
+            _buildUpdateButton(loc),
             const SizedBox(height: 28),
           ],
           Text(

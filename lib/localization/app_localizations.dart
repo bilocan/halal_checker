@@ -137,6 +137,10 @@ class AppLocalizations {
       'releaseNotes': 'Release Notes',
       'checkForUpdates': 'Check for Updates',
       'upToDate': "You're up to date!",
+      'installed': 'Installed',
+      'latest': 'Latest',
+      'updateAvailable': 'Update Available',
+      'updateNow': 'Update Now',
     },
     'tr': {
       'appTitle': 'HalalScan',
@@ -269,6 +273,10 @@ class AppLocalizations {
       'releaseNotes': 'Sürüm Notları',
       'checkForUpdates': 'Güncellemeleri Kontrol Et',
       'upToDate': 'Güncel durumdasınız!',
+      'installed': 'Kurulu',
+      'latest': 'En Son',
+      'updateAvailable': 'Güncelleme Mevcut',
+      'updateNow': 'Şimdi Güncelle',
     },
     'de': {
       'appTitle': 'HalalScan',
@@ -406,6 +414,10 @@ class AppLocalizations {
       'releaseNotes': 'Versionshinweise',
       'checkForUpdates': 'Nach Updates suchen',
       'upToDate': 'Sie sind auf dem neuesten Stand!',
+      'installed': 'Installiert',
+      'latest': 'Neueste',
+      'updateAvailable': 'Update verfügbar',
+      'updateNow': 'Jetzt aktualisieren',
     },
   };
 
@@ -536,6 +548,10 @@ class AppLocalizations {
   String get releaseNotes => _translate('releaseNotes');
   String get checkForUpdates => _translate('checkForUpdates');
   String get upToDate => _translate('upToDate');
+  String get installed => _translate('installed');
+  String get latest => _translate('latest');
+  String get updateAvailable => _translate('updateAvailable');
+  String get updateNow => _translate('updateNow');
 
   static AppLocalizations of(BuildContext context) {
     final localizations = Localizations.of<AppLocalizations>(
