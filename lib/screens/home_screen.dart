@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show HapticFeedback;
+import 'package:flutter/services.dart'
+    show Clipboard, HapticFeedback, FilteringTextInputFormatter;
 import 'package:mobile_scanner/mobile_scanner.dart';
 import '../app_colors.dart';
 import '../localization/app_localizations.dart';
@@ -87,8 +88,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   bool _isValidBarcode(String value) {
     final code = value.trim();
-    // No spaces; standard barcode characters only; min 6 chars
-    return RegExp(r'^[0-9A-Za-z\-\.\$+\%\/\*]{6,50}$').hasMatch(code);
+    return RegExp(r'^\d{6,50}$').hasMatch(code);
   }
 
   void _onDetect(BarcodeCapture capture) async {
@@ -184,8 +184,30 @@ class _HomeScreenState extends State<HomeScreen> {
           title: Text(loc.enterBarcodeManually),
           content: TextField(
             controller: _barcodeController,
-            keyboardType: TextInputType.text,
-            decoration: const InputDecoration(hintText: 'e.g. 0123456789012'),
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            autofocus: true,
+            textInputAction: TextInputAction.done,
+            decoration: InputDecoration(
+              hintText: '0123456789012',
+              labelText: loc.enterBarcodeManually,
+              prefixIcon: const Icon(Icons.barcode_reader),
+              border: const OutlineInputBorder(),
+              suffixIcon: IconButton(
+                icon: const Icon(Icons.content_paste),
+                tooltip: 'Paste',
+                onPressed: () async {
+                  final data = await Clipboard.getData(Clipboard.kTextPlain);
+                  if (data?.text != null) {
+                    final digits = data!.text!.replaceAll(RegExp(r'\D'), '');
+                    _barcodeController.text = digits;
+                    _barcodeController.selection = TextSelection.collapsed(
+                      offset: digits.length,
+                    );
+                  }
+                },
+              ),
+            ),
             onSubmitted: (value) {
               Navigator.of(dialogContext).pop();
               _submitBarcode(value);
