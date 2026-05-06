@@ -73,6 +73,8 @@ class _ReleaseNote {
   }
 }
 
+List<_ReleaseNote>? _releaseNotesCache;
+
 class AboutScreen extends StatefulWidget {
   const AboutScreen({super.key});
 
@@ -104,23 +106,24 @@ class _AboutScreenState extends State<AboutScreen> {
   }
 
   Future<void> _loadReleaseNotes() async {
+    if (_releaseNotesCache != null) {
+      if (mounted) setState(() => _releaseNotes = _releaseNotesCache!);
+      return;
+    }
     try {
       final jsonString = await rootBundle.loadString(
         'assets/release_notes.json',
       );
       final data = jsonDecode(jsonString) as List<dynamic>;
       if (data.isNotEmpty) {
-        if (mounted) {
-          setState(() {
-            _releaseNotes = data
-                .map((e) => _ReleaseNote.fromJson(e as Map<String, dynamic>))
-                .toList();
-          });
-        }
+        _releaseNotesCache = data
+            .map((e) => _ReleaseNote.fromJson(e as Map<String, dynamic>))
+            .toList();
+        if (mounted) setState(() => _releaseNotes = _releaseNotesCache!);
         return;
       }
     } catch (_) {}
-    // Bundle is empty (local build) — fall back to GitHub API
+    // Bundle is empty (local build) — fetch from GitHub API once
     try {
       final response = await http.get(
         Uri.parse(
@@ -128,13 +131,11 @@ class _AboutScreenState extends State<AboutScreen> {
         ),
         headers: {'Accept': 'application/vnd.github+json'},
       );
-      if (response.statusCode == 200 && mounted) {
-        final data = jsonDecode(response.body) as List<dynamic>;
-        setState(() {
-          _releaseNotes = data
-              .map((e) => _ReleaseNote.fromJson(e as Map<String, dynamic>))
-              .toList();
-        });
+      if (response.statusCode == 200) {
+        _releaseNotesCache = (jsonDecode(response.body) as List<dynamic>)
+            .map((e) => _ReleaseNote.fromJson(e as Map<String, dynamic>))
+            .toList();
+        if (mounted) setState(() => _releaseNotes = _releaseNotesCache!);
       }
     } catch (_) {}
   }
