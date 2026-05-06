@@ -39,6 +39,7 @@ jobs:
   # ── Android APK ──────────────────────────────────────────────────────────────
   build-android:
     needs: test
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -81,6 +82,7 @@ jobs:
   # ── iOS ──────────────────────────────────────────────────────────────────────
   build-ios:
     needs: test
+    if: github.event_name == 'pull_request'
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
