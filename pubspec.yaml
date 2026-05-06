@@ -83,6 +83,7 @@ flutter:
   uses-material-design: true
 
   assets:
+    - assets/release_notes.json
     - test_data/seed_products.json
     - test_data/seed_barcodes.txt
 

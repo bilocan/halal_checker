@@ -1,6 +1,8 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:in_app_update/in_app_update.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
@@ -18,23 +20,57 @@ class _ReleaseNote {
     required this.date,
     required this.changes,
   });
-}
 
-const _releaseNotes = [
-  _ReleaseNote(
-    version: '1.0.0',
-    date: 'May 2026',
-    changes: [
-      'Initial release',
-      'Barcode scanning with halal ingredient analysis',
-      'Community feedback system for products',
-      'Multi-language support: English, Turkish, German',
-      'Custom keyword suggestions reviewed by the team',
-      'Scan history stored locally on your device',
-      'Transparency panel showing every keyword we check',
-    ],
-  ),
-];
+  factory _ReleaseNote.fromJson(Map<String, dynamic> json) {
+    final version = (json['tag_name'] as String).replaceFirst('v', '');
+    final publishedAt = DateTime.tryParse(
+      json['published_at'] as String? ?? '',
+    );
+    final date = publishedAt != null ? _formatDate(publishedAt) : '';
+    final changes = _parseBody((json['body'] as String?) ?? '');
+    return _ReleaseNote(version: version, date: date, changes: changes);
+  }
+
+  static String _formatDate(DateTime dt) {
+    const months = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ];
+    return '${months[dt.month - 1]} ${dt.year}';
+  }
+
+  static List<String> _parseBody(String body) {
+    return body
+        .split('\n')
+        .where((l) => l.startsWith('* ') || l.startsWith('- '))
+        .map((l) {
+          var text = l.replaceFirst(RegExp(r'^[*\-] '), '').trim();
+          // Strip conventional commit prefix (feat:, fix:, chore:, etc.)
+          text = text.replaceFirst(
+            RegExp(
+              r'^(feat|fix|chore|refactor|docs|style|test|ci|build)(\([^)]+\))?: ',
+              caseSensitive: false,
+            ),
+            '',
+          );
+          // Strip trailing "by @user in #N" added by GitHub auto-notes
+          text = text.replaceFirst(RegExp(r'\s+by @\S+.*$'), '').trim();
+          return text;
+        })
+        .where((l) => l.isNotEmpty)
+        .toList();
+  }
+}
 
 class AboutScreen extends StatefulWidget {
   const AboutScreen({super.key});
@@ -47,11 +83,13 @@ class _AboutScreenState extends State<AboutScreen> {
   String _version = '';
   String _buildNumber = '';
   bool _checkingUpdate = false;
+  List<_ReleaseNote> _releaseNotes = [];
 
   @override
   void initState() {
     super.initState();
     _loadVersion();
+    _loadReleaseNotes();
   }
 
   Future<void> _loadVersion() async {
@@ -61,6 +99,24 @@ class _AboutScreenState extends State<AboutScreen> {
         _version = info.version;
         _buildNumber = info.buildNumber;
       });
+    }
+  }
+
+  Future<void> _loadReleaseNotes() async {
+    try {
+      final jsonString = await rootBundle.loadString(
+        'assets/release_notes.json',
+      );
+      final data = jsonDecode(jsonString) as List<dynamic>;
+      if (mounted) {
+        setState(() {
+          _releaseNotes = data
+              .map((e) => _ReleaseNote.fromJson(e as Map<String, dynamic>))
+              .toList();
+        });
+      }
+    } catch (_) {
+      // silently fail — no release notes shown
     }
   }
 
