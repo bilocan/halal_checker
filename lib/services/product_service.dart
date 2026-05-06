@@ -2,6 +2,9 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../config.dart';
+import '../constants/food_categories.dart';
+import '../constants/ingredient_display_names.dart';
+import '../constants/ingredient_keywords.dart';
 import '../models/product.dart';
 import 'cache_service.dart';
 import 'keyword_service.dart';
@@ -33,6 +36,10 @@ class ProductService {
   final Map<String, List<String>> _customSuspiciousVariants = {};
   bool _customKeywordsLoaded = false;
 
+  // Public aliases kept for callers that reference ProductService directly.
+  static const haramKeywords = IngredientKeywords.haram;
+  static const suspiciousKeywords = IngredientKeywords.suspicious;
+
   Future<void> _loadCustomKeywords() async {
     if (_customKeywordsLoaded) return;
     _customKeywordsLoaded = true;
@@ -55,556 +62,37 @@ class ProductService {
     }
   }
 
-  // Canonical keyword → reason (used for transparency UI chips)
-  static const Map<String, String> haramKeywords = {
-    'alcohol': 'Contains alcohol or alcohol-derived ingredient',
-    'ethanol': 'Contains alcohol or alcohol-derived ingredient',
-    'wine': 'Contains alcohol or alcohol-derived ingredient',
-    'beer': 'Contains alcohol or alcohol-derived ingredient',
-    'cognac': 'Contains cognac (alcoholic spirit)',
-    'brandy': 'Contains brandy (alcoholic spirit)',
-    'whisky': 'Contains whisky (alcoholic spirit)',
-    'vodka': 'Contains vodka (alcoholic spirit)',
-    'rum': 'Contains rum (alcoholic spirit)',
-    'gin': 'Contains gin (alcoholic spirit)',
-    'liqueur': 'Contains liqueur (alcoholic)',
-    'schnapps': 'Contains schnapps (alcoholic spirit)',
-    'champagne': 'Contains champagne (alcoholic)',
-    'prosecco': 'Contains prosecco (alcoholic)',
-    'bourbon': 'Contains bourbon (alcoholic spirit)',
-    'sake': 'Contains sake (alcoholic)',
-    'pork': 'Contains pork or pork-derived ingredient',
-    'lard': 'Contains pork fat',
-    'gelatin': 'Gelatin is typically animal-derived',
-    'bacon': 'Contains pork product',
-    'ham': 'Contains pork product',
-    'pepperoni': 'Contains pork product',
-    'salami': 'Contains pork product',
-    'chorizo': 'Contains pork product',
-    'prosciutto': 'Contains pork product',
-    'carmine': 'Carmine/cochineal is insect-derived',
-    'cochineal': 'Carmine/cochineal is insect-derived',
-    'e120': 'Carmine/cochineal color, animal-derived',
-    'e441': 'Gelatin, animal-derived',
-    'e542': 'Bone phosphate, animal-derived',
-    'e904': 'Shellac, animal-derived',
-  };
-
-  static const Map<String, String> suspiciousKeywords = {
-    'e920': 'L-cysteine may be animal-derived',
-    'e322': 'Lecithin may be animal-derived',
-    'e471': 'Mono- and diglycerides may be animal-derived',
-    'e472': 'Emulsifiers may be animal-derived',
-    'e473': 'Sucrose esters may be animal-derived',
-    'e927': 'Glycine may be animal-derived',
-    'rennet': 'Rennet may be animal-derived',
-    'whey': 'Whey is a dairy ingredient',
-    'l-cysteine': 'L-cysteine may be animal-derived',
-    'natural flavour': 'Natural flavor may include animal-derived extracts',
-    'flavouring': 'Flavouring may include animal-derived extracts',
-    'enzymes': 'Enzymes may be extracted from animal sources',
-    'glycerol': 'Glycerol may be animal-derived',
-  };
-
-  // Multilingual variants per canonical keyword (EN / DE / TR / FR / IT / ES / NL)
-  static const Map<String, List<String>> _haramVariants = {
-    'alcohol': ['alcohol', 'alkohol', 'alcool', 'alcol', 'alkol', 'álcool'],
-    'ethanol': ['ethanol', 'äthanol', 'éthanol', 'etanolo', 'etanol'],
-    'wine': [
-      'wine',
-      'wein',
-      'vin',
-      'vino',
-      'şarap',
-      'wijn',
-      'vinho',
-      'víno',
-      'bor',
-    ],
-    'beer': [
-      'beer',
-      'bier',
-      'bière',
-      'birra',
-      'cerveza',
-      'bira',
-      'cerveja',
-      'pivo', // SR / CS
-      'sör', // HU
-    ],
-    'cognac': ['cognac', 'kognak', 'konjak', 'konyak', 'koňak'],
-    'brandy': ['brandy', 'branntwein', 'brandewijn'],
-    'whisky': ['whisky', 'whiskey', 'whiskie', 'viski'],
-    'vodka': ['vodka', 'wodka', 'votka'], // SR
-    'rum': ['rum', 'rhum', 'ron'],
-    'gin': ['gin', 'džin'], // SR
-    'liqueur': [
-      'liqueur',
-      'likör',
-      'licor',
-      'likeur',
-      'liquore',
-      'liker',
-      'likőr',
-      'likér',
-    ],
-    'schnapps': ['schnapps', 'schnaps', 'šnaps'], // SR
-    'champagne': [
-      'champagne',
-      'sekt',
-      'cava',
-      'spumante',
-      'šampanjac',
-      'pezsgő',
-      'šampaňské',
-    ],
-    'prosecco': ['prosecco'],
-    'bourbon': ['bourbon'],
-    'sake': ['sake', 'saké'],
-    'pork': [
-      'pork',
-      'schwein',
-      'schweinefleisch',
-      'porc',
-      'maiale',
-      'cerdo',
-      'domuz',
-      'varkens',
-      'varkensvlees',
-      'porco',
-      'svinjetina', // SR
-      'svinjsko', // SR
-      'sertéshús', // HU
-      'sertés', // HU
-      'vepřové', // CS
-      'vepřová', // CS
-    ],
-    'lard': [
-      'lard',
-      'schmalz',
-      'schweineschmalz',
-      'saindoux',
-      'strutto',
-      'manteca',
-      'domuz yağı',
-      'banha',
-      'svinjska mast', // SR
-      'sertészsír', // HU
-      'sádlo', // CS
-    ],
-    'gelatin': [
-      'gelatin',
-      'gelatine',
-      'gelatina',
-      'jelatin',
-      'gélatine',
-      'želatina', // SR / CS
-      'zselatin', // HU
-    ],
-    'bacon': [
-      'bacon',
-      'speck',
-      'lardons',
-      'pancetta',
-      'domuz pastırması',
-      'slanina', // SR / CS
-      'szalonna', // HU
-    ],
-    'ham': [
-      'ham',
-      'schinken',
-      'jambon',
-      'prosciutto',
-      'jamón',
-      'presunto',
-      'šunka', // SR / CS
-      'sonka', // HU
-    ],
-    'pepperoni': ['pepperoni'],
-    'salami': ['salami', 'salame', 'szalámi', 'salám'], // HU / CS
-    'chorizo': ['chorizo'],
-    'prosciutto': ['prosciutto'],
-    'carmine': ['carmine', 'karmin', 'carmín', 'karmín', 'carmin'],
-    'cochineal': [
-      'cochineal',
-      'cochenille',
-      'cocciniglia',
-      'cochinilla',
-      'koşnil',
-      'košenil', // SR
-      'košenila', // CS
-    ],
-    'e120': ['e120', 'e-120'],
-    'e441': ['e441', 'e-441'],
-    'e542': ['e542', 'e-542'],
-    'e904': ['e904', 'e-904'],
-  };
-
-  static const Map<String, List<String>> _suspiciousVariants = {
-    'e920': ['e920', 'e-920'],
-    'e322': ['e322', 'e-322'],
-    'e471': ['e471', 'e-471'],
-    'e472': ['e472', 'e-472'],
-    'e473': ['e473', 'e-473'],
-    'e927': ['e927', 'e-927'],
-    'rennet': [
-      'rennet',
-      'lab',
-      'labferment',
-      'présure',
-      'caglio',
-      'cuajo',
-      'peynir mayası',
-      'stremsel',
-      'sirilo', // SR
-      'oltóanyag', // HU
-      'syřidlo', // CS
-    ],
-    'whey': [
-      'whey',
-      'molke',
-      'lactosérum',
-      'siero di latte',
-      'suero de leche',
-      'peynir suyu',
-      'wei',
-      'surutka', // SR
-      'tejsavó', // HU
-      'syrovátka', // CS
-    ],
-    'l-cysteine': [
-      'l-cysteine',
-      'l-cystein',
-      'l-cystéine',
-      'l-cisteina',
-      'l-sistein',
-      'l-cistein', // SR
-      'l-cisztein', // HU
-    ],
-    'natural flavour': [
-      'natural flavour',
-      'natural flavor',
-      'natürliches aroma',
-      'natürliche aromen',
-      'arôme naturel',
-      'aroma naturale',
-      'aroma natural',
-      'doğal aroma',
-      'natuurlijk aroma',
-      'prirodna aroma', // SR
-      'természetes aroma', // HU
-      'přírodní aroma', // CS
-    ],
-    'flavouring': [
-      'flavouring',
-      'flavoring',
-      'aroma',
-      'arôme',
-      'aroma naturale',
-      'doğal aroma',
-      'natürliches aroma',
-      'smaakstof',
-      'ízesítő', // HU
-    ],
-    'enzymes': [
-      'enzymes',
-      'enzyme',
-      'enzimi',
-      'enzimas',
-      'enzim',
-      'enzymen',
-      'enzymy', // CS
-    ],
-    'glycerol': [
-      'glycerol',
-      'glycerin',
-      'glycérol',
-      'glicerina',
-      'gliserin',
-      'glycerine',
-      'glicerol', // SR
-    ],
-  };
-
-  // Canonical keyword → locale → display name for the translated view.
-  // Covers the app's supported UI locales (tr, de, fr, es, it, nl, sr, hu, cs).
-  // Falls back to the canonical English key when a locale is absent.
-  static const Map<String, Map<String, String>> _canonicalDisplayNames = {
-    'alcohol': {
-      'de': 'Alkohol',
-      'tr': 'alkol',
-      'fr': 'alcool',
-      'es': 'alcohol',
-      'it': 'alcol',
-      'nl': 'alcohol',
-      'sr': 'alkohol',
-      'hu': 'alkohol',
-      'cs': 'alkohol',
-    },
-    'ethanol': {
-      'de': 'Äthanol',
-      'tr': 'etanol',
-      'fr': 'éthanol',
-      'es': 'etanol',
-      'it': 'etanolo',
-      'nl': 'ethanol',
-      'sr': 'etanol',
-      'hu': 'etanol',
-      'cs': 'etanol',
-    },
-    'wine': {
-      'de': 'Wein',
-      'tr': 'şarap',
-      'fr': 'vin',
-      'es': 'vino',
-      'it': 'vino',
-      'nl': 'wijn',
-      'sr': 'vino',
-      'hu': 'bor',
-      'cs': 'víno',
-    },
-    'beer': {
-      'de': 'Bier',
-      'tr': 'bira',
-      'fr': 'bière',
-      'es': 'cerveza',
-      'it': 'birra',
-      'nl': 'bier',
-      'sr': 'pivo',
-      'hu': 'sör',
-      'cs': 'pivo',
-    },
-    'cognac': {
-      'de': 'Kognak',
-      'tr': 'konyak',
-      'sr': 'konjak',
-      'hu': 'konyak',
-      'cs': 'koňak',
-    },
-    'brandy': {'de': 'Weinbrand', 'nl': 'brandewijn'},
-    'whisky': {'tr': 'viski'},
-    'vodka': {'de': 'Wodka', 'sr': 'votka'},
-    'rum': {'fr': 'rhum', 'es': 'ron'},
-    'gin': {'sr': 'džin'},
-    'liqueur': {
-      'de': 'Likör',
-      'fr': 'liqueur',
-      'es': 'licor',
-      'it': 'liquore',
-      'nl': 'likeur',
-      'sr': 'liker',
-      'hu': 'likőr',
-      'cs': 'likér',
-    },
-    'schnapps': {'de': 'Schnaps', 'sr': 'šnaps'},
-    'champagne': {
-      'de': 'Sekt',
-      'es': 'cava',
-      'it': 'spumante',
-      'sr': 'šampanjac',
-      'hu': 'pezsgő',
-      'cs': 'šampaňské',
-    },
-    'pork': {
-      'de': 'Schweinefleisch',
-      'tr': 'domuz',
-      'fr': 'porc',
-      'es': 'cerdo',
-      'it': 'maiale',
-      'nl': 'varkensvlees',
-      'sr': 'svinjetina',
-      'hu': 'sertéshús',
-      'cs': 'vepřové',
-    },
-    'lard': {
-      'de': 'Schmalz',
-      'tr': 'domuz yağı',
-      'fr': 'saindoux',
-      'es': 'manteca',
-      'it': 'strutto',
-      'sr': 'svinjska mast',
-      'hu': 'sertészsír',
-      'cs': 'sádlo',
-    },
-    'gelatin': {
-      'de': 'Gelatine',
-      'tr': 'jelatin',
-      'fr': 'gélatine',
-      'es': 'gelatina',
-      'it': 'gelatina',
-      'sr': 'želatina',
-      'hu': 'zselatin',
-      'cs': 'želatina',
-    },
-    'bacon': {
-      'de': 'Speck',
-      'tr': 'domuz pastırması',
-      'fr': 'lardons',
-      'it': 'pancetta',
-      'sr': 'slanina',
-      'hu': 'szalonna',
-      'cs': 'slanina',
-    },
-    'ham': {
-      'de': 'Schinken',
-      'fr': 'jambon',
-      'es': 'jamón',
-      'it': 'prosciutto',
-      'nl': 'ham',
-      'sr': 'šunka',
-      'hu': 'sonka',
-      'cs': 'šunka',
-    },
-    'salami': {'it': 'salame', 'hu': 'szalámi', 'cs': 'salám'},
-    'carmine': {
-      'de': 'Karmin',
-      'tr': 'karmin',
-      'fr': 'carmin',
-      'es': 'carmín',
-      'sr': 'karmin',
-      'hu': 'karmin',
-      'cs': 'karmin',
-    },
-    'cochineal': {
-      'de': 'Cochenille',
-      'tr': 'koşnil',
-      'fr': 'cochenille',
-      'es': 'cochinilla',
-      'it': 'cocciniglia',
-      'sr': 'košenil',
-      'cs': 'košenila',
-    },
-    'rennet': {
-      'de': 'Lab',
-      'tr': 'peynir mayası',
-      'fr': 'présure',
-      'es': 'cuajo',
-      'it': 'caglio',
-      'nl': 'stremsel',
-      'sr': 'sirilo',
-      'hu': 'oltóanyag',
-      'cs': 'syřidlo',
-    },
-    'whey': {
-      'de': 'Molke',
-      'tr': 'peynir suyu',
-      'fr': 'lactosérum',
-      'es': 'suero de leche',
-      'it': 'siero di latte',
-      'nl': 'wei',
-      'sr': 'surutka',
-      'hu': 'tejsavó',
-      'cs': 'syrovátka',
-    },
-    'l-cysteine': {
-      'de': 'L-Cystein',
-      'tr': 'l-sistein',
-      'fr': 'l-cystéine',
-      'es': 'l-cisteina',
-      'it': 'l-cisteina',
-      'sr': 'l-cistein',
-      'hu': 'l-cisztein',
-      'cs': 'l-cystein',
-    },
-    'natural flavour': {
-      'de': 'natürliches Aroma',
-      'tr': 'doğal aroma',
-      'fr': 'arôme naturel',
-      'es': 'aroma natural',
-      'it': 'aroma naturale',
-      'nl': 'natuurlijk aroma',
-      'sr': 'prirodna aroma',
-      'hu': 'természetes aroma',
-      'cs': 'přírodní aroma',
-    },
-    'flavouring': {
-      'de': 'Aroma',
-      'tr': 'aroma',
-      'fr': 'arôme',
-      'nl': 'smaakstof',
-      'hu': 'ízesítő',
-    },
-    'enzymes': {
-      'de': 'Enzyme',
-      'tr': 'enzim',
-      'es': 'enzimas',
-      'it': 'enzimi',
-      'nl': 'enzymen',
-      'sr': 'enzimi',
-      'hu': 'enzim',
-      'cs': 'enzymy',
-    },
-    'glycerol': {
-      'de': 'Glycerin',
-      'tr': 'gliserin',
-      'fr': 'glycérol',
-      'es': 'glicerina',
-      'it': 'glicerina',
-      'nl': 'glycerine',
-      'sr': 'glicerol',
-    },
-  };
-
-  /// Returns the display name for [canonical] in the given [locale],
-  /// falling back to the canonical English key if the locale is not covered.
   static String canonicalDisplay(String canonical, String locale) =>
-      _canonicalDisplayNames[canonical]?[locale] ?? canonical;
-
-  // All alcohol-family terms — these get the "alcohol-free" exclusion applied
-  static const _alcoholFamily = {
-    'alcohol',
-    'alkohol',
-    'alcool',
-    'alcol',
-    'alkol',
-    'álcool',
-    'ethanol',
-    'äthanol',
-    'éthanol',
-    'etanolo',
-    'etanol',
-  };
-
-  // Fatty alcohol prefixes — these are NOT haram (cosmetic/food emulsifiers)
-  static final _fattyAlcoholPrefix = RegExp(
-    r'\b(cetyl|stearyl|behenyl|lauryl|myristyl|arachidyl|oleyl|cetostearyl|'
-    r'lanolin|isostearyl|octyldodecyl|decyl)\s+',
-    caseSensitive: false,
-  );
+      IngredientDisplayNames.of(canonical, locale);
 
   static bool isFattyAlcohol(String ingredient) =>
-      _fattyAlcoholPrefix.hasMatch(ingredient);
-
-  // Unicode-aware word boundary: not preceded/followed by any letter or digit,
-  // including Latin characters with diacritics (U+00C0–U+024F).
-  // Standard \b only recognises [a-zA-Z0-9_], so words like "šunka", "vepřové",
-  // "şarap", or "pezsgő" would never trigger a boundary when preceded/followed
-  // by a space or comma.
-  static const _wPre = '(?<![a-zA-Z\\dÀ-ɏ])';
-  static const _wPost = '(?![a-zA-Z\\dÀ-ɏ])';
+      IngredientKeywords.fattyAlcoholPrefix.hasMatch(ingredient);
 
   static bool _matchesVariant(String ingredient, String variant) {
     if (variant.contains(' ')) {
       return ingredient.toLowerCase().contains(variant.toLowerCase());
     }
     final escaped = RegExp.escape(variant);
-    if (_alcoholFamily.contains(variant.toLowerCase())) {
-      // Skip fatty alcohols — they are halal
-      if (_fattyAlcoholPrefix.hasMatch(ingredient)) return false;
+    if (IngredientKeywords.alcoholFamily.contains(variant.toLowerCase())) {
+      if (IngredientKeywords.fattyAlcoholPrefix.hasMatch(ingredient)) {
+        return false;
+      }
       return RegExp(
-        '$_wPre$escaped$_wPost(?![-\\s]*free)',
+        '${IngredientKeywords.wPre}$escaped${IngredientKeywords.wPost}(?![-\\s]*free)',
         caseSensitive: false,
       ).hasMatch(ingredient);
     }
     return RegExp(
-      '$_wPre$escaped$_wPost',
+      '${IngredientKeywords.wPre}$escaped${IngredientKeywords.wPost}',
       caseSensitive: false,
     ).hasMatch(ingredient);
   }
 
   static bool matchesKeyword(String ingredient, String keyword) {
     final variants =
-        _haramVariants[keyword] ?? _suspiciousVariants[keyword] ?? [keyword];
+        IngredientKeywords.haramVariants[keyword] ??
+        IngredientKeywords.suspiciousVariants[keyword] ??
+        [keyword];
     return variants.any((v) => _matchesVariant(ingredient, v));
   }
 
@@ -633,7 +121,7 @@ class ProductService {
       final lower = ingredient.toLowerCase();
 
       bool foundHaram = false;
-      for (final entry in haramKeywords.entries) {
+      for (final entry in IngredientKeywords.haram.entries) {
         if (matchesKeyword(lower, entry.key)) {
           warnings[ingredient] = entry.value;
           if (_needsTranslation(ingredient, entry.key)) {
@@ -646,7 +134,7 @@ class ProductService {
       }
       if (foundHaram) continue;
 
-      for (final entry in suspiciousKeywords.entries) {
+      for (final entry in IngredientKeywords.suspicious.entries) {
         if (matchesKeyword(lower, entry.key)) {
           warnings[ingredient] = entry.value;
           if (_needsTranslation(ingredient, entry.key)) {
@@ -1051,51 +539,17 @@ class ProductService {
           .where((e) => e.isNotEmpty)
           .toList();
 
-      // OFf categories that unambiguously indicate an alcoholic product.
-      const haramCategories = {
-        'en:alcoholic-beverages',
-        'en:beers',
-        'en:wines',
-        'en:spirits',
-        'en:champagnes',
-        'en:ciders',
-        'en:sake',
-      };
-      // Categories where the product is inherently halal even with no ingredient list.
-      const halalCategories = {
-        'en:waters',
-        'en:bottled-waters',
-        'en:mineral-waters',
-        'en:spring-waters',
-        'en:carbonated-waters',
-        'en:sparkling-waters',
-        'en:natural-mineral-waters',
-        'en:still-natural-mineral-waters',
-        'en:still-waters',
-        'en:sparkling-mineral-waters',
-        'en:flavoured-waters',
-        'en:table-waters',
-        'en:drinking-water',
-        'en:salts',
-        'en:table-salt',
-        'en:sea-salt',
-        'en:sugars',
-        'en:white-sugar',
-        'en:cane-sugar',
-        'en:granulated-sugar',
-        'en:vinegars',
-      };
       final rawCategories = productData['categories_tags'];
       final bool haramByCategory =
           rawCategories is List &&
           rawCategories.any(
-            (c) => haramCategories.contains(c.toString().toLowerCase()),
+            (c) => FoodCategories.haram.contains(c.toString().toLowerCase()),
           );
       final bool halalByCategory =
           !haramByCategory &&
           rawCategories is List &&
           rawCategories.any(
-            (c) => halalCategories.contains(c.toString().toLowerCase()),
+            (c) => FoodCategories.halal.contains(c.toString().toLowerCase()),
           );
 
       final fallback = analyzeWithKeywords(ingredients);
@@ -1133,7 +587,7 @@ class ProductService {
           (nameCheck?.isHalal ?? true)) {
         explanation =
             'This product belongs to a category that is not permissible: '
-            '${rawCategories.firstWhere((c) => haramCategories.contains(c.toString().toLowerCase()))}.';
+            '${rawCategories.firstWhere((c) => FoodCategories.haram.contains(c.toString().toLowerCase()))}.';
       } else if (isHalalByCategory) {
         explanation =
             'This product is in an inherently halal category (e.g. water, salt). No harmful ingredients expected.';
