@@ -180,7 +180,9 @@ class _AboutScreenState extends State<AboutScreen> {
             ],
           ),
         ),
-        if (_updateInfo != null && _updateInfo!.updateAvailability == UpdateAvailability.updateAvailable) ...[
+        if (_updateInfo != null &&
+            _updateInfo!.updateAvailability ==
+                UpdateAvailability.updateAvailable) ...[
           const SizedBox(height: 16),
           Text(
             loc.releaseNotes,
@@ -200,10 +202,7 @@ class _AboutScreenState extends State<AboutScreen> {
             ),
             child: Text(
               'New version available',
-              style: TextStyle(
-                color: Colors.grey.shade700,
-                fontSize: 12,
-              ),
+              style: TextStyle(color: Colors.grey.shade700, fontSize: 12),
             ),
           ),
         ],
