@@ -17,6 +17,8 @@ class MainActivity : FlutterActivity() {
             { flutterEngine.plugins.add(com.github.dart_lang.jni.JniPlugin()) },
             { flutterEngine.plugins.add(com.github.dart_lang.jni_flutter.JniFlutterPlugin()) },
             { flutterEngine.plugins.add(dev.steenbakker.mobile_scanner.MobileScannerPlugin()) },
+            { flutterEngine.plugins.add(de.ffuf.in_app_update.InAppUpdatePlugin()) },
+            { flutterEngine.plugins.add(dev.fluttercommunity.plus.packageinfo.PackageInfoPlugin()) },
             { flutterEngine.plugins.add(io.flutter.plugins.sharedpreferences.SharedPreferencesPlugin()) },
             { flutterEngine.plugins.add(com.tekartik.sqflite.SqflitePlugin()) },
             { flutterEngine.plugins.add(io.flutter.plugins.urllauncher.UrlLauncherPlugin()) },
