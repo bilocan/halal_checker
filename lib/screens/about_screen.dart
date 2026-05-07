@@ -51,10 +51,6 @@ class _AboutScreenState extends State<AboutScreen> {
       final info = await InAppUpdate.checkForUpdate();
       if (!mounted) return;
       setState(() => _updateInfo = info);
-      if (info.updateAvailability == UpdateAvailability.updateAvailable) {
-        await InAppUpdate.startFlexibleUpdate();
-        await InAppUpdate.completeFlexibleUpdate();
-      }
     } catch (_) {
       if (mounted) setState(() => _checkFailed = true);
     } finally {
@@ -64,6 +60,17 @@ class _AboutScreenState extends State<AboutScreen> {
           _checked = true;
         });
       }
+    }
+  }
+
+  Future<void> _performUpdate() async {
+    setState(() => _checkingUpdate = true);
+    try {
+      await InAppUpdate.performImmediateUpdate();
+    } catch (_) {
+      if (mounted) setState(() => _checkFailed = true);
+    } finally {
+      if (mounted) setState(() => _checkingUpdate = false);
     }
   }
 
@@ -114,7 +121,9 @@ class _AboutScreenState extends State<AboutScreen> {
           const SizedBox(height: 28),
           if (Platform.isAndroid)
             ElevatedButton.icon(
-              onPressed: _checkingUpdate ? null : _checkForUpdate,
+              onPressed: _checkingUpdate
+                  ? null
+                  : (updateAvailable ? _performUpdate : _checkForUpdate),
               icon: _checkingUpdate
                   ? const SizedBox(
                       width: 16,
