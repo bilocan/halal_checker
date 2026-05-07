@@ -5,12 +5,33 @@ on:
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'
 
+# ──────────────────────────────────────────────────────────────────────────────
+# Gate structure (each environment requires a manual approval in GitHub Actions):
+#
+#  [tag push] → build-and-draft (auto)
+#                 └─ play/publish-internal  → Gate 1: review draft, publish to internal
+#                       └─ play/promote-closed  → Gate 2: promote internal → closed testing
+#                             └─ play/submit-review  → Gate 3: promote closed → open testing (triggers Google review)
+#                                   └─ play/publish-test  → Gate 4: confirm review passed, release is live
+#
+# Setup required (GitHub → Settings → Environments):
+#   Create these four environments and add yourself as a required reviewer on each:
+#     play/publish-internal
+#     play/promote-closed
+#     play/submit-review
+#     play/publish-test
+# ──────────────────────────────────────────────────────────────────────────────
+
 jobs:
-  deploy:
+
+  # ── Automated: build + upload draft to internal ────────────────────────────
+  build-and-draft:
     runs-on: ubuntu-latest
     permissions:
       contents: read
       id-token: write
+    outputs:
+      version-code: ${{ steps.version.outputs.code }}
     steps:
       - uses: actions/checkout@v4
 
@@ -42,7 +63,7 @@ jobs:
             echo "storeFile=upload-keystore.jks"
           } > android/key.properties
 
-      - name: Extract version name from tag
+      - name: Extract version
         id: version
         run: |
           TAG_NAME="${GITHUB_REF_NAME#v}"
@@ -70,7 +91,7 @@ jobs:
           service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
           token_format: access_token
 
-      - name: Upload to Google Play (internal track)
+      - name: Upload draft to internal track
         uses: r0adkll/upload-google-play@v1
         with:
           serviceAccountJson: ${{ steps.auth.outputs.credentials_file_path }}
@@ -78,3 +99,155 @@ jobs:
           releaseFiles: build/app/outputs/bundle/release/*.aab
           track: internal
           status: draft
+
+      - name: Save AAB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-aab
+          path: build/app/outputs/bundle/release/*.aab
+          retention-days: 30
+
+  # ── Gate 1: Publish on internal ────────────────────────────────────────────
+  # Check the draft in Play Console, then approve this gate to publish it to
+  # internal testers.
+  publish-internal:
+    needs: build-and-draft
+    runs-on: ubuntu-latest
+    environment: play/publish-internal
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+          token_format: access_token
+
+      - name: Publish internal draft → completed
+        env:
+          TOKEN: ${{ steps.auth.outputs.access_token }}
+          PKG: app.halalscan
+          VC: ${{ needs.build-and-draft.outputs.version-code }}
+        run: |
+          set -euo pipefail
+          EDIT=$(curl -sf -X POST \
+            -H "Authorization: Bearer $TOKEN" \
+            "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PKG/edits" \
+            | jq -r '.id')
+          curl -sf -X PUT \
+            -H "Authorization: Bearer $TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{\"releases\":[{\"versionCodes\":[\"$VC\"],\"status\":\"completed\"}]}" \
+            "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PKG/edits/$EDIT/tracks/internal"
+          curl -sf -X POST \
+            -H "Authorization: Bearer $TOKEN" \
+            "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PKG/edits/$EDIT:commit"
+          echo "Internal release $VC published."
+
+  # ── Gate 2: Promote to closed testing ──────────────────────────────────────
+  # Approve when internal testers have validated the build.
+  promote-closed:
+    needs: publish-internal
+    runs-on: ubuntu-latest
+    environment: play/promote-closed
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+          token_format: access_token
+
+      - name: Promote internal → closed testing
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJson: ${{ steps.auth.outputs.credentials_file_path }}
+          packageName: app.halalscan
+          track: internal
+          track_promote_to: alpha
+          status: completed
+
+  # ── Gate 3: Submit for Google Play review ──────────────────────────────────
+  # Approve when ready to submit. Promotes to open testing and triggers
+  # Google's review process. The release will go live on open testing
+  # automatically once the review passes.
+  submit-review:
+    needs: promote-closed
+    runs-on: ubuntu-latest
+    environment: play/submit-review
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+          token_format: access_token
+
+      - name: Promote closed testing → open testing
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJson: ${{ steps.auth.outputs.credentials_file_path }}
+          packageName: app.halalscan
+          track: alpha
+          track_promote_to: beta
+          status: completed
+
+  # ── Gate 4: Confirm release is live on open testing ────────────────────────
+  # Approve this gate AFTER Play Console shows the review has passed.
+  # The job verifies the open testing release is in "completed" state and
+  # fails fast if the review is still pending — re-run it once it passes.
+  publish-test:
+    needs: [build-and-draft, submit-review]
+    runs-on: ubuntu-latest
+    environment: play/publish-test
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+          token_format: access_token
+
+      - name: Verify open testing release is live
+        env:
+          TOKEN: ${{ steps.auth.outputs.access_token }}
+          PKG: app.halalscan
+          VC: ${{ needs.build-and-draft.outputs.version-code }}
+        run: |
+          set -euo pipefail
+          EDIT=$(curl -sf -X POST \
+            -H "Authorization: Bearer $TOKEN" \
+            "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PKG/edits" \
+            | jq -r '.id')
+          STATUS=$(curl -sf \
+            -H "Authorization: Bearer $TOKEN" \
+            "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PKG/edits/$EDIT/tracks/beta" \
+            | jq -r --argjson vc "$VC" \
+              '.releases[] | select(.versionCodes[] | tonumber == $vc) | .status' \
+            2>/dev/null || echo "not_found")
+          # Discard edit — read-only check, nothing to commit
+          curl -sf -X DELETE \
+            -H "Authorization: Bearer $TOKEN" \
+            "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PKG/edits/$EDIT" || true
+          echo "Open testing release $VC status: $STATUS"
+          if [ "$STATUS" != "completed" ]; then
+            echo "::error::Release $VC is not yet live on open testing (status: $STATUS)." \
+                 "Wait for Google's review to pass, then re-run this job."
+            exit 1
+          fi
+          echo "Release $VC is live on open testing."
