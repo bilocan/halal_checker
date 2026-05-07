@@ -373,9 +373,10 @@ class ProductService {
 
     // Step 2: Shared DB read — cheaper than an Edge Function invocation for
     // barcodes another user has already scanned (no AI, no OFf fetch needed).
+    // Skip stale "unknown" entries — they may predate category-based analysis.
     if (!forceBackendRefresh) {
       final dbProduct = await _fetchFromSharedDb(barcode);
-      if (dbProduct != null) {
+      if (dbProduct != null && !dbProduct.isUnknown) {
         final safe = _applyKeywordSafety(dbProduct);
         await _cache.saveProduct(barcode, safe);
         return safe;
