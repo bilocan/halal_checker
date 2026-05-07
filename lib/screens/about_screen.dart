@@ -94,10 +94,8 @@ class _AboutScreenState extends State<AboutScreen> {
                     color: kGreenDark,
                   ),
                 ),
-                if (_version.isNotEmpty) ...[
-                  const SizedBox(height: 8),
-                  _buildVersionTable(loc, updateAvailable),
-                ],
+                const SizedBox(height: 12),
+                _buildVersionTable(loc, updateAvailable),
               ],
             ),
           ),
@@ -138,84 +136,44 @@ class _AboutScreenState extends State<AboutScreen> {
   }
 
   Widget _buildVersionTable(AppLocalizations loc, bool updateAvailable) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        DefaultTextStyle(
-          style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
-          child: Table(
-            defaultColumnWidth: const IntrinsicColumnWidth(),
+    return DefaultTextStyle(
+      style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
+      child: Table(
+        defaultColumnWidth: const IntrinsicColumnWidth(),
+        children: [
+          TableRow(
             children: [
-              TableRow(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(right: 8, bottom: 4),
-                    child: Text('${loc.installed}:'),
-                  ),
-                  Text(
-                    'v$_version (build $_buildNumber)',
-                    style: TextStyle(
-                      color: Colors.grey.shade700,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
+              Padding(
+                padding: const EdgeInsets.only(right: 16, bottom: 4),
+                child: Text('${loc.installed}:'),
               ),
-              if (_updateInfo != null)
-                TableRow(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.only(right: 8, bottom: 4),
-                      child: Text('${loc.store}:'),
-                    ),
-                    Text(
-                      _formatStoreVersion(loc),
-                      style: TextStyle(
-                        color: Colors.grey.shade700,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
+              Text(
+                _version.isNotEmpty ? 'v$_version (build $_buildNumber)' : '—',
+                style: TextStyle(
+                  color: Colors.grey.shade700,
+                  fontWeight: FontWeight.w600,
                 ),
+              ),
             ],
           ),
-        ),
-        if (_updateInfo != null &&
-            _updateInfo!.updateAvailability ==
-                UpdateAvailability.updateAvailable) ...[
-          const SizedBox(height: 16),
-          Text(
-            loc.releaseNotes,
-            style: TextStyle(
-              color: Colors.grey.shade600,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
+          if (_updateInfo != null)
+            TableRow(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(right: 16),
+                  child: Text('${loc.store}:'),
+                ),
+                Text(
+                  updateAvailable ? loc.updateAvailable : loc.upToDate,
+                  style: TextStyle(
+                    color: updateAvailable ? kGreenDark : Colors.grey.shade700,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ),
-          ),
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade50,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.grey.shade200),
-            ),
-            child: Text(
-              'New version available',
-              style: TextStyle(color: Colors.grey.shade700, fontSize: 12),
-            ),
-          ),
         ],
-      ],
+      ),
     );
-  }
-
-  String _formatStoreVersion(AppLocalizations loc) {
-    if (_updateInfo?.updateAvailability == UpdateAvailability.updateAvailable &&
-        _updateInfo?.availableVersionCode != null) {
-      return 'Build ${_updateInfo!.availableVersionCode}';
-    }
-
-    return loc.upToDate;
   }
 }

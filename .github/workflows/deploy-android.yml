@@ -9,7 +9,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
       id-token: write
     steps:
       - uses: actions/checkout@v4
@@ -41,16 +41,6 @@ jobs:
             echo "keyAlias=${{ secrets.KEY_ALIAS }}"
             echo "storeFile=upload-keystore.jks"
           } > android/key.properties
-
-      - name: Create GitHub Release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh release create ${{ github.ref_name }} --title "${{ github.ref_name }}" --generate-notes
-
-      - name: Write release notes asset
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh api repos/${{ github.repository }}/releases > assets/release_notes.json
 
       - name: Extract version name from tag
         id: version
