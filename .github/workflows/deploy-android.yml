@@ -188,10 +188,9 @@ jobs:
             "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PKG/edits/$EDIT:commit"
           echo "Promoted release $VC to closed testing."
 
-  # ── Gate 3: Submit for Google Play review ──────────────────────────────────
-  # Approve when ready to submit. Promotes to open testing and triggers
-  # Google's review process. The release will go live on open testing
-  # automatically once the review passes.
+  # ── Gate 3: Publish closed testing release ─────────────────────────────────
+  # Approve once Play Console shows the closed testing review has passed.
+  # Managed publishing is on, so this gate publishes the approved alpha release.
   submit-review:
     needs: [build-and-draft, promote-closed]
     runs-on: ubuntu-latest
@@ -209,7 +208,7 @@ jobs:
           token_format: access_token
           access_token_scopes: https://www.googleapis.com/auth/androidpublisher
 
-      - name: Verify closed testing review has passed
+      - name: Publish approved closed testing release
         env:
           TOKEN: ${{ steps.auth.outputs.access_token }}
           PKG: app.halalscan
@@ -220,21 +219,35 @@ jobs:
             -H "Authorization: Bearer $TOKEN" \
             "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PKG/edits" \
             | jq -r '.id')
-          STATUS=$(curl -sS --fail-with-body \
+          curl -sS --fail-with-body -X PUT \
             -H "Authorization: Bearer $TOKEN" \
-            "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PKG/edits/$EDIT/tracks/alpha" \
-            | jq -r --argjson vc "$VC" \
-              '.releases[] | select(.versionCodes[] | tonumber == $vc) | .status' \
-            2>/dev/null || echo "not_found")
-          curl -sS -X DELETE \
+            -H "Content-Type: application/json" \
+            -d "{\"releases\":[{\"versionCodes\":[\"$VC\"],\"status\":\"completed\"}]}" \
+            "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PKG/edits/$EDIT/tracks/alpha"
+          # changesNotSentForReview=true: release is already reviewed, just publish it
+          curl -sS --fail-with-body -X POST \
             -H "Authorization: Bearer $TOKEN" \
-            "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PKG/edits/$EDIT" || true
-          echo "Alpha release $VC status: $STATUS"
-          if [ "$STATUS" != "completed" ]; then
-            echo "::error::Closed testing review has not passed yet (status: $STATUS)." \
-                 "Wait for Play Console to show the review is approved, then re-run this job."
-            exit 1
-          fi
+            "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PKG/edits/$EDIT:commit?changesNotSentForReview=true"
+          echo "Published closed testing release $VC."
+
+  # ── Gate 4: Promote to open testing (test environment) ─────────────────────
+  # Approve when closed testing is published and you're ready to push to open testing.
+  publish-test:
+    needs: [build-and-draft, submit-review]
+    runs-on: ubuntu-latest
+    environment: play/publish-test
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/androidpublisher
 
       - name: Promote closed testing → open testing
         env:
@@ -255,54 +268,4 @@ jobs:
           curl -sS --fail-with-body -X POST \
             -H "Authorization: Bearer $TOKEN" \
             "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PKG/edits/$EDIT:commit"
-          echo "Submitted release $VC to open testing for review."
-
-  # ── Gate 4: Confirm release is live on open testing ────────────────────────
-  # Approve this gate AFTER Play Console shows the review has passed.
-  # The job verifies the open testing release is in "completed" state and
-  # fails fast if the review is still pending — re-run it once it passes.
-  publish-test:
-    needs: [build-and-draft, submit-review]
-    runs-on: ubuntu-latest
-    environment: play/publish-test
-    permissions:
-      contents: read
-      id-token: write
-    steps:
-      - name: Authenticate to Google Cloud
-        id: auth
-        uses: google-github-actions/auth@v2
-        with:
-          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
-          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
-          token_format: access_token
-          access_token_scopes: https://www.googleapis.com/auth/androidpublisher
-
-      - name: Verify open testing release is live
-        env:
-          TOKEN: ${{ steps.auth.outputs.access_token }}
-          PKG: app.halalscan
-          VC: ${{ needs.build-and-draft.outputs.version-code }}
-        run: |
-          set -euo pipefail
-          EDIT=$(curl -sS --fail-with-body -X POST \
-            -H "Authorization: Bearer $TOKEN" \
-            "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PKG/edits" \
-            | jq -r '.id')
-          STATUS=$(curl -sS --fail-with-body \
-            -H "Authorization: Bearer $TOKEN" \
-            "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PKG/edits/$EDIT/tracks/beta" \
-            | jq -r --argjson vc "$VC" \
-              '.releases[] | select(.versionCodes[] | tonumber == $vc) | .status' \
-            2>/dev/null || echo "not_found")
-          # Discard edit — read-only check, nothing to commit
-          curl -sS -X DELETE \
-            -H "Authorization: Bearer $TOKEN" \
-            "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PKG/edits/$EDIT" || true
-          echo "Open testing release $VC status: $STATUS"
-          if [ "$STATUS" != "completed" ]; then
-            echo "::error::Release $VC is not yet live on open testing (status: $STATUS)." \
-                 "Wait for Google's review to pass, then re-run this job."
-            exit 1
-          fi
-          echo "Release $VC is live on open testing."
+          echo "Promoted release $VC to open testing."
