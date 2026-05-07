@@ -365,10 +365,15 @@ class ProductService {
       if (fixture != null) return fixture;
     }
 
-    // Step 1: Check local cache (fast path — no network)
+    // Step 1: Check local cache (fast path — no network).
+    // Skip stale "unknown" entries — they may predate category-based analysis.
+    var hadStaleUnknown = false;
     if (!forceBackendRefresh) {
       final cached = await _cache.getProduct(barcode);
-      if (cached != null) return cached;
+      if (cached != null) {
+        if (!cached.isUnknown) return cached;
+        hadStaleUnknown = true;
+      }
     }
 
     // Step 2: Shared DB read — cheaper than an Edge Function invocation for
@@ -376,17 +381,22 @@ class ProductService {
     // Skip stale "unknown" entries — they may predate category-based analysis.
     if (!forceBackendRefresh) {
       final dbProduct = await _fetchFromSharedDb(barcode);
-      if (dbProduct != null && !dbProduct.isUnknown) {
-        final safe = _applyKeywordSafety(dbProduct);
-        await _cache.saveProduct(barcode, safe);
-        return safe;
+      if (dbProduct != null) {
+        if (!dbProduct.isUnknown) {
+          final safe = _applyKeywordSafety(dbProduct);
+          await _cache.saveProduct(barcode, safe);
+          return safe;
+        }
+        hadStaleUnknown = true;
       }
     }
 
-    // Step 3: Edge Function (fetches OFf + runs AI + saves to shared DB)
+    // Step 3: Edge Function (fetches OFf + runs AI + saves to shared DB).
+    // Force a fresh fetch if we detected a stale "unknown" in Steps 1 or 2
+    // so the Edge Function bypasses its own Supabase cache too.
     final backendProduct = await _fetchFromBackend(
       barcode,
-      force: forceBackendRefresh,
+      force: forceBackendRefresh || hadStaleUnknown,
     );
     if (backendProduct != null) {
       final safe = _applyKeywordSafety(backendProduct);
