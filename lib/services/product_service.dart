@@ -360,8 +360,9 @@ class ProductService {
     // Step 0 (debug only): return fixture from test DB without touching cache/network.
     // Skip stale "unknown" fixtures so they fall through to the live pipeline and get
     // resolved; the fresh result is written back to the test DB below.
+    // Bypassed entirely on force-refresh so the refresh button always hits the network.
     var hadStaleTestFixture = false;
-    if (kDebugMode) {
+    if (kDebugMode && !forceBackendRefresh) {
       final fixture = await TestProductRepository.instance.getByBarcode(
         barcode,
       );

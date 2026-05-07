@@ -5,7 +5,16 @@
       "PowerShell(winget install --id GitHub.cli --silent --accept-package-agreements --accept-source-agreements 2>&1)",
       "PowerShell($env:PATH = $env:PATH + \";C:\\\\Program Files\\\\GitHub CLI\"; gh --version 2>&1)",
       "PowerShell($env:PATH = $env:PATH + \";C:\\\\Program Files\\\\GitHub CLI\"; gh auth status 2>&1)",
-      "Bash(flutter --version)"
+      "Bash(flutter --version)",
+      "Bash(mkdir -p /home/bilal/dev/halal_checker/test/constants)",
+      "Bash(flutter test *)",
+      "Bash(echo \"exit: $?\")",
+      "Read(//tmp/**)",
+      "Bash(dart analyze *)"
+    ],
+    "additionalDirectories": [
+      "/home/bilal/dev/halal_checker/test",
+      "/tmp"
     ]
   }
 }
