@@ -20,6 +20,8 @@ class _AboutScreenState extends State<AboutScreen> {
   String _buildNumber = '';
   bool _checkingUpdate = false;
   AppUpdateInfo? _updateInfo;
+  bool _checked = false;
+  bool _checkFailed = false;
 
   @override
   void initState() {
@@ -40,7 +42,11 @@ class _AboutScreenState extends State<AboutScreen> {
   }
 
   Future<void> _checkForUpdate() async {
-    setState(() => _checkingUpdate = true);
+    setState(() {
+      _checkingUpdate = true;
+      _checked = false;
+      _checkFailed = false;
+    });
     try {
       final info = await InAppUpdate.checkForUpdate();
       if (!mounted) return;
@@ -50,8 +56,14 @@ class _AboutScreenState extends State<AboutScreen> {
         await InAppUpdate.completeFlexibleUpdate();
       }
     } catch (_) {
+      if (mounted) setState(() => _checkFailed = true);
     } finally {
-      if (mounted) setState(() => _checkingUpdate = false);
+      if (mounted) {
+        setState(() {
+          _checkingUpdate = false;
+          _checked = true;
+        });
+      }
     }
   }
 
@@ -156,7 +168,7 @@ class _AboutScreenState extends State<AboutScreen> {
               ),
             ],
           ),
-          if (_updateInfo != null)
+          if (_checked)
             TableRow(
               children: [
                 Padding(
@@ -164,9 +176,17 @@ class _AboutScreenState extends State<AboutScreen> {
                   child: Text('${loc.store}:'),
                 ),
                 Text(
-                  updateAvailable ? loc.updateAvailable : loc.upToDate,
+                  _checkFailed
+                      ? '—'
+                      : updateAvailable
+                      ? loc.updateAvailable
+                      : 'v$_version',
                   style: TextStyle(
-                    color: updateAvailable ? kGreenDark : Colors.grey.shade700,
+                    color: _checkFailed
+                        ? Colors.grey.shade400
+                        : updateAvailable
+                        ? kGreenDark
+                        : Colors.grey.shade700,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
