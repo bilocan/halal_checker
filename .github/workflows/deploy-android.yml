@@ -125,6 +125,7 @@ jobs:
           workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
           service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
           token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/androidpublisher
 
       - name: Publish internal draft → completed
         env:
@@ -133,16 +134,16 @@ jobs:
           VC: ${{ needs.build-and-draft.outputs.version-code }}
         run: |
           set -euo pipefail
-          EDIT=$(curl -sf -X POST \
+          EDIT=$(curl -sS --fail-with-body -X POST \
             -H "Authorization: Bearer $TOKEN" \
             "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PKG/edits" \
             | jq -r '.id')
-          curl -sf -X PUT \
+          curl -sS --fail-with-body -X PUT \
             -H "Authorization: Bearer $TOKEN" \
             -H "Content-Type: application/json" \
             -d "{\"releases\":[{\"versionCodes\":[\"$VC\"],\"status\":\"completed\"}]}" \
             "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PKG/edits/$EDIT/tracks/internal"
-          curl -sf -X POST \
+          curl -sS --fail-with-body -X POST \
             -H "Authorization: Bearer $TOKEN" \
             "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PKG/edits/$EDIT:commit"
           echo "Internal release $VC published."
@@ -222,6 +223,7 @@ jobs:
           workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
           service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
           token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/androidpublisher
 
       - name: Verify open testing release is live
         env:
@@ -230,18 +232,18 @@ jobs:
           VC: ${{ needs.build-and-draft.outputs.version-code }}
         run: |
           set -euo pipefail
-          EDIT=$(curl -sf -X POST \
+          EDIT=$(curl -sS --fail-with-body -X POST \
             -H "Authorization: Bearer $TOKEN" \
             "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PKG/edits" \
             | jq -r '.id')
-          STATUS=$(curl -sf \
+          STATUS=$(curl -sS --fail-with-body \
             -H "Authorization: Bearer $TOKEN" \
             "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PKG/edits/$EDIT/tracks/beta" \
             | jq -r --argjson vc "$VC" \
               '.releases[] | select(.versionCodes[] | tonumber == $vc) | .status' \
             2>/dev/null || echo "not_found")
           # Discard edit — read-only check, nothing to commit
-          curl -sf -X DELETE \
+          curl -sS -X DELETE \
             -H "Authorization: Bearer $TOKEN" \
             "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PKG/edits/$EDIT" || true
           echo "Open testing release $VC status: $STATUS"
