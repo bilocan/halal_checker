@@ -151,7 +151,7 @@ jobs:
   # ── Gate 2: Promote to closed testing ──────────────────────────────────────
   # Approve when internal testers have validated the build.
   promote-closed:
-    needs: publish-internal
+    needs: [build-and-draft, publish-internal]
     runs-on: ubuntu-latest
     environment: play/promote-closed
     permissions:
@@ -165,22 +165,35 @@ jobs:
           workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
           service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
           token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/androidpublisher
 
       - name: Promote internal → closed testing
-        uses: r0adkll/upload-google-play@v1
-        with:
-          serviceAccountJson: ${{ steps.auth.outputs.credentials_file_path }}
-          packageName: app.halalscan
-          track: internal
-          track_promote_to: alpha
-          status: completed
+        env:
+          TOKEN: ${{ steps.auth.outputs.access_token }}
+          PKG: app.halalscan
+          VC: ${{ needs.build-and-draft.outputs.version-code }}
+        run: |
+          set -euo pipefail
+          EDIT=$(curl -sS --fail-with-body -X POST \
+            -H "Authorization: Bearer $TOKEN" \
+            "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PKG/edits" \
+            | jq -r '.id')
+          curl -sS --fail-with-body -X PUT \
+            -H "Authorization: Bearer $TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{\"releases\":[{\"versionCodes\":[\"$VC\"],\"status\":\"completed\"}]}" \
+            "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PKG/edits/$EDIT/tracks/alpha"
+          curl -sS --fail-with-body -X POST \
+            -H "Authorization: Bearer $TOKEN" \
+            "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PKG/edits/$EDIT:commit"
+          echo "Promoted release $VC to closed testing."
 
   # ── Gate 3: Submit for Google Play review ──────────────────────────────────
   # Approve when ready to submit. Promotes to open testing and triggers
   # Google's review process. The release will go live on open testing
   # automatically once the review passes.
   submit-review:
-    needs: promote-closed
+    needs: [build-and-draft, promote-closed]
     runs-on: ubuntu-latest
     environment: play/submit-review
     permissions:
@@ -194,15 +207,28 @@ jobs:
           workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
           service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
           token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/androidpublisher
 
       - name: Promote closed testing → open testing
-        uses: r0adkll/upload-google-play@v1
-        with:
-          serviceAccountJson: ${{ steps.auth.outputs.credentials_file_path }}
-          packageName: app.halalscan
-          track: alpha
-          track_promote_to: beta
-          status: completed
+        env:
+          TOKEN: ${{ steps.auth.outputs.access_token }}
+          PKG: app.halalscan
+          VC: ${{ needs.build-and-draft.outputs.version-code }}
+        run: |
+          set -euo pipefail
+          EDIT=$(curl -sS --fail-with-body -X POST \
+            -H "Authorization: Bearer $TOKEN" \
+            "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PKG/edits" \
+            | jq -r '.id')
+          curl -sS --fail-with-body -X PUT \
+            -H "Authorization: Bearer $TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{\"releases\":[{\"versionCodes\":[\"$VC\"],\"status\":\"completed\"}]}" \
+            "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PKG/edits/$EDIT/tracks/beta"
+          curl -sS --fail-with-body -X POST \
+            -H "Authorization: Bearer $TOKEN" \
+            "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PKG/edits/$EDIT:commit"
+          echo "Submitted release $VC to open testing for review."
 
   # ── Gate 4: Confirm release is live on open testing ────────────────────────
   # Approve this gate AFTER Play Console shows the review has passed.
