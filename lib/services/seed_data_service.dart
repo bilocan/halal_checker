@@ -49,7 +49,7 @@ class SeedDataService {
 
     for (final barcode in barcodes) {
       final existing = await repo.getByBarcode(barcode);
-      if (existing != null) continue;
+      if (existing != null && !existing.isUnknown) continue;
 
       try {
         final product = await service.getProduct(barcode);
