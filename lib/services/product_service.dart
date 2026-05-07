@@ -357,12 +357,18 @@ class ProductService {
   }) async {
     await _loadCustomKeywords();
 
-    // Step 0 (debug only): return fixture from test DB without touching cache/network
+    // Step 0 (debug only): return fixture from test DB without touching cache/network.
+    // Skip stale "unknown" fixtures so they fall through to the live pipeline and get
+    // resolved; the fresh result is written back to the test DB below.
+    var hadStaleTestFixture = false;
     if (kDebugMode) {
       final fixture = await TestProductRepository.instance.getByBarcode(
         barcode,
       );
-      if (fixture != null) return fixture;
+      if (fixture != null) {
+        if (!fixture.isUnknown) return fixture;
+        hadStaleTestFixture = true;
+      }
     }
 
     // Step 1: Check local cache (fast path — no network).
@@ -396,12 +402,20 @@ class ProductService {
     // so the Edge Function bypasses its own Supabase cache too.
     final backendProduct = await _fetchFromBackend(
       barcode,
-      force: forceBackendRefresh || hadStaleUnknown,
+      force: forceBackendRefresh || hadStaleUnknown || hadStaleTestFixture,
     );
     if (backendProduct != null) {
       final safe = _applyKeywordSafety(backendProduct);
-      await _cache.saveProduct(barcode, safe);
-      return safe;
+      // If the backend still returns unknown after a stale-unknown force-refresh,
+      // fall through to Step 4 — direct OFf fetch may resolve it via category tags.
+      final staleRetry = hadStaleUnknown || hadStaleTestFixture;
+      if (!safe.isUnknown || !staleRetry) {
+        await _cache.saveProduct(barcode, safe);
+        if (kDebugMode && hadStaleTestFixture && !safe.isUnknown) {
+          await TestProductRepository.instance.upsert(safe);
+        }
+        return safe;
+      }
     }
 
     // Step 4: Fallback — try each open food database in order.
@@ -421,6 +435,9 @@ class ProductService {
         }
         final safe = _applyKeywordSafety(product);
         await _cache.saveProduct(barcode, safe);
+        if (kDebugMode && hadStaleTestFixture) {
+          await TestProductRepository.instance.upsert(safe);
+        }
         return safe;
       }
     }
