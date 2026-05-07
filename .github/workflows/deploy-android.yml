@@ -209,6 +209,33 @@ jobs:
           token_format: access_token
           access_token_scopes: https://www.googleapis.com/auth/androidpublisher
 
+      - name: Verify closed testing review has passed
+        env:
+          TOKEN: ${{ steps.auth.outputs.access_token }}
+          PKG: app.halalscan
+          VC: ${{ needs.build-and-draft.outputs.version-code }}
+        run: |
+          set -euo pipefail
+          EDIT=$(curl -sS --fail-with-body -X POST \
+            -H "Authorization: Bearer $TOKEN" \
+            "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PKG/edits" \
+            | jq -r '.id')
+          STATUS=$(curl -sS --fail-with-body \
+            -H "Authorization: Bearer $TOKEN" \
+            "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PKG/edits/$EDIT/tracks/alpha" \
+            | jq -r --argjson vc "$VC" \
+              '.releases[] | select(.versionCodes[] | tonumber == $vc) | .status' \
+            2>/dev/null || echo "not_found")
+          curl -sS -X DELETE \
+            -H "Authorization: Bearer $TOKEN" \
+            "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PKG/edits/$EDIT" || true
+          echo "Alpha release $VC status: $STATUS"
+          if [ "$STATUS" != "completed" ]; then
+            echo "::error::Closed testing review has not passed yet (status: $STATUS)." \
+                 "Wait for Play Console to show the review is approved, then re-run this job."
+            exit 1
+          fi
+
       - name: Promote closed testing → open testing
         env:
           TOKEN: ${{ steps.auth.outputs.access_token }}
