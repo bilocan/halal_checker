@@ -1,0 +1,298 @@
+name: Deploy iOS to App Store
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Gate structure (each environment requires a manual approval in GitHub Actions):
+#
+#  [tag push] → build-and-upload (auto)
+#                 └─ appstore/submit-review  → Gate 1: test on TestFlight, then submit for review
+#                       └─ appstore/release  → Gate 2: Apple approved — release to App Store
+#
+# One-time setup required:
+#
+#   GitHub → Settings → Environments — create these two environments and add
+#   yourself as a required reviewer on each:
+#     appstore/submit-review
+#     appstore/release
+#
+#   GitHub → Settings → Secrets → Actions — add these secrets:
+#     IOS_DISTRIBUTION_CERT_BASE64      base64 of your Distribution .p12 certificate
+#                                        base64 -i cert.p12 | pbcopy
+#     IOS_DISTRIBUTION_CERT_PASSWORD    password used when exporting the .p12
+#     IOS_PROVISIONING_PROFILE_BASE64   base64 of your App Store provisioning profile
+#                                        base64 -i "HalalScan.mobileprovision" | pbcopy
+#     APPLE_TEAM_ID                     10-character team ID (e.g. AB12CD34EF)
+#     APP_STORE_CONNECT_KEY_ID          API key ID from App Store Connect
+#     APP_STORE_CONNECT_ISSUER_ID       Issuer ID from App Store Connect
+#     APP_STORE_CONNECT_KEY_BASE64      base64 of the .p8 API key file
+#                                        base64 -i AuthKey_XXXXXX.p8 | pbcopy
+#
+#   Also needed (shared with Android):
+#     SUPABASE_URL, SUPABASE_ANON_KEY, GOOGLE_WEB_CLIENT_ID
+#
+#   App Store Connect prerequisite:
+#     Create the app (bundle ID: app.halalscan) and fill in all metadata
+#     (screenshots, description, etc.) before approving Gate 1. The version
+#     must be in "Prepare for Submission" state for the submit step to succeed.
+# ──────────────────────────────────────────────────────────────────────────────
+
+jobs:
+
+  # ── Automated: sign, build, upload to TestFlight ───────────────────────────
+  build-and-upload:
+    runs-on: macos-latest
+    outputs:
+      version-name: ${{ steps.version.outputs.name }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Import distribution certificate
+        env:
+          CERT_BASE64: ${{ secrets.IOS_DISTRIBUTION_CERT_BASE64 }}
+          CERT_PASSWORD: ${{ secrets.IOS_DISTRIBUTION_CERT_PASSWORD }}
+        run: |
+          KEYCHAIN_PATH="$RUNNER_TEMP/ios-build.keychain"
+          CERT_PATH="$RUNNER_TEMP/dist.p12"
+          echo "$CERT_BASE64" | base64 --decode > "$CERT_PATH"
+          security create-keychain -p "" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "" "$KEYCHAIN_PATH"
+          security import "$CERT_PATH" -k "$KEYCHAIN_PATH" -P "$CERT_PASSWORD" -T /usr/bin/codesign
+          security list-keychain -d user -s "$KEYCHAIN_PATH"
+          security set-key-partition-list -S apple-tool:,apple: -k "" "$KEYCHAIN_PATH"
+
+      - name: Install provisioning profile
+        env:
+          PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
+        run: |
+          PROFILE_PATH="$RUNNER_TEMP/profile.mobileprovision"
+          echo "$PROFILE_BASE64" | base64 --decode > "$PROFILE_PATH"
+          UUID=$(security cms -D -i "$PROFILE_PATH" | plutil -extract UUID xml1 -o - - | sed -n 's/.*<string>\(.*\)<\/string>.*/\1/p')
+          echo "Profile UUID: $UUID"
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          cp "$PROFILE_PATH" ~/Library/MobileDevice/Provisioning\ Profiles/"$UUID".mobileprovision
+          echo "PROFILE_UUID=$UUID" >> "$GITHUB_ENV"
+
+      - name: Extract version
+        id: version
+        run: |
+          TAG_NAME="${GITHUB_REF_NAME#v}"
+          if [ -z "$TAG_NAME" ]; then
+            echo "ERROR: GITHUB_REF_NAME is empty — workflow must be triggered by a version tag" >&2
+            exit 1
+          fi
+          echo "name=$TAG_NAME" >> "$GITHUB_OUTPUT"
+          echo "code=$((100 + ${{ github.run_number }}))" >> "$GITHUB_OUTPUT"
+
+      - name: Create ExportOptions.plist
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          cat > ExportOptions.plist <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>method</key>
+              <string>app-store</string>
+              <key>teamID</key>
+              <string>${APPLE_TEAM_ID}</string>
+              <key>stripSwiftSymbols</key>
+              <true/>
+              <key>provisioningProfiles</key>
+              <dict>
+                  <key>app.halalscan</key>
+                  <string>${PROFILE_UUID}</string>
+              </dict>
+          </dict>
+          </plist>
+          PLIST
+
+      - name: Build IPA
+        env:
+          FLUTTER_XCODE_CODE_SIGN_STYLE: Manual
+          FLUTTER_XCODE_CODE_SIGN_IDENTITY: Apple Distribution
+          FLUTTER_XCODE_PROVISIONING_PROFILE_SPECIFIER: ${{ env.PROFILE_UUID }}
+          FLUTTER_XCODE_DEVELOPMENT_TEAM: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          flutter build ipa --release \
+            --build-name=${{ steps.version.outputs.name }} \
+            --build-number=${{ steps.version.outputs.code }} \
+            --export-options-plist=ExportOptions.plist \
+            --dart-define=SUPABASE_URL=${{ secrets.SUPABASE_URL }} \
+            --dart-define=SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }} \
+            --dart-define=GOOGLE_WEB_CLIENT_ID=${{ secrets.GOOGLE_WEB_CLIENT_ID }}
+
+      - name: Upload to TestFlight
+        env:
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APP_STORE_CONNECT_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_KEY_BASE64 }}
+        run: |
+          mkdir -p ~/.appstoreconnect/private_keys
+          echo "$APP_STORE_CONNECT_KEY_BASE64" | base64 --decode \
+            > ~/.appstoreconnect/private_keys/AuthKey_${APP_STORE_CONNECT_KEY_ID}.p8
+          IPA_PATH=$(find build/ios/ipa -name "*.ipa" | head -1)
+          echo "Uploading $IPA_PATH"
+          xcrun altool --upload-app \
+            --type ios \
+            --file "$IPA_PATH" \
+            --apiKey "$APP_STORE_CONNECT_KEY_ID" \
+            --apiIssuer "$APP_STORE_CONNECT_ISSUER_ID" \
+            --output-format json
+
+      - name: Save IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-ipa
+          path: build/ios/ipa/*.ipa
+          retention-days: 30
+
+  # ── Gate 1: Submit for App Store review ────────────────────────────────────
+  # Test the build on TestFlight first, then approve this gate to submit for
+  # App Store review. The app version must be in "Prepare for Submission" state
+  # in App Store Connect (metadata and screenshots filled in).
+  submit-review:
+    needs: build-and-upload
+    runs-on: ubuntu-latest
+    environment: appstore/submit-review
+    steps:
+      - name: Submit for App Store review
+        env:
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APP_STORE_CONNECT_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_KEY_BASE64 }}
+          VERSION: ${{ needs.build-and-upload.outputs.version-name }}
+        run: |
+          set -euo pipefail
+          pip install cryptography --quiet
+
+          KEY_FILE=$(mktemp /tmp/authkey.XXXXXX.p8)
+          echo "$APP_STORE_CONNECT_KEY_BASE64" | base64 --decode > "$KEY_FILE"
+
+          JWT=$(KEY_FILE="$KEY_FILE" python3 - <<'PYEOF'
+          import json, time, base64, os
+          from cryptography.hazmat.primitives import hashes, serialization
+          from cryptography.hazmat.primitives.asymmetric import ec
+          from cryptography.hazmat.primitives.asymmetric.utils import decode_dss_signature
+          key_id = os.environ['APP_STORE_CONNECT_KEY_ID']
+          issuer_id = os.environ['APP_STORE_CONNECT_ISSUER_ID']
+          with open(os.environ['KEY_FILE'], 'rb') as f:
+              pk = serialization.load_pem_private_key(f.read(), password=None)
+          now = int(time.time())
+          def b64u(d): return base64.urlsafe_b64encode(d if isinstance(d, bytes) else d.encode()).rstrip(b'=').decode()
+          h = b64u(json.dumps({'alg':'ES256','kid':key_id,'typ':'JWT'}, separators=(',',':')))
+          p = b64u(json.dumps({'iss':issuer_id,'iat':now,'exp':now+1200,'aud':'appstoreconnect-v1'}, separators=(',',':')))
+          msg = f'{h}.{p}'
+          r, s = decode_dss_signature(pk.sign(msg.encode(), ec.ECDSA(hashes.SHA256())))
+          print(f'{msg}.{b64u(r.to_bytes(32,"big")+s.to_bytes(32,"big"))}')
+          PYEOF
+          )
+          rm -f "$KEY_FILE"
+
+          APP_ID=$(curl -sS --fail-with-body \
+            -H "Authorization: Bearer $JWT" \
+            "https://api.appstoreconnect.apple.com/v1/apps?filter[bundleId]=app.halalscan" \
+            | jq -r '.data[0].id')
+          echo "App ID: $APP_ID"
+
+          VERSION_ID=$(curl -sS --fail-with-body \
+            -H "Authorization: Bearer $JWT" \
+            "https://api.appstoreconnect.apple.com/v1/apps/$APP_ID/appStoreVersions?filter[platform]=IOS&filter[appStoreState]=PREPARE_FOR_SUBMISSION" \
+            | jq -r '.data[0].id')
+
+          if [ -z "$VERSION_ID" ] || [ "$VERSION_ID" = "null" ]; then
+            echo "No version found in PREPARE_FOR_SUBMISSION state. Current versions:" >&2
+            curl -sS -H "Authorization: Bearer $JWT" \
+              "https://api.appstoreconnect.apple.com/v1/apps/$APP_ID/appStoreVersions?filter[platform]=IOS" \
+              | jq '.data[] | {id: .id, version: .attributes.versionString, state: .attributes.appStoreState}'
+            exit 1
+          fi
+
+          curl -sS --fail-with-body \
+            -X POST \
+            -H "Authorization: Bearer $JWT" \
+            -H "Content-Type: application/json" \
+            -d "{\"data\":{\"type\":\"appStoreVersionSubmissions\",\"relationships\":{\"appStoreVersion\":{\"data\":{\"type\":\"appStoreVersions\",\"id\":\"$VERSION_ID\"}}}}}" \
+            "https://api.appstoreconnect.apple.com/v1/appStoreVersionSubmissions"
+          echo "Submitted version $VERSION for App Store review."
+
+  # ── Gate 2: Release to App Store ───────────────────────────────────────────
+  # Approve once Apple approves the review. The version must be in
+  # "Pending Developer Release" state (requires manual release to be enabled
+  # in App Store Connect for this version).
+  release:
+    needs: [build-and-upload, submit-review]
+    runs-on: ubuntu-latest
+    environment: appstore/release
+    steps:
+      - name: Release to App Store
+        env:
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APP_STORE_CONNECT_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_KEY_BASE64 }}
+          VERSION: ${{ needs.build-and-upload.outputs.version-name }}
+        run: |
+          set -euo pipefail
+          pip install cryptography --quiet
+
+          KEY_FILE=$(mktemp /tmp/authkey.XXXXXX.p8)
+          echo "$APP_STORE_CONNECT_KEY_BASE64" | base64 --decode > "$KEY_FILE"
+
+          JWT=$(KEY_FILE="$KEY_FILE" python3 - <<'PYEOF'
+          import json, time, base64, os
+          from cryptography.hazmat.primitives import hashes, serialization
+          from cryptography.hazmat.primitives.asymmetric import ec
+          from cryptography.hazmat.primitives.asymmetric.utils import decode_dss_signature
+          key_id = os.environ['APP_STORE_CONNECT_KEY_ID']
+          issuer_id = os.environ['APP_STORE_CONNECT_ISSUER_ID']
+          with open(os.environ['KEY_FILE'], 'rb') as f:
+              pk = serialization.load_pem_private_key(f.read(), password=None)
+          now = int(time.time())
+          def b64u(d): return base64.urlsafe_b64encode(d if isinstance(d, bytes) else d.encode()).rstrip(b'=').decode()
+          h = b64u(json.dumps({'alg':'ES256','kid':key_id,'typ':'JWT'}, separators=(',',':')))
+          p = b64u(json.dumps({'iss':issuer_id,'iat':now,'exp':now+1200,'aud':'appstoreconnect-v1'}, separators=(',',':')))
+          msg = f'{h}.{p}'
+          r, s = decode_dss_signature(pk.sign(msg.encode(), ec.ECDSA(hashes.SHA256())))
+          print(f'{msg}.{b64u(r.to_bytes(32,"big")+s.to_bytes(32,"big"))}')
+          PYEOF
+          )
+          rm -f "$KEY_FILE"
+
+          APP_ID=$(curl -sS --fail-with-body \
+            -H "Authorization: Bearer $JWT" \
+            "https://api.appstoreconnect.apple.com/v1/apps?filter[bundleId]=app.halalscan" \
+            | jq -r '.data[0].id')
+
+          VERSION_ID=$(curl -sS --fail-with-body \
+            -H "Authorization: Bearer $JWT" \
+            "https://api.appstoreconnect.apple.com/v1/apps/$APP_ID/appStoreVersions?filter[platform]=IOS&filter[appStoreState]=PENDING_DEVELOPER_RELEASE" \
+            | jq -r '.data[0].id')
+
+          if [ -z "$VERSION_ID" ] || [ "$VERSION_ID" = "null" ]; then
+            echo "No version in PENDING_DEVELOPER_RELEASE state. Current versions:" >&2
+            curl -sS -H "Authorization: Bearer $JWT" \
+              "https://api.appstoreconnect.apple.com/v1/apps/$APP_ID/appStoreVersions?filter[platform]=IOS" \
+              | jq '.data[] | {id: .id, version: .attributes.versionString, state: .attributes.appStoreState}'
+            exit 1
+          fi
+
+          curl -sS --fail-with-body \
+            -X POST \
+            -H "Authorization: Bearer $JWT" \
+            -H "Content-Type: application/json" \
+            -d "{\"data\":{\"type\":\"appStoreVersionReleaseRequests\",\"relationships\":{\"appStoreVersion\":{\"data\":{\"type\":\"appStoreVersions\",\"id\":\"$VERSION_ID\"}}}}}" \
+            "https://api.appstoreconnect.apple.com/v1/appStoreVersionReleaseRequests"
+          echo "Released version $VERSION to App Store."
