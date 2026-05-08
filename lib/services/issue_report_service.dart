@@ -47,9 +47,7 @@ class IssueReportService {
     try {
       final response = await http
           .post(
-            Uri.parse(
-              '${AppConfig.supabaseUrl}/functions/v1/report-issue',
-            ),
+            Uri.parse('${AppConfig.supabaseUrl}/functions/v1/report-issue'),
             headers: {
               'Authorization': 'Bearer ${AppConfig.supabaseAnonKey}',
               'Content-Type': 'application/json',

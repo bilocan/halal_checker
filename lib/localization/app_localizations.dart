@@ -144,7 +144,8 @@ class AppLocalizations {
       'updateNow': 'Update Now',
       'reportWrongResult': 'Report Wrong Result',
       'reportWrongResultTitle': 'Is this result wrong?',
-      'reportWrongResultSubtitle': 'Tell us what it should be. '
+      'reportWrongResultSubtitle':
+          'Tell us what it should be. '
           "We'll create a bug report and fix it.",
       'currentResultLabel': 'Current result',
       'expectedResultLabel': 'What should it be?',
@@ -294,7 +295,8 @@ class AppLocalizations {
       'updateNow': 'Şimdi Güncelle',
       'reportWrongResult': 'Yanlış Sonucu Bildir',
       'reportWrongResultTitle': 'Bu sonuç yanlış mı?',
-      'reportWrongResultSubtitle': 'Ne olması gerektiğini söyleyin. '
+      'reportWrongResultSubtitle':
+          'Ne olması gerektiğini söyleyin. '
           'Bir hata raporu oluşturup düzelteceğiz.',
       'currentResultLabel': 'Mevcut sonuç',
       'expectedResultLabel': 'Ne olmalı?',
@@ -449,13 +451,15 @@ class AppLocalizations {
       'updateNow': 'Jetzt aktualisieren',
       'reportWrongResult': 'Falsches Ergebnis melden',
       'reportWrongResultTitle': 'Ist dieses Ergebnis falsch?',
-      'reportWrongResultSubtitle': 'Sagen Sie uns, was es sein sollte. '
+      'reportWrongResultSubtitle':
+          'Sagen Sie uns, was es sein sollte. '
           'Wir erstellen einen Fehlerbericht und beheben ihn.',
       'currentResultLabel': 'Aktuelles Ergebnis',
       'expectedResultLabel': 'Was sollte es sein?',
       'optionalNote': 'Optionale Notiz (z. B. warum Sie das denken)',
       'reportSubmitted': 'Fehlerbericht eingereicht — danke!',
-      'reportFailed': 'Bericht konnte nicht gesendet werden. Später erneut versuchen.',
+      'reportFailed':
+          'Bericht konnte nicht gesendet werden. Später erneut versuchen.',
       'reportResultHalal': 'Halal',
       'reportResultHaram': 'Nicht Halal',
       'reportResultNonFood': 'Kein Lebensmittel',
