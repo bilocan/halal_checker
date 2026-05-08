@@ -142,6 +142,19 @@ class AppLocalizations {
       'latest': 'Latest',
       'updateAvailable': 'Update Available',
       'updateNow': 'Update Now',
+      'reportWrongResult': 'Report Wrong Result',
+      'reportWrongResultTitle': 'Is this result wrong?',
+      'reportWrongResultSubtitle': 'Tell us what it should be. '
+          "We'll create a bug report and fix it.",
+      'currentResultLabel': 'Current result',
+      'expectedResultLabel': 'What should it be?',
+      'optionalNote': 'Optional note (e.g. why you think so)',
+      'reportSubmitted': 'Bug report submitted — thank you!',
+      'reportFailed': 'Could not submit report. Try again later.',
+      'reportResultHalal': 'Halal',
+      'reportResultHaram': 'Not Halal',
+      'reportResultNonFood': 'Non-Food',
+      'reportResultUnknown': 'Unknown',
     },
     'tr': {
       'appTitle': 'HalalScan',
@@ -279,6 +292,19 @@ class AppLocalizations {
       'latest': 'En Son',
       'updateAvailable': 'Güncelleme Mevcut',
       'updateNow': 'Şimdi Güncelle',
+      'reportWrongResult': 'Yanlış Sonucu Bildir',
+      'reportWrongResultTitle': 'Bu sonuç yanlış mı?',
+      'reportWrongResultSubtitle': 'Ne olması gerektiğini söyleyin. '
+          'Bir hata raporu oluşturup düzelteceğiz.',
+      'currentResultLabel': 'Mevcut sonuç',
+      'expectedResultLabel': 'Ne olmalı?',
+      'optionalNote': 'İsteğe bağlı not (örn. neden öyle düşündüğünüz)',
+      'reportSubmitted': 'Hata raporu gönderildi — teşekkürler!',
+      'reportFailed': 'Rapor gönderilemedi. Daha sonra tekrar deneyin.',
+      'reportResultHalal': 'Helal',
+      'reportResultHaram': 'Haram',
+      'reportResultNonFood': 'Gıda Değil',
+      'reportResultUnknown': 'Bilinmiyor',
     },
     'de': {
       'appTitle': 'HalalScan',
@@ -421,6 +447,19 @@ class AppLocalizations {
       'latest': 'Neueste',
       'updateAvailable': 'Update verfügbar',
       'updateNow': 'Jetzt aktualisieren',
+      'reportWrongResult': 'Falsches Ergebnis melden',
+      'reportWrongResultTitle': 'Ist dieses Ergebnis falsch?',
+      'reportWrongResultSubtitle': 'Sagen Sie uns, was es sein sollte. '
+          'Wir erstellen einen Fehlerbericht und beheben ihn.',
+      'currentResultLabel': 'Aktuelles Ergebnis',
+      'expectedResultLabel': 'Was sollte es sein?',
+      'optionalNote': 'Optionale Notiz (z. B. warum Sie das denken)',
+      'reportSubmitted': 'Fehlerbericht eingereicht — danke!',
+      'reportFailed': 'Bericht konnte nicht gesendet werden. Später erneut versuchen.',
+      'reportResultHalal': 'Halal',
+      'reportResultHaram': 'Nicht Halal',
+      'reportResultNonFood': 'Kein Lebensmittel',
+      'reportResultUnknown': 'Unbekannt',
     },
   };
 
@@ -556,6 +595,19 @@ class AppLocalizations {
   String get latest => _translate('latest');
   String get updateAvailable => _translate('updateAvailable');
   String get updateNow => _translate('updateNow');
+  String get reportWrongResult => _translate('reportWrongResult');
+  String get reportWrongResultTitle => _translate('reportWrongResultTitle');
+  String get reportWrongResultSubtitle =>
+      _translate('reportWrongResultSubtitle');
+  String get currentResultLabel => _translate('currentResultLabel');
+  String get expectedResultLabel => _translate('expectedResultLabel');
+  String get optionalNote => _translate('optionalNote');
+  String get reportSubmitted => _translate('reportSubmitted');
+  String get reportFailed => _translate('reportFailed');
+  String get reportResultHalal => _translate('reportResultHalal');
+  String get reportResultHaram => _translate('reportResultHaram');
+  String get reportResultNonFood => _translate('reportResultNonFood');
+  String get reportResultUnknown => _translate('reportResultUnknown');
 
   static AppLocalizations of(BuildContext context) {
     final localizations = Localizations.of<AppLocalizations>(
