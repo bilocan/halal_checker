@@ -35,7 +35,7 @@ class VersionService {
       final storeVersion = await _fetchPlayStoreVersion();
 
       // Also run in_app_update for the native update flow.
-      bool inAppAvailable = false;
+      var inAppAvailable = false;
       try {
         final info = await InAppUpdate.checkForUpdate();
         inAppAvailable =
@@ -43,8 +43,7 @@ class VersionService {
       } catch (_) {}
 
       if (storeVersion != null) {
-        final newer =
-            _isNewerVersion(storeVersion, packageInfo.version) ||
+        final newer = _isNewerVersion(storeVersion, packageInfo.version) ||
             inAppAvailable;
         return StoreVersionInfo(
           newer ? UpdateStatus.updateAvailable : UpdateStatus.upToDate,
@@ -55,7 +54,9 @@ class VersionService {
 
       // Play Store page fetch failed — fall back to in_app_update result only.
       return StoreVersionInfo(
-        inAppAvailable ? UpdateStatus.updateAvailable : UpdateStatus.checkFailed,
+        inAppAvailable
+            ? UpdateStatus.updateAvailable
+            : UpdateStatus.checkFailed,
         storeUrl: storeUrl,
       );
     } catch (_) {
@@ -71,9 +72,8 @@ class VersionService {
           .get(Uri.parse(url))
           .timeout(const Duration(seconds: 10));
       if (response.statusCode != 200) return null;
-      final match = RegExp(
-        r'"softwareVersion":"([^"]+)"',
-      ).firstMatch(response.body);
+      final match =
+          RegExp(r'"softwareVersion":"([^"]+)"').firstMatch(response.body);
       return match?.group(1);
     } catch (_) {
       return null;
@@ -86,7 +86,8 @@ class VersionService {
       final uri = Uri.parse(
         'https://itunes.apple.com/lookup?bundleId=$_bundleId',
       );
-      final response = await http.get(uri).timeout(const Duration(seconds: 10));
+      final response =
+          await http.get(uri).timeout(const Duration(seconds: 10));
       if (response.statusCode != 200) {
         return const StoreVersionInfo(UpdateStatus.checkFailed);
       }
@@ -132,8 +133,7 @@ class VersionService {
         await InAppUpdate.performImmediateUpdate();
       } catch (_) {
         // in_app_update unavailable (sideloaded build) — open Play Store directly.
-        final url =
-            storeUrl ??
+        final url = storeUrl ??
             'https://play.google.com/store/apps/details?id=$_bundleId';
         final uri = Uri.parse(url);
         if (await canLaunchUrl(uri)) {
@@ -141,9 +141,7 @@ class VersionService {
         }
       }
     } else if (Platform.isIOS) {
-      final url =
-          storeUrl ??
-          'https://apps.apple.com/app/id$_bundleId';
+      final url = storeUrl ?? 'https://apps.apple.com/app/id$_bundleId';
       final uri = Uri.parse(url);
       if (await canLaunchUrl(uri)) {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
