@@ -89,6 +89,14 @@ class _StartScreenState extends State<StartScreen> {
           ? await _productService.refreshProduct(scan['barcode'] as String)
           : await _productService.getProduct(scan['barcode'] as String);
       if (!mounted) return;
+      if (recheck && product != null) {
+        await DatabaseService.instance.insertScan(
+          barcode: scan['barcode'] as String,
+          productName: product.name,
+          isHalal: product.isHalal,
+        );
+      }
+      if (!mounted) return;
       await Navigator.push(
         context,
         MaterialPageRoute(

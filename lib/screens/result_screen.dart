@@ -7,6 +7,7 @@ import '../models/product.dart';
 import '../models/feedback.dart';
 import '../services/auth_service.dart';
 import '../services/feedback_service.dart';
+import '../services/database_service.dart';
 import '../services/product_service.dart';
 
 class ResultScreen extends StatefulWidget {
@@ -104,6 +105,12 @@ class _ResultScreenState extends State<ResultScreen> {
         widget.barcode,
       );
       if (refreshedProduct != null && mounted) {
+        await DatabaseService.instance.insertScan(
+          barcode: widget.barcode,
+          productName: refreshedProduct.name,
+          isHalal: refreshedProduct.isHalal,
+        );
+        if (!mounted) return;
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
