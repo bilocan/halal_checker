@@ -26,8 +26,7 @@ class VersionService {
   }
 
   static Future<StoreVersionInfo> _checkAndroid() async {
-    const storeUrl =
-        'https://play.google.com/store/apps/details?id=$_bundleId';
+    const storeUrl = 'https://play.google.com/store/apps/details?id=$_bundleId';
     try {
       final packageInfo = await PackageInfo.fromPlatform();
 
@@ -55,7 +54,9 @@ class VersionService {
 
       // Play Store page fetch failed — fall back to in_app_update result only.
       return StoreVersionInfo(
-        inAppAvailable ? UpdateStatus.updateAvailable : UpdateStatus.checkFailed,
+        inAppAvailable
+            ? UpdateStatus.updateAvailable
+            : UpdateStatus.checkFailed,
         storeUrl: storeUrl,
       );
     } catch (_) {
@@ -141,9 +142,7 @@ class VersionService {
         }
       }
     } else if (Platform.isIOS) {
-      final url =
-          storeUrl ??
-          'https://apps.apple.com/app/id$_bundleId';
+      final url = storeUrl ?? 'https://apps.apple.com/app/id$_bundleId';
       final uri = Uri.parse(url);
       if (await canLaunchUrl(uri)) {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
