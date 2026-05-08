@@ -13,4 +13,5 @@
 # 7394376616127   Oatly Oat Drink 1L
 
 # --- add new barcodes below ---
-90098369   # mineral water
+90098369       # mineral water
+742948341318   # non-food product

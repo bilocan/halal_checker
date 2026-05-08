@@ -570,19 +570,19 @@ class ProductService {
           .toList();
 
       final rawCategories = productData['categories_tags'];
-      final bool nonFoodByCategory =
+      final bool isNonFoodByCategory =
           rawCategories is List &&
           rawCategories.any(
             (c) => FoodCategories.nonFood.contains(c.toString().toLowerCase()),
           );
       final bool haramByCategory =
-          !nonFoodByCategory &&
+          !isNonFoodByCategory &&
           rawCategories is List &&
           rawCategories.any(
             (c) => FoodCategories.haram.contains(c.toString().toLowerCase()),
           );
       final bool halalByCategory =
-          !nonFoodByCategory &&
+          !isNonFoodByCategory &&
           !haramByCategory &&
           rawCategories is List &&
           rawCategories.any(
@@ -609,7 +609,7 @@ class ProductService {
           ? fallback.warnings
           : (nameCheck?.warnings ?? {});
 
-      if (nonFoodByCategory) {
+      if (isNonFoodByCategory) {
         return Product(
           barcode: barcode,
           name: name,

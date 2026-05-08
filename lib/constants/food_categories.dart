@@ -12,23 +12,35 @@ class FoodCategories {
     'en:sake',
   };
 
-  // OFf categories that indicate a non-food product (cosmetics, cleaning, pet care, etc.).
-  // When an OFf result has one of these tags, dietary rules do not apply.
+  // OFF categories that indicate non-food items (cosmetics, cleaning, etc.).
+  // Products in these categories should be marked isNonFood rather than isUnknown.
   static const Set<String> nonFood = {
     'en:non-food-products',
     'en:cosmetics',
     'en:beauty-products',
+    'en:body-care',
+    'en:make-up',
+    'en:fragrances',
+    'en:oral-care',
+    'en:oral-hygiene',
     'en:personal-care',
     'en:hygiene-products',
+    'en:cleaning',
     'en:cleaning-products',
     'en:cleaning-agents',
+    'en:household-products',
+    'en:household-chemicals',
+    'en:laundry',
     'en:laundry-products',
+    'en:dishwashing',
     'en:pet-food',
     'en:pet-foods',
     'en:cat-food',
     'en:cat-foods',
     'en:dog-food',
     'en:dog-foods',
+    'en:pet-care',
+    'en:plant-care',
     'en:baby-care',
     'en:diapers',
     'en:baby-wipes',
