@@ -472,6 +472,51 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Tier 3: Vision analysis — when no text ingredients but an ingredients image exists.
+    // Claude reads the label photo (handles Arabic, Turkish, etc.) and returns a full verdict.
+    if (!analyzedByAI && ingredients.length === 0 && !isNonFood && !isHalalByCategory && haramCategory === null) {
+      const imgUrl = resolveImg(pd, 'image_ingredients_url', 'ingredients')
+      const claudeKey = Deno.env.get('CLAUDE_API_KEY')
+      if (imgUrl && claudeKey) {
+        try {
+          const visionRes = await fetch(CLAUDE_URL, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-api-key': claudeKey,
+              'anthropic-version': '2023-06-01',
+            },
+            body: JSON.stringify({
+              model: CLAUDE_MODEL,
+              max_tokens: 1024,
+              system: CLAUDE_SYSTEM,
+              messages: [{
+                role: 'user',
+                content: [
+                  { type: 'image', source: { type: 'url', url: imgUrl } },
+                  { type: 'text', text: 'This is an ingredients label from a product. The text may be in Arabic, Turkish, or another language. Read the ingredient names, translate them to English, and determine if the product is halal. Respond with the JSON format specified.' },
+                ],
+              }],
+            }),
+          })
+          if (visionRes.ok) {
+            const cd = await visionRes.json()
+            const text: string = cd.content?.find((c: { type: string }) => c.type === 'text')?.text ?? ''
+            try {
+              const p = JSON.parse(text.trim())
+              isHalal               = p.isHalal ?? false
+              isUnknown             = p.isUnknown ?? true
+              haramIngredients      = p.haramIngredients ?? []
+              suspiciousIngredients = p.suspiciousIngredients ?? []
+              ingredientWarnings    = p.ingredientWarnings ?? {}
+              explanation           = p.explanation ?? ''
+              analyzedByAI          = true
+            } catch { /* remain unknown */ }
+          }
+        } catch { /* remain unknown */ }
+      }
+    }
+
     // Keyword safety override: haram keywords always win over AI verdict.
     // Reuses kwFirst — no need to re-run keyword analysis.
     if (kwFirst.haram.length > 0 && isHalal) {
