@@ -1,11 +1,11 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:in_app_update/in_app_update.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 import '../app_colors.dart';
 import '../localization/app_localizations.dart';
+import '../services/version_service.dart';
 import '../widgets/halal_scan_logo.dart';
 
 class AboutScreen extends StatefulWidget {
@@ -19,9 +19,8 @@ class _AboutScreenState extends State<AboutScreen> {
   String _version = '';
   String _buildNumber = '';
   bool _checkingUpdate = false;
-  AppUpdateInfo? _updateInfo;
+  StoreVersionInfo? _storeInfo;
   bool _checked = false;
-  bool _checkFailed = false;
 
   @override
   void initState() {
@@ -45,14 +44,11 @@ class _AboutScreenState extends State<AboutScreen> {
     setState(() {
       _checkingUpdate = true;
       _checked = false;
-      _checkFailed = false;
     });
     try {
-      final info = await InAppUpdate.checkForUpdate();
+      final info = await VersionService.checkForUpdate();
       if (!mounted) return;
-      setState(() => _updateInfo = info);
-    } catch (_) {
-      if (mounted) setState(() => _checkFailed = true);
+      setState(() => _storeInfo = info);
     } finally {
       if (mounted) {
         setState(() {
@@ -66,19 +62,27 @@ class _AboutScreenState extends State<AboutScreen> {
   Future<void> _performUpdate() async {
     setState(() => _checkingUpdate = true);
     try {
-      await InAppUpdate.performImmediateUpdate();
+      await VersionService.performUpdate(storeUrl: _storeInfo?.storeUrl);
     } catch (_) {
-      if (mounted) setState(() => _checkFailed = true);
     } finally {
       if (mounted) setState(() => _checkingUpdate = false);
     }
   }
 
+  String _storeVersionLabel(AppLocalizations loc, bool updateAvailable) {
+    final info = _storeInfo!;
+    if (info.status == UpdateStatus.checkFailed) return '—';
+    // iOS: we have the real version string from iTunes
+    if (info.storeVersion != null) return 'v${info.storeVersion}';
+    // Android: in_app_update gives no version string, only availability
+    return updateAvailable ? loc.updateAvailable : 'v$_version';
+  }
+
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context);
-    final updateAvailable =
-        _updateInfo?.updateAvailability == UpdateAvailability.updateAvailable;
+    final updateAvailable = _storeInfo?.status == UpdateStatus.updateAvailable;
+    final isSupported = Platform.isAndroid || Platform.isIOS;
 
     return Scaffold(
       appBar: AppBar(
@@ -119,7 +123,7 @@ class _AboutScreenState extends State<AboutScreen> {
             ),
           ),
           const SizedBox(height: 28),
-          if (Platform.isAndroid)
+          if (isSupported)
             ElevatedButton.icon(
               onPressed: _checkingUpdate
                   ? null
@@ -177,7 +181,7 @@ class _AboutScreenState extends State<AboutScreen> {
               ),
             ],
           ),
-          if (_checked)
+          if (_checked && _storeInfo != null)
             TableRow(
               children: [
                 Padding(
@@ -185,13 +189,9 @@ class _AboutScreenState extends State<AboutScreen> {
                   child: Text('${loc.store}:'),
                 ),
                 Text(
-                  _checkFailed
-                      ? '—'
-                      : updateAvailable
-                      ? loc.updateAvailable
-                      : 'v$_version',
+                  _storeVersionLabel(loc, updateAvailable),
                   style: TextStyle(
-                    color: _checkFailed
+                    color: _storeInfo!.status == UpdateStatus.checkFailed
                         ? Colors.grey.shade400
                         : updateAvailable
                         ? kGreenDark

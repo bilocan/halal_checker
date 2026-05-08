@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:in_app_update/in_app_update.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../app_colors.dart';
 import '../config.dart';
@@ -9,6 +8,7 @@ import '../main.dart';
 import '../services/auth_service.dart';
 import '../services/database_service.dart';
 import '../services/product_service.dart';
+import '../services/version_service.dart';
 import '../localization/app_localizations.dart';
 import '../widgets/halal_scan_logo.dart';
 import 'result_screen.dart';
@@ -38,10 +38,10 @@ class _StartScreenState extends State<StartScreen> {
   }
 
   Future<void> _checkForUpdate() async {
-    if (!Platform.isAndroid) return;
+    if (!Platform.isAndroid && !Platform.isIOS) return;
     try {
-      final info = await InAppUpdate.checkForUpdate();
-      if (info.updateAvailability != UpdateAvailability.updateAvailable) return;
+      final info = await VersionService.checkForUpdate();
+      if (info.status != UpdateStatus.updateAvailable) return;
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -50,8 +50,7 @@ class _StartScreenState extends State<StartScreen> {
             label: 'Update',
             onPressed: () async {
               try {
-                await InAppUpdate.startFlexibleUpdate();
-                await InAppUpdate.completeFlexibleUpdate();
+                await VersionService.performUpdate(storeUrl: info.storeUrl);
               } catch (_) {}
             },
           ),
