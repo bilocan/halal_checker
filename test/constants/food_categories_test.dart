@@ -56,6 +56,63 @@ void main() {
     });
   });
 
+  // ── nonFood set ──────────────────────────────────────────────────────────────
+
+  group('FoodCategories — nonFood set', () {
+    test('is non-empty', () {
+      expect(FoodCategories.nonFood, isNotEmpty);
+    });
+    test('contains en:non-food-products', () {
+      expect(FoodCategories.nonFood.contains('en:non-food-products'), isTrue);
+    });
+    test('contains en:cosmetics', () {
+      expect(FoodCategories.nonFood.contains('en:cosmetics'), isTrue);
+    });
+    test('contains en:cleaning-products', () {
+      expect(FoodCategories.nonFood.contains('en:cleaning-products'), isTrue);
+    });
+    test('contains en:diapers', () {
+      expect(FoodCategories.nonFood.contains('en:diapers'), isTrue);
+    });
+    test('contains en:baby-care', () {
+      expect(FoodCategories.nonFood.contains('en:baby-care'), isTrue);
+    });
+    test('contains en:baby-wipes', () {
+      expect(FoodCategories.nonFood.contains('en:baby-wipes'), isTrue);
+    });
+    test(
+      'does NOT contain en:medicines — medicines need ingredient analysis',
+      () {
+        expect(FoodCategories.nonFood.contains('en:medicines'), isFalse);
+      },
+    );
+    test(
+      'does NOT contain en:dietary-supplements — need ingredient analysis',
+      () {
+        expect(
+          FoodCategories.nonFood.contains('en:dietary-supplements'),
+          isFalse,
+        );
+      },
+    );
+    test('does NOT contain en:baby-products — generic tag includes food', () {
+      expect(FoodCategories.nonFood.contains('en:baby-products'), isFalse);
+    });
+  });
+
+  // ── Set integrity ─────────────────────────────────────────────────────────────
+
+  group('FoodCategories — no overlap between sets', () {
+    test('nonFood and haram are disjoint', () {
+      final shared = FoodCategories.nonFood.intersection(FoodCategories.haram);
+      expect(shared, isEmpty, reason: 'shared categories: $shared');
+    });
+    test('nonFood and halal are disjoint', () {
+      final shared = FoodCategories.nonFood.intersection(FoodCategories.halal);
+      expect(shared, isEmpty, reason: 'shared categories: $shared');
+    });
+  });
+
   // ── Category format ──────────────────────────────────────────────────────────
 
   group('FoodCategories — all entries use en: prefix', () {
@@ -70,6 +127,15 @@ void main() {
     });
     test('all halal entries start with "en:"', () {
       for (final cat in FoodCategories.halal) {
+        expect(
+          cat.startsWith('en:'),
+          isTrue,
+          reason: '"$cat" does not start with "en:"',
+        );
+      }
+    });
+    test('all nonFood entries start with "en:"', () {
+      for (final cat in FoodCategories.nonFood) {
         expect(
           cat.startsWith('en:'),
           isTrue,

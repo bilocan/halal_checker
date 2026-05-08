@@ -296,8 +296,9 @@ class ProductService {
       final row = list.first as Map<String, dynamic>;
       final fetchedAt = DateTime.tryParse(row['fetched_at'] as String? ?? '');
       if (fetchedAt == null) return null;
-      if (DateTime.now().difference(fetchedAt) > const Duration(days: 30))
+      if (DateTime.now().difference(fetchedAt) > const Duration(days: 30)) {
         return null;
+      }
       return Product.fromJson({
         'barcode': row['barcode'],
         'name': row['name'],
@@ -569,12 +570,19 @@ class ProductService {
           .toList();
 
       final rawCategories = productData['categories_tags'];
+      final bool nonFoodByCategory =
+          rawCategories is List &&
+          rawCategories.any(
+            (c) => FoodCategories.nonFood.contains(c.toString().toLowerCase()),
+          );
       final bool haramByCategory =
+          !nonFoodByCategory &&
           rawCategories is List &&
           rawCategories.any(
             (c) => FoodCategories.haram.contains(c.toString().toLowerCase()),
           );
       final bool halalByCategory =
+          !nonFoodByCategory &&
           !haramByCategory &&
           rawCategories is List &&
           rawCategories.any(
@@ -600,6 +608,29 @@ class ProductService {
           fallback.warnings.isNotEmpty
           ? fallback.warnings
           : (nameCheck?.warnings ?? {});
+
+      if (nonFoodByCategory) {
+        return Product(
+          barcode: barcode,
+          name: name,
+          ingredients: const [],
+          isHalal: false,
+          isUnknown: false,
+          isNonFood: true,
+          haramIngredients: const [],
+          suspiciousIngredients: const [],
+          ingredientWarnings: const {},
+          ingredientTranslations: const {},
+          labels: labels,
+          imageUrl: imageUrl,
+          imageFrontUrl: imageFrontUrl,
+          imageIngredientsUrl: imageIngredientsUrl,
+          imageNutritionUrl: imageNutritionUrl,
+          explanation:
+              'This is a non-food product. Islamic dietary rules do not apply.',
+          analyzedByAI: false,
+        );
+      }
 
       // Halal-by-category overrides unknown when no ingredients are listed.
       final bool isHalalByCategory =

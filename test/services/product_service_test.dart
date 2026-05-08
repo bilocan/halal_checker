@@ -641,4 +641,175 @@ void main() {
       expect(p!.explanation, contains('en:wines'));
     });
   });
+
+  // ── non-food category detection ───────────────────────────────────────────
+
+  group('getProduct — non-food by OFf category tag', () {
+    test('en:non-food-products → isNonFood true, isUnknown false', () async {
+      ProductService().setHttpClientForTesting(
+        _mockGet(
+          _offJson(
+            name: 'Cleaning Spray',
+            ingredients: '',
+            categoriesTags: ['en:non-food-products', 'en:cleaning-products'],
+          ),
+        ),
+      );
+
+      final p = await ProductService().getProduct('1000000030');
+      expect(p, isNotNull);
+      expect(p!.isNonFood, isTrue);
+      expect(p.isUnknown, isFalse);
+      expect(p.explanation, contains('non-food'));
+    });
+
+    test('en:cosmetics → isNonFood true', () async {
+      ProductService().setHttpClientForTesting(
+        _mockGet(
+          _offJson(
+            name: 'Face Cream',
+            ingredients: '',
+            categoriesTags: ['en:cosmetics', 'en:beauty-products'],
+          ),
+        ),
+      );
+
+      final p = await ProductService().getProduct('1000000031');
+      expect(p!.isNonFood, isTrue);
+      expect(p.isUnknown, isFalse);
+    });
+
+    test('en:diapers → isNonFood true', () async {
+      ProductService().setHttpClientForTesting(
+        _mockGet(
+          _offJson(
+            name: 'Baby Diapers',
+            ingredients: '',
+            categoriesTags: ['en:baby-products', 'en:diapers'],
+          ),
+        ),
+      );
+
+      final p = await ProductService().getProduct('1000000032');
+      expect(p!.isNonFood, isTrue);
+      expect(p.isUnknown, isFalse);
+    });
+
+    test('en:baby-care → isNonFood true', () async {
+      ProductService().setHttpClientForTesting(
+        _mockGet(
+          _offJson(
+            name: 'Baby Lotion',
+            ingredients: '',
+            categoriesTags: ['en:baby-care', 'en:baby-lotions'],
+          ),
+        ),
+      );
+
+      final p = await ProductService().getProduct('1000000033');
+      expect(p!.isNonFood, isTrue);
+    });
+
+    test(
+      'en:baby-products alone (no non-food sub-tag) → normal analysis, not non-food',
+      () async {
+        ProductService().setHttpClientForTesting(
+          _mockGet(
+            _offJson(
+              name: 'Baby Formula',
+              ingredients: 'skimmed milk, lactose, vegetable oils',
+              categoriesTags: ['en:baby-products', 'en:baby-milks'],
+            ),
+          ),
+        );
+
+        final p = await ProductService().getProduct('1000000034');
+        expect(p!.isNonFood, isFalse);
+        expect(p.isUnknown, isFalse);
+        expect(p.isHalal, isTrue);
+      },
+    );
+
+    test(
+      'en:medicines → analyzed normally, gelatin detected as haram',
+      () async {
+        ProductService().setHttpClientForTesting(
+          _mockGet(
+            _offJson(
+              name: 'Ibuprofen Capsules',
+              ingredients: 'ibuprofen, gelatin, magnesium stearate',
+              categoriesTags: ['en:medicines'],
+            ),
+          ),
+        );
+
+        final p = await ProductService().getProduct('1000000035');
+        expect(p!.isNonFood, isFalse);
+        expect(p.isHalal, isFalse);
+        expect(p.haramIngredients, contains('gelatin'));
+      },
+    );
+
+    test(
+      'en:dietary-supplements → analyzed normally, gelatin detected as haram',
+      () async {
+        ProductService().setHttpClientForTesting(
+          _mockGet(
+            _offJson(
+              name: 'Fish Oil Capsules',
+              ingredients: 'fish oil, gelatin, glycerin',
+              categoriesTags: ['en:dietary-supplements'],
+            ),
+          ),
+        );
+
+        final p = await ProductService().getProduct('1000000036');
+        expect(p!.isNonFood, isFalse);
+        expect(p.isHalal, isFalse);
+        expect(p.haramIngredients, contains('gelatin'));
+      },
+    );
+  });
+
+  group('getProduct — non-food via OBF/OPF database', () {
+    test('product found in OBF (not OFf) → isNonFood true', () async {
+      ProductService().setHttpClientForTesting(
+        _mockGetWithCallback((req) async {
+          if (req.url.host == 'world.openfoodfacts.org') {
+            return http.Response(_notFoundJson, 200);
+          }
+          if (req.url.host == 'world.openbeautyfacts.org') {
+            return http.Response(
+              _offJson(name: 'Shampoo', ingredients: ''),
+              200,
+            );
+          }
+          return http.Response(_notFoundJson, 200);
+        }),
+      );
+
+      final p = await ProductService().getProduct('1000000037');
+      expect(p!.isNonFood, isTrue);
+      expect(p.isUnknown, isFalse);
+      expect(p.explanation, contains('non-food'));
+    });
+
+    test('product found in OPF (not OFf/OBF) → isNonFood true', () async {
+      ProductService().setHttpClientForTesting(
+        _mockGetWithCallback((req) async {
+          if (req.url.host == 'world.openproductsfacts.org') {
+            return http.Response(
+              _offJson(name: 'Tape Roll', ingredients: ''),
+              200,
+            );
+          }
+          return http.Response(_notFoundJson, 200);
+        }),
+      );
+
+      final p = await ProductService().getProduct('1000000038');
+      expect(p!.isNonFood, isTrue);
+      expect(p.isUnknown, isFalse);
+    });
+  });
 }
