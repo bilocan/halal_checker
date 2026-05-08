@@ -26,15 +26,57 @@ class VersionService {
   }
 
   static Future<StoreVersionInfo> _checkAndroid() async {
+    const storeUrl =
+        'https://play.google.com/store/apps/details?id=$_bundleId';
     try {
-      final info = await InAppUpdate.checkForUpdate();
-      final available =
-          info.updateAvailability == UpdateAvailability.updateAvailable;
+      final packageInfo = await PackageInfo.fromPlatform();
+
+      // Fetch real version from Play Store page.
+      final storeVersion = await _fetchPlayStoreVersion();
+
+      // Also run in_app_update for the native update flow.
+      bool inAppAvailable = false;
+      try {
+        final info = await InAppUpdate.checkForUpdate();
+        inAppAvailable =
+            info.updateAvailability == UpdateAvailability.updateAvailable;
+      } catch (_) {}
+
+      if (storeVersion != null) {
+        final newer =
+            _isNewerVersion(storeVersion, packageInfo.version) ||
+            inAppAvailable;
+        return StoreVersionInfo(
+          newer ? UpdateStatus.updateAvailable : UpdateStatus.upToDate,
+          storeVersion: storeVersion,
+          storeUrl: storeUrl,
+        );
+      }
+
+      // Play Store page fetch failed — fall back to in_app_update result only.
       return StoreVersionInfo(
-        available ? UpdateStatus.updateAvailable : UpdateStatus.upToDate,
+        inAppAvailable ? UpdateStatus.updateAvailable : UpdateStatus.checkFailed,
+        storeUrl: storeUrl,
       );
     } catch (_) {
       return const StoreVersionInfo(UpdateStatus.checkFailed);
+    }
+  }
+
+  static Future<String?> _fetchPlayStoreVersion() async {
+    try {
+      const url =
+          'https://play.google.com/store/apps/details?id=$_bundleId&hl=en_US';
+      final response = await http
+          .get(Uri.parse(url))
+          .timeout(const Duration(seconds: 10));
+      if (response.statusCode != 200) return null;
+      final match = RegExp(
+        r'"softwareVersion":"([^"]+)"',
+      ).firstMatch(response.body);
+      return match?.group(1);
+    } catch (_) {
+      return null;
     }
   }
 
@@ -86,9 +128,23 @@ class VersionService {
 
   static Future<void> performUpdate({String? storeUrl}) async {
     if (Platform.isAndroid) {
-      await InAppUpdate.performImmediateUpdate();
-    } else if (Platform.isIOS && storeUrl != null) {
-      final uri = Uri.parse(storeUrl);
+      try {
+        await InAppUpdate.performImmediateUpdate();
+      } catch (_) {
+        // in_app_update unavailable (sideloaded build) — open Play Store directly.
+        final url =
+            storeUrl ??
+            'https://play.google.com/store/apps/details?id=$_bundleId';
+        final uri = Uri.parse(url);
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        }
+      }
+    } else if (Platform.isIOS) {
+      final url =
+          storeUrl ??
+          'https://apps.apple.com/app/id$_bundleId';
+      final uri = Uri.parse(url);
       if (await canLaunchUrl(uri)) {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
       }
