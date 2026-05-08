@@ -346,36 +346,6 @@ Deno.serve(async (req) => {
 
     const rawCategories: string[] = Array.isArray(pd.categories_tags) ? pd.categories_tags : []
 
-    // OFf categories that indicate a non-food product — dietary rules don't apply.
-    const NON_FOOD_CATEGORIES = new Set([
-      'en:non-food-products',
-      'en:cosmetics',
-      'en:beauty-products',
-      'en:personal-care',
-      'en:hygiene-products',
-      'en:cleaning-products',
-      'en:cleaning-agents',
-      'en:laundry-products',
-      'en:pet-food',
-      'en:pet-foods',
-      'en:cat-food',
-      'en:cat-foods',
-      'en:dog-food',
-      'en:dog-foods',
-      'en:baby-care',
-      'en:diapers',
-      'en:baby-wipes',
-      'en:baby-lotions',
-      'en:office-products',
-      'en:stationery',
-    ])
-
-    // If a product was submitted to OFf but its categories mark it as non-food,
-    // override the isNonFood flag so dietary rules don't apply.
-    if (!isNonFood && rawCategories.some((c: string) => NON_FOOD_CATEGORIES.has(c.toLowerCase()))) {
-      isNonFood = true
-    }
-
     // Category-based detection: OFf categories that unambiguously indicate alcohol
     const HARAM_CATEGORIES = new Set([
       'en:alcoholic-beverages', 'en:beers', 'en:wines',
@@ -391,7 +361,24 @@ Deno.serve(async (req) => {
       'en:sugars', 'en:white-sugar', 'en:cane-sugar', 'en:granulated-sugar',
       'en:vinegars',
     ])
-    const haramCategory = rawCategories.find(c => HARAM_CATEGORIES.has(c.toLowerCase())) ?? null
+    // OFF categories that indicate non-food items even when found in the food database.
+    const NON_FOOD_CATEGORIES = new Set([
+      'en:non-food-products',
+      'en:cosmetics', 'en:beauty-products', 'en:body-care',
+      'en:make-up', 'en:fragrances',
+      'en:oral-care', 'en:oral-hygiene',
+      'en:personal-care', 'en:hygiene-products',
+      'en:cleaning', 'en:cleaning-products', 'en:cleaning-agents',
+      'en:household-products', 'en:household-chemicals',
+      'en:laundry', 'en:laundry-products', 'en:dishwashing',
+      'en:pet-food', 'en:pet-foods', 'en:cat-food', 'en:cat-foods',
+      'en:dog-food', 'en:dog-foods', 'en:pet-care',
+      'en:plant-care',
+      'en:baby-care', 'en:diapers', 'en:baby-wipes', 'en:baby-lotions',
+      'en:office-products', 'en:stationery',
+    ])
+    if (!isNonFood && rawCategories.some(c => NON_FOOD_CATEGORIES.has(c.toLowerCase()))) isNonFood = true
+    const haramCategory = isNonFood ? null : (rawCategories.find(c => HARAM_CATEGORIES.has(c.toLowerCase())) ?? null)
     const isHalalByCategory = !isNonFood && !haramCategory && rawCategories.some(c => HALAL_CATEGORIES.has(c.toLowerCase()))
 
     // 4. Tiered AI analysis — keyword-first to minimize cost.
