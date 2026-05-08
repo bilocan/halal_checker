@@ -6,18 +6,16 @@
       "PowerShell($env:PATH = $env:PATH + \";C:\\\\Program Files\\\\GitHub CLI\"; gh --version 2>&1)",
       "PowerShell($env:PATH = $env:PATH + \";C:\\\\Program Files\\\\GitHub CLI\"; gh auth status 2>&1)",
       "Bash(flutter --version)",
-      "Bash(mkdir -p /home/bilal/dev/halal_checker/test/constants)",
       "Bash(flutter test *)",
       "Bash(echo \"exit: $?\")",
       "Read(//tmp/**)",
       "Bash(dart analyze *)",
       "Bash(grep -E \"\\\\.\\(dart|ts|js\\)$\")",
-      "Read(//home/bilal/dev/**)",
       "Bash(npx create-next-app@latest halal-checker-web --typescript --tailwind --app --no-src-dir --import-alias \"@/*\" --no-git --yes)",
       "Bash(npx --version)",
-      "Read(//home/bilal/.nvm/alias/**)",
       "Bash(command -v fnm)",
-      "Read(//usr/local/bin/**)"
+      "Read(//usr/local/bin/**)",
+      "WebFetch(domain:world.openfoodfacts.org)"
     ],
     "additionalDirectories": [
       "/home/bilal/dev/halal_checker/test",
