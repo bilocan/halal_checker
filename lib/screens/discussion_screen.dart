@@ -480,6 +480,7 @@ class _CommentsScreenState extends State<_CommentsScreen> {
       _comments[idx] = comment.copyWith(
         voteScore: comment.voteScore + delta,
         myVote: newVote == 0 ? null : newVote,
+        clearMyVote: newVote == 0,
       );
     });
   }

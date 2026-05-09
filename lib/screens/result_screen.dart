@@ -30,6 +30,7 @@ class ResultScreen extends StatefulWidget {
 class _ResultScreenState extends State<ResultScreen> {
   final FeedbackService _feedbackService = FeedbackService();
   final ProductService _productService = ProductService();
+  final AnalysisService _analysisService = AnalysisService();
   List<FeedbackItem> _feedbacks = [];
   bool _isLoadingFeedback = false;
   bool _isRefreshing = false;
@@ -104,7 +105,7 @@ class _ResultScreenState extends State<ResultScreen> {
   }
 
   Future<void> _loadAnalysis() async {
-    final a = await AnalysisService.getAnalysis(widget.barcode);
+    final a = await _analysisService.getAnalysis(widget.barcode);
     if (mounted) setState(() => _analysis = a);
   }
 
@@ -119,7 +120,7 @@ class _ResultScreenState extends State<ResultScreen> {
       return;
     }
     setState(() => _isRequestingAnalysis = true);
-    final result = await AnalysisService.requestDeepAnalysis(widget.barcode);
+    final result = await _analysisService.requestDeepAnalysis(widget.barcode);
     if (!mounted) return;
     setState(() {
       _isRequestingAnalysis = false;

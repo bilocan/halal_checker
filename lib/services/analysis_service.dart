@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -8,6 +9,18 @@ import '../models/product_analysis.dart';
 import 'auth_service.dart';
 
 class AnalysisService {
+  final http.Client _httpClient;
+  final bool _hasSupabase;
+  final String _supabaseUrl;
+
+  AnalysisService({
+    http.Client? httpClient,
+    @visibleForTesting bool? hasSupabase,
+    @visibleForTesting String? supabaseUrl,
+  }) : _httpClient = httpClient ?? http.Client(),
+       _hasSupabase = hasSupabase ?? AppConfig.hasSupabase,
+       _supabaseUrl = supabaseUrl ?? AppConfig.supabaseUrl;
+
   static String? get _jwt =>
       Supabase.instance.client.auth.currentSession?.accessToken;
 
@@ -15,16 +28,19 @@ class AnalysisService {
 
   /// Queues a product for deep analysis and returns the resulting record.
   /// If analysis already exists (and is not pending), returns it immediately.
-  static Future<ProductAnalysis?> requestDeepAnalysis(String barcode) async {
-    if (!AppConfig.hasSupabase || AuthService.currentUser == null) return null;
-    final jwt = _jwt;
+  ///
+  /// [jwtOverride] is for testing only — bypasses the Supabase + auth guards.
+  Future<ProductAnalysis?> requestDeepAnalysis(
+    String barcode, {
+    @visibleForTesting String? jwtOverride,
+  }) async {
+    if (!_hasSupabase && jwtOverride == null) return null;
+    final jwt = jwtOverride ?? (AuthService.currentUser == null ? null : _jwt);
     if (jwt == null) return null;
     try {
-      final res = await http
+      final res = await _httpClient
           .post(
-            Uri.parse(
-              '${AppConfig.supabaseUrl}/functions/v1/deep-analyze-product',
-            ),
+            Uri.parse('$_supabaseUrl/functions/v1/deep-analyze-product'),
             headers: {
               'Authorization': 'Bearer $jwt',
               'Content-Type': 'application/json',
@@ -43,8 +59,8 @@ class AnalysisService {
   // ── fetch existing ─────────────────────────────────────────────────────────
 
   /// Returns the current analysis record for a barcode, or null if none exists.
-  static Future<ProductAnalysis?> getAnalysis(String barcode) async {
-    if (!AppConfig.hasSupabase) return null;
+  Future<ProductAnalysis?> getAnalysis(String barcode) async {
+    if (!_hasSupabase) return null;
     try {
       final row = await Supabase.instance.client
           .from('product_analyses')
@@ -61,14 +77,19 @@ class AnalysisService {
   // ── admin batch ────────────────────────────────────────────────────────────
 
   /// Admin-only: triggers batch AI analysis on all pending products.
-  static Future<Map<String, dynamic>?> runBatch({int limit = 10}) async {
-    if (!AppConfig.hasSupabase || AuthService.currentUser == null) return null;
-    final jwt = _jwt;
+  ///
+  /// [jwtOverride] is for testing only — bypasses the Supabase + auth guards.
+  Future<Map<String, dynamic>?> runBatch({
+    int limit = 10,
+    @visibleForTesting String? jwtOverride,
+  }) async {
+    if (!_hasSupabase && jwtOverride == null) return null;
+    final jwt = jwtOverride ?? (AuthService.currentUser == null ? null : _jwt);
     if (jwt == null) return null;
     try {
-      final res = await http
+      final res = await _httpClient
           .post(
-            Uri.parse('${AppConfig.supabaseUrl}/functions/v1/batch-analyze'),
+            Uri.parse('$_supabaseUrl/functions/v1/batch-analyze'),
             headers: {
               'Authorization': 'Bearer $jwt',
               'Content-Type': 'application/json',

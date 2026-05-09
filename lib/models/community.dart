@@ -122,17 +122,18 @@ class Comment {
     myVote: j['my_vote'] as int?,
   );
 
-  Comment copyWith({int? voteScore, int? myVote}) => Comment(
-    id: id,
-    discussionId: discussionId,
-    parentId: parentId,
-    body: body,
-    isDeleted: isDeleted,
-    createdBy: createdBy,
-    createdByUsername: createdByUsername,
-    createdByAvatarUrl: createdByAvatarUrl,
-    createdAt: createdAt,
-    voteScore: voteScore ?? this.voteScore,
-    myVote: myVote ?? this.myVote,
-  );
+  Comment copyWith({int? voteScore, int? myVote, bool clearMyVote = false}) =>
+      Comment(
+        id: id,
+        discussionId: discussionId,
+        parentId: parentId,
+        body: body,
+        isDeleted: isDeleted,
+        createdBy: createdBy,
+        createdByUsername: createdByUsername,
+        createdByAvatarUrl: createdByAvatarUrl,
+        createdAt: createdAt,
+        voteScore: voteScore ?? this.voteScore,
+        myVote: clearMyVote ? null : (myVote ?? this.myVote),
+      );
 }
