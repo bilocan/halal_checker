@@ -214,9 +214,7 @@ async function fetchFromFoodApi(barcode: string, baseUrl: string): Promise<any |
 function extractIngredientsText(pd: any): string {
   let text: string = (pd['ingredients_text'] ?? '').trim()
   if (!text) {
-    for (const lang of [
-      'en', 'nl', 'de', 'fr', 'tr', 'es', 'it', 'sr', 'hu', 'cs',
-    ]) {
+    for (const lang of ['en', 'nl', 'de', 'fr', 'tr', 'es', 'it', 'sr', 'hu', 'cs']) {
       const t = (pd[`ingredients_text_${lang}`] ?? '').trim()
       if (t) { text = t; break }
     }
