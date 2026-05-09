@@ -33,7 +33,10 @@ class VersionService {
 
   @visibleForTesting
   Future<StoreVersionInfo> checkAndroid() async {
-    const storeUrl = 'https://play.google.com/store/apps/details?id=$_bundleId';
+    const playStoreUrl =
+        'https://play.google.com/store/apps/details?id=$_bundleId';
+    // market:// is handled by both Play Store and Aurora Store.
+    const marketUrl = 'market://details?id=$_bundleId';
     try {
       final packageInfo = await PackageInfo.fromPlatform();
       final storeVersion = await _fetchPlayStoreVersion();
@@ -53,15 +56,17 @@ class VersionService {
         return StoreVersionInfo(
           newer ? UpdateStatus.updateAvailable : UpdateStatus.upToDate,
           storeVersion: storeVersion,
-          storeUrl: storeUrl,
+          storeUrl: playStoreUrl,
         );
       }
 
+      // Play Store scrape failed — fall back to market:// so Aurora Store
+      // can handle the update prompt if Play Store is not installed.
       return StoreVersionInfo(
         inAppAvailable
             ? UpdateStatus.updateAvailable
             : UpdateStatus.checkFailed,
-        storeUrl: storeUrl,
+        storeUrl: marketUrl,
       );
     } catch (_) {
       return const StoreVersionInfo(UpdateStatus.checkFailed);
@@ -145,12 +150,19 @@ class VersionService {
       try {
         await InAppUpdate.performImmediateUpdate();
       } catch (_) {
-        final url =
-            storeUrl ??
-            'https://play.google.com/store/apps/details?id=$_bundleId';
-        final uri = Uri.parse(url);
-        if (await canLaunchUrl(uri)) {
-          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        // Try market:// first — handled by both Play Store and Aurora Store.
+        // Falls back to the HTTPS Play Store URL if neither is available.
+        final candidates = [
+          'market://details?id=$_bundleId',
+          storeUrl ??
+              'https://play.google.com/store/apps/details?id=$_bundleId',
+        ];
+        for (final url in candidates) {
+          final uri = Uri.parse(url);
+          if (await canLaunchUrl(uri)) {
+            await launchUrl(uri, mode: LaunchMode.externalApplication);
+            return;
+          }
         }
       }
     } else if (Platform.isIOS) {
