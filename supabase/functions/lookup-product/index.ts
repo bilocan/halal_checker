@@ -320,6 +320,18 @@ Deno.serve(async (req) => {
     if (!pd) { pd = await fetchFromFoodApi(barcode, OBF_BASE); if (pd) isNonFood = true }
     if (!pd) { pd = await fetchFromFoodApi(barcode, OPF_BASE); if (pd) isNonFood = true }
 
+    // If OFf found the product but has no ingredient data, also probe OBF/OPF.
+    // A cross-listing there confirms the product is non-food (e.g. a cleaning
+    // spray or cosmetic that was also submitted to OpenFoodFacts by mistake).
+    if (pd && !isNonFood && !extractIngredientsText(pd)) {
+      const obfPd = await fetchFromFoodApi(barcode, OBF_BASE)
+      if (obfPd) { isNonFood = true; pd = obfPd }
+      else {
+        const opfPd = await fetchFromFoodApi(barcode, OPF_BASE)
+        if (opfPd) { isNonFood = true; pd = opfPd }
+      }
+    }
+
     if (!pd) {
       return new Response(
         JSON.stringify({ product: null }),
@@ -457,7 +469,7 @@ Deno.serve(async (req) => {
               const cd = await claudeRes.json()
               const text: string = cd.content?.find((c: { type: string }) => c.type === 'text')?.text ?? ''
               try {
-                const p = JSON.parse(text.trim())
+                const p = JSON.parse(text.replace(/```json\n?|\n?```/g, '').trim())
                 isHalal               = p.isHalal ?? false
                 isUnknown             = p.isUnknown ?? (ingredients.length === 0)
                 haramIngredients      = p.haramIngredients ?? []
@@ -494,7 +506,7 @@ Deno.serve(async (req) => {
                 role: 'user',
                 content: [
                   { type: 'image', source: { type: 'url', url: imgUrl } },
-                  { type: 'text', text: 'This is an ingredients label from a product. The text may be in Arabic, Turkish, or another language. Read the ingredient names, translate them to English, and determine if the product is halal. Respond with the JSON format specified.' },
+                  { type: 'text', text: 'This image shows the ingredients label of a food product. The text may be in Arabic, Turkish, or another language. The ingredient list is NOT empty — it is visible in the image. Read ALL the ingredient names from the image, translate them to English, and determine if the product is halal. Set isUnknown to false if you can read any ingredients. Respond with the JSON format specified.' },
                 ],
               }],
             }),

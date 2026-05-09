@@ -230,8 +230,16 @@ void main() {
 
   group('getProduct — unknown', () {
     test('no ingredients and no haram signals → isUnknown true', () async {
+      final body = _offJson(name: 'Mystery Product', ingredients: '');
       ProductService().setHttpClientForTesting(
-        _mockGet(_offJson(name: 'Mystery Product', ingredients: '')),
+        _mockGetWithCallback((req) async {
+          // Only OFf has this product — OBF/OPF must return not-found so the
+          // cross-listing check doesn't accidentally mark it as non-food.
+          if (req.url.host == 'world.openfoodfacts.org') {
+            return http.Response(body, 200);
+          }
+          return http.Response(_notFoundJson, 200);
+        }),
       );
 
       final p = await ProductService().getProduct('1000000011');
@@ -617,8 +625,16 @@ void main() {
     test(
       'unknown product explanation says status cannot be determined',
       () async {
+        final body = _offJson(name: 'Mystery Box', ingredients: '');
         ProductService().setHttpClientForTesting(
-          _mockGet(_offJson(name: 'Mystery Box', ingredients: '')),
+          _mockGetWithCallback((req) async {
+            // Only OFf has this product — OBF/OPF must return not-found so the
+            // cross-listing check doesn't accidentally mark it as non-food.
+            if (req.url.host == 'world.openfoodfacts.org') {
+              return http.Response(body, 200);
+            }
+            return http.Response(_notFoundJson, 200);
+          }),
         );
 
         final p = await ProductService().getProduct('1000000023');
@@ -771,6 +787,60 @@ void main() {
     );
   });
 
+  group('getProduct — non-food category edge cases', () {
+    test('en:pet-food → isNonFood true', () async {
+      ProductService().setHttpClientForTesting(
+        _mockGet(
+          _offJson(
+            name: 'Dog Kibble',
+            ingredients: '',
+            categoriesTags: ['en:pet-food', 'en:dog-food'],
+          ),
+        ),
+      );
+
+      final p = await ProductService().getProduct('1000000042');
+      expect(p!.isNonFood, isTrue);
+      expect(p.isUnknown, isFalse);
+    });
+
+    test(
+      'non-food category + OFf has ingredient data → ingredients discarded, isNonFood true',
+      () async {
+        ProductService().setHttpClientForTesting(
+          _mockGet(
+            _offJson(
+              name: 'Moisturiser',
+              ingredients: 'water, glycerin, alcohol, parfum',
+              categoriesTags: ['en:cosmetics'],
+            ),
+          ),
+        );
+
+        final p = await ProductService().getProduct('1000000043');
+        expect(p!.isNonFood, isTrue);
+        expect(p.isUnknown, isFalse);
+        expect(p.ingredients, isEmpty);
+      },
+    );
+
+    test('non-food category takes priority over haram category', () async {
+      ProductService().setHttpClientForTesting(
+        _mockGet(
+          _offJson(
+            name: 'Alcohol Hand Gel',
+            ingredients: '',
+            categoriesTags: ['en:cosmetics', 'en:alcoholic-beverages'],
+          ),
+        ),
+      );
+
+      final p = await ProductService().getProduct('1000000044');
+      expect(p!.isNonFood, isTrue);
+      expect(p.isUnknown, isFalse);
+    });
+  });
+
   group('getProduct — non-food via OBF/OPF database', () {
     test('product found in OBF (not OFf) → isNonFood true', () async {
       ProductService().setHttpClientForTesting(
@@ -811,5 +881,135 @@ void main() {
       expect(p!.isNonFood, isTrue);
       expect(p.isUnknown, isFalse);
     });
+
+    test(
+      'OFf unknown + found in OBF → isNonFood true (cross-listing detection)',
+      () async {
+        ProductService().setHttpClientForTesting(
+          _mockGetWithCallback((req) async {
+            if (req.url.host == 'world.openfoodfacts.org') {
+              // Found in OFf but no ingredients — would be unknown on its own.
+              return http.Response(
+                _offJson(name: 'Cleaning Spray', ingredients: ''),
+                200,
+              );
+            }
+            if (req.url.host == 'world.openbeautyfacts.org') {
+              return http.Response(
+                _offJson(name: 'Cleaning Spray', ingredients: ''),
+                200,
+              );
+            }
+            return http.Response(_notFoundJson, 200);
+          }),
+        );
+
+        final p = await ProductService().getProduct('1000000039');
+        expect(p!.isNonFood, isTrue);
+        expect(p.isUnknown, isFalse);
+        expect(p.explanation, contains('non-food'));
+      },
+    );
+
+    test(
+      'OFf unknown + found in OPF → isNonFood true (cross-listing detection)',
+      () async {
+        ProductService().setHttpClientForTesting(
+          _mockGetWithCallback((req) async {
+            if (req.url.host == 'world.openfoodfacts.org') {
+              return http.Response(
+                _offJson(name: 'Stationery Kit', ingredients: ''),
+                200,
+              );
+            }
+            if (req.url.host == 'world.openproductsfacts.org') {
+              return http.Response(
+                _offJson(name: 'Stationery Kit', ingredients: ''),
+                200,
+              );
+            }
+            return http.Response(_notFoundJson, 200);
+          }),
+        );
+
+        final p = await ProductService().getProduct('1000000040');
+        expect(p!.isNonFood, isTrue);
+        expect(p.isUnknown, isFalse);
+      },
+    );
+
+    test(
+      'OFf unknown + not in OBF/OPF → still returns unknown (not null)',
+      () async {
+        ProductService().setHttpClientForTesting(
+          _mockGetWithCallback((req) async {
+            if (req.url.host == 'world.openfoodfacts.org') {
+              return http.Response(
+                _offJson(name: 'Mystery Item', ingredients: ''),
+                200,
+              );
+            }
+            return http.Response(_notFoundJson, 200);
+          }),
+        );
+
+        final p = await ProductService().getProduct('1000000041');
+        expect(p, isNotNull);
+        expect(p!.isUnknown, isTrue);
+        expect(p.isNonFood, isFalse);
+      },
+    );
+
+    test(
+      'OFf unknown + OBF HTTP error → falls through to OPF, returns non-food',
+      () async {
+        ProductService().setHttpClientForTesting(
+          _mockGetWithCallback((req) async {
+            if (req.url.host == 'world.openfoodfacts.org') {
+              return http.Response(
+                _offJson(name: 'Mystery Spray', ingredients: ''),
+                200,
+              );
+            }
+            if (req.url.host == 'world.openbeautyfacts.org') {
+              return http.Response('server error', 500);
+            }
+            if (req.url.host == 'world.openproductsfacts.org') {
+              return http.Response(
+                _offJson(name: 'Mystery Spray', ingredients: ''),
+                200,
+              );
+            }
+            return http.Response(_notFoundJson, 200);
+          }),
+        );
+
+        final p = await ProductService().getProduct('1000000045');
+        expect(p!.isNonFood, isTrue);
+        expect(p.isUnknown, isFalse);
+      },
+    );
+
+    test(
+      'OFf unknown + both OBF and OPF HTTP errors → falls back to OFf unknown',
+      () async {
+        ProductService().setHttpClientForTesting(
+          _mockGetWithCallback((req) async {
+            if (req.url.host == 'world.openfoodfacts.org') {
+              return http.Response(
+                _offJson(name: 'Mystery Item', ingredients: ''),
+                200,
+              );
+            }
+            return http.Response('server error', 500);
+          }),
+        );
+
+        final p = await ProductService().getProduct('1000000046');
+        expect(p, isNotNull);
+        expect(p!.isUnknown, isTrue);
+        expect(p.isNonFood, isFalse);
+      },
+    );
   });
 }

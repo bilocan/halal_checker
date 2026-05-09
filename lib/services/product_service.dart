@@ -423,6 +423,7 @@ class ProductService {
     // Step 4: Fallback — try each open food database in order.
     // OBF (beauty) and OPF (general products) are non-food databases.
     const nonFoodUrls = {_obfBaseUrl, _opfBaseUrl};
+    Product? offUnknown;
     for (final baseUrl in [_offBaseUrl, _obfBaseUrl, _opfBaseUrl]) {
       var product = await _fetchFromFoodApi(barcode, baseUrl);
       if (product != null) {
@@ -435,6 +436,12 @@ class ProductService {
                 'This is a non-food product. Islamic dietary rules do not apply.',
           );
         }
+        // If OFf returned unknown (no ingredient data, no category signal),
+        // continue to OBF/OPF — a cross-listing there confirms it is non-food.
+        if (product.isUnknown && baseUrl == _offBaseUrl) {
+          offUnknown = product;
+          continue;
+        }
         final safe = _applyKeywordSafety(product);
         await _cache.saveProduct(barcode, safe);
         if (kDebugMode && hadStaleTestFixture) {
@@ -442,6 +449,15 @@ class ProductService {
         }
         return safe;
       }
+    }
+    // OBF/OPF had no entry — return the OFf unknown result if we have one.
+    if (offUnknown != null) {
+      final safe = _applyKeywordSafety(offUnknown);
+      await _cache.saveProduct(barcode, safe);
+      if (kDebugMode && hadStaleTestFixture) {
+        await TestProductRepository.instance.upsert(safe);
+      }
+      return safe;
     }
     return null;
   }
