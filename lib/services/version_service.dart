@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:in_app_update/in_app_update.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -19,21 +20,24 @@ class StoreVersionInfo {
 class VersionService {
   static const String _bundleId = 'app.halalscan';
 
-  static Future<StoreVersionInfo> checkForUpdate() async {
-    if (Platform.isAndroid) return _checkAndroid();
-    if (Platform.isIOS) return _checkIOS();
+  final http.Client _httpClient;
+
+  VersionService({http.Client? httpClient})
+    : _httpClient = httpClient ?? http.Client();
+
+  Future<StoreVersionInfo> checkForUpdate() async {
+    if (Platform.isAndroid) return checkAndroid();
+    if (Platform.isIOS) return checkIOS();
     return const StoreVersionInfo(UpdateStatus.checkFailed);
   }
 
-  static Future<StoreVersionInfo> _checkAndroid() async {
+  @visibleForTesting
+  Future<StoreVersionInfo> checkAndroid() async {
     const storeUrl = 'https://play.google.com/store/apps/details?id=$_bundleId';
     try {
       final packageInfo = await PackageInfo.fromPlatform();
-
-      // Fetch real version from Play Store page.
       final storeVersion = await _fetchPlayStoreVersion();
 
-      // Also run in_app_update for the native update flow.
       var inAppAvailable = false;
       try {
         final info = await InAppUpdate.checkForUpdate();
@@ -43,8 +47,7 @@ class VersionService {
 
       if (storeVersion != null) {
         final newer =
-            _isNewerVersion(storeVersion, packageInfo.version) ||
-            inAppAvailable;
+            isNewerVersion(storeVersion, packageInfo.version) || inAppAvailable;
         return StoreVersionInfo(
           newer ? UpdateStatus.updateAvailable : UpdateStatus.upToDate,
           storeVersion: storeVersion,
@@ -52,7 +55,6 @@ class VersionService {
         );
       }
 
-      // Play Store page fetch failed — fall back to in_app_update result only.
       return StoreVersionInfo(
         inAppAvailable
             ? UpdateStatus.updateAvailable
@@ -64,11 +66,11 @@ class VersionService {
     }
   }
 
-  static Future<String?> _fetchPlayStoreVersion() async {
+  Future<String?> _fetchPlayStoreVersion() async {
     try {
       const url =
           'https://play.google.com/store/apps/details?id=$_bundleId&hl=en_US';
-      final response = await http
+      final response = await _httpClient
           .get(Uri.parse(url))
           .timeout(const Duration(seconds: 10));
       if (response.statusCode != 200) return null;
@@ -81,13 +83,16 @@ class VersionService {
     }
   }
 
-  static Future<StoreVersionInfo> _checkIOS() async {
+  @visibleForTesting
+  Future<StoreVersionInfo> checkIOS() async {
     try {
       final packageInfo = await PackageInfo.fromPlatform();
       final uri = Uri.parse(
         'https://itunes.apple.com/lookup?bundleId=$_bundleId',
       );
-      final response = await http.get(uri).timeout(const Duration(seconds: 10));
+      final response = await _httpClient
+          .get(uri)
+          .timeout(const Duration(seconds: 10));
       if (response.statusCode != 200) {
         return const StoreVersionInfo(UpdateStatus.checkFailed);
       }
@@ -101,7 +106,7 @@ class VersionService {
       if (storeVersion == null) {
         return const StoreVersionInfo(UpdateStatus.checkFailed);
       }
-      final newer = _isNewerVersion(storeVersion, packageInfo.version);
+      final newer = isNewerVersion(storeVersion, packageInfo.version);
       return StoreVersionInfo(
         newer ? UpdateStatus.updateAvailable : UpdateStatus.upToDate,
         storeVersion: storeVersion,
@@ -112,8 +117,8 @@ class VersionService {
     }
   }
 
-  // Returns true if store version is strictly newer than installed.
-  static bool _isNewerVersion(String store, String installed) {
+  @visibleForTesting
+  static bool isNewerVersion(String store, String installed) {
     List<int> parse(String v) =>
         v.split('.').map((s) => int.tryParse(s) ?? 0).toList();
     final s = parse(store);
@@ -132,7 +137,6 @@ class VersionService {
       try {
         await InAppUpdate.performImmediateUpdate();
       } catch (_) {
-        // in_app_update unavailable (sideloaded build) — open Play Store directly.
         final url =
             storeUrl ??
             'https://play.google.com/store/apps/details?id=$_bundleId';

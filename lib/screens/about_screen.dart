@@ -46,7 +46,7 @@ class _AboutScreenState extends State<AboutScreen> {
       _checked = false;
     });
     try {
-      final info = await VersionService.checkForUpdate();
+      final info = await VersionService().checkForUpdate();
       if (!mounted) return;
       setState(() => _storeInfo = info);
     } finally {

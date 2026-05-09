@@ -56,17 +56,13 @@ void main() {
     });
 
     test('copyWith preserves analysisMethod when not overridden', () {
-      final p = Product.fromJson(
-        _baseJson(analysisMethod: 'keyword'),
-      );
+      final p = Product.fromJson(_baseJson(analysisMethod: 'keyword'));
       final copy = p.copyWith(isHalal: false);
       expect(copy.analysisMethod, equals('keyword'));
     });
 
     test('copyWith can override analysisMethod', () {
-      final p = Product.fromJson(
-        _baseJson(analysisMethod: 'keyword'),
-      );
+      final p = Product.fromJson(_baseJson(analysisMethod: 'keyword'));
       final updated = p.copyWith(analysisMethod: 'ai');
       expect(updated.analysisMethod, equals('ai'));
     });

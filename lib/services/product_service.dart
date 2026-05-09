@@ -316,8 +316,9 @@ class ProductService {
         'imageNutritionUrl': row['image_nutrition_url'],
         'explanation': row['explanation'] ?? '',
         'analyzedByAI': row['analyzed_by_ai'] ?? false,
-        'analysisMethod':
-            (row['analyzed_by_ai'] as bool? ?? false) ? 'ai' : 'keyword',
+        'analysisMethod': (row['analyzed_by_ai'] as bool? ?? false)
+            ? 'ai'
+            : 'keyword',
       });
     } catch (_) {
       return null;

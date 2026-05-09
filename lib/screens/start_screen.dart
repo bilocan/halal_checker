@@ -40,7 +40,7 @@ class _StartScreenState extends State<StartScreen> {
   Future<void> _checkForUpdate() async {
     if (!Platform.isAndroid && !Platform.isIOS) return;
     try {
-      final info = await VersionService.checkForUpdate();
+      final info = await VersionService().checkForUpdate();
       if (info.status != UpdateStatus.updateAvailable) return;
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
