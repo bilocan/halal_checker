@@ -17,6 +17,11 @@ class Product {
   final String explanation;
   final bool analyzedByAI;
 
+  /// 'ai' when Claude/Gemini analyzed this product; 'keyword' when keyword
+  /// matching was used as the sole analysis method. Null for legacy records
+  /// that predate this field.
+  final String? analysisMethod;
+
   Product({
     required this.barcode,
     required this.name,
@@ -35,6 +40,7 @@ class Product {
     this.imageNutritionUrl,
     this.explanation = '',
     this.analyzedByAI = false,
+    this.analysisMethod,
   });
 
   Product copyWith({
@@ -55,6 +61,7 @@ class Product {
     String? imageNutritionUrl,
     String? explanation,
     bool? analyzedByAI,
+    String? analysisMethod,
   }) => Product(
     barcode: barcode ?? this.barcode,
     name: name ?? this.name,
@@ -74,6 +81,7 @@ class Product {
     imageNutritionUrl: imageNutritionUrl ?? this.imageNutritionUrl,
     explanation: explanation ?? this.explanation,
     analyzedByAI: analyzedByAI ?? this.analyzedByAI,
+    analysisMethod: analysisMethod ?? this.analysisMethod,
   );
 
   Map<String, dynamic> toJson() => {
@@ -94,6 +102,7 @@ class Product {
     'imageNutritionUrl': imageNutritionUrl,
     'explanation': explanation,
     'analyzedByAI': analyzedByAI,
+    if (analysisMethod != null) 'analysisMethod': analysisMethod,
   };
 
   factory Product.fromJson(Map<String, dynamic> json) => Product(
@@ -120,5 +129,6 @@ class Product {
     imageNutritionUrl: json['imageNutritionUrl'] as String?,
     explanation: json['explanation'] as String? ?? '',
     analyzedByAI: json['analyzedByAI'] as bool? ?? false,
+    analysisMethod: json['analysisMethod'] as String?,
   );
 }
