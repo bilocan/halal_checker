@@ -28,6 +28,10 @@ class _ResultScreenState extends State<ResultScreen> {
   bool _isLoadingFeedback = false;
   bool _isRefreshing = false;
   bool _showTranslated = false;
+  String _note = '';
+  bool _isFlagged = false;
+  bool _noteExpanded = false;
+  final _noteController = TextEditingController();
 
   // Pre-computed once in initState to avoid regex work during build.
   Set<String> _foundInText = {};
@@ -38,6 +42,182 @@ class _ResultScreenState extends State<ResultScreen> {
     super.initState();
     _loadFeedbacks();
     _computeTransparency();
+    _loadNote();
+  }
+
+  @override
+  void dispose() {
+    _noteController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadNote() async {
+    final data = await DatabaseService.instance.getScanNote(widget.barcode);
+    if (data != null && mounted) {
+      setState(() {
+        _note = data['notes'] as String? ?? '';
+        _isFlagged = data['isFlagged'] as bool;
+        _noteController.text = _note;
+      });
+    }
+  }
+
+  Future<void> _saveNote() async {
+    final note = _noteController.text.trim();
+    await DatabaseService.instance.updateScanNote(
+      widget.barcode,
+      note: note.isEmpty ? null : note,
+      isFlagged: _isFlagged,
+    );
+    if (!mounted) return;
+    setState(() => _note = note);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(AppLocalizations.of(context).noteSaved),
+        duration: const Duration(seconds: 1),
+      ),
+    );
+  }
+
+  Future<void> _toggleFlag() async {
+    final newFlag = !_isFlagged;
+    setState(() => _isFlagged = newFlag);
+    await DatabaseService.instance.updateScanNote(
+      widget.barcode,
+      note: _noteController.text.trim().isEmpty
+          ? null
+          : _noteController.text.trim(),
+      isFlagged: newFlag,
+    );
+  }
+
+  void _reportWithNote() {
+    final product = widget.product;
+    if (product == null) return;
+    _showReportDialog(
+      context,
+      product,
+      initialNote: _noteController.text.trim(),
+    );
+  }
+
+  Widget _buildNoteSection(AppLocalizations loc) {
+    final hasNote = _note.isNotEmpty;
+
+    return Card(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          InkWell(
+            onTap: () => setState(() => _noteExpanded = !_noteExpanded),
+            borderRadius: const BorderRadius.all(Radius.circular(12)),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                children: [
+                  Icon(Icons.edit_note, size: 20, color: Colors.grey.shade700),
+                  const SizedBox(width: 8),
+                  Text(
+                    loc.myNote,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  if (hasNote) ...[
+                    const SizedBox(width: 6),
+                    Container(
+                      width: 7,
+                      height: 7,
+                      decoration: const BoxDecoration(
+                        color: kGreen,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ],
+                  const Spacer(),
+                  GestureDetector(
+                    onTap: _toggleFlag,
+                    behavior: HitTestBehavior.opaque,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: Icon(
+                        _isFlagged ? Icons.bookmark : Icons.bookmark_border,
+                        color: _isFlagged
+                            ? Colors.orange.shade700
+                            : Colors.grey.shade500,
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Icon(
+                    _noteExpanded ? Icons.expand_less : Icons.expand_more,
+                    color: Colors.grey.shade500,
+                    size: 20,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          AnimatedSize(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeInOut,
+            child: _noteExpanded
+                ? Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const Divider(height: 1),
+                        const SizedBox(height: 12),
+                        TextField(
+                          controller: _noteController,
+                          maxLines: 3,
+                          maxLength: 300,
+                          decoration: InputDecoration(
+                            hintText: loc.noteHint,
+                            border: const OutlineInputBorder(),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 10,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            TextButton.icon(
+                              onPressed: _reportWithNote,
+                              style: TextButton.styleFrom(
+                                foregroundColor: Colors.orange.shade700,
+                                padding: EdgeInsets.zero,
+                              ),
+                              icon: const Icon(Icons.flag_outlined, size: 16),
+                              label: Text(
+                                loc.reportWrongResult,
+                                style: const TextStyle(fontSize: 12),
+                              ),
+                            ),
+                            ElevatedButton(
+                              onPressed: _saveNote,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: kGreen,
+                                foregroundColor: Colors.white,
+                              ),
+                              child: Text(loc.submit),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  )
+                : const SizedBox.shrink(),
+          ),
+        ],
+      ),
+    );
   }
 
   void _computeTransparency() {
@@ -207,6 +387,11 @@ class _ResultScreenState extends State<ResultScreen> {
         backgroundColor: kGreen,
         foregroundColor: Colors.white,
         actions: [
+          IconButton(
+            icon: Icon(_isFlagged ? Icons.bookmark : Icons.bookmark_border),
+            onPressed: _toggleFlag,
+            tooltip: loc.checkLater,
+          ),
           if (_isRefreshing)
             const Padding(
               padding: EdgeInsets.all(14),
@@ -529,6 +714,8 @@ class _ResultScreenState extends State<ResultScreen> {
               ],
               const SizedBox(height: 16),
               _buildTransparencySection(product, loc),
+              const SizedBox(height: 16),
+              _buildNoteSection(loc),
               const SizedBox(height: 16),
               Align(
                 alignment: Alignment.centerLeft,
@@ -1508,7 +1695,11 @@ class _ResultScreenState extends State<ResultScreen> {
     replyController.dispose();
   }
 
-  void _showReportDialog(BuildContext context, Product product) {
+  void _showReportDialog(
+    BuildContext context,
+    Product product, {
+    String initialNote = '',
+  }) {
     final String currentResult = product.isNonFood
         ? 'non_food'
         : product.isUnknown
@@ -1527,6 +1718,7 @@ class _ResultScreenState extends State<ResultScreen> {
         barcode: widget.barcode,
         productName: product.name,
         currentResult: currentResult,
+        initialNote: initialNote,
       ),
     );
   }
@@ -1536,11 +1728,13 @@ class _ReportSheet extends StatefulWidget {
   final String barcode;
   final String productName;
   final String currentResult;
+  final String initialNote;
 
   const _ReportSheet({
     required this.barcode,
     required this.productName,
     required this.currentResult,
+    this.initialNote = '',
   });
 
   @override
@@ -1549,7 +1743,7 @@ class _ReportSheet extends StatefulWidget {
 
 class _ReportSheetState extends State<_ReportSheet> {
   ExpectedResult? _selected;
-  final _noteController = TextEditingController();
+  late final _noteController = TextEditingController(text: widget.initialNote);
   bool _submitting = false;
 
   @override

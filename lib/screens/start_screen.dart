@@ -29,6 +29,7 @@ class _StartScreenState extends State<StartScreen> {
   List<Map<String, dynamic>> _recentScans = [];
   bool _isLoading = true;
   bool _isLoadingProduct = false;
+  bool _showFlaggedOnly = false;
 
   @override
   void initState() {
@@ -379,7 +380,24 @@ class _StartScreenState extends State<StartScreen> {
                     color: Colors.grey,
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    _FilterChip(
+                      label: localizations.allScans,
+                      selected: !_showFlaggedOnly,
+                      onTap: () => setState(() => _showFlaggedOnly = false),
+                    ),
+                    const SizedBox(width: 8),
+                    _FilterChip(
+                      label: localizations.flaggedOnly,
+                      selected: _showFlaggedOnly,
+                      icon: Icons.bookmark,
+                      onTap: () => setState(() => _showFlaggedOnly = true),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
                 Expanded(
                   child: _isLoading
                       ? const Center(child: CircularProgressIndicator())
@@ -414,101 +432,151 @@ class _StartScreenState extends State<StartScreen> {
                             ],
                           ),
                         )
-                      : ListView.builder(
-                          itemCount: _recentScans.length,
-                          itemBuilder: (context, index) {
-                            final scan = _recentScans[index];
-                            final isHalal = scan['isHalal'] as bool;
-                            final barcode = scan['barcode'] as String;
+                      : Builder(
+                          builder: (context) {
+                            final displayed = _showFlaggedOnly
+                                ? _recentScans
+                                      .where((s) => s['isFlagged'] == true)
+                                      .toList()
+                                : _recentScans;
+                            if (displayed.isEmpty) {
+                              return Center(
+                                child: Text(
+                                  localizations.noRecentResults,
+                                  style: const TextStyle(color: Colors.grey),
+                                  textAlign: TextAlign.center,
+                                ),
+                              );
+                            }
+                            return ListView.builder(
+                              itemCount: displayed.length,
+                              itemBuilder: (context, index) {
+                                final scan = displayed[index];
+                                final isHalal = scan['isHalal'] as bool;
+                                final isFlagged = scan['isFlagged'] as bool;
+                                final barcode = scan['barcode'] as String;
+                                final note = scan['notes'] as String?;
 
-                            return Dismissible(
-                              key: ValueKey(barcode),
-                              direction: DismissDirection.endToStart,
-                              background: Container(
-                                alignment: Alignment.centerRight,
-                                padding: const EdgeInsets.only(right: 20),
-                                margin: const EdgeInsets.only(bottom: 8),
-                                decoration: BoxDecoration(
-                                  color: Colors.red.shade400,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: const Icon(
-                                  Icons.delete_outline,
-                                  color: Colors.white,
-                                ),
-                              ),
-                              onDismissed: (_) async {
-                                final removed = scan;
-                                final messenger = ScaffoldMessenger.of(context);
-                                setState(() => _recentScans.removeAt(index));
-                                await DatabaseService.instance.deleteScan(
-                                  barcode,
-                                );
-                                if (!mounted) return;
-                                messenger.showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      localizations.deletedFromHistory,
+                                return Dismissible(
+                                  key: ValueKey(barcode),
+                                  direction: DismissDirection.endToStart,
+                                  background: Container(
+                                    alignment: Alignment.centerRight,
+                                    padding: const EdgeInsets.only(right: 20),
+                                    margin: const EdgeInsets.only(bottom: 8),
+                                    decoration: BoxDecoration(
+                                      color: Colors.red.shade400,
+                                      borderRadius: BorderRadius.circular(12),
                                     ),
-                                    action: SnackBarAction(
-                                      label: localizations.undo,
-                                      onPressed: () async {
-                                        await DatabaseService.instance
-                                            .insertScan(
-                                              barcode:
-                                                  removed['barcode'] as String,
-                                              productName:
-                                                  removed['productName']
-                                                      as String,
-                                              isHalal:
-                                                  removed['isHalal'] as bool,
-                                            );
-                                        await _loadRecentScans();
-                                      },
+                                    child: const Icon(
+                                      Icons.delete_outline,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                  onDismissed: (_) async {
+                                    final removed = scan;
+                                    final messenger = ScaffoldMessenger.of(
+                                      context,
+                                    );
+                                    setState(
+                                      () => _recentScans.removeWhere(
+                                        (s) => s['barcode'] == barcode,
+                                      ),
+                                    );
+                                    await DatabaseService.instance.deleteScan(
+                                      barcode,
+                                    );
+                                    if (!mounted) return;
+                                    messenger.showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          localizations.deletedFromHistory,
+                                        ),
+                                        action: SnackBarAction(
+                                          label: localizations.undo,
+                                          onPressed: () async {
+                                            await DatabaseService.instance
+                                                .insertScan(
+                                                  barcode:
+                                                      removed['barcode']
+                                                          as String,
+                                                  productName:
+                                                      removed['productName']
+                                                          as String,
+                                                  isHalal:
+                                                      removed['isHalal']
+                                                          as bool,
+                                                  notes:
+                                                      removed['notes']
+                                                          as String?,
+                                                  isFlagged:
+                                                      removed['isFlagged']
+                                                          as bool,
+                                                );
+                                            await _loadRecentScans();
+                                          },
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  child: Card(
+                                    margin: const EdgeInsets.only(bottom: 8),
+                                    child: ListTile(
+                                      leading: Semantics(
+                                        label: isHalal
+                                            ? localizations.halal
+                                            : localizations.notHalal,
+                                        child: Container(
+                                          width: 16,
+                                          height: 16,
+                                          decoration: BoxDecoration(
+                                            color: isHalal
+                                                ? kGreen
+                                                : Colors.red,
+                                            shape: BoxShape.circle,
+                                          ),
+                                        ),
+                                      ),
+                                      title: Text(
+                                        scan['productName'] as String,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      subtitle: Text(
+                                        note != null && note.isNotEmpty
+                                            ? note.length > 50
+                                                  ? '${note.substring(0, 50)}…'
+                                                  : note
+                                            : '${localizations.lastScanned}: ${_formatDate(scan['timestamp'] as int)}',
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      trailing: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          if (isFlagged)
+                                            Icon(
+                                              Icons.bookmark,
+                                              color: Colors.orange.shade700,
+                                              size: 18,
+                                            ),
+                                          IconButton(
+                                            icon: const Icon(Icons.refresh),
+                                            color: kGreen,
+                                            tooltip: localizations.recheck,
+                                            onPressed: () => _openResult(
+                                              scan,
+                                              recheck: true,
+                                            ),
+                                          ),
+                                          const Icon(Icons.chevron_right),
+                                        ],
+                                      ),
+                                      onTap: () => _openResult(scan),
                                     ),
                                   ),
                                 );
                               },
-                              child: Card(
-                                margin: const EdgeInsets.only(bottom: 8),
-                                child: ListTile(
-                                  leading: Semantics(
-                                    label: isHalal
-                                        ? localizations.halal
-                                        : localizations.notHalal,
-                                    child: Container(
-                                      width: 16,
-                                      height: 16,
-                                      decoration: BoxDecoration(
-                                        color: isHalal ? kGreen : Colors.red,
-                                        shape: BoxShape.circle,
-                                      ),
-                                    ),
-                                  ),
-                                  title: Text(
-                                    scan['productName'] as String,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  subtitle: Text(
-                                    '${localizations.lastScanned}: ${_formatDate(scan['timestamp'] as int)}',
-                                  ),
-                                  trailing: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      IconButton(
-                                        icon: const Icon(Icons.refresh),
-                                        color: kGreen,
-                                        tooltip: localizations.recheck,
-                                        onPressed: () =>
-                                            _openResult(scan, recheck: true),
-                                      ),
-                                      const Icon(Icons.chevron_right),
-                                    ],
-                                  ),
-                                  onTap: () => _openResult(scan),
-                                ),
-                              ),
                             );
                           },
                         ),
@@ -524,6 +592,57 @@ class _StartScreenState extends State<StartScreen> {
               ),
             ),
         ],
+      ),
+    );
+  }
+}
+
+class _FilterChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final IconData? icon;
+  final VoidCallback onTap;
+
+  const _FilterChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+    this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: selected ? kGreen : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: selected ? kGreen : Colors.grey.shade400),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (icon != null) ...[
+              Icon(
+                icon,
+                size: 14,
+                color: selected ? Colors.white : Colors.grey.shade600,
+              ),
+              const SizedBox(width: 4),
+            ],
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 13,
+                color: selected ? Colors.white : Colors.grey.shade600,
+                fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

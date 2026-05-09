@@ -156,6 +156,12 @@ class AppLocalizations {
       'reportResultHaram': 'Not Halal',
       'reportResultNonFood': 'Non-Food',
       'reportResultUnknown': 'Unknown',
+      'myNote': 'My Note',
+      'noteHint': 'e.g. ask producer about E471, check later...',
+      'noteSaved': 'Note saved',
+      'checkLater': 'Check later',
+      'flaggedOnly': 'Flagged only',
+      'allScans': 'All scans',
     },
     'tr': {
       'appTitle': 'HalalScan',
@@ -307,6 +313,12 @@ class AppLocalizations {
       'reportResultHaram': 'Haram',
       'reportResultNonFood': 'Gıda Değil',
       'reportResultUnknown': 'Bilinmiyor',
+      'myNote': 'Notum',
+      'noteHint': 'örn. üreticiye E471 sor, sonra kontrol et...',
+      'noteSaved': 'Not kaydedildi',
+      'checkLater': 'Sonra kontrol et',
+      'flaggedOnly': 'Yalnızca işaretliler',
+      'allScans': 'Tüm taramalar',
     },
     'de': {
       'appTitle': 'HalalScan',
@@ -464,6 +476,12 @@ class AppLocalizations {
       'reportResultHaram': 'Nicht Halal',
       'reportResultNonFood': 'Kein Lebensmittel',
       'reportResultUnknown': 'Unbekannt',
+      'myNote': 'Meine Notiz',
+      'noteHint': 'z. B. Hersteller nach E471 fragen, später prüfen...',
+      'noteSaved': 'Notiz gespeichert',
+      'checkLater': 'Später prüfen',
+      'flaggedOnly': 'Nur markierte',
+      'allScans': 'Alle Scans',
     },
   };
 
@@ -612,6 +630,12 @@ class AppLocalizations {
   String get reportResultHaram => _translate('reportResultHaram');
   String get reportResultNonFood => _translate('reportResultNonFood');
   String get reportResultUnknown => _translate('reportResultUnknown');
+  String get myNote => _translate('myNote');
+  String get noteHint => _translate('noteHint');
+  String get noteSaved => _translate('noteSaved');
+  String get checkLater => _translate('checkLater');
+  String get flaggedOnly => _translate('flaggedOnly');
+  String get allScans => _translate('allScans');
 
   static AppLocalizations of(BuildContext context) {
     final localizations = Localizations.of<AppLocalizations>(

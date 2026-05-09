@@ -2,7 +2,6 @@ name: CI
 
 on:
   push:
-    branches: [main]
   pull_request:
     branches: [main]
 
@@ -81,6 +80,7 @@ jobs:
           retention-days: 14
 
   # ── iOS ──────────────────────────────────────────────────────────────────────
+  # TODO: add build-ios to required branch protection checks once iOS developer account is ready
   build-ios:
     needs: test
     if: github.event_name == 'pull_request'

@@ -631,6 +631,35 @@ class ProductService {
           .where((e) => e.isNotEmpty)
           .toList();
 
+      // Extract canonical IDs from the structured ingredients array for
+      // supplementary keyword analysis. OFf normalises these (e.g. "en:pork")
+      // so they catch matches that the label's free-form text may omit when
+      // the language is not covered by our variant lists.
+      final List<String> ingredientIds = [];
+      void addId(Map<dynamic, dynamic> item) {
+        final id = (item['id'] ?? '').toString();
+        if (id.isNotEmpty) {
+          final canonical = id
+              .replaceFirst(RegExp(r'^[a-z]{2,3}:'), '')
+              .replaceAll('-', ' ');
+          if (canonical.isNotEmpty) ingredientIds.add(canonical);
+        }
+        final sub = item['ingredients'];
+        if (sub is List) {
+          for (final s in sub.whereType<Map<dynamic, dynamic>>()) {
+            addId(s);
+          }
+        }
+      }
+
+      final rawStructuredIngredients = productData['ingredients'];
+      if (rawStructuredIngredients is List) {
+        for (final item
+            in rawStructuredIngredients.whereType<Map<dynamic, dynamic>>()) {
+          addId(item);
+        }
+      }
+
       final rawCategories = productData['categories_tags'];
       final bool isNonFoodByCategory =
           rawCategories is List &&
@@ -653,23 +682,45 @@ class ProductService {
 
       final fallback = analyzeWithKeywords(ingredients);
 
-      // When no ingredients are available, check the product name itself.
+      // Also analyse canonical IDs; merge extra matches the text analysis missed.
+      final idAnalysis = analyzeWithKeywords(ingredientIds);
+      final textHaramLower = fallback.haram.map((s) => s.toLowerCase()).toSet();
+      final extraIdHaram = idAnalysis.haram
+          .where((s) => !textHaramLower.contains(s.toLowerCase()))
+          .toList();
+      final textSuspiciousLower = fallback.suspicious
+          .map((s) => s.toLowerCase())
+          .toSet();
+      final extraIdSuspicious = idAnalysis.suspicious
+          .where((s) => !textSuspiciousLower.contains(s.toLowerCase()))
+          .toList();
+
+      // When no ingredient data at all, check the product name itself.
       // Names like "Wieselburger Bier" or "Rosé Wine" contain haram keywords
       // that make the verdict unambiguous without needing ingredient data.
-      final nameCheck = ingredients.isEmpty
+      final nameCheck = ingredients.isEmpty && ingredientIds.isEmpty
           ? analyzeWithKeywords([name.toLowerCase()])
           : null;
 
-      final List<String> haramIngredients = fallback.haram.isNotEmpty
-          ? fallback.haram
-          : (nameCheck?.haram ?? []);
-      final List<String> suspiciousIngredients = fallback.suspicious.isNotEmpty
-          ? fallback.suspicious
-          : (nameCheck?.suspicious ?? []);
-      final Map<String, String> ingredientWarnings =
-          fallback.warnings.isNotEmpty
-          ? fallback.warnings
-          : (nameCheck?.warnings ?? {});
+      final List<String> haramIngredients = [
+        ...(fallback.haram.isNotEmpty
+            ? fallback.haram
+            : (nameCheck?.haram ?? [])),
+        ...extraIdHaram,
+      ];
+      final List<String> suspiciousIngredients = [
+        ...(fallback.suspicious.isNotEmpty
+            ? fallback.suspicious
+            : (nameCheck?.suspicious ?? [])),
+        ...extraIdSuspicious,
+      ];
+      final Map<String, String> ingredientWarnings = {
+        ...(fallback.warnings.isNotEmpty
+            ? fallback.warnings
+            : (nameCheck?.warnings ?? {})),
+        for (final id in extraIdHaram) id: idAnalysis.warnings[id] ?? '',
+        for (final id in extraIdSuspicious) id: idAnalysis.warnings[id] ?? '',
+      };
 
       if (isNonFoodByCategory) {
         return Product(
@@ -699,6 +750,7 @@ class ProductService {
           halalByCategory && ingredients.isEmpty && haramIngredients.isEmpty;
       final bool isUnknown =
           ingredients.isEmpty &&
+          ingredientIds.isEmpty &&
           (nameCheck?.isHalal ?? true) &&
           !haramByCategory &&
           !isHalalByCategory;
@@ -706,6 +758,7 @@ class ProductService {
       final String explanation;
       if (haramByCategory &&
           fallback.haram.isEmpty &&
+          extraIdHaram.isEmpty &&
           (nameCheck?.isHalal ?? true)) {
         explanation =
             'This product belongs to a category that is not permissible: '
@@ -721,7 +774,9 @@ class ProductService {
             'No ingredient list found, but the product name contains a haram indicator: '
             '${nameCheck.haram.join(', ')}.';
       } else {
-        explanation = fallback.explanation;
+        explanation = ingredients.isNotEmpty
+            ? fallback.explanation
+            : idAnalysis.explanation;
       }
 
       return Product(
