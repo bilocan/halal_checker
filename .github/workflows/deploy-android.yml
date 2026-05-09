@@ -268,3 +268,17 @@ jobs:
             -H "Authorization: Bearer $TOKEN" \
             "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PKG/edits/$EDIT:commit"
           echo "Promoted release $VC to open testing."
+
+      - name: Update latest_version in Supabase
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          curl -sS --fail-with-body -X PATCH \
+            -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
+            -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
+            -H "Content-Type: application/json" \
+            -d "{\"value\": \"$VERSION\"}" \
+            "$SUPABASE_URL/rest/v1/app_config?key=eq.latest_version"
+          echo "Set latest_version to $VERSION in Supabase."

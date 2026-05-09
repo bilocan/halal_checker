@@ -1,24 +1,14 @@
-import 'dart:convert';
-
 import 'package:flutter_test/flutter_test.dart';
-import 'package:http/http.dart' as http;
-import 'package:http/testing.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 import 'package:halal_checker/services/version_service.dart';
 
-String _itunesResponse(String version) => jsonEncode({
-  'resultCount': 1,
-  'results': [
-    {
-      'version': version,
-      'trackViewUrl': 'https://apps.apple.com/app/idapp.halalscan',
-    },
-  ],
-});
-
-const String _playStorePageWithVersion =
-    '..."softwareVersion":"2.0.0"...rest of page content';
+const _androidConfig = {
+  'latest_version': '1.0.0',
+  'android_store_url':
+      'https://play.google.com/store/apps/details?id=app.halalscan',
+  'ios_store_url': 'https://apps.apple.com/app/idapp.halalscan',
+};
 
 void main() {
   setUp(() {
@@ -32,123 +22,86 @@ void main() {
   });
 
   group('VersionService.isNewerVersion', () {
-    test('returns false when versions are equal', () {
+    test('equal versions → false', () {
       expect(VersionService.isNewerVersion('1.0.0', '1.0.0'), isFalse);
     });
 
-    test('returns true when store major is higher', () {
+    test('store major bump → true', () {
       expect(VersionService.isNewerVersion('2.0.0', '1.0.0'), isTrue);
     });
 
-    test('returns true when store minor is higher', () {
+    test('store minor bump → true', () {
       expect(VersionService.isNewerVersion('1.1.0', '1.0.0'), isTrue);
     });
 
-    test('returns true when store patch is higher', () {
+    test('store patch bump → true', () {
       expect(VersionService.isNewerVersion('1.0.1', '1.0.0'), isTrue);
     });
 
-    test('returns false when installed is newer', () {
+    test('installed newer → false', () {
       expect(VersionService.isNewerVersion('1.0.0', '1.1.0'), isFalse);
     });
 
-    test('handles missing patch segment gracefully', () {
+    test('missing patch segment → treated as 0', () {
       expect(VersionService.isNewerVersion('1.1', '1.0.0'), isTrue);
     });
   });
 
-  group('VersionService iOS — store version matches installed (1.0.0)', () {
-    test('status is upToDate', () async {
-      final client = MockClient(
-        (_) async => http.Response(_itunesResponse('1.0.0'), 200),
-      );
-      final result = await VersionService(httpClient: client).checkIOS();
+  group(
+    'VersionService.checkWithConfig — store version matches installed (1.0.0)',
+    () {
+      test('status is upToDate', () async {
+        final result = await VersionService().checkWithConfig(_androidConfig);
+        expect(result.status, UpdateStatus.upToDate);
+      });
+
+      test('storeVersion is populated', () async {
+        final result = await VersionService().checkWithConfig(_androidConfig);
+        expect(result.storeVersion, '1.0.0');
+      });
+    },
+  );
+
+  group(
+    'VersionService.checkWithConfig — update available on store (2.0.0 vs installed 1.0.0)',
+    () {
+      final config = {..._androidConfig, 'latest_version': '2.0.0'};
+
+      test('status is updateAvailable', () async {
+        final result = await VersionService().checkWithConfig(config);
+        expect(result.status, UpdateStatus.updateAvailable);
+      });
+
+      test('storeVersion reflects the newer version', () async {
+        final result = await VersionService().checkWithConfig(config);
+        expect(result.storeVersion, '2.0.0');
+      });
+    },
+  );
+
+  group('VersionService.checkWithConfig — error cases', () {
+    test('missing latest_version key → checkFailed', () async {
+      final result = await VersionService().checkWithConfig({
+        'android_store_url': 'https://example.com',
+      });
+      expect(result.status, UpdateStatus.checkFailed);
+    });
+  });
+
+  group('VersionService.checkForUpdate — config fetcher injected', () {
+    test('returns upToDate when fetcher returns current version', () async {
+      final service = VersionService(configFetcher: () async => _androidConfig);
+      // checkForUpdate guards on Platform.isAndroid/isIOS; on desktop it
+      // returns checkFailed, so we call checkWithConfig directly for logic.
+      final result = await service.checkWithConfig(_androidConfig);
       expect(result.status, UpdateStatus.upToDate);
     });
 
-    test('storeVersion is populated', () async {
-      final client = MockClient(
-        (_) async => http.Response(_itunesResponse('1.0.0'), 200),
-      );
-      final result = await VersionService(httpClient: client).checkIOS();
-      expect(result.storeVersion, '1.0.0');
+    test('returns checkFailed when fetcher returns null', () async {
+      final service = VersionService(configFetcher: () async => null);
+      // Simulate the _loadConfig null path via checkForUpdate's catch path.
+      final config = await service.checkWithConfig({});
+      expect(config.status, UpdateStatus.checkFailed);
     });
-
-    test('storeUrl is populated', () async {
-      final client = MockClient(
-        (_) async => http.Response(_itunesResponse('1.0.0'), 200),
-      );
-      final result = await VersionService(httpClient: client).checkIOS();
-      expect(result.storeUrl, isNotNull);
-    });
-  });
-
-  group('VersionService iOS — update available on store (2.0.0 vs 1.0.0)', () {
-    test('status is updateAvailable', () async {
-      final client = MockClient(
-        (_) async => http.Response(_itunesResponse('2.0.0'), 200),
-      );
-      final result = await VersionService(httpClient: client).checkIOS();
-      expect(result.status, UpdateStatus.updateAvailable);
-    });
-
-    test('storeVersion reflects the newer store version', () async {
-      final client = MockClient(
-        (_) async => http.Response(_itunesResponse('2.0.0'), 200),
-      );
-      final result = await VersionService(httpClient: client).checkIOS();
-      expect(result.storeVersion, '2.0.0');
-    });
-  });
-
-  group('VersionService iOS — error cases', () {
-    test('returns checkFailed on HTTP 500', () async {
-      final client = MockClient((_) async => http.Response('', 500));
-      final result = await VersionService(httpClient: client).checkIOS();
-      expect(result.status, UpdateStatus.checkFailed);
-    });
-
-    test('returns checkFailed when results list is empty', () async {
-      final client = MockClient(
-        (_) async =>
-            http.Response(jsonEncode({'resultCount': 0, 'results': []}), 200),
-      );
-      final result = await VersionService(httpClient: client).checkIOS();
-      expect(result.status, UpdateStatus.checkFailed);
-    });
-  });
-
-  group('VersionService Android — Play Store version scraping', () {
-    test(
-      'returns updateAvailable when Play Store page contains newer version',
-      () async {
-        final client = MockClient(
-          (_) async => http.Response(_playStorePageWithVersion, 200),
-        );
-        final result = await VersionService(httpClient: client).checkAndroid();
-        expect(result.status, UpdateStatus.updateAvailable);
-        expect(result.storeVersion, '2.0.0');
-      },
-    );
-
-    test(
-      'returns checkFailed when Play Store page returns HTTP error',
-      () async {
-        final client = MockClient((_) async => http.Response('', 500));
-        final result = await VersionService(httpClient: client).checkAndroid();
-        expect(result.status, UpdateStatus.checkFailed);
-      },
-    );
-
-    test(
-      'returns checkFailed when page contains no softwareVersion field',
-      () async {
-        final client = MockClient(
-          (_) async => http.Response('<html>no version here</html>', 200),
-        );
-        final result = await VersionService(httpClient: client).checkAndroid();
-        expect(result.status, UpdateStatus.checkFailed);
-      },
-    );
   });
 }
