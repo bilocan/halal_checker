@@ -27,7 +27,7 @@ jobs:
         run: flutter analyze --no-fatal-infos
 
       - name: Run tests
-        run: flutter test test/services/ --coverage --reporter=github
+        run: flutter test test/services/ test/constants/ test/models/ --coverage --reporter=github
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
