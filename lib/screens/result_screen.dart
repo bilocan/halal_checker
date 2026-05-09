@@ -3,13 +3,19 @@ import 'package:file_picker/file_picker.dart';
 import '../app_colors.dart';
 import '../config.dart';
 import '../localization/app_localizations.dart';
+import '../models/community.dart';
 import '../models/product.dart';
 import '../models/feedback.dart';
+import '../models/product_analysis.dart';
+import '../services/analysis_service.dart';
 import '../services/auth_service.dart';
+import '../services/community_service.dart';
 import '../services/feedback_service.dart';
 import '../services/database_service.dart';
 import '../services/issue_report_service.dart';
 import '../services/product_service.dart';
+import 'deep_analysis_screen.dart';
+import 'discussion_screen.dart';
 
 class ResultScreen extends StatefulWidget {
   final Product? product;
@@ -33,6 +39,10 @@ class _ResultScreenState extends State<ResultScreen> {
   bool _noteExpanded = false;
   final _noteController = TextEditingController();
 
+  ProductAnalysis? _analysis;
+  bool _isRequestingAnalysis = false;
+  List<Discussion> _discussions = [];
+
   // Pre-computed once in initState to avoid regex work during build.
   Set<String> _foundInText = {};
   Set<String> _flaggedByAnalysis = {};
@@ -43,6 +53,8 @@ class _ResultScreenState extends State<ResultScreen> {
     _loadFeedbacks();
     _computeTransparency();
     _loadNote();
+    _loadAnalysis();
+    _loadDiscussions();
   }
 
   @override
@@ -91,6 +103,46 @@ class _ResultScreenState extends State<ResultScreen> {
     );
   }
 
+  Future<void> _loadAnalysis() async {
+    final a = await AnalysisService.getAnalysis(widget.barcode);
+    if (mounted) setState(() => _analysis = a);
+  }
+
+  Future<void> _loadDiscussions() async {
+    final d = await CommunityService.getDiscussions(widget.barcode);
+    if (mounted) setState(() => _discussions = d);
+  }
+
+  Future<void> _requestAnalysis() async {
+    if (AuthService.currentUser == null) {
+      _showSignInRequired(context);
+      return;
+    }
+    setState(() => _isRequestingAnalysis = true);
+    final result = await AnalysisService.requestDeepAnalysis(widget.barcode);
+    if (!mounted) return;
+    setState(() {
+      _isRequestingAnalysis = false;
+      if (result != null) _analysis = result;
+    });
+    if (result != null) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => DeepAnalysisScreen(
+            productName: widget.product?.name ?? widget.barcode,
+            barcode: widget.barcode,
+            analysis: result,
+          ),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Analysis failed — please try again.')),
+      );
+    }
+  }
+
   void _reportWithNote() {
     final product = widget.product;
     if (product == null) return;
@@ -98,6 +150,155 @@ class _ResultScreenState extends State<ResultScreen> {
       context,
       product,
       initialNote: _noteController.text.trim(),
+    );
+  }
+
+  Widget _buildAnalysisCard() {
+    final analysis = _analysis;
+    final statusColor = switch (analysis?.status) {
+      AnalysisStatus.resolved => Colors.green.shade700,
+      AnalysisStatus.aiDone ||
+      AnalysisStatus.communityReview ||
+      AnalysisStatus.consulting => Colors.blue.shade700,
+      AnalysisStatus.aiAnalyzing => Colors.orange.shade700,
+      _ => Colors.purple.shade700,
+    };
+
+    return Card(
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap:
+            analysis != null &&
+                analysis.status != AnalysisStatus.pending &&
+                analysis.status != AnalysisStatus.aiAnalyzing
+            ? () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => DeepAnalysisScreen(
+                    productName: widget.product?.name ?? widget.barcode,
+                    barcode: widget.barcode,
+                    analysis: analysis,
+                  ),
+                ),
+              )
+            : null,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Icon(Icons.biotech, color: statusColor, size: 28),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Deep Analysis',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                        color: statusColor,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      analysis == null
+                          ? 'Per-ingredient AI analysis with Islamic basis'
+                          : analysis.status.label,
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              if (_isRequestingAnalysis)
+                const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              else if (analysis == null ||
+                  analysis.status == AnalysisStatus.pending)
+                FilledButton(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: Colors.purple.shade700,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                  ),
+                  onPressed: _requestAnalysis,
+                  child: const Text('Analyse', style: TextStyle(fontSize: 13)),
+                )
+              else if (analysis.status == AnalysisStatus.aiAnalyzing)
+                const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              else
+                Icon(Icons.chevron_right, color: Colors.grey.shade400),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCommunityCard() {
+    final count = _discussions.length;
+    return Card(
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () async {
+          if (AuthService.currentUser == null) {
+            _showSignInRequired(context);
+            return;
+          }
+          await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => DiscussionScreen(
+                barcode: widget.barcode,
+                productName: widget.product?.name ?? widget.barcode,
+              ),
+            ),
+          );
+          _loadDiscussions();
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Icon(Icons.forum_outlined, color: Colors.blue.shade700, size: 28),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Community Discussion',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                        color: Colors.blue.shade700,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      count == 0
+                          ? 'No discussions yet — start one'
+                          : '$count discussion${count == 1 ? '' : 's'}',
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right, color: Colors.grey.shade400),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -716,6 +917,10 @@ class _ResultScreenState extends State<ResultScreen> {
               _buildTransparencySection(product, loc),
               const SizedBox(height: 16),
               _buildNoteSection(loc),
+              const SizedBox(height: 16),
+              _buildAnalysisCard(),
+              const SizedBox(height: 8),
+              _buildCommunityCard(),
               const SizedBox(height: 16),
               Align(
                 alignment: Alignment.centerLeft,
