@@ -254,6 +254,7 @@ function toProduct(row: Record<string, any>) {
     imageNutritionUrl:     row.image_nutrition_url,
     explanation:           row.explanation,
     analyzedByAI:          row.analyzed_by_ai,
+    analysisMethod:        row.analyzed_by_ai ? 'ai' : 'keyword',
   }
 }
 
@@ -428,9 +429,13 @@ Deno.serve(async (req) => {
               ingredientWarnings    = p.ingredientWarnings ?? {}
               explanation           = p.explanation ?? ''
               analyzedByAI          = true
-            } catch { /* fall through to Claude */ }
+            } catch (e) {
+              console.error('[lookup-product] Gemini JSON parse failed:', e)
+            }
           }
-        } catch { /* fall through to Claude */ }
+        } catch (e) {
+          console.error('[lookup-product] Gemini request failed:', e)
+        }
       }
 
       // Tier 2: Claude Haiku — paid fallback when Gemini is unavailable or fails
@@ -465,9 +470,13 @@ Deno.serve(async (req) => {
                 ingredientWarnings    = p.ingredientWarnings ?? {}
                 explanation           = p.explanation ?? ''
                 analyzedByAI          = true
-              } catch { /* stay with keyword result */ }
+              } catch (e) {
+                console.error('[lookup-product] Claude JSON parse failed:', e)
+              }
             }
-          } catch { /* stay with keyword result */ }
+          } catch (e) {
+            console.error('[lookup-product] Claude request failed:', e)
+          }
         }
       }
     }
@@ -511,9 +520,13 @@ Deno.serve(async (req) => {
               ingredientWarnings    = p.ingredientWarnings ?? {}
               explanation           = p.explanation ?? ''
               analyzedByAI          = true
-            } catch { /* remain unknown */ }
+            } catch (e) {
+              console.error('[lookup-product] Vision Claude JSON parse failed:', e)
+            }
           }
-        } catch { /* remain unknown */ }
+        } catch (e) {
+          console.error('[lookup-product] Vision Claude request failed:', e)
+        }
       }
     }
 
