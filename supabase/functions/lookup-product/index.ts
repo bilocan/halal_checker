@@ -285,7 +285,7 @@ Deno.serve(async (req) => {
       .from('products')
       .select('*')
       .eq('barcode', barcode)
-      .single()
+      .maybeSingle()
 
     if (cached && !force) {
       const age = Date.now() - new Date(cached.fetched_at).getTime()
@@ -598,12 +598,15 @@ Deno.serve(async (req) => {
       .from('products')
       .upsert(row)
       .select()
-      .single()
+      .maybeSingle()
 
-    if (upsertErr) throw upsertErr
+    if (upsertErr) {
+      // Log but don't crash — return the analysed product even if caching failed.
+      console.error('upsert error', upsertErr)
+    }
 
     return new Response(
-      JSON.stringify({ product: toProduct(upserted) }),
+      JSON.stringify({ product: toProduct(upserted ?? row) }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     )
   } catch (err) {

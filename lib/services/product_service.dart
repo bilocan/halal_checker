@@ -343,11 +343,16 @@ class ProductService {
             body: jsonEncode({'barcode': barcode, if (force) 'force': true}),
           )
           .timeout(const Duration(seconds: 30));
+      debugPrint('[Backend $barcode] HTTP ${response.statusCode}');
       if (response.statusCode != 200) return null;
       final data = json.decode(response.body) as Map<String, dynamic>;
-      if (data['product'] == null) return null;
+      if (data['product'] == null) {
+        debugPrint('[Backend $barcode] response had null product');
+        return null;
+      }
       return Product.fromJson(data['product'] as Map<String, dynamic>);
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[Backend $barcode] exception: $e');
       return null;
     }
   }
@@ -370,6 +375,10 @@ class ProductService {
       final fixture = await TestProductRepository.instance.getByBarcode(
         barcode,
       );
+      debugPrint(
+        '[Lookup $barcode] Step 0 (testDB): '
+        'found=${fixture != null} isUnknown=${fixture?.isUnknown}',
+      );
       if (fixture != null) {
         if (!fixture.isUnknown) return fixture;
         hadStaleTestFixture = true;
@@ -381,6 +390,10 @@ class ProductService {
     var hadStaleUnknown = false;
     if (!forceBackendRefresh) {
       final cached = await _cache.getProduct(barcode);
+      debugPrint(
+        '[Lookup $barcode] Step 1 (cache): '
+        'found=${cached != null} isUnknown=${cached?.isUnknown}',
+      );
       if (cached != null) {
         if (!cached.isUnknown) return cached;
         hadStaleUnknown = true;
@@ -392,6 +405,11 @@ class ProductService {
     // Skip stale "unknown" entries — they may predate category-based analysis.
     if (!forceBackendRefresh) {
       final dbProduct = await _fetchFromSharedDb(barcode);
+      debugPrint(
+        '[Lookup $barcode] Step 2 (sharedDB): '
+        'found=${dbProduct != null} isUnknown=${dbProduct?.isUnknown} '
+        'isNonFood=${dbProduct?.isNonFood}',
+      );
       if (dbProduct != null) {
         if (!dbProduct.isUnknown) {
           final safe = _applyKeywordSafety(dbProduct);
@@ -402,6 +420,12 @@ class ProductService {
       }
     }
 
+    debugPrint(
+      '[Lookup $barcode] hadStaleUnknown=$hadStaleUnknown '
+      'hadStaleTestFixture=$hadStaleTestFixture '
+      'forceBackendRefresh=$forceBackendRefresh',
+    );
+
     // Step 3: Edge Function (fetches OFf + runs AI + saves to shared DB).
     // Force a fresh fetch if we detected a stale "unknown" in Steps 1 or 2
     // so the Edge Function bypasses its own Supabase cache too.
@@ -409,18 +433,25 @@ class ProductService {
       barcode,
       force: forceBackendRefresh || hadStaleUnknown || hadStaleTestFixture,
     );
+    debugPrint(
+      '[Lookup $barcode] Step 3 (edgeFn): '
+      'found=${backendProduct != null} isUnknown=${backendProduct?.isUnknown} '
+      'isNonFood=${backendProduct?.isNonFood}',
+    );
     if (backendProduct != null) {
       final safe = _applyKeywordSafety(backendProduct);
-      // If the backend still returns unknown after a stale-unknown force-refresh,
-      // fall through to Step 4 — direct OFf fetch may resolve it via category tags.
-      final staleRetry = hadStaleUnknown || hadStaleTestFixture;
-      if (!safe.isUnknown || !staleRetry) {
+      // Fall through to Step 4 only when the backend returned unknown —
+      // OBF/OPF cross-check may confirm the product is non-food.
+      if (!safe.isUnknown) {
         await _cache.saveProduct(barcode, safe);
-        if (kDebugMode && hadStaleTestFixture && !safe.isUnknown) {
+        if (kDebugMode && hadStaleTestFixture) {
           await TestProductRepository.instance.upsert(safe);
         }
         return safe;
       }
+      debugPrint(
+        '[Lookup $barcode] Step 3 returned unknown — falling to Step 4',
+      );
     }
 
     // Step 4: Fallback — try each open food database in order.
@@ -429,6 +460,13 @@ class ProductService {
     Product? offUnknown;
     for (final baseUrl in [_offBaseUrl, _obfBaseUrl, _opfBaseUrl]) {
       var product = await _fetchFromFoodApi(barcode, baseUrl);
+      debugPrint(
+        '[Lookup $barcode] Step 4 ($baseUrl): '
+        'found=${product != null} name="${product?.name}" '
+        'isUnknown=${product?.isUnknown} isNonFood=${product?.isNonFood} '
+        'ingredients=${product?.ingredients.length ?? 0} '
+        'labels=${product?.labels}',
+      );
       if (product != null) {
         if (nonFoodUrls.contains(baseUrl)) {
           product = product.copyWith(
@@ -443,6 +481,7 @@ class ProductService {
         // continue to OBF/OPF — a cross-listing there confirms it is non-food.
         if (product.isUnknown && baseUrl == _offBaseUrl) {
           offUnknown = product;
+          debugPrint('[Lookup $barcode] Step 4: OFf unknown — probing OBF/OPF');
           continue;
         }
         final safe = _applyKeywordSafety(product);
@@ -453,6 +492,10 @@ class ProductService {
         return safe;
       }
     }
+    debugPrint(
+      '[Lookup $barcode] Step 4: OBF/OPF not found — '
+      'returning offUnknown=${offUnknown != null}',
+    );
     // OBF/OPF had no entry — return the OFf unknown result if we have one.
     if (offUnknown != null) {
       final safe = _applyKeywordSafety(offUnknown);

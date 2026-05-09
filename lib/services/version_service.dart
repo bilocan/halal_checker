@@ -39,11 +39,13 @@ class VersionService {
       final storeVersion = await _fetchPlayStoreVersion();
 
       var inAppAvailable = false;
-      try {
-        final info = await InAppUpdate.checkForUpdate();
-        inAppAvailable =
-            info.updateAvailability == UpdateAvailability.updateAvailable;
-      } catch (_) {}
+      if (!kDebugMode) {
+        try {
+          final info = await InAppUpdate.checkForUpdate();
+          inAppAvailable =
+              info.updateAvailability == UpdateAvailability.updateAvailable;
+        } catch (_) {}
+      }
 
       if (storeVersion != null) {
         final newer =
@@ -73,12 +75,18 @@ class VersionService {
       final response = await _httpClient
           .get(Uri.parse(url))
           .timeout(const Duration(seconds: 10));
+      debugPrint(
+        '[VersionService] Play Store HTTP ${response.statusCode}'
+        ' body_length=${response.body.length}',
+      );
       if (response.statusCode != 200) return null;
       final match = RegExp(
         r'"softwareVersion":"([^"]+)"',
       ).firstMatch(response.body);
+      debugPrint('[VersionService] softwareVersion match: ${match?.group(1)}');
       return match?.group(1);
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[VersionService] _fetchPlayStoreVersion error: $e');
       return null;
     }
   }
