@@ -9,6 +9,9 @@ Point the camera at any food product barcode (or enter it manually). The app fet
 - A clear **Halal / Not Halal** verdict with a colour-coded result screen
 - A per-ingredient breakdown showing exactly which ingredients were flagged and why
 - A full transparency panel listing every keyword that was checked
+- **Deep Analysis** — on-demand per-ingredient AI analysis with Islamic scholarly basis, confidence levels, and alternative names
+- **Community discussions** — threaded conversations about a product's ingredients with upvoting
+- **Ingredient challenges** — formally dispute the verdict on a specific ingredient and track resolution
 - Community feedback on each product
 - A scan history so you can revisit previous lookups
 
@@ -72,28 +75,105 @@ Approved community keyword suggestions (stored in Supabase) are applied on top o
 
 ---
 
-## Architecture
+## Deep Analysis & Community
+
+### Deep Analysis
+
+The standard scan gives a quick verdict. Deep Analysis goes further — it runs a separate AI pass using **Claude Sonnet** and returns a detailed breakdown for *every* ingredient, not just the flagged ones.
+
+**How to trigger it:**
+
+1. Scan a product and open the result screen.
+2. Tap the **Deep Analysis** card (purple, with a science icon).
+3. If no analysis exists yet, tap **Analyse** — this calls the `deep-analyze-product` Edge Function and may take 10–30 seconds.
+4. The screen moves through pipeline stages as the analysis progresses.
+
+> Sign-in is required to trigger analysis. The result is cached in Supabase and shared with all users — so the first person who analyses a product pays the wait; everyone else gets it instantly.
+
+**What each ingredient card shows:**
+
+| Field | Description |
+|---|---|
+| Verdict | `halal` / `haram` / `suspicious` / `unknown` — colour-coded |
+| Confidence | `high` (universally agreed) / `medium` (mainstream) / `low` (contested across madhabs) |
+| Reason | Plain-language explanation of the verdict |
+| Islamic basis | Quranic verse, hadith, scholarly consensus, or fatwa body reference |
+| Also known as | Alternative names and E-numbers the ingredient may appear under |
+
+**Analysis pipeline stages:**
+
+```
+pending          → queued, waiting for the AI run
+ai_analyzing     → Claude Sonnet is processing (do not retry)
+ai_done          → AI complete, results visible
+community_review → opened for community discussion by admin
+consulting       → escalated to a scholar
+resolved         → final verdict set by scholar or admin
+```
+
+Admins can trigger a batch run on all pending products via the `batch-analyze` Edge Function (admin role required).
+
+---
+
+### Ingredient Challenges
+
+If you believe the AI got a specific ingredient wrong, you can file a formal challenge.
+
+1. On the Deep Analysis screen, expand any ingredient card and tap **Challenge verdict**.
+2. Select what the verdict *should* be and write your reasoning (cite sources if possible — Quran, hadith, fatwa body).
+3. The challenge appears in the **Community → Challenges** tab, visible to all users.
+4. An admin or scholar can resolve or dismiss it, optionally adding a resolution note.
+
+Challenges are tracked separately from discussions so they can be acted on systematically.
+
+---
+
+### Community Discussions
+
+Every product has a discussion space, accessible from the result screen or the Deep Analysis screen.
+
+- **Discussions tab** — browse or start threads about the product. Threads can be titled (e.g. "Is the gelatin bovine or porcine?") or left untitled.
+- **Challenges tab** — see all open ingredient challenges and their resolution status.
+- Inside a thread, post top-level comments or reply to a specific comment. Upvote/downvote with the thumb icons.
+- Locked threads (set by admin) remain readable but accept no new comments.
+
+Sign-in via Google is required to post or vote.
+
+---
 
 ```
 Flutter App
 │
-├── HomeScreen          Barcode scanner (mobile_scanner)
-├── ResultScreen        Verdict + per-ingredient breakdown
-├── StartScreen         Scan history (last 50 scans)
-└── KeywordsScreen      View / suggest custom keywords
+├── HomeScreen              Barcode scanner (mobile_scanner)
+├── ResultScreen            Verdict + per-ingredient breakdown + analysis/community cards
+├── DeepAnalysisScreen      Per-ingredient AI analysis with Islamic basis + challenge sheet
+├── DiscussionScreen        Community threads (Discussions tab + Challenges tab)
+├── StartScreen             Scan history (last 50 scans)
+└── KeywordsScreen          View / suggest custom keywords
 
 Services
-├── ProductService      Orchestrates the full lookup pipeline
-├── CacheService        30-day local cache (SharedPreferences)
-├── DatabaseService     Scan history (SQLite — halal_scan.db)
-├── KeywordService      Fetches approved custom keywords from Supabase
-└── FeedbackService     Local community feedback storage
+├── ProductService          Orchestrates the full lookup pipeline
+├── AnalysisService         Request / fetch deep analysis; admin batch trigger
+├── CommunityService        Challenges, discussions, comments, votes (Supabase direct)
+├── CacheService            30-day local cache (SharedPreferences)
+├── DatabaseService         Scan history (SQLite — halal_scan.db)
+├── KeywordService          Fetches approved custom keywords from Supabase
+└── FeedbackService         Local community feedback storage
 
 Backend (Supabase)
-├── lookup-product      Edge Function: OpenFoodFacts → Claude → keyword fallback → cache
-├── products            Shared product cache (7-day TTL)
-├── keywords            Approved custom halal keywords
-└── keyword_suggestions Community keyword submissions (pending moderation)
+├── lookup-product          Edge Function: OpenFoodFacts → Claude/Gemini → keyword fallback → cache
+├── deep-analyze-product    Edge Function: per-ingredient Claude Sonnet analysis (auth required)
+├── batch-analyze           Edge Function: process all pending analyses (admin only)
+├── report-issue            Edge Function: submit wrong-result reports
+├── products                Shared product cache
+├── product_analyses        Deep analysis pipeline records (status + AI result JSON)
+├── ingredient_challenges   Community ingredient verdict challenges
+├── discussions             Per-product discussion threads
+├── comments                Threaded comments with soft-delete
+├── comment_votes           Upvote/downvote per user per comment
+├── profiles                User profiles (auto-created on first Google sign-in)
+├── keywords                Approved custom halal keywords
+└── keyword_suggestions     Community keyword submissions (pending moderation)
 ```
 
 **Lookup pipeline** (in order, first hit wins):
@@ -112,13 +192,31 @@ Backend (Supabase)
 ### Prerequisites
 
 - Flutter SDK (stable channel)
-- A [Supabase](https://supabase.com) project with the `lookup-product` Edge Function deployed
+- A [Supabase](https://supabase.com) project with Edge Functions deployed
 - An [Anthropic](https://console.anthropic.com) API key set as a Supabase secret
+- Google OAuth configured in the Supabase dashboard (Authentication → Providers → Google)
 
 ### Supabase secrets
 
 ```bash
 supabase secrets set CLAUDE_API_KEY=sk-ant-...
+```
+
+### Database migrations
+
+```bash
+supabase db push
+```
+
+This applies all migrations including the community tables (`profiles`, `product_analyses`, `ingredient_challenges`, `discussions`, `comments`, `comment_votes`).
+
+### Deploy Edge Functions
+
+```bash
+supabase functions deploy lookup-product
+supabase functions deploy deep-analyze-product
+supabase functions deploy batch-analyze
+supabase functions deploy report-issue
 ```
 
 ### Local configuration
