@@ -214,7 +214,7 @@ async function fetchFromFoodApi(barcode: string, baseUrl: string): Promise<any |
 function extractIngredientsText(pd: any): string {
   let text: string = (pd['ingredients_text'] ?? '').trim()
   if (!text) {
-    for (const lang of ['en', 'nl', 'de', 'fr', 'tr', 'es', 'it']) {
+    for (const lang of ['en', 'nl', 'de', 'fr', 'tr', 'es', 'it', 'sr', 'hu', 'cs']) {
       const t = (pd[`ingredients_text_${lang}`] ?? '').trim()
       if (t) { text = t; break }
     }
@@ -524,7 +524,7 @@ Deno.serve(async (req) => {
             const cd = await visionRes.json()
             const text: string = cd.content?.find((c: { type: string }) => c.type === 'text')?.text ?? ''
             try {
-              const p = JSON.parse(text.trim())
+              const p = JSON.parse(text.replace(/```json\n?|\n?```/g, '').trim())
               isHalal               = p.isHalal ?? false
               isUnknown             = p.isUnknown ?? true
               haramIngredients      = p.haramIngredients ?? []
