@@ -127,8 +127,11 @@ class AppLocalizations {
       'explanationHaram':
           'This product contains one or more ingredients that may be animal-derived or alcohol-related. Review the flagged ingredients below for details.',
       'unknown': '? UNKNOWN',
+      'noCert': '⚠️ NO CERT',
       'explanationUnknown':
           'No ingredient data was found for this product. Halal status cannot be determined — check the packaging directly.',
+      'explanationNoCert':
+          'This is an animal-derived food product without a verified halal certification. Halal slaughter cannot be confirmed — check the packaging for a halal label.',
       'nonFood': 'ℹ️ NOT FOOD',
       'explanationNonFood':
           'This is a non-food product. Islamic dietary rules do not apply.',
@@ -284,8 +287,11 @@ class AppLocalizations {
       'explanationHaram':
           'Bu ürün, hayvansal kaynaklı veya alkol içerikli olabilecek bir veya daha fazla içerik barındırmaktadır. Ayrıntılar için işaretlenen içerikleri inceleyin.',
       'unknown': '? BİLİNMİYOR',
+      'noCert': '⚠️ SERTİFİKA YOK',
       'explanationUnknown':
           'Bu ürün için içerik bilgisi bulunamadı. Helal durumu belirlenemiyor — lütfen ambalajı doğrudan kontrol edin.',
+      'explanationNoCert':
+          'Bu ürün hayvansal kaynaklı bir gıdadır ancak doğrulanmış bir helal sertifikası bulunmamaktadır. Helal kesim teyit edilemez — ambalajda helal etiketi olup olmadığını kontrol edin.',
       'nonFood': 'ℹ️ GIDA DEĞİL',
       'explanationNonFood':
           'Bu bir gıda ürünü değildir. İslami beslenme kuralları bu ürün için geçerli değildir.',
@@ -446,8 +452,11 @@ class AppLocalizations {
       'explanationHaram':
           'Dieses Produkt enthält eine oder mehrere Zutaten, die tierischen Ursprungs oder alkoholbezogen sein könnten. Prüfen Sie die markierten Zutaten.',
       'unknown': '? UNBEKANNT',
+      'noCert': '⚠️ KEIN ZERTIFIKAT',
       'explanationUnknown':
           'Für dieses Produkt wurden keine Zutatendaten gefunden. Der Halal-Status kann nicht bestimmt werden — bitte prüfen Sie die Verpackung direkt.',
+      'explanationNoCert':
+          'Dies ist ein tierisches Lebensmittelprodukt ohne geprüfte Halal-Zertifizierung. Eine islamkonforme Schlachtung kann nicht bestätigt werden — prüfen Sie die Verpackung auf ein Halal-Siegel.',
       'nonFood': 'ℹ️ KEIN LEBENSMITTEL',
       'explanationNonFood':
           'Dies ist kein Lebensmittelprodukt. Islamische Ernährungsregeln gelten nicht für dieses Produkt.',
@@ -604,7 +613,9 @@ class AppLocalizations {
       _translate('explanationSuspiciousOnly');
   String get explanationHaram => _translate('explanationHaram');
   String get unknown => _translate('unknown');
+  String get noCert => _translate('noCert');
   String get explanationUnknown => _translate('explanationUnknown');
+  String get explanationNoCert => _translate('explanationNoCert');
   String get nonFood => _translate('nonFood');
   String get explanationNonFood => _translate('explanationNonFood');
   String get about => _translate('about');

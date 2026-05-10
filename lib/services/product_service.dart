@@ -96,6 +96,17 @@ class ProductService {
     return variants.any((v) => _matchesVariant(ingredient, v));
   }
 
+  // Returns true when the product name suggests it is a meat/animal product,
+  // used as a fallback when OFf category data is absent or unknown.
+  static bool _nameIndicatesAnimalProduct(String nameLower) {
+    return FoodCategories.animalProductNameTerms.any(
+      (term) => RegExp(
+        '(?<![a-zA-ZÀ-ɏ])${RegExp.escape(term)}(?![a-zA-ZÀ-ɏ])',
+        caseSensitive: false,
+      ).hasMatch(nameLower),
+    );
+  }
+
   // Returns true only when the ingredient text doesn't already contain the
   // canonical keyword — i.e. a translation label would actually add information.
   static bool _needsTranslation(String ingredient, String canonical) {
@@ -748,12 +759,48 @@ class ProductService {
       // Halal-by-category overrides unknown when no ingredients are listed.
       final bool isHalalByCategory =
           halalByCategory && ingredients.isEmpty && haramIngredients.isEmpty;
+
+      // Animal product without halal certification: flagged as not halal even
+      // when no haram keywords are found. Detection uses OFf category tags
+      // first; if those are absent/unknown the product name is checked as a
+      // fallback (covers e.g. "Faschiertes" with sparse category data).
+      final bool categoryIsAnimalProduct =
+          rawCategories is List &&
+          rawCategories.any(
+            (c) => FoodCategories.animalProduct.contains(
+              c.toString().toLowerCase(),
+            ),
+          );
+      final bool nameIsAnimalProduct =
+          !categoryIsAnimalProduct &&
+          (rawCategories is! List ||
+              (rawCategories).every(
+                (c) => c.toString().toLowerCase().contains('unknown'),
+              )) &&
+          _nameIndicatesAnimalProduct(name.toLowerCase());
+      final bool isAnimalProduct =
+          categoryIsAnimalProduct || nameIsAnimalProduct;
+      final bool hasHalalCert = labels.any(
+        (l) =>
+            FoodCategories.halalCertificationLabels.contains(l.toLowerCase()),
+      );
+      // Only apply this rule when no haram ingredient was already found and the
+      // product is not already in a haram/non-food category.
+      final bool requiresHalalCert =
+          isAnimalProduct &&
+          !hasHalalCert &&
+          !isNonFoodByCategory &&
+          !haramByCategory &&
+          !halalByCategory &&
+          haramIngredients.isEmpty;
+
       final bool isUnknown =
           ingredients.isEmpty &&
           ingredientIds.isEmpty &&
           (nameCheck?.isHalal ?? true) &&
           !haramByCategory &&
-          !isHalalByCategory;
+          !isHalalByCategory &&
+          !requiresHalalCert;
 
       final String explanation;
       if (haramByCategory &&
@@ -766,6 +813,8 @@ class ProductService {
       } else if (isHalalByCategory) {
         explanation =
             'This product is in an inherently halal category (e.g. water, salt). No harmful ingredients expected.';
+      } else if (requiresHalalCert) {
+        explanation = '';
       } else if (isUnknown) {
         explanation =
             'No ingredient data found. Halal status cannot be determined — check the packaging directly.';
@@ -785,7 +834,10 @@ class ProductService {
         ingredients: ingredients,
         isHalal:
             isHalalByCategory ||
-            (!isUnknown && !haramByCategory && haramIngredients.isEmpty),
+            (!isUnknown &&
+                !haramByCategory &&
+                haramIngredients.isEmpty &&
+                !requiresHalalCert),
         isUnknown: isUnknown,
         haramIngredients: haramIngredients,
         suspiciousIngredients: suspiciousIngredients,
@@ -801,6 +853,7 @@ class ProductService {
         imageNutritionUrl: imageNutritionUrl,
         explanation: explanation,
         analyzedByAI: false,
+        requiresHalalCert: requiresHalalCert,
       );
     } catch (_) {
       return null;

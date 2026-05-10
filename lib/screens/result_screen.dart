@@ -579,20 +579,27 @@ class _ResultScreenState extends State<ResultScreen> {
     final ingredients = product.ingredients;
     final suspiciousIngredients = product.suspiciousIngredients;
 
+    final bool requiresHalalCert = product.requiresHalalCert;
     final Color statusColor = isNonFood
         ? Colors.blueGrey.shade600
         : isUnknown
+        ? Colors.orange.shade700
+        : requiresHalalCert
         ? Colors.orange.shade700
         : (isHalal ? kGreen : Colors.red);
     final IconData statusIcon = isNonFood
         ? Icons.info_outline
         : isUnknown
         ? Icons.help_outline
+        : requiresHalalCert
+        ? Icons.warning_amber_outlined
         : (isHalal ? Icons.check_circle : Icons.cancel);
     final String statusLabel = isNonFood
         ? loc.nonFood
         : isUnknown
         ? loc.unknown
+        : requiresHalalCert
+        ? loc.noCert
         : (isHalal ? '✅ HALAL' : '❌ NOT HALAL');
 
     return Scaffold(
@@ -658,7 +665,9 @@ class _ResultScreenState extends State<ResultScreen> {
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      product.explanation.isNotEmpty
+                      product.requiresHalalCert
+                          ? loc.explanationNoCert
+                          : product.explanation.isNotEmpty
                           ? product.explanation
                           : _halalReasonText(
                               isHalal,
