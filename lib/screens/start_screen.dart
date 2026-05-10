@@ -1,10 +1,11 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show AuthState;
 import '../app_colors.dart';
 import '../config.dart';
 import '../main.dart';
+import '../services/analysis_service.dart';
 import '../services/auth_service.dart';
 import '../services/database_service.dart';
 import '../services/product_service.dart';
@@ -15,6 +16,7 @@ import 'result_screen.dart';
 import 'home_screen.dart';
 import 'about_screen.dart';
 import 'keywords_screen.dart';
+import 'admin_panel_screen.dart';
 import 'directory_screen.dart';
 
 class StartScreen extends StatefulWidget {
@@ -30,12 +32,22 @@ class _StartScreenState extends State<StartScreen> {
   bool _isLoading = true;
   bool _isLoadingProduct = false;
   bool _showFlaggedOnly = false;
+  bool _isAdmin = false;
 
   @override
   void initState() {
     super.initState();
     _loadRecentScans();
+    _checkAdmin();
     WidgetsBinding.instance.addPostFrameCallback((_) => _checkForUpdate());
+    AuthService.authStateChanges.listen((_) {
+      if (mounted) _checkAdmin();
+    });
+  }
+
+  Future<void> _checkAdmin() async {
+    final admin = await AnalysisService().isAdmin();
+    if (mounted) setState(() => _isAdmin = admin);
   }
 
   Future<void> _checkForUpdate() async {
@@ -253,6 +265,15 @@ class _StartScreenState extends State<StartScreen> {
             ],
             icon: const Icon(Icons.language),
           ),
+          if (_isAdmin)
+            IconButton(
+              icon: const Icon(Icons.admin_panel_settings_outlined),
+              tooltip: 'Admin panel',
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const AdminPanelScreen()),
+              ),
+            ),
           if (AppConfig.hasSupabase) _buildAuthButton(context),
         ],
       ),

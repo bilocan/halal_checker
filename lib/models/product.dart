@@ -22,6 +22,11 @@ class Product {
   /// that predate this field.
   final String? analysisMethod;
 
+  /// True when the product was identified as an animal-derived food but has
+  /// no halal certification label. The UI uses this flag to show a localized
+  /// "requires halal cert" explanation instead of a hardcoded English string.
+  final bool requiresHalalCert;
+
   Product({
     required this.barcode,
     required this.name,
@@ -41,6 +46,7 @@ class Product {
     this.explanation = '',
     this.analyzedByAI = false,
     this.analysisMethod,
+    this.requiresHalalCert = false,
   });
 
   Product copyWith({
@@ -62,6 +68,7 @@ class Product {
     String? explanation,
     bool? analyzedByAI,
     String? analysisMethod,
+    bool? requiresHalalCert,
   }) => Product(
     barcode: barcode ?? this.barcode,
     name: name ?? this.name,
@@ -82,6 +89,7 @@ class Product {
     explanation: explanation ?? this.explanation,
     analyzedByAI: analyzedByAI ?? this.analyzedByAI,
     analysisMethod: analysisMethod ?? this.analysisMethod,
+    requiresHalalCert: requiresHalalCert ?? this.requiresHalalCert,
   );
 
   Map<String, dynamic> toJson() => {
@@ -103,6 +111,7 @@ class Product {
     'explanation': explanation,
     'analyzedByAI': analyzedByAI,
     if (analysisMethod != null) 'analysisMethod': analysisMethod,
+    if (requiresHalalCert) 'requiresHalalCert': requiresHalalCert,
   };
 
   factory Product.fromJson(Map<String, dynamic> json) => Product(
@@ -130,5 +139,6 @@ class Product {
     explanation: json['explanation'] as String? ?? '',
     analyzedByAI: json['analyzedByAI'] as bool? ?? false,
     analysisMethod: json['analysisMethod'] as String?,
+    requiresHalalCert: json['requiresHalalCert'] as bool? ?? false,
   );
 }

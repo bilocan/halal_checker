@@ -409,13 +409,28 @@ Deno.serve(async (req) => {
           : kwFirst.explanation)
     let analyzedByAI          = false
 
+    const geminiEnabled = Deno.env.get('GEMINI_ENABLED') !== 'false'
+    const claudeEnabled = Deno.env.get('CLAUDE_ENABLED') !== 'false'
+
     // Skip AI when keywords already found haram, product is in a haram category,
     // is non-food, halal-by-category, or there are no ingredients.
     const skipAI = isNonFood || isHalalByCategory || kwFirst.haram.length > 0 || haramCategory !== null || ingredients.length === 0
-    if (!skipAI) {
+    if (skipAI) {
+      const skipReason = isNonFood ? 'non-food'
+        : isHalalByCategory ? 'halal-by-category'
+        : haramCategory !== null ? `haram-category(${haramCategory})`
+        : kwFirst.haram.length > 0 ? `keyword-haram(${kwFirst.haram.join(', ')})`
+        : 'no-ingredients'
+      console.log(`[${barcode}] AI: skipped — ${skipReason}`)
+    } else {
       // Tier 1: Gemini Flash — free 1,500 req/day; handles the vast majority of scans
       const geminiKey = Deno.env.get('GEMINI_API_KEY')
-      if (geminiKey) {
+      if (!geminiEnabled) {
+        console.log(`[${barcode}] Gemini: skipped — disabled by GEMINI_ENABLED=false`)
+      } else if (!geminiKey) {
+        console.log(`[${barcode}] Gemini: skipped — GEMINI_API_KEY not set`)
+      } else {
+        console.log(`[${barcode}] Gemini: calling ${GEMINI_MODEL}...`)
         try {
           const geminiRes = await fetch(
             `${GEMINI_URL_BASE}/${GEMINI_MODEL}:generateContent?key=${geminiKey}`,
@@ -441,19 +456,30 @@ Deno.serve(async (req) => {
               ingredientWarnings    = p.ingredientWarnings ?? {}
               explanation           = p.explanation ?? ''
               analyzedByAI          = true
+              console.log(`[${barcode}] Gemini: success`)
             } catch (e) {
-              console.error('[lookup-product] Gemini JSON parse failed:', e)
+              console.error(`[${barcode}] Gemini: JSON parse failed:`, e)
             }
+          } else {
+            const body = await geminiRes.text()
+            console.error(`[${barcode}] Gemini: HTTP ${geminiRes.status} — ${body}`)
           }
         } catch (e) {
-          console.error('[lookup-product] Gemini request failed:', e)
+          console.error(`[${barcode}] Gemini: exception:`, e)
         }
       }
 
       // Tier 2: Claude Haiku — paid fallback when Gemini is unavailable or fails
       if (!analyzedByAI) {
         const claudeKey = Deno.env.get('CLAUDE_API_KEY')
-        if (claudeKey) {
+        if (!claudeEnabled) {
+          console.log(`[${barcode}] Claude: skipped — disabled by CLAUDE_ENABLED=false`)
+        } else if (!claudeKey) {
+          console.log(`[${barcode}] Claude: skipped — CLAUDE_API_KEY not set`)
+        } else {
+          console.log(`[${barcode}] Claude: calling ${CLAUDE_MODEL}...`)
+        }
+        if (claudeEnabled && claudeKey) {
           try {
             const claudeRes = await fetch(CLAUDE_URL, {
               method: 'POST',
@@ -482,12 +508,16 @@ Deno.serve(async (req) => {
                 ingredientWarnings    = p.ingredientWarnings ?? {}
                 explanation           = p.explanation ?? ''
                 analyzedByAI          = true
+                console.log(`[${barcode}] Claude: success`)
               } catch (e) {
-                console.error('[lookup-product] Claude JSON parse failed:', e)
+                console.error(`[${barcode}] Claude: JSON parse failed:`, e)
               }
+            } else {
+              const body = await claudeRes.text()
+              console.error(`[${barcode}] Claude: HTTP ${claudeRes.status} — ${body}`)
             }
           } catch (e) {
-            console.error('[lookup-product] Claude request failed:', e)
+            console.error(`[${barcode}] Claude: exception:`, e)
           }
         }
       }
@@ -498,7 +528,15 @@ Deno.serve(async (req) => {
     if (!analyzedByAI && ingredients.length === 0 && !isNonFood && !isHalalByCategory && haramCategory === null) {
       const imgUrl = resolveImg(pd, 'image_ingredients_url', 'ingredients')
       const claudeKey = Deno.env.get('CLAUDE_API_KEY')
-      if (imgUrl && claudeKey) {
+      if (!claudeEnabled) {
+        console.log(`[${barcode}] Claude vision: skipped — disabled by CLAUDE_ENABLED=false`)
+      } else if (!imgUrl) {
+        console.log(`[${barcode}] Claude vision: skipped — no ingredients image`)
+      } else if (!claudeKey) {
+        console.log(`[${barcode}] Claude vision: skipped — CLAUDE_API_KEY not set`)
+      }
+      if (claudeEnabled && imgUrl && claudeKey) {
+        console.log(`[${barcode}] Claude vision: calling...`)
         try {
           const visionRes = await fetch(CLAUDE_URL, {
             method: 'POST',
@@ -532,9 +570,13 @@ Deno.serve(async (req) => {
               ingredientWarnings    = p.ingredientWarnings ?? {}
               explanation           = p.explanation ?? ''
               analyzedByAI          = true
+              console.log(`[${barcode}] Claude vision: success`)
             } catch (e) {
-              console.error('[lookup-product] Vision Claude JSON parse failed:', e)
+              console.error(`[${barcode}] Claude vision: JSON parse failed:`, e)
             }
+          } else {
+            const body = await visionRes.text()
+            console.error(`[${barcode}] Claude vision: HTTP ${visionRes.status} — ${body}`)
           }
         } catch (e) {
           console.error('[lookup-product] Vision Claude request failed:', e)
