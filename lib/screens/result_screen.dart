@@ -120,13 +120,16 @@ class _ResultScreenState extends State<ResultScreen> {
       return;
     }
     setState(() => _isRequestingAnalysis = true);
-    final result = await _analysisService.requestDeepAnalysis(widget.barcode);
+    final result = await _analysisService.requestDeepAnalysis(
+      widget.barcode,
+      product: widget.product,
+    );
     if (!mounted) return;
     setState(() {
       _isRequestingAnalysis = false;
       if (result != null) _analysis = result;
     });
-    if (result != null) {
+    if (result != null && result.status != AnalysisStatus.pending) {
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -135,6 +138,15 @@ class _ResultScreenState extends State<ResultScreen> {
             barcode: widget.barcode,
             analysis: result,
           ),
+        ),
+      );
+    } else if (result != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Analysis queued — results will appear after admin review.',
+          ),
+          duration: Duration(seconds: 4),
         ),
       );
     } else {

@@ -6,6 +6,7 @@ import '../app_colors.dart';
 import '../localization/app_localizations.dart';
 import '../services/database_service.dart';
 import '../services/product_service.dart';
+import 'admin_panel_screen.dart';
 import 'result_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -238,6 +239,15 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
+  Widget _adminButton(BuildContext context) => IconButton(
+    icon: const Icon(Icons.admin_panel_settings_outlined),
+    tooltip: 'Admin panel',
+    onPressed: () => Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const AdminPanelScreen()),
+    ),
+  );
+
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context);
@@ -249,6 +259,7 @@ class _HomeScreenState extends State<HomeScreen> {
           title: Text(loc.appTitle),
           backgroundColor: kGreen,
           foregroundColor: Colors.white,
+          actions: [_adminButton(context)],
         ),
         body: Padding(
           padding: const EdgeInsets.all(20),
@@ -296,6 +307,7 @@ class _HomeScreenState extends State<HomeScreen> {
         title: Text(loc.appTitle),
         backgroundColor: kGreen,
         foregroundColor: Colors.white,
+        actions: [_adminButton(context)],
       ),
       body: Stack(
         children: [
