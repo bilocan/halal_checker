@@ -5,7 +5,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const CACHE_TTL_MS = 30 * 24 * 60 * 60 * 1000
 const OFF_BASE = 'https://world.openfoodfacts.org/api/v0/product'
 const OBF_BASE = 'https://world.openbeautyfacts.org/api/v0/product'
 const OPF_BASE = 'https://world.openproductsfacts.org/api/v0/product'
@@ -255,6 +254,7 @@ function toProduct(row: Record<string, any>) {
     explanation:           row.explanation,
     analyzedByAI:          row.analyzed_by_ai,
     analysisMethod:        row.analyzed_by_ai ? 'ai' : 'keyword',
+    requiresHalalCert:     row.requires_halal_cert ?? false,
   }
 }
 
@@ -288,13 +288,10 @@ Deno.serve(async (req) => {
       .maybeSingle()
 
     if (cached && !force) {
-      const age = Date.now() - new Date(cached.fetched_at).getTime()
-      if (age < CACHE_TTL_MS) {
-        return new Response(
-          JSON.stringify({ product: toProduct(cached) }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
-        )
-      }
+      return new Response(
+        JSON.stringify({ product: toProduct(cached) }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      )
     }
 
     // 2. Load custom approved keywords from DB
@@ -389,6 +386,55 @@ Deno.serve(async (req) => {
       'en:plant-care',
       'en:baby-care', 'en:diapers', 'en:baby-wipes', 'en:baby-lotions',
       'en:office-products', 'en:stationery',
+    ])
+    // OFf category tags that indicate animal/meat products requiring halal slaughter
+    // certification. If a product is in one of these categories but has no halal
+    // label, it is flagged as not halal regardless of ingredient analysis.
+    const ANIMAL_PRODUCT_CATEGORIES = new Set([
+      // English canonical
+      'en:meats', 'en:meat', 'en:fresh-meats', 'en:processed-meats',
+      'en:meat-products', 'en:meat-based-products', 'en:beef', 'en:beef-products',
+      'en:veal', 'en:lamb', 'en:mutton', 'en:lamb-and-mutton', 'en:sheep-meat',
+      'en:poultry', 'en:chicken', 'en:turkey', 'en:duck', 'en:goose',
+      'en:poultry-products', 'en:chicken-products', 'en:sausages', 'en:deli-meats',
+      'en:cold-cuts', 'en:charcuterie', 'en:burgers', 'en:meatballs',
+      // German
+      'de:fleisch', 'de:fleischwaren', 'de:fleischerzeugnisse', 'de:frisches-fleisch',
+      'de:rindfleisch', 'de:kalbfleisch', 'de:lammfleisch', 'de:hammelfleisch',
+      'de:geflügel', 'de:geflügelfleisch', 'de:hähnchenfleisch', 'de:putenfleisch',
+      'de:entenfleisch', 'de:hackfleisch', 'de:faschiertes', 'de:wurstwaren',
+      'de:wurst', 'de:aufschnitt', 'de:frikadellen', 'de:burger',
+      // Turkish
+      'tr:et', 'tr:et-urunleri', 'tr:et-ürünleri', 'tr:sigir-eti', 'tr:sığır-eti',
+      'tr:dana-eti', 'tr:kuzu-eti', 'tr:tavuk', 'tr:tavuk-eti', 'tr:hindi-eti',
+      'tr:kiyma', 'tr:kıyma', 'tr:sucuk', 'tr:sosis', 'tr:köfte', 'tr:kofte',
+    ])
+    // Label strings that indicate a recognised halal certification.
+    const HALAL_CERT_LABELS = new Set([
+      'halal', 'halal certified', 'halal certificate', 'certified halal',
+      'hfa halal', 'halal hfa', 'ifanca', 'isna halal', 'muis halal',
+      'muslim consumer group',
+    ])
+    const VEGAN_OR_VEGETARIAN_LABELS = new Set([
+      'vegan', 'vegetarian', 'vegan certified', 'vegetarian friendly',
+      'en:vegan', 'en:vegetarian',
+    ])
+    const VEGAN_OR_VEGETARIAN_NAME_TERMS = ['vegan', 'vegetarian']
+
+    // Terms used to detect animal/meat products from the product name alone.
+    const ANIMAL_PRODUCT_NAME_TERMS = new Set([
+      // German / Austrian
+      'fleisch', 'faschiertes', 'hackfleisch', 'geschnetzeltes', 'schnitzel',
+      'gulasch', 'braten', 'würstchen', 'geflügel', 'rindfleisch', 'kalbfleisch',
+      'lammfleisch', 'hähnchenfleisch', 'putenfleisch', 'frikadelle', 'frikadellen',
+      // English
+      'minced meat', 'ground beef', 'ground chicken', 'ground turkey',
+      'chicken breast', 'chicken thigh', 'beef steak', 'lamb chop',
+      // French
+      'viande', 'poulet haché', 'bœuf haché',
+      // Turkish
+      'kıyma', 'tavuk göğsü', 'kuzu eti', 'dana eti', 'sığır eti',
+      'tavuk but', 'tavuk kanat', 'köfte', 'sucuk', 'kavurma',
     ])
     if (!isNonFood && rawCategories.some(c => NON_FOOD_CATEGORIES.has(c.toLowerCase()))) isNonFood = true
     const haramCategory = isNonFood ? null : (rawCategories.find(c => HARAM_CATEGORIES.has(c.toLowerCase())) ?? null)
@@ -615,6 +661,20 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Calculate requiresHalalCert
+    const categoryIsAnimalProduct = rawCategories.some(c => ANIMAL_PRODUCT_CATEGORIES.has(c.toLowerCase()))
+    const nameIsAnimalProduct = [...ANIMAL_PRODUCT_NAME_TERMS].some(term => name.toLowerCase().includes(term))
+    const hasVeganOrVegetarianEvidence = labels.some(l => VEGAN_OR_VEGETARIAN_LABELS.has(l.toLowerCase())) || VEGAN_OR_VEGETARIAN_NAME_TERMS.some(term => name.toLowerCase().includes(term))
+    const isAnimalProduct = (categoryIsAnimalProduct || nameIsAnimalProduct) && !hasVeganOrVegetarianEvidence
+    const hasHalalCert = labels.some(l => HALAL_CERT_LABELS.has(l.toLowerCase()))
+    const requiresHalalCert = isAnimalProduct && !hasHalalCert && !isNonFood && !haramCategory && !isHalalByCategory && haramIngredients.length === 0
+
+    // Adjust isHalal for requiresHalalCert
+    if (requiresHalalCert) {
+      isHalal = false
+      isUnknown = false
+    }
+
     // 5. Upsert to DB
     const row = {
       barcode,
@@ -633,6 +693,7 @@ Deno.serve(async (req) => {
       image_nutrition_url:    resolveImg(pd, 'image_nutrition_url', 'nutrition'),
       explanation,
       analyzed_by_ai:         analyzedByAI,
+      requires_halal_cert:    requiresHalalCert,
       fetched_at:             new Date().toISOString(),
     }
 

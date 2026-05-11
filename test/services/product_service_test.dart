@@ -27,11 +27,15 @@ String _offJson({
     'labels': labels,
     'labels_tags': labelsTags,
   };
-  if (imageUrl != null) product['image_url'] = imageUrl;
-  if (ingredientsTextDe != null)
+  if (imageUrl != null) {
+    product['image_url'] = imageUrl;
+  }
+  if (ingredientsTextDe != null) {
     product['ingredients_text_de'] = ingredientsTextDe;
-  if (structuredIngredients != null)
+  }
+  if (structuredIngredients != null) {
     product['ingredients'] = structuredIngredients;
+  }
   return jsonEncode({'status': 1, 'product': product});
 }
 
@@ -39,11 +43,12 @@ final _notFoundJson = jsonEncode({'status': 0});
 
 // Mock that returns the given body for every GET and 500 for every POST
 // (so the Supabase backend path is skipped cleanly in tests).
-MockClient _mockGet(String body, {int status = 200}) => MockClient(
-  (req) async => req.method == 'POST'
-      ? http.Response('', 500)
-      : http.Response(body, status),
-);
+MockClient _mockGet(String body, {int status = 200}) => MockClient((req) async {
+  if (req.method == 'POST') {
+    return http.Response('', 500);
+  }
+  return http.Response(body, status);
+});
 
 MockClient _mockGetWithCallback(
   Future<http.Response> Function(http.Request) handler,
@@ -125,6 +130,43 @@ void main() {
       final p = await ProductService().getProduct('1000000004');
       expect(p!.haramIngredients, isEmpty);
     });
+
+    test(
+      'vegan product does not require halal certification when category tags imply meat',
+      () async {
+        ProductService().setHttpClientForTesting(
+          _mockGet(
+            _offJson(
+              name: 'Vegan Burger',
+              ingredients: '',
+              categoriesTags: ['en:meats'],
+              labelsTags: ['en:vegan'],
+            ),
+          ),
+        );
+
+        ProductService().setHttpClientForTesting(
+          _mockGetWithCallback((req) async {
+            if (req.url.host == 'world.openfoodfacts.org') {
+              return http.Response(
+                _offJson(
+                  name: 'Vegan Burger',
+                  ingredients: '',
+                  categoriesTags: ['en:meats'],
+                  labelsTags: ['en:vegan'],
+                ),
+                200,
+              );
+            }
+            return http.Response(_notFoundJson, 200);
+          }),
+        );
+
+        final p = await ProductService().getProduct('1000000050');
+        expect(p!.requiresHalalCert, isFalse);
+        expect(p.isUnknown, isTrue);
+      },
+    );
   });
 
   // ── haram products ────────────────────────────────────────────────────────
