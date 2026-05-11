@@ -138,6 +138,17 @@ class FoodCategories {
     'muslim consumer group',
   };
 
+  static const Set<String> veganOrVegetarianLabels = {
+    'vegan',
+    'vegetarian',
+    'vegan certified',
+    'vegetarian friendly',
+    'en:vegan',
+    'en:vegetarian',
+  };
+
+  static const Set<String> veganOrVegetarianNameTerms = {'vegan', 'vegetarian'};
+
   // Terms used to detect animal/meat products from the product name alone,
   // as a fallback when OFf category data is absent or marked unknown.
   // Only distinctive multi-character terms — avoids single ambiguous words.

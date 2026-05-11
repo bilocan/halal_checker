@@ -107,6 +107,15 @@ class ProductService {
     );
   }
 
+  static bool _nameIndicatesVeganOrVegetarian(String nameLower) {
+    return FoodCategories.veganOrVegetarianNameTerms.any(
+      (term) => RegExp(
+        '(?<![a-zA-ZÀ-ɏ])${RegExp.escape(term)}(?![a-zA-ZÀ-ɏ])',
+        caseSensitive: false,
+      ).hasMatch(nameLower),
+    );
+  }
+
   // Returns true only when the ingredient text doesn't already contain the
   // canonical keyword — i.e. a translation label would actually add information.
   static bool _needsTranslation(String ingredient, String canonical) {
@@ -776,8 +785,16 @@ class ProductService {
                 (c) => c.toString().toLowerCase().contains('unknown'),
               )) &&
           _nameIndicatesAnimalProduct(name.toLowerCase());
+      final bool hasVeganOrVegetarianEvidence =
+          labels.any(
+            (l) => FoodCategories.veganOrVegetarianLabels.contains(
+              l.toLowerCase(),
+            ),
+          ) ||
+          _nameIndicatesVeganOrVegetarian(name.toLowerCase());
       final bool isAnimalProduct =
-          categoryIsAnimalProduct || nameIsAnimalProduct;
+          (categoryIsAnimalProduct || nameIsAnimalProduct) &&
+          !hasVeganOrVegetarianEvidence;
       final bool hasHalalCert = labels.any(
         (l) =>
             FoodCategories.halalCertificationLabels.contains(l.toLowerCase()),
