@@ -292,6 +292,10 @@ Deno.serve(async (req) => {
         JSON.stringify({ product: toProduct(cached) }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       )
+      return new Response(
+        JSON.stringify({ product: toProduct(cached) }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      )
     }
 
     // 2. Load custom approved keywords from DB
@@ -686,6 +690,7 @@ Deno.serve(async (req) => {
       image_nutrition_url:    resolveImg(pd, 'image_nutrition_url', 'nutrition'),
       explanation,
       analyzed_by_ai:         analyzedByAI,
+      requires_halal_cert:    requiresHalalCert,
       requires_halal_cert:    requiresHalalCert,
       fetched_at:             new Date().toISOString(),
     }
