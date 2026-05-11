@@ -292,6 +292,10 @@ Deno.serve(async (req) => {
         JSON.stringify({ product: toProduct(cached) }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       )
+      return new Response(
+        JSON.stringify({ product: toProduct(cached) }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      )
     }
 
     // 2. Load custom approved keywords from DB
@@ -415,12 +419,6 @@ Deno.serve(async (req) => {
       'hfa halal', 'halal hfa', 'ifanca', 'isna halal', 'muis halal',
       'muslim consumer group',
     ])
-    const VEGAN_OR_VEGETARIAN_LABELS = new Set([
-      'vegan', 'vegetarian', 'vegan certified', 'vegetarian friendly',
-      'en:vegan', 'en:vegetarian',
-    ])
-    const VEGAN_OR_VEGETARIAN_NAME_TERMS = ['vegan', 'vegetarian']
-
     // Terms used to detect animal/meat products from the product name alone.
     const ANIMAL_PRODUCT_NAME_TERMS = new Set([
       // German / Austrian
@@ -664,8 +662,7 @@ Deno.serve(async (req) => {
     // Calculate requiresHalalCert
     const categoryIsAnimalProduct = rawCategories.some(c => ANIMAL_PRODUCT_CATEGORIES.has(c.toLowerCase()))
     const nameIsAnimalProduct = [...ANIMAL_PRODUCT_NAME_TERMS].some(term => name.toLowerCase().includes(term))
-    const hasVeganOrVegetarianEvidence = labels.some(l => VEGAN_OR_VEGETARIAN_LABELS.has(l.toLowerCase())) || VEGAN_OR_VEGETARIAN_NAME_TERMS.some(term => name.toLowerCase().includes(term))
-    const isAnimalProduct = (categoryIsAnimalProduct || nameIsAnimalProduct) && !hasVeganOrVegetarianEvidence
+    const isAnimalProduct = categoryIsAnimalProduct || nameIsAnimalProduct
     const hasHalalCert = labels.some(l => HALAL_CERT_LABELS.has(l.toLowerCase()))
     const requiresHalalCert = isAnimalProduct && !hasHalalCert && !isNonFood && !haramCategory && !isHalalByCategory && haramIngredients.length === 0
 
@@ -693,6 +690,7 @@ Deno.serve(async (req) => {
       image_nutrition_url:    resolveImg(pd, 'image_nutrition_url', 'nutrition'),
       explanation,
       analyzed_by_ai:         analyzedByAI,
+      requires_halal_cert:    requiresHalalCert,
       requires_halal_cert:    requiresHalalCert,
       fetched_at:             new Date().toISOString(),
     }
