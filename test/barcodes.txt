@@ -9,3 +9,4 @@
 5014379008630 haram # Budweiser
 4000539003004 haram # Chocolate Cognac
 90098369 halal # mineral water
+4004155015069 # test barcode

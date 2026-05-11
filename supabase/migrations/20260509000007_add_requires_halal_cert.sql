@@ -1,0 +1,1 @@
+ALTER TABLE products ADD COLUMN IF NOT EXISTS requires_halal_cert BOOLEAN NOT NULL DEFAULT false;
