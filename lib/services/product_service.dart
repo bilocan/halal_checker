@@ -307,9 +307,6 @@ class ProductService {
       final row = list.first as Map<String, dynamic>;
       final fetchedAt = DateTime.tryParse(row['fetched_at'] as String? ?? '');
       if (fetchedAt == null) return null;
-      if (DateTime.now().difference(fetchedAt) > const Duration(days: 30)) {
-        return null;
-      }
       return Product.fromJson({
         'barcode': row['barcode'],
         'name': row['name'],
@@ -330,6 +327,7 @@ class ProductService {
         'analysisMethod': (row['analyzed_by_ai'] as bool? ?? false)
             ? 'ai'
             : 'keyword',
+        'requiresHalalCert': row['requires_halal_cert'] ?? false,
       });
     } catch (_) {
       return null;
