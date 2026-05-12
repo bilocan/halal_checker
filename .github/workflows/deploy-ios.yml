@@ -4,13 +4,30 @@ on:
   push:
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number (e.g. 1.2.3) — used when testing without a tag'
+        required: true
+        type: string
+      skip_testflight:
+        description: 'Build only — skip TestFlight upload and Supabase version update'
+        required: false
+        type: boolean
+        default: false
 
 # ──────────────────────────────────────────────────────────────────────────────
+# Triggers:
+#   • Tag push (v*.*.*)  — full pipeline: build → TestFlight → review → release
+#   • workflow_dispatch   — manual run from Actions tab for testing without a tag
+#       version:          required, e.g. "1.2.3"
+#       skip_testflight:  optional, skip upload/review/release gates (build only)
+#
 # Gate structure (each environment requires a manual approval in GitHub Actions):
 #
-#  [tag push] → build-and-upload (auto)
-#                 └─ appstore/submit-review  → Gate 1: test on TestFlight, then submit for review
-#                       └─ appstore/release  → Gate 2: Apple approved — release to App Store
+#  [tag push / dispatch] → build-and-upload (auto)
+#                            └─ appstore/submit-review  → Gate 1: test on TestFlight, then submit
+#                                  └─ appstore/release  → Gate 2: Apple approved — release
 #
 # One-time setup required:
 #
@@ -88,9 +105,13 @@ jobs:
       - name: Extract version
         id: version
         run: |
-          TAG_NAME="${GITHUB_REF_NAME#v}"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG_NAME="${{ inputs.version }}"
+          else
+            TAG_NAME="${GITHUB_REF_NAME#v}"
+          fi
           if [ -z "$TAG_NAME" ]; then
-            echo "ERROR: GITHUB_REF_NAME is empty — workflow must be triggered by a version tag" >&2
+            echo "ERROR: version could not be determined — push a version tag or provide the version input" >&2
             exit 1
           fi
           echo "name=$TAG_NAME" >> "$GITHUB_OUTPUT"
@@ -136,6 +157,7 @@ jobs:
             --dart-define=GOOGLE_WEB_CLIENT_ID=${{ secrets.GOOGLE_WEB_CLIENT_ID }}
 
       - name: Upload to TestFlight
+        if: ${{ !(inputs.skip_testflight || false) }}
         env:
           APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
           APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
@@ -161,11 +183,12 @@ jobs:
           retention-days: 30
 
       - name: Update latest_version in Supabase
+        if: ${{ !(inputs.skip_testflight || false) }}
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
+          VERSION="${{ steps.version.outputs.name }}"
           curl -sS --fail-with-body -X PATCH \
             -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
             -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
@@ -180,6 +203,7 @@ jobs:
   # in App Store Connect (metadata and screenshots filled in).
   submit-review:
     needs: build-and-upload
+    if: ${{ !(inputs.skip_testflight || false) }}
     runs-on: ubuntu-latest
     environment: appstore/submit-review
     steps:
@@ -249,6 +273,7 @@ jobs:
   # in App Store Connect for this version).
   release:
     needs: [build-and-upload, submit-review]
+    if: ${{ !(inputs.skip_testflight || false) }}
     runs-on: ubuntu-latest
     environment: appstore/release
     steps:
