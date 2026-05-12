@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../app_colors.dart';
+import '../localization/app_localizations.dart';
 import '../models/product_analysis.dart';
 import '../services/analysis_service.dart';
+import 'rules_management_screen.dart';
 
 class AdminPanelScreen extends StatefulWidget {
   const AdminPanelScreen({super.key});
@@ -13,6 +15,7 @@ class AdminPanelScreen extends StatefulWidget {
 
 class _AdminPanelScreenState extends State<AdminPanelScreen> {
   final _service = AnalysisService();
+  int _tabIndex = 0;
 
   List<Map<String, dynamic>> _analyses = [];
   final Set<String> _selected = {};
@@ -118,13 +121,14 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Admin Panel'),
+        title: Text(loc.adminPanel),
         backgroundColor: kGreen,
         foregroundColor: Colors.white,
         actions: [
-          if (_selected.isNotEmpty)
+          if (_tabIndex == 0 && _selected.isNotEmpty)
             TextButton.icon(
               onPressed: _running ? null : () => _run(ids: _selected.toList()),
               icon: const Icon(Icons.play_arrow, color: Colors.white),
@@ -133,19 +137,98 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
                 style: const TextStyle(color: Colors.white),
               ),
             ),
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loading ? null : _load,
-          ),
+          if (_tabIndex == 0)
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              onPressed: _loading ? null : _load,
+            ),
         ],
       ),
       body: Column(
         children: [
-          _buildHeader(),
-          _buildFilterRow(),
-          Expanded(child: _buildList()),
+          _buildTabBar(loc),
+          Expanded(
+            child: _tabIndex == 0
+                ? _buildAnalysisBody()
+                : const RulesManagementScreen(),
+          ),
         ],
       ),
+    );
+  }
+
+  Widget _buildTabBar(AppLocalizations loc) {
+    return Container(
+      color: Colors.green.shade50,
+      child: Row(
+        children: [
+          Expanded(
+            child: _tabButton(
+              label: loc.analysisTab,
+              icon: Icons.analytics_outlined,
+              index: 0,
+            ),
+          ),
+          Expanded(
+            child: _tabButton(
+              label: loc.rulesEngineTab,
+              icon: Icons.rule_outlined,
+              index: 1,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _tabButton({
+    required String label,
+    required IconData icon,
+    required int index,
+  }) {
+    final selected = _tabIndex == index;
+    return InkWell(
+      onTap: () => setState(() => _tabIndex = index),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          border: Border(
+            bottom: BorderSide(
+              color: selected ? kGreen : Colors.transparent,
+              width: 3,
+            ),
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: 18,
+              color: selected ? kGreen : Colors.grey.shade500,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+                color: selected ? kGreen : Colors.grey.shade600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAnalysisBody() {
+    return Column(
+      children: [
+        _buildHeader(),
+        _buildFilterRow(),
+        Expanded(child: _buildList()),
+      ],
     );
   }
 
