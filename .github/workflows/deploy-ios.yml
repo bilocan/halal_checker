@@ -160,6 +160,20 @@ jobs:
           path: build/ios/ipa/*.ipa
           retention-days: 30
 
+      - name: Update latest_version in Supabase
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          curl -sS --fail-with-body -X PATCH \
+            -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
+            -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
+            -H "Content-Type: application/json" \
+            -d "{\"value\": \"$VERSION\"}" \
+            "$SUPABASE_URL/rest/v1/app_config?key=eq.latest_version"
+          echo "Set latest_version to $VERSION in Supabase."
+
   # ── Gate 1: Submit for App Store review ────────────────────────────────────
   # Test the build on TestFlight first, then approve this gate to submit for
   # App Store review. The app version must be in "Prepare for Submission" state
@@ -297,16 +311,3 @@ jobs:
             "https://api.appstoreconnect.apple.com/v1/appStoreVersionReleaseRequests"
           echo "Released version $VERSION to App Store."
 
-      - name: Update latest_version in Supabase
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          VERSION: ${{ needs.build-and-upload.outputs.version-name }}
-        run: |
-          curl -sS --fail-with-body -X PATCH \
-            -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
-            -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
-            -H "Content-Type: application/json" \
-            -d "{\"value\": \"$VERSION\"}" \
-            "$SUPABASE_URL/rest/v1/app_config?key=eq.latest_version"
-          echo "Set latest_version to $VERSION in Supabase."
