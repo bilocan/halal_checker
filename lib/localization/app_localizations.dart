@@ -197,6 +197,39 @@ class AppLocalizations {
       'signedIn': 'Signed in',
       'adminPanel': 'Admin panel',
       'noDiscussionsHint': 'Be the first to start one!',
+      'analysisTab': 'Analysis',
+      'rulesEngineTab': 'Rules Engine',
+      'customRulesTab': 'Custom',
+      'builtInRulesTab': 'Built-in',
+      'suggestionsTab': 'Suggestions',
+      'searchRules': 'Search rules...',
+      'noCustomRules': 'No custom rules yet',
+      'noMatchingRules': 'No matching rules found',
+      'noSuggestions': 'No pending suggestions',
+      'addRule': 'Add Rule',
+      'editRule': 'Edit Rule',
+      'delete': 'Delete',
+      'deleteRuleTitle': 'Delete Rule',
+      'deleteRuleConfirm': 'Remove "{keyword}" from the rules?',
+      'ruleCreated': 'Rule created successfully',
+      'ruleCreateFailed': 'Could not create rule. Please try again.',
+      'ruleUpdated': 'Rule updated successfully',
+      'ruleUpdateFailed': 'Could not update rule. Please try again.',
+      'ruleDeleted': 'Rule deleted',
+      'ruleDeleteFailed': 'Could not delete rule. Please try again.',
+      'createRule': 'Create Rule',
+      'updateRule': 'Update Rule',
+      'variantsLabel': 'Variants',
+      'variantsHint': 'e.g. schmalz, domuz yağı, saindoux',
+      'variantsHelperText':
+          'Comma-separated multilingual variants for matching',
+      'builtInBadge': 'built-in',
+      'approve': 'Approve',
+      'reject': 'Reject',
+      'suggestionApproved': 'Suggestion approved and added as a rule',
+      'suggestionApproveFailed': 'Could not approve suggestion.',
+      'suggestionRejected': 'Suggestion rejected',
+      'suggestionRejectFailed': 'Could not reject suggestion.',
     },
     'tr': {
       'appTitle': 'HalalScan',
@@ -379,6 +412,39 @@ class AppLocalizations {
       'signedIn': 'Giriş yapıldı',
       'adminPanel': 'Yönetici paneli',
       'noDiscussionsHint': 'İlk tartışmayı siz başlatın!',
+      'analysisTab': 'Analiz',
+      'rulesEngineTab': 'Kural Motoru',
+      'customRulesTab': 'Özel',
+      'builtInRulesTab': 'Yerleşik',
+      'suggestionsTab': 'Öneriler',
+      'searchRules': 'Kural ara...',
+      'noCustomRules': 'Henüz özel kural yok',
+      'noMatchingRules': 'Eşleşen kural bulunamadı',
+      'noSuggestions': 'Bekleyen öneri yok',
+      'addRule': 'Kural Ekle',
+      'editRule': 'Kuralı Düzenle',
+      'delete': 'Sil',
+      'deleteRuleTitle': 'Kuralı Sil',
+      'deleteRuleConfirm': '"{keyword}" kuralını silmek istiyor musunuz?',
+      'ruleCreated': 'Kural başarıyla oluşturuldu',
+      'ruleCreateFailed': 'Kural oluşturulamadı. Lütfen tekrar deneyin.',
+      'ruleUpdated': 'Kural başarıyla güncellendi',
+      'ruleUpdateFailed': 'Kural güncellenemedi. Lütfen tekrar deneyin.',
+      'ruleDeleted': 'Kural silindi',
+      'ruleDeleteFailed': 'Kural silinemedi. Lütfen tekrar deneyin.',
+      'createRule': 'Kural Oluştur',
+      'updateRule': 'Kuralı Güncelle',
+      'variantsLabel': 'Varyantlar',
+      'variantsHint': 'örn. schmalz, domuz yağı, saindoux',
+      'variantsHelperText':
+          'Eşleştirme için virgülle ayrılmış çok dilli varyantlar',
+      'builtInBadge': 'yerleşik',
+      'approve': 'Onayla',
+      'reject': 'Reddet',
+      'suggestionApproved': 'Öneri onaylandı ve kural olarak eklendi',
+      'suggestionApproveFailed': 'Öneri onaylanamadı.',
+      'suggestionRejected': 'Öneri reddedildi',
+      'suggestionRejectFailed': 'Öneri reddedilemedi.',
     },
     'de': {
       'appTitle': 'HalalScan',
@@ -567,6 +633,42 @@ class AppLocalizations {
       'signedIn': 'Angemeldet',
       'adminPanel': 'Admin-Panel',
       'noDiscussionsHint': 'Seien Sie der Erste!',
+      'analysisTab': 'Analyse',
+      'rulesEngineTab': 'Regelwerk',
+      'customRulesTab': 'Benutzerdefiniert',
+      'builtInRulesTab': 'Eingebaut',
+      'suggestionsTab': 'Vorschläge',
+      'searchRules': 'Regeln suchen...',
+      'noCustomRules': 'Noch keine benutzerdefinierten Regeln',
+      'noMatchingRules': 'Keine passenden Regeln gefunden',
+      'noSuggestions': 'Keine ausstehenden Vorschläge',
+      'addRule': 'Regel hinzufügen',
+      'editRule': 'Regel bearbeiten',
+      'delete': 'Löschen',
+      'deleteRuleTitle': 'Regel löschen',
+      'deleteRuleConfirm': '"{keyword}" aus den Regeln entfernen?',
+      'ruleCreated': 'Regel erfolgreich erstellt',
+      'ruleCreateFailed':
+          'Regel konnte nicht erstellt werden. Bitte erneut versuchen.',
+      'ruleUpdated': 'Regel erfolgreich aktualisiert',
+      'ruleUpdateFailed':
+          'Regel konnte nicht aktualisiert werden. Bitte erneut versuchen.',
+      'ruleDeleted': 'Regel gelöscht',
+      'ruleDeleteFailed':
+          'Regel konnte nicht gelöscht werden. Bitte erneut versuchen.',
+      'createRule': 'Regel erstellen',
+      'updateRule': 'Regel aktualisieren',
+      'variantsLabel': 'Varianten',
+      'variantsHint': 'z. B. Schmalz, domuz yağı, saindoux',
+      'variantsHelperText':
+          'Kommagetrennte mehrsprachige Varianten für den Abgleich',
+      'builtInBadge': 'eingebaut',
+      'approve': 'Genehmigen',
+      'reject': 'Ablehnen',
+      'suggestionApproved': 'Vorschlag genehmigt und als Regel hinzugefügt',
+      'suggestionApproveFailed': 'Vorschlag konnte nicht genehmigt werden.',
+      'suggestionRejected': 'Vorschlag abgelehnt',
+      'suggestionRejectFailed': 'Vorschlag konnte nicht abgelehnt werden.',
     },
   };
 
@@ -754,6 +856,39 @@ class AppLocalizations {
   String get noDiscussionsHint => _translate('noDiscussionsHint');
   String get flaggedOnly => _translate('flaggedOnly');
   String get allScans => _translate('allScans');
+  String get analysisTab => _translate('analysisTab');
+  String get rulesEngineTab => _translate('rulesEngineTab');
+  String get customRulesTab => _translate('customRulesTab');
+  String get builtInRulesTab => _translate('builtInRulesTab');
+  String get suggestionsTab => _translate('suggestionsTab');
+  String get searchRules => _translate('searchRules');
+  String get noCustomRules => _translate('noCustomRules');
+  String get noMatchingRules => _translate('noMatchingRules');
+  String get noSuggestions => _translate('noSuggestions');
+  String get addRule => _translate('addRule');
+  String get editRule => _translate('editRule');
+  String get delete => _translate('delete');
+  String get deleteRuleTitle => _translate('deleteRuleTitle');
+  String deleteRuleConfirm(String keyword) =>
+      _translate('deleteRuleConfirm').replaceAll('{keyword}', keyword);
+  String get ruleCreated => _translate('ruleCreated');
+  String get ruleCreateFailed => _translate('ruleCreateFailed');
+  String get ruleUpdated => _translate('ruleUpdated');
+  String get ruleUpdateFailed => _translate('ruleUpdateFailed');
+  String get ruleDeleted => _translate('ruleDeleted');
+  String get ruleDeleteFailed => _translate('ruleDeleteFailed');
+  String get createRule => _translate('createRule');
+  String get updateRule => _translate('updateRule');
+  String get variantsLabel => _translate('variantsLabel');
+  String get variantsHint => _translate('variantsHint');
+  String get variantsHelperText => _translate('variantsHelperText');
+  String get builtInBadge => _translate('builtInBadge');
+  String get approve => _translate('approve');
+  String get reject => _translate('reject');
+  String get suggestionApproved => _translate('suggestionApproved');
+  String get suggestionApproveFailed => _translate('suggestionApproveFailed');
+  String get suggestionRejected => _translate('suggestionRejected');
+  String get suggestionRejectFailed => _translate('suggestionRejectFailed');
 
   static AppLocalizations of(BuildContext context) {
     final localizations = Localizations.of<AppLocalizations>(
