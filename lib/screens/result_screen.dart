@@ -48,10 +48,16 @@ class _ResultScreenState extends State<ResultScreen> {
   @override
   void initState() {
     super.initState();
-    _loadFeedbacks();
-    _loadNote();
-    _loadAnalysis();
-    _loadDiscussions();
+    _loadAll();
+  }
+
+  Future<void> _loadAll() async {
+    await Future.wait([
+      _loadFeedbacks(),
+      _loadNote(),
+      _loadAnalysis(),
+      _loadDiscussions(),
+    ]);
   }
 
   @override
@@ -138,16 +144,14 @@ class _ResultScreenState extends State<ResultScreen> {
       );
     } else if (result != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Analysis queued — results will appear after admin review.',
-          ),
-          duration: Duration(seconds: 4),
+        SnackBar(
+          content: Text(AppLocalizations.of(context).analysisQueued),
+          duration: const Duration(seconds: 4),
         ),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Analysis failed — please try again.')),
+        SnackBar(content: Text(AppLocalizations.of(context).analysisFailed)),
       );
     }
   }
@@ -202,7 +206,7 @@ class _ResultScreenState extends State<ResultScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Deep Analysis',
+                      AppLocalizations.of(context).deepAnalysis,
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 15,
@@ -212,7 +216,7 @@ class _ResultScreenState extends State<ResultScreen> {
                     const SizedBox(height: 2),
                     Text(
                       analysis == null
-                          ? 'Per-ingredient AI analysis with Islamic basis'
+                          ? AppLocalizations.of(context).perIngredientAiAnalysis
                           : analysis.status.label,
                       style: const TextStyle(fontSize: 12, color: Colors.grey),
                     ),
@@ -237,7 +241,10 @@ class _ResultScreenState extends State<ResultScreen> {
                     ),
                   ),
                   onPressed: _requestAnalysis,
-                  child: const Text('Analyse', style: TextStyle(fontSize: 13)),
+                  child: Text(
+                    AppLocalizations.of(context).analyse,
+                    style: const TextStyle(fontSize: 13),
+                  ),
                 )
               else if (analysis.status == AnalysisStatus.aiAnalyzing)
                 const SizedBox(
@@ -286,7 +293,7 @@ class _ResultScreenState extends State<ResultScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Community Discussion',
+                      AppLocalizations.of(context).communityDiscussion,
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 15,
@@ -296,7 +303,7 @@ class _ResultScreenState extends State<ResultScreen> {
                     const SizedBox(height: 2),
                     Text(
                       count == 0
-                          ? 'No discussions yet — start one'
+                          ? AppLocalizations.of(context).noDiscussionsYet
                           : '$count discussion${count == 1 ? '' : 's'}',
                       style: const TextStyle(fontSize: 12, color: Colors.grey),
                     ),

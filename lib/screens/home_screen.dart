@@ -40,15 +40,6 @@ class _HomeScreenState extends State<HomeScreen> {
           BarcodeFormat.ean13,
           BarcodeFormat.upcA,
           BarcodeFormat.upcE,
-          BarcodeFormat.code128,
-          BarcodeFormat.code39,
-          BarcodeFormat.code93,
-          BarcodeFormat.itf14,
-          BarcodeFormat.codabar,
-          BarcodeFormat.dataMatrix,
-          BarcodeFormat.qrCode,
-          BarcodeFormat.pdf417,
-          BarcodeFormat.aztec,
         ],
         facing: CameraFacing.back,
         torchEnabled: false,
@@ -56,8 +47,8 @@ class _HomeScreenState extends State<HomeScreen> {
       _scannerInitialized = true;
       if (mounted) setState(() {});
     } catch (e, stackTrace) {
-      print('Scanner initialization failed: $e');
-      print('Stack trace: $stackTrace');
+      debugPrint('Scanner initialization failed: $e');
+      debugPrint('Stack trace: $stackTrace');
       // Scanner failed to initialize - app will work with manual entry only
       _scannerInitialized = false;
       if (mounted) setState(() {});
@@ -74,7 +65,7 @@ class _HomeScreenState extends State<HomeScreen> {
         onDetect: _onDetect,
       );
     } catch (e) {
-      print('Scanner widget failed: $e');
+      debugPrint('Scanner widget failed: $e');
       // If scanner widget fails, show fallback
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {

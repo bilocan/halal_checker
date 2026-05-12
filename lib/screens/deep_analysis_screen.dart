@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../app_colors.dart';
+import '../localization/app_localizations.dart';
 import '../models/product_analysis.dart';
 import '../services/auth_service.dart';
 import '../services/community_service.dart';
@@ -61,7 +62,7 @@ class _DeepAnalysisScreenState extends State<DeepAnalysisScreen> {
   void _showChallengeSheet(IngredientAnalysis ingredient) {
     if (AuthService.currentUser == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Sign in to submit a challenge.')),
+        SnackBar(content: Text(AppLocalizations.of(context).signInToChallenge)),
       );
       return;
     }
