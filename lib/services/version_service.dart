@@ -92,14 +92,26 @@ class VersionService {
   }
 
   static Future<void> performUpdate({String? storeUrl}) async {
-    final url =
-        storeUrl ??
-        (Platform.isAndroid
-            ? 'https://play.google.com/store/apps/details?id=$_bundleId'
-            : 'https://apps.apple.com/app/id$_bundleId');
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    var url = storeUrl;
+    if (url == null) {
+      url = await _fetchStoreUrlFromConfig();
     }
+    url ??= Platform.isAndroid
+        ? 'https://play.google.com/store/apps/details?id=$_bundleId'
+        : 'https://apps.apple.com/app/id$_bundleId';
+    await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+  }
+
+  static Future<String?> _fetchStoreUrlFromConfig() async {
+    try {
+      final key = Platform.isAndroid ? 'android_store_url' : 'ios_store_url';
+      final rows = await Supabase.instance.client
+          .from('app_config')
+          .select('value')
+          .eq('key', key)
+          .limit(1);
+      if (rows.isNotEmpty) return rows.first['value'] as String?;
+    } catch (_) {}
+    return null;
   }
 }
