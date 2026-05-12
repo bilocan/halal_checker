@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../app_colors.dart';
@@ -646,7 +647,7 @@ class _CommentTile extends StatelessWidget {
           CircleAvatar(
             radius: 16,
             backgroundImage: comment.createdByAvatarUrl != null
-                ? NetworkImage(comment.createdByAvatarUrl!)
+                ? CachedNetworkImageProvider(comment.createdByAvatarUrl!)
                 : null,
             backgroundColor: Colors.blue.shade100,
             child: comment.createdByAvatarUrl == null

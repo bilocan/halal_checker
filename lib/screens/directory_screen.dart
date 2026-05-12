@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -610,10 +611,12 @@ class _DirectoryScreenState extends State<DirectoryScreen>
       child: logoUrl != null
           ? ClipRRect(
               borderRadius: BorderRadius.circular(10),
-              child: Image.network(
-                logoUrl,
+              child: CachedNetworkImage(
+                imageUrl: logoUrl,
                 fit: BoxFit.contain,
-                errorBuilder: (context, error, stackTrace) =>
+                placeholder: (context, url) =>
+                    Icon(fallback, color: kGreen, size: 28),
+                errorWidget: (context, url, error) =>
                     Icon(fallback, color: kGreen, size: 28),
               ),
             )
