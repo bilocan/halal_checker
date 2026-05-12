@@ -45,7 +45,13 @@ Deno.serve(async (req) => {
         const imgRes = await fetch(image_url)
         if (imgRes.ok) {
           const imgBuf = await imgRes.arrayBuffer()
-          const base64 = btoa(String.fromCharCode(...new Uint8Array(imgBuf)))
+          const bytes = new Uint8Array(imgBuf)
+          let binary = ''
+          const chunkSize = 0x8000
+          for (let i = 0; i < bytes.length; i += chunkSize) {
+            binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize))
+          }
+          const base64 = btoa(binary)
           const mimeType = imgRes.headers.get('content-type') || 'image/jpeg'
 
           const geminiRes = await fetch(
