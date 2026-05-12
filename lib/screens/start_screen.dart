@@ -58,7 +58,7 @@ class _StartScreenState extends State<StartScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('A new version is available'),
+          content: Text(AppLocalizations.of(context).newVersionAvailable),
           action: SnackBarAction(
             label: 'Update',
             onPressed: () async {
@@ -164,7 +164,7 @@ class _StartScreenState extends State<StartScreen> {
         if (user == null) {
           return IconButton(
             icon: const Icon(Icons.person_outline),
-            tooltip: 'Sign in',
+            tooltip: AppLocalizations.of(context).signIn,
             onPressed: () => _signIn(context),
           );
         }
@@ -178,18 +178,20 @@ class _StartScreenState extends State<StartScreen> {
             PopupMenuItem(
               enabled: false,
               child: Text(
-                AuthService.displayName ?? user.email ?? 'Signed in',
+                AuthService.displayName ??
+                    user.email ??
+                    AppLocalizations.of(context).signedIn,
                 style: const TextStyle(fontWeight: FontWeight.w600),
               ),
             ),
             const PopupMenuDivider(),
-            const PopupMenuItem(
+            PopupMenuItem(
               value: 'signout',
               child: Row(
                 children: [
-                  Icon(Icons.logout, size: 18),
-                  SizedBox(width: 8),
-                  Text('Sign out'),
+                  const Icon(Icons.logout, size: 18),
+                  const SizedBox(width: 8),
+                  Text(AppLocalizations.of(context).signOut),
                 ],
               ),
             ),
@@ -210,21 +212,20 @@ class _StartScreenState extends State<StartScreen> {
 
   Future<void> _signIn(BuildContext context) async {
     final messenger = ScaffoldMessenger.of(context);
+    final loc = AppLocalizations.of(context);
     try {
       final success = await AuthService.signInWithGoogle();
       if (!success && mounted) {
         messenger.showSnackBar(
-          const SnackBar(
-            content: Text('Sign-in failed. Please try again.'),
-            duration: Duration(seconds: 3),
+          SnackBar(
+            content: Text(loc.signInFailed),
+            duration: const Duration(seconds: 3),
           ),
         );
       }
     } catch (e) {
       if (!mounted) return;
-      messenger.showSnackBar(
-        const SnackBar(content: Text('Sign-in failed. Please try again.')),
-      );
+      messenger.showSnackBar(SnackBar(content: Text(loc.signInFailed)));
     }
   }
 
@@ -268,7 +269,7 @@ class _StartScreenState extends State<StartScreen> {
           if (_isAdmin)
             IconButton(
               icon: const Icon(Icons.admin_panel_settings_outlined),
-              tooltip: 'Admin panel',
+              tooltip: localizations.adminPanel,
               onPressed: () => Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const AdminPanelScreen()),
@@ -386,9 +387,12 @@ class _StartScreenState extends State<StartScreen> {
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
                   icon: const Icon(Icons.store),
-                  label: const Text(
-                    'Halal Directory',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                  label: Text(
+                    localizations.halalDirectory,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 24),

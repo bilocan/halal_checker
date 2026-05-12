@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../app_colors.dart';
+import '../localization/app_localizations.dart';
 import '../models/community.dart';
 import '../services/auth_service.dart';
 import '../services/community_service.dart';
@@ -46,7 +47,7 @@ class _DiscussionScreenState extends State<DiscussionScreen> {
   void _startDiscussion() {
     if (AuthService.currentUser == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Sign in to start a discussion.')),
+        SnackBar(content: Text(AppLocalizations.of(context).signInToDiscuss)),
       );
       return;
     }
@@ -66,13 +67,13 @@ class _DiscussionScreenState extends State<DiscussionScreen> {
           title: Text(widget.productName, overflow: TextOverflow.ellipsis),
           backgroundColor: Colors.blue.shade700,
           foregroundColor: Colors.white,
-          bottom: const TabBar(
+          bottom: TabBar(
             labelColor: Colors.white,
             unselectedLabelColor: Colors.white70,
             indicatorColor: Colors.white,
             tabs: [
-              Tab(text: 'Discussions'),
-              Tab(text: 'Challenges'),
+              Tab(text: AppLocalizations.of(context).discussions),
+              Tab(text: AppLocalizations.of(context).challenges),
             ],
           ),
         ),
@@ -81,7 +82,7 @@ class _DiscussionScreenState extends State<DiscussionScreen> {
           backgroundColor: Colors.blue.shade700,
           foregroundColor: Colors.white,
           icon: const Icon(Icons.add),
-          label: const Text('New Discussion'),
+          label: Text(AppLocalizations.of(context).newDiscussion),
         ),
         body: _loading
             ? const Center(child: CircularProgressIndicator())
@@ -126,12 +127,12 @@ class _DiscussionsTab extends StatelessWidget {
             Icon(Icons.forum_outlined, size: 56, color: Colors.grey.shade300),
             const SizedBox(height: 12),
             Text(
-              'No discussions yet.',
+              AppLocalizations.of(context).noDiscussionsYet,
               style: TextStyle(color: Colors.grey.shade500),
             ),
             const SizedBox(height: 4),
             Text(
-              'Be the first to start one!',
+              AppLocalizations.of(context).noDiscussionsHint,
               style: TextStyle(color: Colors.grey.shade400, fontSize: 13),
             ),
           ],

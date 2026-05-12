@@ -175,6 +175,28 @@ class AppLocalizations {
       'checkLater': 'Check later',
       'flaggedOnly': 'Flagged only',
       'allScans': 'All scans',
+      'deepAnalysis': 'Deep Analysis',
+      'analyse': 'Analyse',
+      'perIngredientAiAnalysis':
+          'Per-ingredient AI analysis with Islamic basis',
+      'communityDiscussion': 'Community Discussion',
+      'noDiscussionsYet': 'No discussions yet — start one',
+      'analysisQueued':
+          'Analysis queued — results will appear after admin review.',
+      'analysisFailed': 'Analysis failed — please try again.',
+      'signInToDiscuss': 'Sign in to start a discussion.',
+      'signInToChallenge': 'Sign in to submit a challenge.',
+      'discussions': 'Discussions',
+      'challenges': 'Challenges',
+      'newDiscussion': 'New Discussion',
+      'halalDirectory': 'Halal Directory',
+      'signInFailed': 'Sign-in failed. Please try again.',
+      'newVersionAvailable': 'A new version is available',
+      'signIn': 'Sign in',
+      'signOut': 'Sign out',
+      'signedIn': 'Signed in',
+      'adminPanel': 'Admin panel',
+      'noDiscussionsHint': 'Be the first to start one!',
     },
     'tr': {
       'appTitle': 'HalalScan',
@@ -335,6 +357,28 @@ class AppLocalizations {
       'checkLater': 'Sonra kontrol et',
       'flaggedOnly': 'Yalnızca işaretliler',
       'allScans': 'Tüm taramalar',
+      'deepAnalysis': 'Detaylı Analiz',
+      'analyse': 'Analiz Et',
+      'perIngredientAiAnalysis':
+          'İslami temelli içerik bazlı yapay zeka analizi',
+      'communityDiscussion': 'Topluluk Tartışması',
+      'noDiscussionsYet': 'Henüz tartışma yok — ilk siz başlatın',
+      'analysisQueued':
+          'Analiz sıraya alındı — sonuçlar yönetici incelemesinden sonra görünecektir.',
+      'analysisFailed': 'Analiz başarısız oldu — lütfen tekrar deneyin.',
+      'signInToDiscuss': 'Tartışma başlatmak için giriş yapın.',
+      'signInToChallenge': 'İtiraz göndermek için giriş yapın.',
+      'discussions': 'Tartışmalar',
+      'challenges': 'İtirazlar',
+      'newDiscussion': 'Yeni Tartışma',
+      'halalDirectory': 'Helal Rehberi',
+      'signInFailed': 'Giriş başarısız oldu. Lütfen tekrar deneyin.',
+      'newVersionAvailable': 'Yeni bir sürüm mevcut',
+      'signIn': 'Giriş Yap',
+      'signOut': 'Çıkış Yap',
+      'signedIn': 'Giriş yapıldı',
+      'adminPanel': 'Yönetici paneli',
+      'noDiscussionsHint': 'İlk tartışmayı siz başlatın!',
     },
     'de': {
       'appTitle': 'HalalScan',
@@ -501,6 +545,28 @@ class AppLocalizations {
       'checkLater': 'Später prüfen',
       'flaggedOnly': 'Nur markierte',
       'allScans': 'Alle Scans',
+      'deepAnalysis': 'Detailanalyse',
+      'analyse': 'Analysieren',
+      'perIngredientAiAnalysis':
+          'KI-Analyse pro Zutat auf islamischer Grundlage',
+      'communityDiscussion': 'Community-Diskussion',
+      'noDiscussionsYet': 'Noch keine Diskussionen — starten Sie eine',
+      'analysisQueued':
+          'Analyse in Warteschlange — Ergebnisse erscheinen nach Admin-Prüfung.',
+      'analysisFailed': 'Analyse fehlgeschlagen — bitte erneut versuchen.',
+      'signInToDiscuss': 'Anmelden, um eine Diskussion zu starten.',
+      'signInToChallenge': 'Anmelden, um eine Anfechtung einzureichen.',
+      'discussions': 'Diskussionen',
+      'challenges': 'Anfechtungen',
+      'newDiscussion': 'Neue Diskussion',
+      'halalDirectory': 'Halal-Verzeichnis',
+      'signInFailed': 'Anmeldung fehlgeschlagen. Bitte erneut versuchen.',
+      'newVersionAvailable': 'Eine neue Version ist verfügbar',
+      'signIn': 'Anmelden',
+      'signOut': 'Abmelden',
+      'signedIn': 'Angemeldet',
+      'adminPanel': 'Admin-Panel',
+      'noDiscussionsHint': 'Seien Sie der Erste!',
     },
   };
 
@@ -666,6 +732,26 @@ class AppLocalizations {
   String get noteHint => _translate('noteHint');
   String get noteSaved => _translate('noteSaved');
   String get checkLater => _translate('checkLater');
+  String get deepAnalysis => _translate('deepAnalysis');
+  String get analyse => _translate('analyse');
+  String get perIngredientAiAnalysis => _translate('perIngredientAiAnalysis');
+  String get communityDiscussion => _translate('communityDiscussion');
+  String get noDiscussionsYet => _translate('noDiscussionsYet');
+  String get analysisQueued => _translate('analysisQueued');
+  String get analysisFailed => _translate('analysisFailed');
+  String get signInToDiscuss => _translate('signInToDiscuss');
+  String get signInToChallenge => _translate('signInToChallenge');
+  String get discussions => _translate('discussions');
+  String get challenges => _translate('challenges');
+  String get newDiscussion => _translate('newDiscussion');
+  String get halalDirectory => _translate('halalDirectory');
+  String get signInFailed => _translate('signInFailed');
+  String get newVersionAvailable => _translate('newVersionAvailable');
+  String get signIn => _translate('signIn');
+  String get signOut => _translate('signOut');
+  String get signedIn => _translate('signedIn');
+  String get adminPanel => _translate('adminPanel');
+  String get noDiscussionsHint => _translate('noDiscussionsHint');
   String get flaggedOnly => _translate('flaggedOnly');
   String get allScans => _translate('allScans');
 

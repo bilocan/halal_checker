@@ -34,7 +34,7 @@ class ProductService {
   final Map<String, String> _customSuspiciousKeywords = {};
   final Map<String, List<String>> _customHaramVariants = {};
   final Map<String, List<String>> _customSuspiciousVariants = {};
-  bool _customKeywordsLoaded = false;
+  Future<void>? _customKeywordsFuture;
 
   // Public aliases kept for callers that reference ProductService directly.
   static const haramKeywords = IngredientKeywords.haram;
@@ -43,9 +43,14 @@ class ProductService {
   static int get keywordRuleCount =>
       IngredientKeywords.haram.length + IngredientKeywords.suspicious.length;
 
+  HalalRulesEngine? _cachedCustomEngine;
+
   Future<void> _loadCustomKeywords() async {
-    if (_customKeywordsLoaded) return;
-    _customKeywordsLoaded = true;
+    _customKeywordsFuture ??= _doLoadCustomKeywords();
+    await _customKeywordsFuture;
+  }
+
+  Future<void> _doLoadCustomKeywords() async {
     final entries = await _keywordService.fetchCustomKeywords();
     for (final e in entries) {
       final canonical = e['canonical'] as String;
@@ -63,6 +68,14 @@ class ProductService {
         _customSuspiciousVariants[canonical] = variants;
       }
     }
+    _cachedCustomEngine = HalalRulesEngine(
+      rules: HalalKeywordRuleSet(
+        haram: _customHaramKeywords,
+        suspicious: _customSuspiciousKeywords,
+        haramVariants: _customHaramVariants,
+        suspiciousVariants: _customSuspiciousVariants,
+      ),
+    );
   }
 
   static String canonicalDisplay(String canonical, String locale) =>
@@ -126,14 +139,8 @@ class ProductService {
     Map<String, String> translations,
   })
   _customKeywordAnalysis(List<String> ingredients) {
-    final result = HalalRulesEngine(
-      rules: HalalKeywordRuleSet(
-        haram: _customHaramKeywords,
-        suspicious: _customSuspiciousKeywords,
-        haramVariants: _customHaramVariants,
-        suspiciousVariants: _customSuspiciousVariants,
-      ),
-    ).analyzeIngredients(ingredients);
+    final engine = _cachedCustomEngine ?? const HalalRulesEngine();
+    final result = engine.analyzeIngredients(ingredients);
 
     return (
       isHalal: result.isHalal,
