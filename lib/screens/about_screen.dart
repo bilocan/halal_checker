@@ -72,9 +72,7 @@ class _AboutScreenState extends State<AboutScreen> {
   String _storeVersionLabel(AppLocalizations loc, bool updateAvailable) {
     final info = _storeInfo!;
     if (info.status == UpdateStatus.checkFailed) return '—';
-    // iOS: we have the real version string from iTunes
     if (info.storeVersion != null) return 'v${info.storeVersion}';
-    // Android: in_app_update gives no version string, only availability
     return updateAvailable ? loc.updateAvailable : 'v$_version';
   }
 
