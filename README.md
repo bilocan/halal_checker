@@ -8,7 +8,7 @@ Point the camera at any food product barcode (or enter it manually). The app fet
 
 - A clear **Halal / Not Halal** verdict with a colour-coded result screen
 - A per-ingredient breakdown showing exactly which ingredients were flagged and why
-- A full transparency panel listing every keyword that was checked
+- A transparency panel showing what was checked, what matched, and a link to the full keyword/rule catalog
 - **Deep Analysis** — on-demand per-ingredient AI analysis with Islamic scholarly basis, confidence levels, and alternative names
 - **Community discussions** — threaded conversations about a product's ingredients with upvoting
 - **Ingredient challenges** — formally dispute the verdict on a specific ingredient and track resolution
@@ -21,7 +21,7 @@ Supported languages: **English**, **Turkish**, **German**
 
 ## How halal status is determined
 
-The analysis runs through three layers in order. The result of the highest-confidence layer wins, but the keyword safety override always has the final say.
+The analysis runs through several layers in order. The result of the highest-confidence layer wins, but the deterministic rules engine always has the final say for safety-critical ingredient matches.
 
 ### Layer 1 — AI analysis (Claude)
 
@@ -33,20 +33,20 @@ isHalal | haramIngredients[] | suspiciousIngredients[] | ingredientWarnings{} | 
 
 This runs server-side — the API key never touches the app.
 
-### Layer 2 — Keyword matching (fallback)
+### Layer 2 — Rules engine / keyword matching (fallback)
 
-If the Edge Function is unavailable or Claude fails, the app falls back to deterministic keyword matching against two built-in lists:
+If the Edge Function is unavailable or Claude fails, the app falls back to `HalalRulesEngine`, a deterministic rules engine in `lib/services/halal_rules_engine.dart`. It checks ingredient text against two built-in rule lists in `lib/constants/ingredient_keywords.dart`:
 
-**Haram keywords** (19 entries) — these make a product not halal:
+**Haram keywords** make a product not halal:
 
 | Category | Keywords |
 |---|---|
-| Alcohol | alcohol, ethanol, wine, beer |
+| Alcohol | alcohol, ethanol, wine, beer, spirits, liqueurs |
 | Pork | pork, lard, bacon, ham, pepperoni, salami, chorizo, prosciutto |
 | Animal-derived | gelatin, carmine, cochineal |
 | E-numbers | E120, E441, E542, E904 |
 
-**Suspicious keywords** (13 entries) — these require source verification:
+**Suspicious keywords** require source verification:
 
 | Keyword | Reason |
 |---|---|
@@ -54,12 +54,12 @@ If the Edge Function is unavailable or Claude fails, the app falls back to deter
 | rennet | May be animal-derived |
 | E471, E472, E473 | Mono/diglycerides; may be animal fat |
 | E322 | Lecithin; may be animal-derived |
-| E920, L-cysteine | May be derived from feathers or hair |
+| E920, L-cysteine | May be animal-derived |
 | natural flavour, flavouring | Source unspecified |
 | enzymes | May be extracted from animal sources |
 | glycerol | May be animal-derived |
 
-Each keyword is matched across **7 languages** (EN, DE, TR, FR, IT, ES, NL) using word-boundary regex to avoid false positives (e.g. `porcelain` does not match `pork`).
+Each canonical keyword has variants in `IngredientKeywords.haramVariants` or `IngredientKeywords.suspiciousVariants`. Variants cover multiple languages used by the app and product databases, and matching uses word-boundary regex to avoid false positives (for example, `porcelain` does not match `pork`).
 
 **Special cases:**
 - **Fatty alcohols** — cetyl alcohol, stearyl alcohol, behenyl alcohol, and similar food emulsifiers are explicitly excluded from the alcohol haram check
@@ -72,6 +72,135 @@ After AI analysis completes, keyword matching always runs a second time as a saf
 ### Custom keywords
 
 Approved community keyword suggestions (stored in Supabase) are applied on top of the built-in lists, following the same matching logic.
+
+---
+
+## Managing the Rules Engine
+
+The rules engine is deliberately simple and auditable. Most changes should be made either as approved custom keywords in Supabase or as built-in keyword changes in code.
+
+### Where rules live
+
+| Purpose | File / place |
+|---|---|
+| Built-in haram and suspicious keyword reasons | `lib/constants/ingredient_keywords.dart` |
+| Multilingual variants and E-number variants | `lib/constants/ingredient_keywords.dart` |
+| Alcohol exceptions such as fatty alcohols and alcohol-free labels | `lib/constants/ingredient_keywords.dart` and `lib/services/halal_rules_engine.dart` |
+| Localized display names in the result UI | `lib/constants/ingredient_display_names.dart` |
+| Engine logic and structured result model | `lib/services/halal_rules_engine.dart` |
+| Product lookup integration and custom keyword merge | `lib/services/product_service.dart` |
+| User-visible keyword catalog and suggestion flow | `lib/screens/keywords_screen.dart` |
+| Approved remote rules | Supabase `keywords` table |
+| Pending user suggestions | Supabase `keyword_suggestions` table |
+
+### Built-in rule vs custom keyword
+
+Use a **custom keyword** when:
+
+- you want to add a keyword without shipping a new app version;
+- it is a narrow addition with clear wording and reason;
+- the same matching logic is enough;
+- it came from community feedback and still needs operational moderation.
+
+Change the **built-in rules** when:
+
+- the rule is safety-critical and should work offline;
+- a false positive or false negative is caused by matching logic;
+- the keyword needs multilingual variants;
+- the exception needs code support, such as a new alcohol-related exception;
+- the app UI needs localized display names for the keyword.
+
+### Adding a built-in haram or suspicious keyword
+
+1. Edit `lib/constants/ingredient_keywords.dart`.
+2. Add the canonical keyword to exactly one map: `IngredientKeywords.haram` or `IngredientKeywords.suspicious`.
+3. Add the same canonical key to the matching variants map: `IngredientKeywords.haramVariants` or `IngredientKeywords.suspiciousVariants`.
+4. Include common spellings, E-number formats, and language variants. For E-numbers, include both forms, for example `e471` and `e-471`.
+5. If the ingredient appears in the UI and a localized label helps, add it to `lib/constants/ingredient_display_names.dart`.
+6. Add or update tests in `test/constants/ingredient_keywords_test.dart`, `test/services/keyword_analysis_test.dart`, and, when verdict behavior changes, `test/services/product_service_test.dart`.
+7. Run the focused checks:
+
+```bash
+dart analyze lib/services/halal_rules_engine.dart lib/services/product_service.dart lib/constants/ingredient_keywords.dart
+flutter test test/constants/ingredient_keywords_test.dart test/services/halal_rules_engine_test.dart test/services/keyword_analysis_test.dart test/services/product_service_test.dart
+```
+
+### Adding a custom keyword in Supabase
+
+Custom keywords are read by `KeywordService.fetchCustomKeywords()` from the `keywords` table and merged into `ProductService` before product analysis.
+
+The table shape is:
+
+```sql
+canonical text not null unique,
+category text not null check (category in ('haram', 'suspicious')),
+reason text not null,
+variants text[] not null default '{}'
+```
+
+Example:
+
+```sql
+insert into keywords (canonical, category, reason, variants)
+values (
+  'example additive',
+  'suspicious',
+  'Source may be animal-derived and requires verification',
+  array['example additive', 'e-999', 'e999']
+);
+```
+
+User suggestions flow into `keyword_suggestions`. When a suggestion is approved, the migration trigger copies it into `keywords`. The app’s keyword screen lets users submit suggestions, but approval should stay a moderated/admin action.
+
+### Fixing false positives
+
+False positives usually mean the matching rule is too broad.
+
+- Add a failing test first in `test/services/keyword_analysis_test.dart`.
+- Prefer adding a specific exception rather than weakening the whole keyword.
+- For single-word keywords, preserve word-boundary matching.
+- For alcohol-related false positives, check `IngredientKeywords.alcoholFamily` and `fattyAlcoholPrefix`.
+- For phrases, be careful: phrase variants currently use substring matching, so overly generic phrases can match too much.
+
+Examples already handled:
+
+- `cetyl alcohol` is treated as fatty alcohol, not drinking alcohol.
+- `alcohol-free` and `alcohol free` are not flagged as haram alcohol.
+- `porcelain` does not match `pork`.
+
+### Fixing false negatives
+
+False negatives usually mean the canonical keyword is missing a variant or the product database uses a normalized ingredient ID we do not cover yet.
+
+- Add the ingredient text that failed to a test.
+- Add the missing variant to the relevant variants map.
+- Include normalized forms from Open Food Facts IDs, where useful. The app already analyzes structured ingredient IDs after replacing language prefixes and hyphens.
+- If the term can be haram in one context and harmless in another, consider classifying it as `suspicious` rather than `haram`.
+
+### What the engine returns
+
+`HalalRulesEngine.analyzeIngredients()` returns a `HalalRulesResult`:
+
+| Field | Meaning |
+|---|---|
+| `verdict` | `halal` or `haram` for deterministic keyword analysis |
+| `checkedValues` | Ingredient strings that were checked |
+| `checkedRuleCount` | Number of active built-in/custom keyword rules in that engine |
+| `matches` | Structured matches with value, canonical keyword, reason, verdict, and category |
+| `warnings` | Map used by the result UI for per-ingredient explanations |
+| `translations` | Canonical keyword hints used for localized ingredient labels |
+| `explanation` | Plain-language summary shown to users |
+
+In the result screen, users see a compact transparency summary for the current product and can open **Keywords** to inspect the full rule catalog.
+
+### Release checklist for rule changes
+
+- Rule reason text is clear and user-facing.
+- Haram vs suspicious classification is conservative and defensible.
+- Variants include common spellings and E-number formats.
+- Tests cover both the match and at least one non-match.
+- `flutter test` passes.
+- If the change affects legal/religious interpretation, mark it suspicious or route it through Deep Analysis/community review rather than making a hard haram rule too quickly.
 
 ---
 
@@ -153,6 +282,7 @@ Flutter App
 
 Services
 ├── ProductService          Orchestrates the full lookup pipeline
+├── HalalRulesEngine        Deterministic rule matching + transparent result model
 ├── AnalysisService         Request / fetch deep analysis; admin batch trigger
 ├── CommunityService        Challenges, discussions, comments, votes (Supabase direct)
 ├── CacheService            30-day local cache (SharedPreferences)
@@ -253,7 +383,7 @@ flutter build apk --release --split-per-abi --dart-define-from-file=dart_defines
 flutter test test/services/
 ```
 
-Tests cover the keyword matching engine and halal verdict logic. CI runs them automatically on every push and pull request via GitHub Actions.
+Tests cover the rules engine, keyword matching, product verdict logic, caching, community services, and UI smoke paths. CI runs them automatically on every push and pull request via GitHub Actions.
 
 ### Test fixtures
 

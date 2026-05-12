@@ -3,10 +3,10 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../config.dart';
 import '../constants/food_categories.dart';
-import '../constants/ingredient_display_names.dart';
 import '../constants/ingredient_keywords.dart';
 import '../models/product.dart';
 import 'cache_service.dart';
+import 'halal_rules_engine.dart';
 import 'keyword_service.dart';
 import 'test_product_repository.dart';
 
@@ -39,6 +39,9 @@ class ProductService {
   // Public aliases kept for callers that reference ProductService directly.
   static const haramKeywords = IngredientKeywords.haram;
   static const suspiciousKeywords = IngredientKeywords.suspicious;
+  static const HalalRulesEngine _rulesEngine = HalalRulesEngine();
+  static int get keywordRuleCount =>
+      IngredientKeywords.haram.length + IngredientKeywords.suspicious.length;
 
   Future<void> _loadCustomKeywords() async {
     if (_customKeywordsLoaded) return;
@@ -63,37 +66,13 @@ class ProductService {
   }
 
   static String canonicalDisplay(String canonical, String locale) =>
-      IngredientDisplayNames.of(canonical, locale);
+      HalalRulesEngine.canonicalDisplay(canonical, locale);
 
   static bool isFattyAlcohol(String ingredient) =>
-      IngredientKeywords.fattyAlcoholPrefix.hasMatch(ingredient);
-
-  static bool _matchesVariant(String ingredient, String variant) {
-    if (variant.contains(' ')) {
-      return ingredient.toLowerCase().contains(variant.toLowerCase());
-    }
-    final escaped = RegExp.escape(variant);
-    if (IngredientKeywords.alcoholFamily.contains(variant.toLowerCase())) {
-      if (IngredientKeywords.fattyAlcoholPrefix.hasMatch(ingredient)) {
-        return false;
-      }
-      return RegExp(
-        '${IngredientKeywords.wPre}$escaped${IngredientKeywords.wPost}(?![-\\s]*free)',
-        caseSensitive: false,
-      ).hasMatch(ingredient);
-    }
-    return RegExp(
-      '${IngredientKeywords.wPre}$escaped${IngredientKeywords.wPost}',
-      caseSensitive: false,
-    ).hasMatch(ingredient);
-  }
+      HalalRulesEngine.isFattyAlcohol(ingredient);
 
   static bool matchesKeyword(String ingredient, String keyword) {
-    final variants =
-        IngredientKeywords.haramVariants[keyword] ??
-        IngredientKeywords.suspiciousVariants[keyword] ??
-        [keyword];
-    return variants.any((v) => _matchesVariant(ingredient, v));
+    return _rulesEngine.matchesKeyword(ingredient, keyword);
   }
 
   // Returns true when the product name suggests it is a meat/animal product,
@@ -118,11 +97,6 @@ class ProductService {
 
   // Returns true only when the ingredient text doesn't already contain the
   // canonical keyword — i.e. a translation label would actually add information.
-  static bool _needsTranslation(String ingredient, String canonical) {
-    String norm(String s) => s.toLowerCase().replaceAll(RegExp(r'[-\s]'), '');
-    return !norm(ingredient).contains(norm(canonical));
-  }
-
   static ({
     bool isHalal,
     List<String> haram,
@@ -132,67 +106,15 @@ class ProductService {
     String explanation,
   })
   analyzeWithKeywords(List<String> ingredients) {
-    final Map<String, String> warnings = {};
-    final Map<String, String> translations = {};
-    final List<String> haram = [];
-    final List<String> suspicious = [];
-
-    for (final ingredient in ingredients) {
-      final lower = ingredient.toLowerCase();
-
-      bool foundHaram = false;
-      for (final entry in IngredientKeywords.haram.entries) {
-        if (matchesKeyword(lower, entry.key)) {
-          warnings[ingredient] = entry.value;
-          if (_needsTranslation(ingredient, entry.key)) {
-            translations[ingredient] = entry.key;
-          }
-          haram.add(ingredient);
-          foundHaram = true;
-          break;
-        }
-      }
-      if (foundHaram) continue;
-
-      for (final entry in IngredientKeywords.suspicious.entries) {
-        if (matchesKeyword(lower, entry.key)) {
-          warnings[ingredient] = entry.value;
-          if (_needsTranslation(ingredient, entry.key)) {
-            translations[ingredient] = entry.key;
-          }
-          suspicious.add(ingredient);
-          break;
-        }
-      }
-    }
-
-    String explanation;
-    if (haram.isNotEmpty) {
-      explanation =
-          'This product contains ingredient(s) that are not permissible: '
-          '${haram.join(', ')}. '
-          'Assessed by keyword matching against known haram ingredients.';
-    } else if (suspicious.isNotEmpty) {
-      explanation =
-          'No definitively haram ingredients were found, but the following '
-          'may be animal-derived and require verification: '
-          '${suspicious.join(', ')}. '
-          'Assessed by keyword matching.';
-    } else if (ingredients.isEmpty) {
-      explanation = 'No ingredient data available to analyze.';
-    } else {
-      explanation =
-          'No haram or suspicious ingredients were detected in the ingredient '
-          'list. Assessed by keyword matching against known haram ingredients.';
-    }
+    final result = _rulesEngine.analyzeIngredients(ingredients);
 
     return (
-      isHalal: haram.isEmpty,
-      haram: haram,
-      suspicious: suspicious,
-      warnings: warnings,
-      translations: translations,
-      explanation: explanation,
+      isHalal: result.isHalal,
+      haram: result.haram,
+      suspicious: result.suspicious,
+      warnings: result.warnings,
+      translations: result.translations,
+      explanation: result.explanation,
     );
   }
 
@@ -204,45 +126,21 @@ class ProductService {
     Map<String, String> translations,
   })
   _customKeywordAnalysis(List<String> ingredients) {
-    final Map<String, String> warnings = {};
-    final Map<String, String> translations = {};
-    final List<String> haram = [];
-    final List<String> suspicious = [];
-
-    for (final ingredient in ingredients) {
-      bool foundHaram = false;
-      for (final entry in _customHaramKeywords.entries) {
-        final variants = _customHaramVariants[entry.key] ?? [entry.key];
-        if (variants.any((v) => _matchesVariant(ingredient, v))) {
-          warnings[ingredient] = entry.value;
-          if (_needsTranslation(ingredient, entry.key)) {
-            translations[ingredient] = entry.key;
-          }
-          haram.add(ingredient);
-          foundHaram = true;
-          break;
-        }
-      }
-      if (foundHaram) continue;
-      for (final entry in _customSuspiciousKeywords.entries) {
-        final variants = _customSuspiciousVariants[entry.key] ?? [entry.key];
-        if (variants.any((v) => _matchesVariant(ingredient, v))) {
-          warnings[ingredient] = entry.value;
-          if (_needsTranslation(ingredient, entry.key)) {
-            translations[ingredient] = entry.key;
-          }
-          suspicious.add(ingredient);
-          break;
-        }
-      }
-    }
+    final result = HalalRulesEngine(
+      rules: HalalKeywordRuleSet(
+        haram: _customHaramKeywords,
+        suspicious: _customSuspiciousKeywords,
+        haramVariants: _customHaramVariants,
+        suspiciousVariants: _customSuspiciousVariants,
+      ),
+    ).analyzeIngredients(ingredients);
 
     return (
-      isHalal: haram.isEmpty,
-      haram: haram,
-      suspicious: suspicious,
-      warnings: warnings,
-      translations: translations,
+      isHalal: result.isHalal,
+      haram: result.haram,
+      suspicious: result.suspicious,
+      warnings: result.warnings,
+      translations: result.translations,
     );
   }
 

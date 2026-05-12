@@ -134,7 +134,8 @@ class _KeywordsScreenState extends State<KeywordsScreen> {
                             try {
                               final success =
                                   await AuthService.signInWithGoogle();
-                              if (!success && mounted) {
+                              if (!context.mounted) return;
+                              if (!success) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
                                     content: Text(

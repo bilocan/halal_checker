@@ -85,6 +85,16 @@ class AppLocalizations {
       'aiAnalysis': 'AI Analysis',
       'keywordAnalysis': 'Keyword Analysis',
       'analysisTransparency': 'Analysis Transparency',
+      'transparentSummary': 'Decision summary',
+      'transparentResult': 'Result',
+      'transparentIngredientsChecked': 'Ingredients checked',
+      'transparentRulesChecked': 'Rules checked',
+      'transparentFlagged': 'Flagged',
+      'transparentSuspicious': 'Needs verification',
+      'transparentNoMatches': 'No rule matches found',
+      'transparentNoIngredients': 'No ingredient text was available to check',
+      'transparentExplanation': 'Explanation',
+      'viewAllCheckedKeywords': 'View all checked keywords',
       'haramKeywordsChecked': 'Haram Ingredients We Check',
       'suspiciousKeywordsChecked': 'Suspicious Ingredients We Check',
       'transparencyNote':
@@ -577,6 +587,17 @@ class AppLocalizations {
   String get aiAnalysis => _translate('aiAnalysis');
   String get keywordAnalysis => _translate('keywordAnalysis');
   String get analysisTransparency => _translate('analysisTransparency');
+  String get transparentSummary => _translate('transparentSummary');
+  String get transparentResult => _translate('transparentResult');
+  String get transparentIngredientsChecked =>
+      _translate('transparentIngredientsChecked');
+  String get transparentRulesChecked => _translate('transparentRulesChecked');
+  String get transparentFlagged => _translate('transparentFlagged');
+  String get transparentSuspicious => _translate('transparentSuspicious');
+  String get transparentNoMatches => _translate('transparentNoMatches');
+  String get transparentNoIngredients => _translate('transparentNoIngredients');
+  String get transparentExplanation => _translate('transparentExplanation');
+  String get viewAllCheckedKeywords => _translate('viewAllCheckedKeywords');
   String get haramKeywordsChecked => _translate('haramKeywordsChecked');
   String get suspiciousKeywordsChecked =>
       _translate('suspiciousKeywordsChecked');

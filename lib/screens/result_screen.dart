@@ -16,6 +16,7 @@ import '../services/issue_report_service.dart';
 import '../services/product_service.dart';
 import 'deep_analysis_screen.dart';
 import 'discussion_screen.dart';
+import 'keywords_screen.dart';
 
 class ResultScreen extends StatefulWidget {
   final Product? product;
@@ -44,15 +45,10 @@ class _ResultScreenState extends State<ResultScreen> {
   bool _isRequestingAnalysis = false;
   List<Discussion> _discussions = [];
 
-  // Pre-computed once in initState to avoid regex work during build.
-  Set<String> _foundInText = {};
-  Set<String> _flaggedByAnalysis = {};
-
   @override
   void initState() {
     super.initState();
     _loadFeedbacks();
-    _computeTransparency();
     _loadNote();
     _loadAnalysis();
     _loadDiscussions();
@@ -432,39 +428,6 @@ class _ResultScreenState extends State<ResultScreen> {
         ],
       ),
     );
-  }
-
-  void _computeTransparency() {
-    final product = widget.product;
-    if (product == null) return;
-
-    final foundInText = <String>{};
-    final flaggedByAnalysis = <String>{};
-
-    for (final ingredient in product.ingredients) {
-      final lower = ingredient.toLowerCase();
-      for (final kw in ProductService.haramKeywords.keys) {
-        if (ProductService.matchesKeyword(lower, kw)) foundInText.add(kw);
-      }
-      for (final kw in ProductService.suspiciousKeywords.keys) {
-        if (ProductService.matchesKeyword(lower, kw)) foundInText.add(kw);
-      }
-    }
-    for (final flagged in [
-      ...product.haramIngredients,
-      ...product.suspiciousIngredients,
-    ]) {
-      final lower = flagged.toLowerCase();
-      for (final kw in ProductService.haramKeywords.keys) {
-        if (ProductService.matchesKeyword(lower, kw)) flaggedByAnalysis.add(kw);
-      }
-      for (final kw in ProductService.suspiciousKeywords.keys) {
-        if (ProductService.matchesKeyword(lower, kw)) flaggedByAnalysis.add(kw);
-      }
-    }
-
-    _foundInText = foundInText;
-    _flaggedByAnalysis = flaggedByAnalysis;
   }
 
   Future<void> _loadFeedbacks() async {
@@ -1163,52 +1126,71 @@ class _ResultScreenState extends State<ResultScreen> {
   }
 
   Widget _buildTransparencySection(Product product, AppLocalizations loc) {
-    // 3 states: flagged (red/orange) | found but cleared (amber) | not found (grey)
-    // _foundInText and _flaggedByAnalysis are pre-computed in initState.
-    Widget keywordChip(
-      String kw,
-      String reason,
-      Color flaggedColor,
-      IconData flaggedIcon,
-    ) {
-      final isFlagged = _flaggedByAnalysis.contains(kw);
-      final isFoundOnly = !isFlagged && _foundInText.contains(kw);
-
-      final Color bg = isFlagged
-          ? flaggedColor
-          : isFoundOnly
-          ? Colors.amber.shade600
-          : Colors.grey.shade200;
-      final Color textColor = (isFlagged || isFoundOnly)
-          ? Colors.white
-          : Colors.grey.shade700;
-      final String tooltip = isFlagged
-          ? reason
-          : isFoundOnly
-          ? loc.foundNotFlagged
-          : reason;
-      final IconData? icon = isFlagged
-          ? flaggedIcon
-          : isFoundOnly
-          ? Icons.help_outline
-          : null;
-
-      return Tooltip(
-        message: tooltip,
-        child: Chip(
-          label: Text(kw, style: TextStyle(fontSize: 11, color: textColor)),
-          backgroundColor: bg,
-          avatar: icon != null
-              ? Icon(icon, size: 14, color: Colors.white)
-              : null,
-          padding: EdgeInsets.zero,
+    Widget summaryRow(IconData icon, String label, String value, Color color) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 5),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, size: 18, color: color),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey.shade600,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 1),
+                  Text(
+                    value,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey.shade900,
+                      height: 1.25,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       );
     }
 
-    final hasAnyAmber = _foundInText.any(
-      (kw) => !_flaggedByAnalysis.contains(kw),
-    );
+    final explanation = product.requiresHalalCert
+        ? loc.explanationNoCert
+        : product.explanation.isNotEmpty
+        ? product.explanation
+        : _halalReasonText(
+            product.isHalal,
+            product.isUnknown,
+            product.suspiciousIngredients,
+            loc,
+          );
+    final resultLabel = product.isNonFood
+        ? loc.nonFood
+        : product.isUnknown
+        ? loc.unknown
+        : product.requiresHalalCert
+        ? loc.noCert
+        : product.isHalal
+        ? loc.halal
+        : loc.notHalal;
+    final checkedText = product.ingredients.isEmpty
+        ? loc.transparentNoIngredients
+        : '${product.ingredients.length} ${loc.ingredients.toLowerCase()}';
+    final flaggedText = product.haramIngredients.isEmpty
+        ? loc.transparentNoMatches
+        : product.haramIngredients.join(', ');
+    final suspiciousText = product.suspiciousIngredients.isEmpty
+        ? loc.transparentNoMatches
+        : product.suspiciousIngredients.join(', ');
 
     return Card(
       margin: EdgeInsets.zero,
@@ -1221,91 +1203,77 @@ class _ResultScreenState extends State<ResultScreen> {
         tilePadding: const EdgeInsets.symmetric(horizontal: 16),
         childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         children: [
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              loc.haramKeywordsChecked,
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 13,
-                color: Colors.red.shade700,
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade50,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.grey.shade200),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  loc.transparentSummary,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                summaryRow(
+                  Icons.fact_check_outlined,
+                  loc.transparentResult,
+                  resultLabel,
+                  product.isHalal ? kGreen : Colors.red.shade600,
+                ),
+                summaryRow(
+                  Icons.format_list_bulleted,
+                  loc.transparentIngredientsChecked,
+                  checkedText,
+                  Colors.blueGrey.shade600,
+                ),
+                summaryRow(
+                  Icons.rule,
+                  loc.transparentRulesChecked,
+                  ProductService.keywordRuleCount.toString(),
+                  Colors.blueGrey.shade600,
+                ),
+                summaryRow(
+                  Icons.error_outline,
+                  loc.transparentFlagged,
+                  flaggedText,
+                  Colors.red.shade600,
+                ),
+                summaryRow(
+                  Icons.warning_amber,
+                  loc.transparentSuspicious,
+                  suspiciousText,
+                  Colors.orange.shade700,
+                ),
+                summaryRow(
+                  Icons.notes_outlined,
+                  loc.transparentExplanation,
+                  explanation,
+                  Colors.grey.shade700,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const KeywordsScreen()),
               ),
+              icon: const Icon(Icons.list_alt_outlined),
+              label: Text(loc.viewAllCheckedKeywords),
             ),
           ),
           const SizedBox(height: 8),
-          Wrap(
-            spacing: 6,
-            runSpacing: 6,
-            children: ProductService.haramKeywords.entries
-                .map(
-                  (e) => keywordChip(
-                    e.key,
-                    e.value,
-                    Colors.red.shade600,
-                    Icons.close,
-                  ),
-                )
-                .toList(),
-          ),
-          const SizedBox(height: 14),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              loc.suspiciousKeywordsChecked,
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 13,
-                color: Colors.orange.shade700,
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 6,
-            runSpacing: 6,
-            children: ProductService.suspiciousKeywords.entries
-                .map(
-                  (e) => keywordChip(
-                    e.key,
-                    e.value,
-                    Colors.orange.shade600,
-                    Icons.warning_amber,
-                  ),
-                )
-                .toList(),
-          ),
-          const SizedBox(height: 14),
-          if (hasAnyAmber) ...[
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: Colors.amber.shade50,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.amber.shade300),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.help_outline,
-                    size: 16,
-                    color: Colors.amber.shade800,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      loc.foundNotFlagged,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.amber.shade900,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 8),
-          ],
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(10),
@@ -1706,7 +1674,8 @@ class _ResultScreenState extends State<ResultScreen> {
                   Navigator.pop(context);
                   try {
                     final success = await AuthService.signInWithGoogle();
-                    if (!success && mounted) {
+                    if (!context.mounted) return;
+                    if (!success) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text('Sign-in failed. Please try again.'),
