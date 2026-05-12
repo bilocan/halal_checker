@@ -89,11 +89,29 @@ class AppLocalizations {
       'transparentResult': 'Result',
       'transparentIngredientsChecked': 'Ingredients checked',
       'transparentRulesChecked': 'Rules checked',
+      'transparentRulesAvailable': '{count} rules available (nothing to check)',
       'transparentFlagged': 'Flagged',
       'transparentSuspicious': 'Needs verification',
       'transparentNoMatches': 'No rule matches found',
       'transparentNoIngredients': 'No ingredient text was available to check',
       'transparentExplanation': 'Explanation',
+      'contributeIngredients': 'Add Ingredients',
+      'contributeIngredientsHint':
+          'No ingredient data found. Help the community by adding the ingredients from the packaging.',
+      'ingredientTextLabel': 'Ingredient text',
+      'ingredientTextHint':
+          'Type or paste the ingredient list from the packaging',
+      'ingredientSubmitted':
+          'Thank you! Ingredients submitted — the product will be re-analysed.',
+      'ingredientSubmitFailed':
+          'Could not submit ingredients. Please try again.',
+      'improveOnOpenFoodFacts': 'Edit on OpenFoodFacts',
+      'improveOnOpenFoodFactsHint':
+          'Help improve this product for everyone by adding data directly on OpenFoodFacts.',
+      'extractingIngredients': 'Reading ingredients from image…',
+      'ocrFailed':
+          'Could not read ingredients from the image. You can type them manually below.',
+      'ocrSuccess': 'Ingredients extracted — please review before submitting.',
       'viewAllCheckedKeywords': 'View all checked keywords',
       'haramKeywordsChecked': 'Haram Ingredients We Check',
       'suspiciousKeywordsChecked': 'Suspicious Ingredients We Check',
@@ -278,6 +296,24 @@ class AppLocalizations {
       'aiAnalysis': 'Yapay Zeka Analizi',
       'keywordAnalysis': 'Anahtar Kelime Analizi',
       'analysisTransparency': 'Analiz Şeffaflığı',
+      'transparentRulesAvailable':
+          '{count} kural mevcut (kontrol edilecek veri yok)',
+      'contributeIngredients': 'İçerik Ekle',
+      'contributeIngredientsHint':
+          'İçerik bilgisi bulunamadı. Ambalajdaki içerikleri ekleyerek topluluğa yardım edin.',
+      'ingredientTextLabel': 'İçerik metni',
+      'ingredientTextHint':
+          'Ambalajdaki içerik listesini yazın veya yapıştırın',
+      'ingredientSubmitted':
+          'Teşekkürler! İçerikler gönderildi — ürün yeniden analiz edilecek.',
+      'ingredientSubmitFailed':
+          'İçerikler gönderilemedi. Lütfen tekrar deneyin.',
+      'improveOnOpenFoodFacts': 'OpenFoodFacts\'ta Düzenle',
+      'improveOnOpenFoodFactsHint':
+          'OpenFoodFacts\'ta veri ekleyerek bu ürünü herkes için geliştirin.',
+      'extractingIngredients': 'İçerikler görüntüden okunuyor…',
+      'ocrFailed': 'Görüntüden içerik okunamadı. Aşağıya elle yazabilirsiniz.',
+      'ocrSuccess': 'İçerikler çıkarıldı — göndermeden önce gözden geçirin.',
       'haramKeywordsChecked': 'Kontrol Ettiğimiz Haram İçerikler',
       'suspiciousKeywordsChecked': 'Kontrol Ettiğimiz Şüpheli İçerikler',
       'transparencyNote': 'Listemizde eksik mi? Geri bildirim gönderin!',
@@ -464,6 +500,25 @@ class AppLocalizations {
       'aiAnalysis': 'KI-Analyse',
       'keywordAnalysis': 'Schlüsselwortanalyse',
       'analysisTransparency': 'Analysetransparenz',
+      'transparentRulesAvailable':
+          '{count} Regeln verfügbar (keine Daten zu prüfen)',
+      'contributeIngredients': 'Zutaten hinzufügen',
+      'contributeIngredientsHint':
+          'Keine Zutatendaten gefunden. Helfen Sie der Community, indem Sie die Zutaten von der Verpackung eingeben.',
+      'ingredientTextLabel': 'Zutatentext',
+      'ingredientTextHint':
+          'Geben Sie die Zutatenliste von der Verpackung ein oder fügen Sie sie ein',
+      'ingredientSubmitted':
+          'Danke! Zutaten eingereicht — das Produkt wird erneut analysiert.',
+      'ingredientSubmitFailed':
+          'Zutaten konnten nicht eingereicht werden. Bitte erneut versuchen.',
+      'improveOnOpenFoodFacts': 'Auf OpenFoodFacts bearbeiten',
+      'improveOnOpenFoodFactsHint':
+          'Verbessern Sie dieses Produkt für alle, indem Sie Daten direkt auf OpenFoodFacts hinzufügen.',
+      'extractingIngredients': 'Zutaten werden aus dem Bild gelesen…',
+      'ocrFailed':
+          'Zutaten konnten nicht aus dem Bild gelesen werden. Sie können sie unten manuell eingeben.',
+      'ocrSuccess': 'Zutaten extrahiert — bitte vor dem Absenden überprüfen.',
       'haramKeywordsChecked': 'Haram-Zutaten, die wir prüfen',
       'suspiciousKeywordsChecked': 'Verdächtige Zutaten, die wir prüfen',
       'transparencyNote': 'Fehlt etwas? Teilen Sie es uns mit!',
@@ -658,6 +713,9 @@ class AppLocalizations {
   String get transparentIngredientsChecked =>
       _translate('transparentIngredientsChecked');
   String get transparentRulesChecked => _translate('transparentRulesChecked');
+  String transparentRulesAvailable(int count) => _translate(
+    'transparentRulesAvailable',
+  ).replaceAll('{count}', count.toString());
   String get transparentFlagged => _translate('transparentFlagged');
   String get transparentSuspicious => _translate('transparentSuspicious');
   String get transparentNoMatches => _translate('transparentNoMatches');
@@ -752,6 +810,19 @@ class AppLocalizations {
   String get signedIn => _translate('signedIn');
   String get adminPanel => _translate('adminPanel');
   String get noDiscussionsHint => _translate('noDiscussionsHint');
+  String get contributeIngredients => _translate('contributeIngredients');
+  String get contributeIngredientsHint =>
+      _translate('contributeIngredientsHint');
+  String get ingredientTextLabel => _translate('ingredientTextLabel');
+  String get ingredientTextHint => _translate('ingredientTextHint');
+  String get ingredientSubmitted => _translate('ingredientSubmitted');
+  String get ingredientSubmitFailed => _translate('ingredientSubmitFailed');
+  String get improveOnOpenFoodFacts => _translate('improveOnOpenFoodFacts');
+  String get improveOnOpenFoodFactsHint =>
+      _translate('improveOnOpenFoodFactsHint');
+  String get extractingIngredients => _translate('extractingIngredients');
+  String get ocrFailed => _translate('ocrFailed');
+  String get ocrSuccess => _translate('ocrSuccess');
   String get flaggedOnly => _translate('flaggedOnly');
   String get allScans => _translate('allScans');
 

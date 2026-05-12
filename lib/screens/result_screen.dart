@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../app_colors.dart';
 import '../config.dart';
 import '../localization/app_localizations.dart';
@@ -12,7 +13,9 @@ import '../services/auth_service.dart';
 import '../services/community_service.dart';
 import '../services/feedback_service.dart';
 import '../services/database_service.dart';
+import '../services/ingredient_contribution_service.dart';
 import '../services/issue_report_service.dart';
+import '../services/ocr_service.dart';
 import '../services/product_service.dart';
 import 'deep_analysis_screen.dart';
 import 'discussion_screen.dart';
@@ -803,12 +806,14 @@ class _ResultScreenState extends State<ResultScreen> {
                 ],
               ),
               const SizedBox(height: 8),
-              if (ingredients.isEmpty)
+              if (ingredients.isEmpty) ...[
                 Text(
                   loc.noIngredientData,
                   style: const TextStyle(color: Colors.grey),
-                )
-              else
+                ),
+                const SizedBox(height: 16),
+                _buildMissingIngredientActions(product, loc),
+              ] else
                 ...ingredients.map((ingredient) {
                   final warning = product.ingredientWarnings[ingredient];
                   final fattyAlcohol =
@@ -1244,7 +1249,11 @@ class _ResultScreenState extends State<ResultScreen> {
                 summaryRow(
                   Icons.rule,
                   loc.transparentRulesChecked,
-                  ProductService.keywordRuleCount.toString(),
+                  product.ingredients.isEmpty
+                      ? loc.transparentRulesAvailable(
+                          ProductService.keywordRuleCount,
+                        )
+                      : ProductService.keywordRuleCount.toString(),
                   Colors.blueGrey.shade600,
                 ),
                 summaryRow(
@@ -1600,6 +1609,264 @@ class _ResultScreenState extends State<ResultScreen> {
       default:
         return null;
     }
+  }
+
+  Widget _buildMissingIngredientActions(Product product, AppLocalizations loc) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Contribute ingredients card
+        Card(
+          color: Colors.orange.shade50,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.edit_note, color: Colors.orange.shade700),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        loc.contributeIngredients,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.orange.shade800,
+                          fontSize: 15,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  loc.contributeIngredientsHint,
+                  style: TextStyle(color: Colors.orange.shade900, fontSize: 13),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    icon: const Icon(Icons.add, size: 18),
+                    label: Text(loc.contributeIngredients),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.orange.shade700,
+                      foregroundColor: Colors.white,
+                    ),
+                    onPressed: () =>
+                        _showContributeIngredientsDialog(context, product, loc),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        // OpenFoodFacts deep link
+        Card(
+          color: Colors.blue.shade50,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.open_in_new, color: Colors.blue.shade700),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        loc.improveOnOpenFoodFacts,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blue.shade800,
+                          fontSize: 15,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  loc.improveOnOpenFoodFactsHint,
+                  style: TextStyle(color: Colors.blue.shade900, fontSize: 13),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    icon: const Icon(Icons.open_in_new, size: 18),
+                    label: Text(loc.improveOnOpenFoodFacts),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.blue.shade700,
+                      side: BorderSide(color: Colors.blue.shade300),
+                    ),
+                    onPressed: () => launchUrl(
+                      Uri.parse(
+                        'https://world.openfoodfacts.org/cgi/product.pl'
+                        '?type=edit&code=${product.barcode}',
+                      ),
+                      mode: LaunchMode.externalApplication,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showContributeIngredientsDialog(
+    BuildContext context,
+    Product product,
+    AppLocalizations loc,
+  ) {
+    final controller = TextEditingController();
+    var isLoading = false;
+    var isExtracting = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) => Padding(
+          padding: EdgeInsets.fromLTRB(
+            24,
+            24,
+            24,
+            24 + MediaQuery.of(ctx).viewInsets.bottom,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.edit_note, color: Colors.orange.shade700),
+                  const SizedBox(width: 8),
+                  Text(
+                    loc.contributeIngredients,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                loc.contributeIngredientsHint,
+                style: const TextStyle(color: Colors.grey, fontSize: 13),
+              ),
+              const SizedBox(height: 16),
+              // OCR button — pre-fill from product image
+              if (product.imageIngredientsUrl != null) ...[
+                OutlinedButton.icon(
+                  icon: isExtracting
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.document_scanner, size: 18),
+                  label: Text(
+                    isExtracting
+                        ? loc.extractingIngredients
+                        : loc.contributeIngredients,
+                  ),
+                  onPressed: isExtracting || isLoading
+                      ? null
+                      : () async {
+                          setSheetState(() => isExtracting = true);
+                          final text =
+                              await OcrService.extractIngredientsFromImage(
+                                product.imageIngredientsUrl!,
+                              );
+                          if (!ctx.mounted) return;
+                          setSheetState(() => isExtracting = false);
+                          if (text != null && text.isNotEmpty) {
+                            controller.text = text;
+                            ScaffoldMessenger.of(ctx).showSnackBar(
+                              SnackBar(
+                                content: Text(loc.ocrSuccess),
+                                duration: const Duration(seconds: 3),
+                              ),
+                            );
+                          } else {
+                            ScaffoldMessenger.of(ctx).showSnackBar(
+                              SnackBar(
+                                content: Text(loc.ocrFailed),
+                                duration: const Duration(seconds: 3),
+                              ),
+                            );
+                          }
+                        },
+                ),
+                const SizedBox(height: 12),
+              ],
+              TextField(
+                controller: controller,
+                maxLines: 5,
+                decoration: InputDecoration(
+                  labelText: loc.ingredientTextLabel,
+                  hintText: loc.ingredientTextHint,
+                  border: const OutlineInputBorder(),
+                  alignLabelWithHint: true,
+                ),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton.icon(
+                icon: isLoading
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Icon(Icons.send, size: 18),
+                label: Text(loc.submit),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: kGreen,
+                  foregroundColor: Colors.white,
+                ),
+                onPressed: isLoading || isExtracting
+                    ? null
+                    : () async {
+                        final text = controller.text.trim();
+                        if (text.isEmpty) return;
+                        setSheetState(() => isLoading = true);
+                        final ok =
+                            await IngredientContributionService.submitIngredients(
+                              barcode: product.barcode,
+                              ingredientText: text,
+                            );
+                        if (!ctx.mounted) return;
+                        Navigator.pop(ctx);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              ok
+                                  ? loc.ingredientSubmitted
+                                  : loc.ingredientSubmitFailed,
+                            ),
+                          ),
+                        );
+                        if (ok) _refreshProductData();
+                      },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   String _halalReasonText(
