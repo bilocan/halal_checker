@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show AuthState;
 import '../app_colors.dart';
@@ -201,7 +202,7 @@ class _StartScreenState extends State<StartScreen> {
             child: avatarUrl != null
                 ? CircleAvatar(
                     radius: 16,
-                    backgroundImage: NetworkImage(avatarUrl),
+                    backgroundImage: CachedNetworkImageProvider(avatarUrl),
                   )
                 : const Icon(Icons.person),
           ),

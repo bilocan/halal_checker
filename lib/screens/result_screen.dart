@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
@@ -1318,6 +1319,8 @@ class _ResultScreenState extends State<ResultScreen> {
     );
   }
 
+  static String _thumbnailUrl(String url) => url.replaceAll('.400.', '.200.');
+
   void _showFullscreenImage(String url, {String? label}) {
     showDialog<void>(
       context: context,
@@ -1330,10 +1333,12 @@ class _ResultScreenState extends State<ResultScreen> {
               child: InteractiveViewer(
                 minScale: 0.5,
                 maxScale: 6.0,
-                child: Image.network(
-                  url,
+                child: CachedNetworkImage(
+                  imageUrl: url,
                   fit: BoxFit.contain,
-                  errorBuilder: (_, _, _) => const Icon(
+                  placeholder: (_, _) =>
+                      const Center(child: CircularProgressIndicator()),
+                  errorWidget: (_, _, _) => const Icon(
                     Icons.broken_image,
                     size: 64,
                     color: Colors.white38,
@@ -1406,28 +1411,20 @@ class _ResultScreenState extends State<ResultScreen> {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          Image.network(
-            imageUrls.first,
+          CachedNetworkImage(
+            imageUrl: _thumbnailUrl(imageUrls.first),
             fit: BoxFit.contain,
-            loadingBuilder: (context, child, loadingProgress) {
-              if (loadingProgress == null) return child;
-              return Center(
-                child: CircularProgressIndicator(
-                  value: loadingProgress.expectedTotalBytes != null
-                      ? loadingProgress.cumulativeBytesLoaded /
-                            loadingProgress.expectedTotalBytes!
-                      : null,
-                ),
-              );
-            },
-            errorBuilder: (context, error, stackTrace) {
+            fadeInDuration: const Duration(milliseconds: 200),
+            placeholder: (context, url) =>
+                const Center(child: CircularProgressIndicator()),
+            errorWidget: (context, url, error) {
               if (imageUrls.length > 1) {
                 return GestureDetector(
                   onTap: () => _showFullscreenImage(imageUrls[1]),
-                  child: Image.network(
-                    imageUrls[1],
+                  child: CachedNetworkImage(
+                    imageUrl: _thumbnailUrl(imageUrls[1]),
                     fit: BoxFit.contain,
-                    errorBuilder: (_, _, _) => Center(
+                    errorWidget: (_, _, _) => Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -1491,22 +1488,14 @@ class _ResultScreenState extends State<ResultScreen> {
           borderRadius: BorderRadius.circular(8),
           child: Stack(
             children: [
-              Image.network(
-                imageUrl,
+              CachedNetworkImage(
+                imageUrl: _thumbnailUrl(imageUrl),
                 fit: BoxFit.contain,
                 width: double.infinity,
-                loadingBuilder: (context, child, loadingProgress) {
-                  if (loadingProgress == null) return child;
-                  return Center(
-                    child: CircularProgressIndicator(
-                      value: loadingProgress.expectedTotalBytes != null
-                          ? loadingProgress.cumulativeBytesLoaded /
-                                loadingProgress.expectedTotalBytes!
-                          : null,
-                    ),
-                  );
-                },
-                errorBuilder: (context, error, stackTrace) => const Center(
+                fadeInDuration: const Duration(milliseconds: 200),
+                placeholder: (context, url) =>
+                    const Center(child: CircularProgressIndicator()),
+                errorWidget: (context, url, error) => const Center(
                   child: Icon(Icons.broken_image, size: 48, color: Colors.grey),
                 ),
               ),
