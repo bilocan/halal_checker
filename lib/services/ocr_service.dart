@@ -11,6 +11,19 @@ class OcrService {
     return _callEdgeFunction({'image_url': imageUrl});
   }
 
+  /// Try multiple candidate image URLs in priority order.
+  /// The Edge Function validates each image and returns the first one that
+  /// actually contains ingredient text (not nutrition tables, etc.).
+  static Future<String?> extractIngredientsFromImages(
+    List<String> imageUrls,
+  ) async {
+    if (imageUrls.isEmpty) return null;
+    if (imageUrls.length == 1) {
+      return _callEdgeFunction({'image_url': imageUrls.first});
+    }
+    return _callEdgeFunction({'image_urls': imageUrls});
+  }
+
   /// Extract ingredient text from a local image file (e.g. camera capture).
   static Future<String?> extractIngredientsFromFile(File imageFile) async {
     final bytes = await imageFile.readAsBytes();
