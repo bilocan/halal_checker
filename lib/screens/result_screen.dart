@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../app_colors.dart';
 import '../config.dart';
@@ -1765,7 +1767,7 @@ class _ResultScreenState extends State<ResultScreen> {
                 style: const TextStyle(color: Colors.grey, fontSize: 13),
               ),
               const SizedBox(height: 16),
-              // OCR button — pre-fill from product image
+              // OCR button — pre-fill from existing product image
               if (product.imageIngredientsUrl != null) ...[
                 OutlinedButton.icon(
                   icon: isExtracting
@@ -1778,7 +1780,7 @@ class _ResultScreenState extends State<ResultScreen> {
                   label: Text(
                     isExtracting
                         ? loc.extractingIngredients
-                        : loc.contributeIngredients,
+                        : loc.extractFromExistingImage,
                   ),
                   onPressed: isExtracting || isLoading
                       ? null
@@ -1808,8 +1810,57 @@ class _ResultScreenState extends State<ResultScreen> {
                           }
                         },
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
               ],
+              // Camera capture — take photo of ingredients label
+              OutlinedButton.icon(
+                icon: isExtracting
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.camera_alt, size: 18),
+                label: Text(
+                  isExtracting
+                      ? loc.extractingIngredients
+                      : loc.takePhotoOfIngredients,
+                ),
+                onPressed: isExtracting || isLoading
+                    ? null
+                    : () async {
+                        final picker = ImagePicker();
+                        final photo = await picker.pickImage(
+                          source: ImageSource.camera,
+                          imageQuality: 85,
+                        );
+                        if (photo == null || !ctx.mounted) return;
+                        setSheetState(() => isExtracting = true);
+                        final text =
+                            await OcrService.extractIngredientsFromFile(
+                              File(photo.path),
+                            );
+                        if (!ctx.mounted) return;
+                        setSheetState(() => isExtracting = false);
+                        if (text != null && text.isNotEmpty) {
+                          controller.text = text;
+                          ScaffoldMessenger.of(ctx).showSnackBar(
+                            SnackBar(
+                              content: Text(loc.ocrSuccess),
+                              duration: const Duration(seconds: 3),
+                            ),
+                          );
+                        } else {
+                          ScaffoldMessenger.of(ctx).showSnackBar(
+                            SnackBar(
+                              content: Text(loc.ocrFailed),
+                              duration: const Duration(seconds: 3),
+                            ),
+                          );
+                        }
+                      },
+              ),
+              const SizedBox(height: 12),
               TextField(
                 controller: controller,
                 maxLines: 5,

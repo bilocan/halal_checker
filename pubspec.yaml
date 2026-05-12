@@ -44,6 +44,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   supabase_flutter: ^2.8.4
   url_launcher: ^6.3.0
+  image_picker: ^1.1.2
   in_app_update: ^4.2.3
   package_info_plus: ^8.0.0
   flutter_map: ^7.0.0

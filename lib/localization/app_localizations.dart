@@ -112,6 +112,8 @@ class AppLocalizations {
       'ocrFailed':
           'Could not read ingredients from the image. You can type them manually below.',
       'ocrSuccess': 'Ingredients extracted — please review before submitting.',
+      'extractFromExistingImage': 'Extract from existing image',
+      'takePhotoOfIngredients': 'Take photo of ingredients',
       'viewAllCheckedKeywords': 'View all checked keywords',
       'haramKeywordsChecked': 'Haram Ingredients We Check',
       'suspiciousKeywordsChecked': 'Suspicious Ingredients We Check',
@@ -347,6 +349,8 @@ class AppLocalizations {
       'extractingIngredients': 'İçerikler görüntüden okunuyor…',
       'ocrFailed': 'Görüntüden içerik okunamadı. Aşağıya elle yazabilirsiniz.',
       'ocrSuccess': 'İçerikler çıkarıldı — göndermeden önce gözden geçirin.',
+      'extractFromExistingImage': 'Mevcut görüntüden çıkar',
+      'takePhotoOfIngredients': 'İçerik fotoğrafı çek',
       'haramKeywordsChecked': 'Kontrol Ettiğimiz Haram İçerikler',
       'suspiciousKeywordsChecked': 'Kontrol Ettiğimiz Şüpheli İçerikler',
       'transparencyNote': 'Listemizde eksik mi? Geri bildirim gönderin!',
@@ -585,6 +589,8 @@ class AppLocalizations {
       'ocrFailed':
           'Zutaten konnten nicht aus dem Bild gelesen werden. Sie können sie unten manuell eingeben.',
       'ocrSuccess': 'Zutaten extrahiert — bitte vor dem Absenden überprüfen.',
+      'extractFromExistingImage': 'Aus vorhandenem Bild extrahieren',
+      'takePhotoOfIngredients': 'Foto der Zutaten aufnehmen',
       'haramKeywordsChecked': 'Haram-Zutaten, die wir prüfen',
       'suspiciousKeywordsChecked': 'Verdächtige Zutaten, die wir prüfen',
       'transparencyNote': 'Fehlt etwas? Teilen Sie es uns mit!',
@@ -925,6 +931,8 @@ class AppLocalizations {
   String get extractingIngredients => _translate('extractingIngredients');
   String get ocrFailed => _translate('ocrFailed');
   String get ocrSuccess => _translate('ocrSuccess');
+  String get extractFromExistingImage => _translate('extractFromExistingImage');
+  String get takePhotoOfIngredients => _translate('takePhotoOfIngredients');
   String get flaggedOnly => _translate('flaggedOnly');
   String get allScans => _translate('allScans');
   String get analysisTab => _translate('analysisTab');
