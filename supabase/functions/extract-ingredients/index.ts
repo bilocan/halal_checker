@@ -20,16 +20,47 @@ If you cannot read any ingredient text from the image, return:
   "ingredients_text": null
 }`
 
+const OCR_PROMPT = 'This image shows a food product label. Read ALL the ingredient names from the image. Return only the ingredient list text as-is in the original language. Respond with the JSON format specified.'
+
+// Resolve image to base64+mimeType from either a URL or inline base64 data.
+async function resolveImage(imageUrl: string | null, imageBase64: string | null): Promise<{ base64: string; mimeType: string } | null> {
+  if (imageBase64) {
+    return { base64: imageBase64, mimeType: 'image/jpeg' }
+  }
+  if (!imageUrl) return null
+  try {
+    const imgRes = await fetch(imageUrl)
+    if (!imgRes.ok) return null
+    const imgBuf = await imgRes.arrayBuffer()
+    const bytes = new Uint8Array(imgBuf)
+    let binary = ''
+    const chunkSize = 0x8000
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+      binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize))
+    }
+    return {
+      base64: btoa(binary),
+      mimeType: imgRes.headers.get('content-type') || 'image/jpeg',
+    }
+  } catch (e) {
+    console.error('[extract-ingredients] Image fetch failed:', e)
+    return null
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    const { image_url } = await req.json()
-    if (!image_url || typeof image_url !== 'string') {
+    const body = await req.json()
+    const imageUrl: string | null = body.image_url ?? null
+    const imageBase64: string | null = body.image_base64 ?? null
+
+    if (!imageUrl && !imageBase64) {
       return new Response(
-        JSON.stringify({ error: 'image_url is required' }),
+        JSON.stringify({ error: 'image_url or image_base64 is required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       )
     }
@@ -41,19 +72,8 @@ Deno.serve(async (req) => {
     if (geminiEnabled && geminiKey) {
       console.log('[extract-ingredients] Trying Gemini vision...')
       try {
-        // Fetch image and convert to base64 for Gemini
-        const imgRes = await fetch(image_url)
-        if (imgRes.ok) {
-          const imgBuf = await imgRes.arrayBuffer()
-          const bytes = new Uint8Array(imgBuf)
-          let binary = ''
-          const chunkSize = 0x8000
-          for (let i = 0; i < bytes.length; i += chunkSize) {
-            binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize))
-          }
-          const base64 = btoa(binary)
-          const mimeType = imgRes.headers.get('content-type') || 'image/jpeg'
-
+        const img = await resolveImage(imageUrl, imageBase64)
+        if (img) {
           const geminiRes = await fetch(
             `${GEMINI_URL_BASE}/${GEMINI_MODEL}:generateContent?key=${geminiKey}`,
             {
@@ -62,8 +82,8 @@ Deno.serve(async (req) => {
               body: JSON.stringify({
                 contents: [{
                   parts: [
-                    { inlineData: { mimeType, data: base64 } },
-                    { text: 'This image shows a food product label. Read ALL the ingredient names from the image. Return only the ingredient list text as-is in the original language. Respond with the JSON format specified.' },
+                    { inlineData: { mimeType: img.mimeType, data: img.base64 } },
+                    { text: OCR_PROMPT },
                   ],
                 }],
                 systemInstruction: { parts: [{ text: OCR_SYSTEM }] },
@@ -102,6 +122,11 @@ Deno.serve(async (req) => {
     if (claudeEnabled && claudeKey) {
       console.log('[extract-ingredients] Trying Claude vision...')
       try {
+        // Claude supports both URL and base64
+        const imageContent = imageBase64
+          ? { type: 'image' as const, source: { type: 'base64' as const, media_type: 'image/jpeg', data: imageBase64 } }
+          : { type: 'image' as const, source: { type: 'url' as const, url: imageUrl! } }
+
         const claudeRes = await fetch(CLAUDE_URL, {
           method: 'POST',
           headers: {
@@ -116,8 +141,8 @@ Deno.serve(async (req) => {
             messages: [{
               role: 'user',
               content: [
-                { type: 'image', source: { type: 'url', url: image_url } },
-                { type: 'text', text: 'This image shows a food product label. Read ALL the ingredient names from the image. Return only the ingredient list text as-is in the original language. Respond with the JSON format specified.' },
+                imageContent,
+                { type: 'text', text: OCR_PROMPT },
               ],
             }],
           }),
