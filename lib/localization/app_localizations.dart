@@ -114,6 +114,10 @@ class AppLocalizations {
       'ocrSuccess': 'Ingredients extracted — please review before submitting.',
       'extractFromExistingImage': 'Extract from existing image',
       'takePhotoOfIngredients': 'Take photo of ingredients',
+      'noIngredientsImageHint':
+          'No ingredients image available for this product. Please take a photo of the ingredient list on the packaging.',
+      'ocrNoIngredientsFound':
+          'No ingredient list found in the available images. Please take a photo of the ingredient label instead.',
       'viewAllCheckedKeywords': 'View all checked keywords',
       'haramKeywordsChecked': 'Haram Ingredients We Check',
       'suspiciousKeywordsChecked': 'Suspicious Ingredients We Check',
@@ -351,6 +355,10 @@ class AppLocalizations {
       'ocrSuccess': 'İçerikler çıkarıldı — göndermeden önce gözden geçirin.',
       'extractFromExistingImage': 'Mevcut görüntüden çıkar',
       'takePhotoOfIngredients': 'İçerik fotoğrafı çek',
+      'noIngredientsImageHint':
+          'Bu ürün için içerik görseli mevcut değil. Lütfen ambalajdaki içerik listesinin fotoğrafını çekin.',
+      'ocrNoIngredientsFound':
+          'Mevcut görsellerde içerik listesi bulunamadı. Lütfen içerik etiketinin fotoğrafını çekin.',
       'haramKeywordsChecked': 'Kontrol Ettiğimiz Haram İçerikler',
       'suspiciousKeywordsChecked': 'Kontrol Ettiğimiz Şüpheli İçerikler',
       'transparencyNote': 'Listemizde eksik mi? Geri bildirim gönderin!',
@@ -591,6 +599,10 @@ class AppLocalizations {
       'ocrSuccess': 'Zutaten extrahiert — bitte vor dem Absenden überprüfen.',
       'extractFromExistingImage': 'Aus vorhandenem Bild extrahieren',
       'takePhotoOfIngredients': 'Foto der Zutaten aufnehmen',
+      'noIngredientsImageHint':
+          'Kein Zutatenbild für dieses Produkt verfügbar. Bitte fotografieren Sie die Zutatenliste auf der Verpackung.',
+      'ocrNoIngredientsFound':
+          'In den verfügbaren Bildern wurde keine Zutatenliste gefunden. Bitte fotografieren Sie das Zutatenetikett.',
       'haramKeywordsChecked': 'Haram-Zutaten, die wir prüfen',
       'suspiciousKeywordsChecked': 'Verdächtige Zutaten, die wir prüfen',
       'transparencyNote': 'Fehlt etwas? Teilen Sie es uns mit!',
@@ -933,6 +945,8 @@ class AppLocalizations {
   String get ocrSuccess => _translate('ocrSuccess');
   String get extractFromExistingImage => _translate('extractFromExistingImage');
   String get takePhotoOfIngredients => _translate('takePhotoOfIngredients');
+  String get noIngredientsImageHint => _translate('noIngredientsImageHint');
+  String get ocrNoIngredientsFound => _translate('ocrNoIngredientsFound');
   String get flaggedOnly => _translate('flaggedOnly');
   String get allScans => _translate('allScans');
   String get analysisTab => _translate('analysisTab');

@@ -1756,8 +1756,8 @@ class _ResultScreenState extends State<ResultScreen> {
                 style: const TextStyle(color: Colors.grey, fontSize: 13),
               ),
               const SizedBox(height: 16),
-              // OCR button — pre-fill from existing product image
-              if (product.imageIngredientsUrl != null) ...[
+              // OCR button — try all available product images
+              if (_candidateImageUrls(product).isNotEmpty) ...[
                 OutlinedButton.icon(
                   icon: isExtracting
                       ? const SizedBox(
@@ -1776,8 +1776,8 @@ class _ResultScreenState extends State<ResultScreen> {
                       : () async {
                           setSheetState(() => isExtracting = true);
                           final text =
-                              await OcrService.extractIngredientsFromImage(
-                                product.imageIngredientsUrl!,
+                              await OcrService.extractIngredientsFromImages(
+                                _candidateImageUrls(product),
                               );
                           if (!ctx.mounted) return;
                           setSheetState(() => isExtracting = false);
@@ -1792,14 +1792,26 @@ class _ResultScreenState extends State<ResultScreen> {
                           } else {
                             ScaffoldMessenger.of(ctx).showSnackBar(
                               SnackBar(
-                                content: Text(loc.ocrFailed),
-                                duration: const Duration(seconds: 3),
+                                content: Text(loc.ocrNoIngredientsFound),
+                                duration: const Duration(seconds: 5),
                               ),
                             );
                           }
                         },
                 ),
                 const SizedBox(height: 8),
+              ] else ...[
+                // No product images at all — prompt camera
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Text(
+                    loc.noIngredientsImageHint,
+                    style: TextStyle(
+                      color: Colors.orange.shade700,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
               ],
               // Camera capture — take photo of ingredients label
               OutlinedButton.icon(
@@ -1907,6 +1919,24 @@ class _ResultScreenState extends State<ResultScreen> {
         ),
       ),
     );
+  }
+
+  /// Build a priority-ordered list of candidate image URLs to try for OCR.
+  /// Ingredients image first, then front label, then general image.
+  /// Nutrition image is excluded (least likely to contain ingredient text).
+  List<String> _candidateImageUrls(Product product) {
+    final urls = <String>[];
+    if (product.imageIngredientsUrl != null) {
+      urls.add(product.imageIngredientsUrl!);
+    }
+    if (product.imageFrontUrl != null &&
+        !urls.contains(product.imageFrontUrl)) {
+      urls.add(product.imageFrontUrl!);
+    }
+    if (product.imageUrl != null && !urls.contains(product.imageUrl)) {
+      urls.add(product.imageUrl!);
+    }
+    return urls;
   }
 
   String _halalReasonText(
