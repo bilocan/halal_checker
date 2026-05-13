@@ -285,6 +285,91 @@ jobs:
             --apiIssuer "$APP_STORE_CONNECT_ISSUER_ID" \
             --output-format json
 
+      - name: Submit for beta review (external testers)
+        if: ${{ !(inputs.skip_testflight || false) }}
+        env:
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APP_STORE_CONNECT_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_KEY_BASE64 }}
+        run: |
+          set -euo pipefail
+          pip install cryptography --quiet 2>/dev/null
+
+          KEY_FILE=$(mktemp /tmp/authkey.XXXXXX.p8)
+          echo "$APP_STORE_CONNECT_KEY_BASE64" | base64 --decode > "$KEY_FILE"
+
+          JWT=$(KEY_FILE="$KEY_FILE" python3 - <<'PYEOF'
+          import json, time, base64, os
+          from cryptography.hazmat.primitives import hashes, serialization
+          from cryptography.hazmat.primitives.asymmetric import ec
+          from cryptography.hazmat.primitives.asymmetric.utils import decode_dss_signature
+          key_id = os.environ['APP_STORE_CONNECT_KEY_ID']
+          issuer_id = os.environ['APP_STORE_CONNECT_ISSUER_ID']
+          with open(os.environ['KEY_FILE'], 'rb') as f:
+              pk = serialization.load_pem_private_key(f.read(), password=None)
+          now = int(time.time())
+          def b64u(d): return base64.urlsafe_b64encode(d if isinstance(d, bytes) else d.encode()).rstrip(b'=').decode()
+          h = b64u(json.dumps({'alg':'ES256','kid':key_id,'typ':'JWT'}, separators=(',',':')))
+          p = b64u(json.dumps({'iss':issuer_id,'iat':now,'exp':now+1200,'aud':'appstoreconnect-v1'}, separators=(',',':')))
+          msg = f'{h}.{p}'
+          r, s = decode_dss_signature(pk.sign(msg.encode(), ec.ECDSA(hashes.SHA256())))
+          print(f'{msg}.{b64u(r.to_bytes(32,"big")+s.to_bytes(32,"big"))}')
+          PYEOF
+          )
+          rm -f "$KEY_FILE"
+
+          # Wait for Apple to process the build (can take a few minutes)
+          echo "Waiting for build to be processed by App Store Connect..."
+          APP_ID=$(curl -gsS --fail-with-body \
+            -H "Authorization: Bearer $JWT" \
+            "https://api.appstoreconnect.apple.com/v1/apps?filter[bundleId]=app.halalscan" \
+            | jq -r '.data[0].id')
+
+          # Poll for the build to appear (up to 5 minutes)
+          BUILD_ID=""
+          for i in $(seq 1 30); do
+            BUILD_ID=$(curl -gsS \
+              -H "Authorization: Bearer $JWT" \
+              "https://api.appstoreconnect.apple.com/v1/builds?filter[app]=$APP_ID&sort=-uploadedDate&limit=1" \
+              | jq -r '.data[0].id // empty')
+            if [ -n "$BUILD_ID" ]; then
+              PROCESSING=$(curl -gsS \
+                -H "Authorization: Bearer $JWT" \
+                "https://api.appstoreconnect.apple.com/v1/builds/$BUILD_ID" \
+                | jq -r '.data.attributes.processingState')
+              if [ "$PROCESSING" = "VALID" ]; then
+                echo "Build $BUILD_ID is ready."
+                break
+              fi
+              echo "Build processing state: $PROCESSING (attempt $i/30)"
+            fi
+            sleep 10
+          done
+
+          if [ -z "$BUILD_ID" ]; then
+            echo "::warning::Could not find processed build. Beta review submission skipped."
+            exit 0
+          fi
+
+          # Submit for beta app review
+          RESPONSE=$(curl -gsS -w "\n%{http_code}" \
+            -X POST \
+            -H "Authorization: Bearer $JWT" \
+            -H "Content-Type: application/json" \
+            -d "{\"data\":{\"type\":\"betaAppReviewSubmissions\",\"relationships\":{\"build\":{\"data\":{\"type\":\"builds\",\"id\":\"$BUILD_ID\"}}}}}" \
+            "https://api.appstoreconnect.apple.com/v1/betaAppReviewSubmissions")
+          HTTP_CODE=$(echo "$RESPONSE" | tail -1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+
+          if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
+            echo "Build submitted for beta app review (external testers)."
+          elif echo "$BODY" | grep -q "ALREADY_EXISTS\|CONFLICT"; then
+            echo "::warning::Build already submitted for beta review. Skipping."
+          else
+            echo "::warning::Beta review submission returned HTTP $HTTP_CODE (non-fatal):"
+            echo "$BODY" | jq '.errors[0].detail' 2>/dev/null || echo "$BODY"
+          fi
+
       - name: Save IPA artifact
         uses: actions/upload-artifact@v4
         with:
