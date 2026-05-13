@@ -38,7 +38,8 @@ Bump the app version, commit, tag, and push — triggering the store deploy work
 5. Updates `pubspec.yaml` and commits
 6. Creates git tag `vX.Y.Z`
 7. Pushes the branch + tag to origin
-8. Opens a PR via `gh` CLI (if available), or prints a link to create one
+8. Creates a GitHub Release with auto-generated notes (via `gh` CLI)
+9. Opens a PR (via `gh` CLI), or prints links to do both manually
 
 The tag push triggers `deploy-android.yml` and `deploy-ios.yml` automatically.
 Merge the PR to keep `pubspec.yaml` in sync on `main`.
