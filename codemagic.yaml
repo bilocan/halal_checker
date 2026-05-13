@@ -36,7 +36,9 @@ workflows:
 
       - name: Set build number
         script: |
-          agvtool new-version -all $CM_BUILD_NUMBER
+          cd ios
+          agvtool new-version -all $CM_BUILD_NUMBER^
+          cd ..
 
       - name: Build iOS app
         script: |
