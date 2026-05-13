@@ -103,6 +103,13 @@ jobs:
           fi
           echo "All required secrets are set."
 
+      - name: Select latest Xcode
+        run: |
+          LATEST_XCODE=$(ls -d /Applications/Xcode*.app 2>/dev/null | sort -V | tail -1)
+          echo "Selecting: $LATEST_XCODE"
+          sudo xcode-select -s "$LATEST_XCODE/Contents/Developer"
+          xcodebuild -version
+
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
