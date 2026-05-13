@@ -1,0 +1,49 @@
+workflows:
+  ios-release:
+    name: iOS Internal Testing
+
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.your.app
+
+      vars:
+        XCODE_WORKSPACE: "ios/Runner.xcworkspace"
+        XCODE_SCHEME: "Runner"
+
+      groups:
+        - appstore_credentials
+
+    scripts:
+      - name: Flutter packages
+        script: |
+          flutter pub get
+
+      - name: Set build number
+        script: |
+          agvtool new-version -all $CM_BUILD_NUMBER
+
+      - name: Build ipa
+        script: |
+          xcode-project use-profiles \
+            --custom-export-options='{"testFlightInternalTestingOnly": true}'
+
+          flutter build ipa \
+            --release \
+            --build-number=$CM_BUILD_NUMBER
+
+    artifacts:
+      - build/ios/ipa/*.ipa
+
+    publishing:
+      app_store_connect:
+        auth: integration
+
+        submit_to_testflight: true
+
+        beta_groups:
+          - Internal Testers
+
+        expire_build_submitted_for_review: true
+
+        release_type: MANUAL
