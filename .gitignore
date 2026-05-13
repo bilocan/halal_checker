@@ -52,3 +52,4 @@ app.*.map.json
 
 # supabase
 supabase/.temp/
+pubspec.lock

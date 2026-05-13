@@ -1,0 +1,59 @@
+workflows:
+  ios-release:
+    name: iOS Internal Testing
+
+    environment:
+      flutter: stable
+
+      vars:
+        XCODE_WORKSPACE: "ios/Runner.xcworkspace"
+        XCODE_SCHEME: "Runner"
+
+      # App Store Connect API auth (REQUIRED)
+      # Set these in Codemagic UI environment variables:
+      # APP_STORE_CONNECT_PRIVATE_KEY
+      # APP_STORE_CONNECT_KEY_ID
+      # APP_STORE_CONNECT_ISSUER_ID
+
+    scripts:
+
+      - name: Clean project
+        script: |
+          flutter clean
+          rm -rf ios/Pods
+          rm -rf ios/Podfile.lock
+          rm -rf ~/Library/Developer/Xcode/DerivedData
+
+      - name: Get Flutter dependencies
+        script: |
+          flutter pub get
+
+      - name: Install CocoaPods (stable)
+        script: |
+          cd ios
+          pod install --repo-update=false
+          cd ..
+
+      - name: Set build number
+        script: |
+          agvtool new-version -all $CM_BUILD_NUMBER
+
+      - name: Build iOS app
+        script: |
+          flutter build ipa \
+            --release \
+            --build-number=$CM_BUILD_NUMBER
+
+    artifacts:
+      - build/ios/ipa/*.ipa
+
+    publishing:
+      app_store_connect:
+        api_key: $APP_STORE_CONNECT_PRIVATE_KEY
+        key_id: $APP_STORE_CONNECT_KEY_ID
+        issuer_id: $APP_STORE_CONNECT_ISSUER_ID
+
+        submit_to_testflight: true
+
+        beta_groups:
+          - Internal Testers
