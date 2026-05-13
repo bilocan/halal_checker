@@ -10,6 +10,8 @@ workflows:
       vars:
         XCODE_WORKSPACE: "ios/Runner.xcworkspace"
         XCODE_SCHEME: "Runner"
+        COCOAPODS_DISABLE_STATS: true
+        COCOAPODS_SKIP_UPDATE_CHECK: true
 
       groups:
         - appstore_credentials
@@ -30,8 +32,7 @@ workflows:
       - name: Install CocoaPods
         script: |
           cd ios
-          pod repo update
-          pod install
+          pod install --repo-update=false
           cd ..
 
       - name: Set build number
