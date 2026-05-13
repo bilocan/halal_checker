@@ -530,11 +530,13 @@ jobs:
             | jq -r '.data[0].id')
 
           if [ -z "$VERSION_ID" ] || [ "$VERSION_ID" = "null" ]; then
-            echo "No version in PENDING_DEVELOPER_RELEASE state. Current versions:" >&2
+            echo "::warning::No version in PENDING_DEVELOPER_RELEASE state. Skipping release."
+            echo "Current versions:"
             curl -gsS -H "Authorization: Bearer $JWT" \
               "https://api.appstoreconnect.apple.com/v1/apps/$APP_ID/appStoreVersions?filter[platform]=IOS" \
               | jq '.data[] | {id: .id, version: .attributes.versionString, state: .attributes.appStoreState}'
-            exit 1
+            echo "This step only runs after Apple approves the review."
+            exit 0
           fi
 
           curl -sS --fail-with-body \
