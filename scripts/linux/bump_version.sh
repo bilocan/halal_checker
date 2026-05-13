@@ -1,21 +1,24 @@
 #!/usr/bin/env bash
 # ──────────────────────────────────────────────────────────────────────
-# bump_version.sh — bump the app version, commit, tag, and push.
+# bump_version.sh — bump the app version via a release branch + tag.
 #
 # Usage:
-#   ./scripts/linux/bump_version.sh <major|minor|patch>   # auto-increment
-#   ./scripts/linux/bump_version.sh 1.3.0                 # explicit version
-#   ./scripts/linux/bump_version.sh --dry-run patch       # preview only
+#   ./scripts/linux/bump_version.sh <major|minor|patch>        # auto-increment
+#   ./scripts/linux/bump_version.sh 1.3.0                      # explicit version
+#   ./scripts/linux/bump_version.sh --dry-run patch            # preview only
 #
 # What it does:
 #   1. Reads the current version from pubspec.yaml
 #   2. Calculates the next version (or uses the one you provided)
 #   3. Increments the build number (+N) by 1
-#   4. Updates pubspec.yaml
-#   5. Commits: "chore: bump version to X.Y.Z"
+#   4. Creates a release/vX.Y.Z branch from the current branch
+#   5. Updates pubspec.yaml and commits
 #   6. Creates git tag vX.Y.Z
-#   7. Pushes the commit and tag to origin
-#      → This triggers deploy-android.yml and deploy-ios.yml
+#   7. Pushes branch + tag to origin
+#   8. Opens a GitHub PR (if `gh` CLI is available)
+#
+# The tag push triggers deploy-android.yml and deploy-ios.yml.
+# Merge the PR to keep pubspec.yaml in sync on main.
 # ──────────────────────────────────────────────────────────────────────
 set -euo pipefail
 
@@ -79,9 +82,11 @@ NEW_VERSION="$MAJOR.$MINOR.$PATCH"
 NEW_BUILD=$((BUILD_NUMBER + 1))
 NEW_FULL="$NEW_VERSION+$NEW_BUILD"
 TAG="v$NEW_VERSION"
+BRANCH="release/$TAG"
 
 echo "New version:     $NEW_FULL"
 echo "Git tag:         $TAG"
+echo "Branch:          $BRANCH"
 echo ""
 
 if $DRY_RUN; then
@@ -108,6 +113,10 @@ if [[ ! "$CONFIRM" =~ ^[Yy]$ ]]; then
   exit 0
 fi
 
+# ── Create release branch ─────────────────────────────────────────────
+git checkout -b "$BRANCH"
+echo "Created branch $BRANCH"
+
 # ── Update pubspec.yaml ───────────────────────────────────────────────
 sed -i "s/^version:.*/version: $NEW_FULL/" "$PUBSPEC"
 echo "Updated $PUBSPEC → $NEW_FULL"
@@ -116,7 +125,21 @@ echo "Updated $PUBSPEC → $NEW_FULL"
 git add "$PUBSPEC"
 git commit -m "chore: bump version to $NEW_VERSION"
 git tag "$TAG"
-git push origin HEAD --tags
+git push origin "$BRANCH" --tags
 
 echo ""
-echo "Done! Tag $TAG pushed — deploy workflows will start automatically."
+echo "Tag $TAG pushed — deploy workflows will start automatically."
+echo ""
+
+# ── Open PR if gh CLI is available ─────────────────────────────────────
+if command -v gh &>/dev/null; then
+  echo "Opening pull request..."
+  gh pr create \
+    --title "chore: bump version to $NEW_VERSION" \
+    --body "Bumps \`pubspec.yaml\` to \`$NEW_FULL\` and tags \`$TAG\`." \
+    --base main \
+    --head "$BRANCH"
+else
+  echo "Merge the branch into main to keep pubspec.yaml in sync:"
+  echo "  → https://github.com/$(git remote get-url origin | sed 's|.*github.com[:/]||;s|\.git$||')/compare/$BRANCH?expand=1"
+fi

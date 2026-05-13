@@ -1,20 +1,23 @@
 # ──────────────────────────────────────────────────────────────────────
-# bump_version.ps1 — bump the app version, commit, tag, and push.
+# bump_version.ps1 — bump the app version via a release branch + tag.
 #
 # Usage:
-#   .\scripts\windows\bump_version.ps1 <major|minor|patch>   # auto-increment
-#   .\scripts\windows\bump_version.ps1 1.3.0                 # explicit version
-#   .\scripts\windows\bump_version.ps1 -DryRun patch         # preview only
+#   .\scripts\windows\bump_version.ps1 <major|minor|patch>        # auto-increment
+#   .\scripts\windows\bump_version.ps1 1.3.0                      # explicit version
+#   .\scripts\windows\bump_version.ps1 -DryRun patch              # preview only
 #
 # What it does:
 #   1. Reads the current version from pubspec.yaml
 #   2. Calculates the next version (or uses the one you provided)
 #   3. Increments the build number (+N) by 1
-#   4. Updates pubspec.yaml
-#   5. Commits: "chore: bump version to X.Y.Z"
+#   4. Creates a release/vX.Y.Z branch from the current branch
+#   5. Updates pubspec.yaml and commits
 #   6. Creates git tag vX.Y.Z
-#   7. Pushes the commit and tag to origin
-#      → This triggers deploy-android.yml and deploy-ios.yml
+#   7. Pushes branch + tag to origin
+#   8. Opens a GitHub PR (if `gh` CLI is available)
+#
+# The tag push triggers deploy-android.yml and deploy-ios.yml.
+# Merge the PR to keep pubspec.yaml in sync on main.
 # ──────────────────────────────────────────────────────────────────────
 param(
     [Parameter(Mandatory=$true, Position=0)]
@@ -73,9 +76,11 @@ $newVersion = "$major.$minor.$patch"
 $newBuild = $build + 1
 $newFull = "$newVersion+$newBuild"
 $tag = "v$newVersion"
+$branch = "release/$tag"
 
 Write-Host "New version:     $newFull"
 Write-Host "Git tag:         $tag"
+Write-Host "Branch:          $branch"
 Write-Host ""
 
 if ($DryRun) {
@@ -104,6 +109,10 @@ if ($confirm -notin @('y', 'Y')) {
     exit 0
 }
 
+# ── Create release branch ─────────────────────────────────────────────
+git checkout -b $branch
+Write-Host "Created branch $branch"
+
 # ── Update pubspec.yaml ───────────────────────────────────────────────
 (Get-Content $Pubspec) -replace '^version:.*', "version: $newFull" | Set-Content $Pubspec
 Write-Host "Updated $Pubspec -> $newFull"
@@ -112,7 +121,23 @@ Write-Host "Updated $Pubspec -> $newFull"
 git add $Pubspec
 git commit -m "chore: bump version to $newVersion"
 git tag $tag
-git push origin HEAD --tags
+git push origin $branch --tags
 
 Write-Host ""
-Write-Host "Done! Tag $tag pushed - deploy workflows will start automatically."
+Write-Host "Tag $tag pushed - deploy workflows will start automatically."
+Write-Host ""
+
+# ── Open PR if gh CLI is available ─────────────────────────────────────
+$ghAvailable = Get-Command gh -ErrorAction SilentlyContinue
+if ($ghAvailable) {
+    Write-Host "Opening pull request..."
+    gh pr create `
+        --title "chore: bump version to $newVersion" `
+        --body "Bumps ``pubspec.yaml`` to ``$newFull`` and tags ``$tag``." `
+        --base main `
+        --head $branch
+} else {
+    $remote = (git remote get-url origin) -replace '.*github\.com[:/]' -replace '\.git$'
+    Write-Host "Merge the branch into main to keep pubspec.yaml in sync:"
+    Write-Host "  -> https://github.com/$remote/compare/$($branch)?expand=1"
+}
