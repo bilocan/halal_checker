@@ -34,12 +34,14 @@ Bump the app version, commit, tag, and push — triggering the store deploy work
 1. Reads the current version from `pubspec.yaml`
 2. Calculates the next version (or uses the explicit one)
 3. Increments the build number (`+N`) by 1
-4. Updates `pubspec.yaml`
-5. Commits: `chore: bump version to X.Y.Z`
+4. Creates a `release/vX.Y.Z` branch (works with branch protection on `main`)
+5. Updates `pubspec.yaml` and commits
 6. Creates git tag `vX.Y.Z`
-7. Pushes the commit and tag to origin
+7. Pushes the branch + tag to origin
+8. Opens a PR via `gh` CLI (if available), or prints a link to create one
 
 The tag push triggers `deploy-android.yml` and `deploy-ios.yml` automatically.
+Merge the PR to keep `pubspec.yaml` in sync on `main`.
 
 **Preview with `--dry-run`:** pass `--dry-run` (Linux) or `-DryRun` (Windows) to see what the next version would be without making any changes.
 
