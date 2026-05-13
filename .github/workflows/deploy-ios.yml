@@ -350,20 +350,20 @@ jobs:
           )
           rm -f "$KEY_FILE"
 
-          APP_ID=$(curl -sS --fail-with-body \
+          APP_ID=$(curl -gsS --fail-with-body \
             -H "Authorization: Bearer $JWT" \
             "https://api.appstoreconnect.apple.com/v1/apps?filter[bundleId]=app.halalscan" \
             | jq -r '.data[0].id')
           echo "App ID: $APP_ID"
 
-          VERSION_ID=$(curl -sS --fail-with-body \
+          VERSION_ID=$(curl -gsS --fail-with-body \
             -H "Authorization: Bearer $JWT" \
             "https://api.appstoreconnect.apple.com/v1/apps/$APP_ID/appStoreVersions?filter[platform]=IOS&filter[appStoreState]=PREPARE_FOR_SUBMISSION" \
             | jq -r '.data[0].id')
 
           if [ -z "$VERSION_ID" ] || [ "$VERSION_ID" = "null" ]; then
             echo "No version found in PREPARE_FOR_SUBMISSION state. Current versions:" >&2
-            curl -sS -H "Authorization: Bearer $JWT" \
+            curl -gsS -H "Authorization: Bearer $JWT" \
               "https://api.appstoreconnect.apple.com/v1/apps/$APP_ID/appStoreVersions?filter[platform]=IOS" \
               | jq '.data[] | {id: .id, version: .attributes.versionString, state: .attributes.appStoreState}'
             exit 1
@@ -420,19 +420,19 @@ jobs:
           )
           rm -f "$KEY_FILE"
 
-          APP_ID=$(curl -sS --fail-with-body \
+          APP_ID=$(curl -gsS --fail-with-body \
             -H "Authorization: Bearer $JWT" \
             "https://api.appstoreconnect.apple.com/v1/apps?filter[bundleId]=app.halalscan" \
             | jq -r '.data[0].id')
 
-          VERSION_ID=$(curl -sS --fail-with-body \
+          VERSION_ID=$(curl -gsS --fail-with-body \
             -H "Authorization: Bearer $JWT" \
             "https://api.appstoreconnect.apple.com/v1/apps/$APP_ID/appStoreVersions?filter[platform]=IOS&filter[appStoreState]=PENDING_DEVELOPER_RELEASE" \
             | jq -r '.data[0].id')
 
           if [ -z "$VERSION_ID" ] || [ "$VERSION_ID" = "null" ]; then
             echo "No version in PENDING_DEVELOPER_RELEASE state. Current versions:" >&2
-            curl -sS -H "Authorization: Bearer $JWT" \
+            curl -gsS -H "Authorization: Bearer $JWT" \
               "https://api.appstoreconnect.apple.com/v1/apps/$APP_ID/appStoreVersions?filter[platform]=IOS" \
               | jq '.data[] | {id: .id, version: .attributes.versionString, state: .attributes.appStoreState}'
             exit 1
