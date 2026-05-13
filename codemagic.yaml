@@ -3,33 +3,32 @@ workflows:
     name: iOS Internal Testing
 
     environment:
-      ios_signing:
-        distribution_type: app_store
-        bundle_identifier: app.halalscan
+      flutter: stable
 
       vars:
         XCODE_WORKSPACE: "ios/Runner.xcworkspace"
         XCODE_SCHEME: "Runner"
-        COCOAPODS_DISABLE_STATS: true
-        COCOAPODS_SKIP_UPDATE_CHECK: true
 
-      groups:
-        - appstore_credentials
+      # App Store Connect API auth (REQUIRED)
+      # Set these in Codemagic UI environment variables:
+      # APP_STORE_CONNECT_PRIVATE_KEY
+      # APP_STORE_CONNECT_KEY_ID
+      # APP_STORE_CONNECT_ISSUER_ID
 
     scripts:
 
-      - name: Clean Flutter project
+      - name: Clean project
         script: |
           flutter clean
           rm -rf ios/Pods
           rm -rf ios/Podfile.lock
           rm -rf ~/Library/Developer/Xcode/DerivedData
 
-      - name: Get Flutter packages
+      - name: Get Flutter dependencies
         script: |
           flutter pub get
 
-      - name: Install CocoaPods
+      - name: Install CocoaPods (stable)
         script: |
           cd ios
           pod install --repo-update=false
@@ -39,23 +38,22 @@ workflows:
         script: |
           agvtool new-version -all $CM_BUILD_NUMBER
 
-      - name: Build IPA
+      - name: Build iOS app
         script: |
           flutter build ipa \
             --release \
-            --build-number=$CM_BUILD_NUMBER \
-            --export-options-plist=ios/Runner/ExportOptions.plist
+            --build-number=$CM_BUILD_NUMBER
 
     artifacts:
       - build/ios/ipa/*.ipa
 
     publishing:
       app_store_connect:
-        auth: integration
+        api_key: $APP_STORE_CONNECT_PRIVATE_KEY
+        key_id: $APP_STORE_CONNECT_KEY_ID
+        issuer_id: $APP_STORE_CONNECT_ISSUER_ID
 
         submit_to_testflight: true
 
         beta_groups:
           - Internal Testers
-
-        expire_build_submitted_for_review: true
