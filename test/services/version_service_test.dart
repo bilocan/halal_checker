@@ -1,4 +1,8 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 import 'package:halal_checker/services/version_service.dart';
@@ -7,7 +11,7 @@ const _androidConfig = {
   'latest_version': '1.0.0',
   'android_store_url':
       'https://play.google.com/store/apps/details?id=app.halalscan',
-  'ios_store_url': 'https://apps.apple.com/app/idapp.halalscan',
+  'ios_store_url': 'https://apps.apple.com/app/halalscan',
 };
 
 void main() {
@@ -102,6 +106,78 @@ void main() {
       // Simulate the _loadConfig null path via checkForUpdate's catch path.
       final config = await service.checkWithConfig({});
       expect(config.status, UpdateStatus.checkFailed);
+    });
+  });
+
+  // ── lookupIosStoreUrl ────────────────────────────────────────────────────
+
+  group('VersionService.lookupIosStoreUrl', () {
+    test('returns trackViewUrl from iTunes Search API on HTTP 200', () async {
+      final client = MockClient(
+        (_) async => http.Response(
+          jsonEncode({
+            'resultCount': 1,
+            'results': [
+              {
+                'trackViewUrl':
+                    'https://apps.apple.com/app/halalscan/id1234567890',
+              },
+            ],
+          }),
+          200,
+        ),
+      );
+      final url = await VersionService.lookupIosStoreUrl(
+        httpClient: client,
+        bundleId: 'app.halalscan',
+      );
+      expect(url, 'https://apps.apple.com/app/halalscan/id1234567890');
+    });
+
+    test('returns null when no results found', () async {
+      final client = MockClient(
+        (_) async =>
+            http.Response(jsonEncode({'resultCount': 0, 'results': []}), 200),
+      );
+      final url = await VersionService.lookupIosStoreUrl(
+        httpClient: client,
+        bundleId: 'com.nonexistent.app',
+      );
+      expect(url, isNull);
+    });
+
+    test('returns null on HTTP error', () async {
+      final client = MockClient(
+        (_) async => http.Response('Server Error', 500),
+      );
+      final url = await VersionService.lookupIosStoreUrl(httpClient: client);
+      expect(url, isNull);
+    });
+
+    test('returns null on network exception', () async {
+      final client = MockClient(
+        (_) async => throw http.ClientException('Timeout'),
+      );
+      final url = await VersionService.lookupIosStoreUrl(httpClient: client);
+      expect(url, isNull);
+    });
+
+    test('sends correct iTunes lookup URL', () async {
+      late Uri capturedUri;
+      final client = MockClient((req) async {
+        capturedUri = req.url;
+        return http.Response(
+          jsonEncode({'resultCount': 0, 'results': []}),
+          200,
+        );
+      });
+      await VersionService.lookupIosStoreUrl(
+        httpClient: client,
+        bundleId: 'app.halalscan',
+      );
+      expect(capturedUri.host, 'itunes.apple.com');
+      expect(capturedUri.path, '/lookup');
+      expect(capturedUri.queryParameters['bundleId'], 'app.halalscan');
     });
   });
 }
