@@ -45,5 +45,3 @@ workflows:
           - Internal Testers
 
         expire_build_submitted_for_review: true
-
-        release_type: MANUAL
