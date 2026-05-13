@@ -5,6 +5,7 @@
 # Usage:
 #   ./scripts/linux/bump_version.sh <major|minor|patch>   # auto-increment
 #   ./scripts/linux/bump_version.sh 1.3.0                 # explicit version
+#   ./scripts/linux/bump_version.sh --dry-run patch       # preview only
 #
 # What it does:
 #   1. Reads the current version from pubspec.yaml
@@ -17,6 +18,12 @@
 #      → This triggers deploy-android.yml and deploy-ios.yml
 # ──────────────────────────────────────────────────────────────────────
 set -euo pipefail
+
+DRY_RUN=false
+if [ "${1:-}" = "--dry-run" ]; then
+  DRY_RUN=true
+  shift
+fi
 
 PUBSPEC="pubspec.yaml"
 
@@ -38,8 +45,9 @@ echo "Current version: $VERSION_NAME+$BUILD_NUMBER"
 if [ $# -lt 1 ]; then
   echo ""
   echo "Usage:"
-  echo "  $0 <major|minor|patch>   # auto-increment"
-  echo "  $0 1.3.0                 # explicit version"
+  echo "  $0 <major|minor|patch>       # auto-increment"
+  echo "  $0 1.3.0                     # explicit version"
+  echo "  $0 --dry-run <major|minor|patch>  # preview only"
   exit 1
 fi
 
@@ -75,6 +83,11 @@ TAG="v$NEW_VERSION"
 echo "New version:     $NEW_FULL"
 echo "Git tag:         $TAG"
 echo ""
+
+if $DRY_RUN; then
+  echo "(dry run — no changes made)"
+  exit 0
+fi
 
 # ── Check for uncommitted changes ──────────────────────────────────────
 if ! git diff --quiet HEAD 2>/dev/null; then

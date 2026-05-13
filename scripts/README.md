@@ -12,10 +12,12 @@ Bump the app version, commit, tag, and push — triggering the store deploy work
 # Linux / macOS
 ./scripts/linux/bump_version.sh <major|minor|patch>   # auto-increment
 ./scripts/linux/bump_version.sh 1.3.0                 # explicit version
+./scripts/linux/bump_version.sh --dry-run patch       # preview only
 
 # Windows (PowerShell)
 .\scripts\windows\bump_version.ps1 <major|minor|patch>
 .\scripts\windows\bump_version.ps1 1.3.0
+.\scripts\windows\bump_version.ps1 -DryRun patch      # preview only
 ```
 
 **Examples:**
@@ -38,6 +40,8 @@ Bump the app version, commit, tag, and push — triggering the store deploy work
 7. Pushes the commit and tag to origin
 
 The tag push triggers `deploy-android.yml` and `deploy-ios.yml` automatically.
+
+**Preview with `--dry-run`:** pass `--dry-run` (Linux) or `-DryRun` (Windows) to see what the next version would be without making any changes.
 
 **Safety checks:** refuses to run with uncommitted changes, validates version format, checks the tag doesn't already exist, and asks for confirmation.
 

@@ -4,6 +4,7 @@
 # Usage:
 #   .\scripts\windows\bump_version.ps1 <major|minor|patch>   # auto-increment
 #   .\scripts\windows\bump_version.ps1 1.3.0                 # explicit version
+#   .\scripts\windows\bump_version.ps1 -DryRun patch         # preview only
 #
 # What it does:
 #   1. Reads the current version from pubspec.yaml
@@ -17,7 +18,9 @@
 # ──────────────────────────────────────────────────────────────────────
 param(
     [Parameter(Mandatory=$true, Position=0)]
-    [string]$BumpType
+    [string]$BumpType,
+
+    [switch]$DryRun
 )
 
 $ErrorActionPreference = "Stop"
@@ -74,6 +77,11 @@ $tag = "v$newVersion"
 Write-Host "New version:     $newFull"
 Write-Host "Git tag:         $tag"
 Write-Host ""
+
+if ($DryRun) {
+    Write-Host "(dry run - no changes made)"
+    exit 0
+}
 
 # ── Check for uncommitted changes ──────────────────────────────────────
 $diff = git diff --quiet HEAD 2>$null
