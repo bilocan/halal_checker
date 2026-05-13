@@ -35,6 +35,10 @@
 			</array>
 		</dict>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>HalalScan needs camera access to scan product barcodes and capture ingredient labels for halal analysis.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>HalalScan needs photo library access to select product images for ingredient analysis.</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UIApplicationSceneManifest</key>
