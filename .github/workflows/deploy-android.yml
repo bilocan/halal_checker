@@ -152,11 +152,27 @@ jobs:
             -H "Authorization: Bearer $TOKEN" \
             "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PKG/edits" \
             | jq -r '.id')
-          curl -sS --fail-with-body -X PUT \
+
+          RESPONSE=$(curl -sS -w "\n%{http_code}" -X PUT \
             -H "Authorization: Bearer $TOKEN" \
             -H "Content-Type: application/json" \
             -d "{\"releases\":[{\"versionCodes\":[\"$VC\"],\"status\":\"completed\"}]}" \
-            "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PKG/edits/$EDIT/tracks/internal"
+            "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PKG/edits/$EDIT/tracks/internal")
+          HTTP_CODE=$(echo "$RESPONSE" | tail -1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+
+          if [ "$HTTP_CODE" -ge 400 ]; then
+            if echo "$BODY" | grep -q "FAILED_PRECONDITION"; then
+              echo "::warning::Precondition check failed — the app is likely under review."
+              echo "::warning::Re-run this workflow after Google Play review completes."
+              echo "$BODY" | jq '.error.message' 2>/dev/null || echo "$BODY"
+              exit 0
+            fi
+            echo "::error::Track update failed (HTTP $HTTP_CODE):"
+            echo "$BODY"
+            exit 1
+          fi
+
           curl -sS --fail-with-body -X POST \
             -H "Authorization: Bearer $TOKEN" \
             "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PKG/edits/$EDIT:commit"
@@ -192,11 +208,27 @@ jobs:
             -H "Authorization: Bearer $TOKEN" \
             "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PKG/edits" \
             | jq -r '.id')
-          curl -sS --fail-with-body -X PUT \
+
+          RESPONSE=$(curl -sS -w "\n%{http_code}" -X PUT \
             -H "Authorization: Bearer $TOKEN" \
             -H "Content-Type: application/json" \
             -d "{\"releases\":[{\"versionCodes\":[\"$VC\"],\"status\":\"completed\"}]}" \
-            "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PKG/edits/$EDIT/tracks/alpha"
+            "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PKG/edits/$EDIT/tracks/alpha")
+          HTTP_CODE=$(echo "$RESPONSE" | tail -1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+
+          if [ "$HTTP_CODE" -ge 400 ]; then
+            if echo "$BODY" | grep -q "FAILED_PRECONDITION"; then
+              echo "::warning::Precondition check failed — the app is likely under review."
+              echo "::warning::Re-run this workflow after Google Play review completes."
+              echo "$BODY" | jq '.error.message' 2>/dev/null || echo "$BODY"
+              exit 0
+            fi
+            echo "::error::Track update failed (HTTP $HTTP_CODE):"
+            echo "$BODY"
+            exit 1
+          fi
+
           curl -sS --fail-with-body -X POST \
             -H "Authorization: Bearer $TOKEN" \
             "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PKG/edits/$EDIT:commit"
@@ -233,11 +265,27 @@ jobs:
             -H "Authorization: Bearer $TOKEN" \
             "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PKG/edits" \
             | jq -r '.id')
-          curl -sS --fail-with-body -X PUT \
+
+          RESPONSE=$(curl -sS -w "\n%{http_code}" -X PUT \
             -H "Authorization: Bearer $TOKEN" \
             -H "Content-Type: application/json" \
             -d "{\"releases\":[{\"versionCodes\":[\"$VC\"],\"status\":\"completed\"}]}" \
-            "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PKG/edits/$EDIT/tracks/alpha"
+            "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PKG/edits/$EDIT/tracks/alpha")
+          HTTP_CODE=$(echo "$RESPONSE" | tail -1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+
+          if [ "$HTTP_CODE" -ge 400 ]; then
+            if echo "$BODY" | grep -q "FAILED_PRECONDITION"; then
+              echo "::warning::Precondition check failed — the app is likely under review."
+              echo "::warning::Re-run this workflow after Google Play review completes."
+              echo "$BODY" | jq '.error.message' 2>/dev/null || echo "$BODY"
+              exit 0
+            fi
+            echo "::error::Track update failed (HTTP $HTTP_CODE):"
+            echo "$BODY"
+            exit 1
+          fi
+
           curl -sS --fail-with-body -X POST \
             -H "Authorization: Bearer $TOKEN" \
             "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PKG/edits/$EDIT:commit"
@@ -273,11 +321,27 @@ jobs:
             -H "Authorization: Bearer $TOKEN" \
             "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PKG/edits" \
             | jq -r '.id')
-          curl -sS --fail-with-body -X PUT \
+
+          RESPONSE=$(curl -sS -w "\n%{http_code}" -X PUT \
             -H "Authorization: Bearer $TOKEN" \
             -H "Content-Type: application/json" \
             -d "{\"releases\":[{\"versionCodes\":[\"$VC\"],\"status\":\"completed\"}]}" \
-            "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PKG/edits/$EDIT/tracks/beta"
+            "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PKG/edits/$EDIT/tracks/beta")
+          HTTP_CODE=$(echo "$RESPONSE" | tail -1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+
+          if [ "$HTTP_CODE" -ge 400 ]; then
+            if echo "$BODY" | grep -q "FAILED_PRECONDITION"; then
+              echo "::warning::Precondition check failed — the app is likely under review."
+              echo "::warning::Re-run this workflow after Google Play review completes."
+              echo "$BODY" | jq '.error.message' 2>/dev/null || echo "$BODY"
+              exit 0
+            fi
+            echo "::error::Track update failed (HTTP $HTTP_CODE):"
+            echo "$BODY"
+            exit 1
+          fi
+
           curl -sS --fail-with-body -X POST \
             -H "Authorization: Bearer $TOKEN" \
             "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PKG/edits/$EDIT:commit"
