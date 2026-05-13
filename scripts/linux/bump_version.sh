@@ -15,7 +15,8 @@
 #   5. Updates pubspec.yaml and commits
 #   6. Creates git tag vX.Y.Z
 #   7. Pushes branch + tag to origin
-#   8. Opens a GitHub PR (if `gh` CLI is available)
+#   8. Creates a GitHub Release with auto-generated notes
+#   9. Opens a GitHub PR (if `gh` CLI is available)
 #
 # The tag push triggers deploy-android.yml and deploy-ios.yml.
 # Merge the PR to keep pubspec.yaml in sync on main.
@@ -131,8 +132,13 @@ echo ""
 echo "Tag $TAG pushed — deploy workflows will start automatically."
 echo ""
 
-# ── Open PR if gh CLI is available ─────────────────────────────────────
+# ── Create GitHub Release + open PR if gh CLI is available ─────────────
 if command -v gh &>/dev/null; then
+  echo "Creating GitHub Release $TAG..."
+  gh release create "$TAG" \
+    --title "$TAG" \
+    --generate-notes
+
   echo "Opening pull request..."
   gh pr create \
     --title "chore: bump version to $NEW_VERSION" \
@@ -140,6 +146,12 @@ if command -v gh &>/dev/null; then
     --base main \
     --head "$BRANCH"
 else
+  REPO_SLUG=$(git remote get-url origin | sed 's|.*github.com[:/]||;s|\.git$||')
+  echo "Install the gh CLI to auto-create releases and PRs."
+  echo ""
+  echo "Create the release manually:"
+  echo "  → https://github.com/$REPO_SLUG/releases/new?tag=$TAG&title=$TAG"
+  echo ""
   echo "Merge the branch into main to keep pubspec.yaml in sync:"
-  echo "  → https://github.com/$(git remote get-url origin | sed 's|.*github.com[:/]||;s|\.git$||')/compare/$BRANCH?expand=1"
+  echo "  → https://github.com/$REPO_SLUG/compare/$BRANCH?expand=1"
 fi

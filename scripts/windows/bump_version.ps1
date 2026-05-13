@@ -14,7 +14,8 @@
 #   5. Updates pubspec.yaml and commits
 #   6. Creates git tag vX.Y.Z
 #   7. Pushes branch + tag to origin
-#   8. Opens a GitHub PR (if `gh` CLI is available)
+#   8. Creates a GitHub Release with auto-generated notes
+#   9. Opens a GitHub PR (if `gh` CLI is available)
 #
 # The tag push triggers deploy-android.yml and deploy-ios.yml.
 # Merge the PR to keep pubspec.yaml in sync on main.
@@ -127,9 +128,14 @@ Write-Host ""
 Write-Host "Tag $tag pushed - deploy workflows will start automatically."
 Write-Host ""
 
-# ── Open PR if gh CLI is available ─────────────────────────────────────
+# ── Create GitHub Release + open PR if gh CLI is available ─────────────
 $ghAvailable = Get-Command gh -ErrorAction SilentlyContinue
 if ($ghAvailable) {
+    Write-Host "Creating GitHub Release $tag..."
+    gh release create $tag `
+        --title $tag `
+        --generate-notes
+
     Write-Host "Opening pull request..."
     gh pr create `
         --title "chore: bump version to $newVersion" `
@@ -138,6 +144,11 @@ if ($ghAvailable) {
         --head $branch
 } else {
     $remote = (git remote get-url origin) -replace '.*github\.com[:/]' -replace '\.git$'
+    Write-Host "Install the gh CLI to auto-create releases and PRs."
+    Write-Host ""
+    Write-Host "Create the release manually:"
+    Write-Host "  -> https://github.com/$remote/releases/new?tag=$tag&title=$tag"
+    Write-Host ""
     Write-Host "Merge the branch into main to keep pubspec.yaml in sync:"
     Write-Host "  -> https://github.com/$remote/compare/$($branch)?expand=1"
 }
