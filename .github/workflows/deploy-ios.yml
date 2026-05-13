@@ -114,6 +114,7 @@ jobs:
       - name: Check file type
         run: |
           echo "$CERT_BASE64" | base64 --decode > test.p12
+          ls -lh test.p12
           file test.p12
 
       - name: Import distribution certificate
