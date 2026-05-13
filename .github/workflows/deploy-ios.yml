@@ -236,12 +236,20 @@ jobs:
           </plist>
           PLIST
 
-      - name: Build IPA
+      - name: Configure code signing
         env:
-          FLUTTER_XCODE_CODE_SIGN_STYLE: Manual
-          FLUTTER_XCODE_CODE_SIGN_IDENTITY: Apple Distribution
-          FLUTTER_XCODE_PROVISIONING_PROFILE_SPECIFIER: ${{ env.PROFILE_UUID }}
-          FLUTTER_XCODE_DEVELOPMENT_TEAM: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          # Write signing settings to Release.xcconfig (only affects Runner target,
+          # not CocoaPods targets which have their own xcconfig files)
+          cat >> ios/Flutter/Release.xcconfig <<EOF
+          CODE_SIGN_STYLE=Manual
+          CODE_SIGN_IDENTITY=Apple Distribution
+          DEVELOPMENT_TEAM=${APPLE_TEAM_ID}
+          PROVISIONING_PROFILE_SPECIFIER=${PROFILE_UUID}
+          EOF
+
+      - name: Build IPA
         run: |
           flutter build ipa --release \
             --build-name=${{ steps.version.outputs.name }} \
