@@ -111,6 +111,11 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Check file type
+        run: |
+          echo "$CERT_BASE64" | base64 --decode > test.p12
+          file test.p12
+
       - name: Import distribution certificate
         env:
           CERT_BASE64: ${{ secrets.IOS_DISTRIBUTION_CERT_BASE64 }}
