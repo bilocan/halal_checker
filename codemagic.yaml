@@ -5,7 +5,7 @@ workflows:
     environment:
       ios_signing:
         distribution_type: app_store
-        bundle_identifier: com.your.app
+        bundle_identifier: app.halalscan
 
       vars:
         XCODE_WORKSPACE: "ios/Runner.xcworkspace"
@@ -15,22 +15,35 @@ workflows:
         - appstore_credentials
 
     scripts:
-      - name: Flutter packages
+
+      - name: Clean Flutter project
+        script: |
+          flutter clean
+          rm -rf ios/Pods
+          rm -rf ios/Podfile.lock
+          rm -rf ~/Library/Developer/Xcode/DerivedData
+
+      - name: Get Flutter packages
         script: |
           flutter pub get
+
+      - name: Install CocoaPods
+        script: |
+          cd ios
+          pod repo update
+          pod install
+          cd ..
 
       - name: Set build number
         script: |
           agvtool new-version -all $CM_BUILD_NUMBER
 
-      - name: Build ipa
+      - name: Build IPA
         script: |
-          xcode-project use-profiles \
-            --custom-export-options='{"testFlightInternalTestingOnly": true}'
-
           flutter build ipa \
             --release \
-            --build-number=$CM_BUILD_NUMBER
+            --build-number=$CM_BUILD_NUMBER \
+            --export-options-plist=ios/Runner/ExportOptions.plist
 
     artifacts:
       - build/ios/ipa/*.ipa
