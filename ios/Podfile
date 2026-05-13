@@ -1,1 +1,7 @@
 source 'https://cdn.cocoapods.org/'
+
+platform :ios, '14.0'
+
+workspace 'Runner.xcworkspace'
+
+ENV['COCOAPODS_DISABLE_STATS'] = 'true'
