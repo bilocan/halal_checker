@@ -3,8 +3,8 @@
 # bump_version.sh — bump the app version, commit, tag, and push.
 #
 # Usage:
-#   ./scripts/bump_version.sh <major|minor|patch>   # auto-increment
-#   ./scripts/bump_version.sh 1.3.0                 # explicit version
+#   ./scripts/linux/bump_version.sh <major|minor|patch>   # auto-increment
+#   ./scripts/linux/bump_version.sh 1.3.0                 # explicit version
 #
 # What it does:
 #   1. Reads the current version from pubspec.yaml
@@ -59,7 +59,6 @@ case "$ARG" in
     PATCH=$((PATCH + 1))
     ;;
   *)
-    # Explicit version — validate format
     if ! echo "$ARG" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
       echo "Error: invalid version '$ARG'. Expected major.minor.patch (e.g. 1.2.3)" >&2
       exit 1
