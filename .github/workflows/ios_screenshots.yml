@@ -25,6 +25,9 @@ jobs:
           - name: "iPhone SE (3rd generation)"
             slug: "iphone-se-3rd"
             udid_hint: "iPhone SE (3rd generation)"
+          - name: "iPad Pro 13-inch (M4)"
+            slug: "ipad-pro-13-m4"
+            udid_hint: "iPad Pro 13-inch (M4)"
 
     steps:
       - name: Checkout code
