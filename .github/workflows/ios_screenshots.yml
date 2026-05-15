@@ -1,0 +1,83 @@
+name: iOS App Store Screenshots
+
+on:
+  workflow_dispatch:  # Manual trigger from GitHub UI
+    inputs:
+      flutter_version:
+        description: 'Flutter version'
+        required: false
+        default: 'stable'
+
+jobs:
+  screenshots:
+    runs-on: macos-latest
+    
+    strategy:
+      matrix:
+        device:
+          - name: "iPhone 16 Pro Max"
+            udid_hint: "iPhone 16 Pro Max"
+          - name: "iPhone 14 Plus"
+            udid_hint: "iPhone 14 Plus"
+          - name: "iPhone 8 Plus"
+            udid_hint: "iPhone 8 Plus"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ inputs.flutter_version }}
+          channel: 'stable'
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Get available simulators
+        run: xcrun simctl list devices available
+
+      - name: Boot simulator
+        run: |
+          UDID=$(xcrun simctl list devices available | grep "${{ matrix.device.udid_hint }}" | head -1 | grep -E -o '[0-9A-F-]{36}')
+          echo "SIMULATOR_UDID=$UDID" >> $GITHUB_ENV
+          xcrun simctl boot "$UDID"
+          echo "Booted: ${{ matrix.device.name }} ($UDID)"
+
+      - name: Build Flutter app for simulator
+        run: flutter build ios --simulator --no-codesign
+
+      - name: Install app on simulator
+        run: |
+          APP_PATH=$(find build/ios/iphonesimulator -name "*.app" | head -1)
+          echo "Installing: $APP_PATH"
+          xcrun simctl install "$SIMULATOR_UDID" "$APP_PATH"
+
+      - name: Launch app and wait for it to load
+        run: |
+          # Replace with your actual bundle ID
+          BUNDLE_ID=$(defaults read "$(find build/ios/iphonesimulator -name "*.app" | head -1)/Info" CFBundleIdentifier)
+          echo "Bundle ID: $BUNDLE_ID"
+          echo "BUNDLE_ID=$BUNDLE_ID" >> $GITHUB_ENV
+          xcrun simctl launch "$SIMULATOR_UDID" "$BUNDLE_ID"
+          sleep 5  # Wait for app to fully load
+
+      - name: Take screenshots
+        run: |
+          mkdir -p screenshots/${{ matrix.device.name }}
+          
+          # Screenshot 1 - initial screen (already open)
+          xcrun simctl io "$SIMULATOR_UDID" screenshot "screenshots/${{ matrix.device.name }}/01_home.png"
+          sleep 2
+
+          # Add more navigation steps here if needed, e.g.:
+          # xcrun simctl io "$SIMULATOR_UDID" screenshot "screenshots/${{ matrix.device.name }}/02_feature.png"
+
+      - name: Upload screenshots as artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots-${{ matrix.device.name }}
+          path: screenshots/
+          retention-days: 30
