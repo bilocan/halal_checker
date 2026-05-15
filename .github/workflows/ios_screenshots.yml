@@ -4,23 +4,26 @@ on:
   workflow_dispatch:  # Manual trigger from GitHub UI
     inputs:
       flutter_version:
-        description: 'Flutter version'
+        description: 'Flutter version (leave blank for latest stable)'
         required: false
-        default: 'stable'
+        default: ''
 
 jobs:
   screenshots:
     runs-on: macos-latest
-    
+
     strategy:
       matrix:
         device:
           - name: "iPhone 16 Pro Max"
+            slug: "iphone-16-pro-max"
             udid_hint: "iPhone 16 Pro Max"
           - name: "iPhone 14 Plus"
+            slug: "iphone-14-plus"
             udid_hint: "iPhone 14 Plus"
-          - name: "iPhone 8 Plus"
-            udid_hint: "iPhone 8 Plus"
+          - name: "iPhone SE (3rd generation)"
+            slug: "iphone-se-3rd"
+            udid_hint: "iPhone SE (3rd generation)"
 
     steps:
       - name: Checkout code
@@ -33,6 +36,16 @@ jobs:
           channel: 'stable'
           cache: true
 
+      - name: Create dart defines
+        run: |
+          cat > dart_defines.json << 'EOF'
+          {
+            "SUPABASE_URL": "${{ secrets.SUPABASE_URL }}",
+            "SUPABASE_ANON_KEY": "${{ secrets.SUPABASE_ANON_KEY }}",
+            "GOOGLE_WEB_CLIENT_ID": "${{ secrets.GOOGLE_WEB_CLIENT_ID }}"
+          }
+          EOF
+
       - name: Install dependencies
         run: flutter pub get
 
@@ -42,12 +55,18 @@ jobs:
       - name: Boot simulator
         run: |
           UDID=$(xcrun simctl list devices available | grep "${{ matrix.device.udid_hint }}" | head -1 | grep -E -o '[0-9A-F-]{36}')
+          if [ -z "$UDID" ]; then
+            echo "Error: Could not find simulator for ${{ matrix.device.name }}"
+            xcrun simctl list devices available
+            exit 1
+          fi
           echo "SIMULATOR_UDID=$UDID" >> $GITHUB_ENV
           xcrun simctl boot "$UDID"
+          xcrun simctl bootstatus "$UDID" -b
           echo "Booted: ${{ matrix.device.name }} ($UDID)"
 
       - name: Build Flutter app for simulator
-        run: flutter build ios --simulator --no-codesign
+        run: flutter build ios --simulator --no-codesign --dart-define-from-file=dart_defines.json
 
       - name: Install app on simulator
         run: |
@@ -57,8 +76,8 @@ jobs:
 
       - name: Launch app and wait for it to load
         run: |
-          # Replace with your actual bundle ID
-          BUNDLE_ID=$(defaults read "$(find build/ios/iphonesimulator -name "*.app" | head -1)/Info" CFBundleIdentifier)
+          APP_PATH=$(find build/ios/iphonesimulator -name "*.app" | head -1)
+          BUNDLE_ID=$(/usr/libexec/PlistBuddy -c "Print CFBundleIdentifier" "$APP_PATH/Info.plist")
           echo "Bundle ID: $BUNDLE_ID"
           echo "BUNDLE_ID=$BUNDLE_ID" >> $GITHUB_ENV
           xcrun simctl launch "$SIMULATOR_UDID" "$BUNDLE_ID"
@@ -66,18 +85,18 @@ jobs:
 
       - name: Take screenshots
         run: |
-          mkdir -p screenshots/${{ matrix.device.name }}
-          
+          mkdir -p "screenshots/${{ matrix.device.slug }}"
+
           # Screenshot 1 - initial screen (already open)
-          xcrun simctl io "$SIMULATOR_UDID" screenshot "screenshots/${{ matrix.device.name }}/01_home.png"
+          xcrun simctl io "$SIMULATOR_UDID" screenshot "screenshots/${{ matrix.device.slug }}/01_home.png"
           sleep 2
 
           # Add more navigation steps here if needed, e.g.:
-          # xcrun simctl io "$SIMULATOR_UDID" screenshot "screenshots/${{ matrix.device.name }}/02_feature.png"
+          # xcrun simctl io "$SIMULATOR_UDID" screenshot "screenshots/${{ matrix.device.slug }}/02_feature.png"
 
       - name: Upload screenshots as artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: screenshots-${{ matrix.device.name }}
+          name: screenshots-${{ matrix.device.slug }}
           path: screenshots/
           retention-days: 30
