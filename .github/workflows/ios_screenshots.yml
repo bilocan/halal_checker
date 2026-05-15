@@ -54,14 +54,18 @@ jobs:
 
       - name: Boot simulator
         run: |
-          UDID=$(xcrun simctl list devices available | grep "${{ matrix.device.udid_hint }}" | head -1 | grep -E -o '[0-9A-F-]{36}')
-          if [ -z "$UDID" ]; then
-            echo "Error: Could not find simulator for ${{ matrix.device.name }}"
-            xcrun simctl list devices available
+          HINT="${{ matrix.device.udid_hint }}"
+          DEVICE_TYPE=$(xcrun simctl list devicetypes --json | jq -r --arg hint "$HINT" '.devicetypes[] | select(.name | contains($hint)) | .identifier' | head -1)
+          RUNTIME=$(xcrun simctl list runtimes --json | jq -r '[.runtimes[] | select(.name | startswith("iOS")) | select(.isAvailable == true)] | sort_by(.version) | last | .identifier')
+          if [ -z "$DEVICE_TYPE" ] || [ -z "$RUNTIME" ]; then
+            echo "Error: Cannot find device type or runtime for ${{ matrix.device.name }}"
+            xcrun simctl list devicetypes | grep "$HINT" || true
+            xcrun simctl list runtimes
             exit 1
           fi
+          UDID=$(xcrun simctl create "${{ matrix.device.name }}-screenshots" "$DEVICE_TYPE" "$RUNTIME")
           echo "SIMULATOR_UDID=$UDID" >> $GITHUB_ENV
-          xcrun simctl boot "$UDID" || true
+          xcrun simctl boot "$UDID"
           xcrun simctl bootstatus "$UDID" -b
           echo "Booted: ${{ matrix.device.name }} ($UDID)"
 
