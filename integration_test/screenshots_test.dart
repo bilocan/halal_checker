@@ -10,24 +10,24 @@ void main() {
 
   testWidgets('App Store screenshots', (tester) async {
     app.main();
-    await tester.pumpAndSettle(const Duration(seconds: 4));
+    await tester.pump(const Duration(seconds: 4));
 
     // 01 — Start screen (scan history + main actions visible)
     await binding.takeScreenshot('01_start');
 
     // 02 — Scanner screen
     await tester.tap(find.byIcon(Icons.qr_code_scanner));
-    await tester.pumpAndSettle(const Duration(seconds: 2));
+    await tester.pump(const Duration(seconds: 2));
     await binding.takeScreenshot('02_scanner');
     await tester.pageBack();
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
 
     // 03 — Halal directory
     await tester.tap(find.byIcon(Icons.store));
-    await tester.pumpAndSettle(const Duration(seconds: 3));
+    await tester.pump(const Duration(seconds: 3));
     await binding.takeScreenshot('03_directory');
     await tester.pageBack();
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
 
     // 04 — Result: halal product
     final navigator = tester.state<NavigatorState>(
@@ -43,10 +43,9 @@ void main() {
     );
     await tester.pump();
     await tester.pump(const Duration(seconds: 4));
-    await tester.pumpAndSettle();
     await binding.takeScreenshot('04_result_halal');
     await tester.pageBack();
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
 
     // 05 — Result: haram product
     navigator.push(
@@ -59,7 +58,6 @@ void main() {
     );
     await tester.pump();
     await tester.pump(const Duration(seconds: 4));
-    await tester.pumpAndSettle();
     await binding.takeScreenshot('05_result_haram');
   });
 }
