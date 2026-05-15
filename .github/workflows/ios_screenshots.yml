@@ -1,7 +1,7 @@
 name: iOS App Store Screenshots
 
 on:
-  workflow_dispatch:  # Manual trigger from GitHub UI
+  workflow_dispatch:
     inputs:
       flutter_version:
         description: 'Flutter version (leave blank for latest stable)'
@@ -65,36 +65,15 @@ jobs:
           xcrun simctl bootstatus "$UDID" -b
           echo "Booted: ${{ matrix.device.name }} ($UDID)"
 
-      - name: Build Flutter app for simulator
-        run: flutter build ios --simulator --no-codesign --dart-define-from-file=dart_defines.json
-
-      - name: Install app on simulator
-        run: |
-          APP_PATH=$(find build/ios/iphonesimulator -name "*.app" | head -1)
-          echo "Installing: $APP_PATH"
-          xcrun simctl install "$SIMULATOR_UDID" "$APP_PATH"
-
-      - name: Launch app and wait for it to load
-        run: |
-          APP_PATH=$(find build/ios/iphonesimulator -name "*.app" | head -1)
-          BUNDLE_ID=$(/usr/libexec/PlistBuddy -c "Print CFBundleIdentifier" "$APP_PATH/Info.plist")
-          echo "Bundle ID: $BUNDLE_ID"
-          echo "BUNDLE_ID=$BUNDLE_ID" >> $GITHUB_ENV
-          xcrun simctl launch "$SIMULATOR_UDID" "$BUNDLE_ID"
-          sleep 5  # Wait for app to fully load
-
       - name: Take screenshots
         run: |
-          mkdir -p "screenshots/${{ matrix.device.slug }}"
+          flutter drive \
+            --driver=test_driver/integration_test.dart \
+            --target=integration_test/screenshots_test.dart \
+            -d "$SIMULATOR_UDID" \
+            --dart-define-from-file=dart_defines.json
 
-          # Screenshot 1 - initial screen (already open)
-          xcrun simctl io "$SIMULATOR_UDID" screenshot "screenshots/${{ matrix.device.slug }}/01_home.png"
-          sleep 2
-
-          # Add more navigation steps here if needed, e.g.:
-          # xcrun simctl io "$SIMULATOR_UDID" screenshot "screenshots/${{ matrix.device.slug }}/02_feature.png"
-
-      - name: Upload screenshots as artifacts
+      - name: Upload screenshots
         uses: actions/upload-artifact@v4
         with:
           name: screenshots-${{ matrix.device.slug }}
