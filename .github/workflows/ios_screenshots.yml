@@ -69,6 +69,8 @@ jobs:
           xcrun simctl boot "$UDID"
           xcrun simctl bootstatus "$UDID" -b
           echo "Booted: ${{ matrix.device.name }} ($UDID)"
+          echo "Waiting for simulator to settle..."
+          sleep 120
 
       - name: Take screenshots
         run: |
@@ -76,7 +78,8 @@ jobs:
             --driver=test_driver/integration_test.dart \
             --target=integration_test/screenshots_test.dart \
             -d "$SIMULATOR_UDID" \
-            --dart-define-from-file=dart_defines.json
+            --dart-define-from-file=dart_defines.json \
+            --no-dds
 
       - name: Upload screenshots
         uses: actions/upload-artifact@v4
