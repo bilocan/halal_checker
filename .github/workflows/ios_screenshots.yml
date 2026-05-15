@@ -72,14 +72,23 @@ jobs:
           echo "Waiting for simulator to settle..."
           sleep 120
 
+      - name: Build app for simulator
+        run: |
+          flutter build ios --simulator --no-codesign \
+            --target=lib/main_screenshots.dart \
+            --dart-define-from-file=dart_defines.json
+
       - name: Take screenshots
         run: |
-          flutter drive \
-            --driver=test_driver/integration_test.dart \
-            --target=integration_test/screenshots_test.dart \
-            -d "$SIMULATOR_UDID" \
-            --dart-define-from-file=dart_defines.json \
-            --no-dds
+          APP_PATH=$(find build/ios/iphonesimulator -name "*.app" | head -1)
+          BUNDLE_ID=$(/usr/libexec/PlistBuddy -c "Print CFBundleIdentifier" "$APP_PATH/Info.plist")
+          xcrun simctl install "$SIMULATOR_UDID" "$APP_PATH"
+          xcrun simctl launch "$SIMULATOR_UDID" "$BUNDLE_ID"
+          mkdir -p screenshots
+          sleep 10  && xcrun simctl io "$SIMULATOR_UDID" screenshot "screenshots/01_start.png"
+          sleep 15  && xcrun simctl io "$SIMULATOR_UDID" screenshot "screenshots/02_directory.png"
+          sleep 15  && xcrun simctl io "$SIMULATOR_UDID" screenshot "screenshots/03_result_halal.png"
+          sleep 15  && xcrun simctl io "$SIMULATOR_UDID" screenshot "screenshots/04_result_haram.png"
 
       - name: Upload screenshots
         uses: actions/upload-artifact@v4
