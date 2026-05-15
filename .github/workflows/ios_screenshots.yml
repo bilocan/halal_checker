@@ -11,6 +11,7 @@ on:
 jobs:
   screenshots:
     runs-on: macos-latest
+    timeout-minutes: 30
 
     strategy:
       matrix:

@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart'
+    show Icons, MaterialPageRoute, Navigator, NavigatorState;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:halal_checker/main.dart' as app;
@@ -15,17 +16,10 @@ void main() {
     // 01 — Start screen (scan history + main actions visible)
     await binding.takeScreenshot('01_start');
 
-    // 02 — Scanner screen
-    await tester.tap(find.byIcon(Icons.qr_code_scanner));
-    await tester.pump(const Duration(seconds: 2));
-    await binding.takeScreenshot('02_scanner');
-    await tester.pageBack();
-    await tester.pump(const Duration(milliseconds: 500));
-
-    // 03 — Halal directory
+    // 02 — Halal directory
     await tester.tap(find.byIcon(Icons.store));
     await tester.pump(const Duration(seconds: 3));
-    await binding.takeScreenshot('03_directory');
+    await binding.takeScreenshot('02_directory');
     await tester.pageBack();
     await tester.pump(const Duration(milliseconds: 500));
 
@@ -43,7 +37,7 @@ void main() {
     );
     await tester.pump();
     await tester.pump(const Duration(seconds: 4));
-    await binding.takeScreenshot('04_result_halal');
+    await binding.takeScreenshot('03_result_halal');
     await tester.pageBack();
     await tester.pump(const Duration(milliseconds: 500));
 
@@ -58,7 +52,7 @@ void main() {
     );
     await tester.pump();
     await tester.pump(const Duration(seconds: 4));
-    await binding.takeScreenshot('05_result_haram');
+    await binding.takeScreenshot('04_result_haram');
   });
 }
 
