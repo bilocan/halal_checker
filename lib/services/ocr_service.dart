@@ -1,55 +1,64 @@
-import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
+import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:http/http.dart' as http;
-import '../config.dart';
+import 'package:path_provider/path_provider.dart';
 
 class OcrService {
   OcrService._();
 
-  /// Extract ingredient text from an image URL (e.g. OpenFoodFacts image).
-  static Future<String?> extractIngredientsFromImage(String imageUrl) async {
-    return _callEdgeFunction({'image_url': imageUrl});
+  /// Extract text from a local image file using on-device ML Kit OCR.
+  static Future<String?> extractIngredientsFromFile(File imageFile) async {
+    final recognizer = TextRecognizer(script: TextRecognitionScript.latin);
+    try {
+      final result = await recognizer.processImage(
+        InputImage.fromFile(imageFile),
+      );
+      final text = result.text.trim();
+      debugPrint('OCR: ${text.length} chars extracted');
+      return text.isEmpty ? null : text;
+    } catch (e) {
+      debugPrint('OCR file error: $e');
+      return null;
+    } finally {
+      recognizer.close();
+    }
   }
 
-  /// Try multiple candidate image URLs in priority order.
-  /// The Edge Function validates each image and returns the first one that
-  /// actually contains ingredient text (not nutrition tables, etc.).
+  /// Extract text from an image URL by downloading it to a temp file first.
+  static Future<String?> extractIngredientsFromImage(String imageUrl) async {
+    final file = await _downloadToTemp(imageUrl);
+    if (file == null) return null;
+    try {
+      return await extractIngredientsFromFile(file);
+    } finally {
+      file.delete().catchError((e) => file);
+    }
+  }
+
+  /// Try multiple image URLs in order; return the first non-empty result.
   static Future<String?> extractIngredientsFromImages(
     List<String> imageUrls,
   ) async {
-    if (imageUrls.isEmpty) return null;
-    if (imageUrls.length == 1) {
-      return _callEdgeFunction({'image_url': imageUrls.first});
+    for (final url in imageUrls) {
+      final text = await extractIngredientsFromImage(url);
+      if (text != null && text.isNotEmpty) return text;
     }
-    return _callEdgeFunction({'image_urls': imageUrls});
+    return null;
   }
 
-  /// Extract ingredient text from a local image file (e.g. camera capture).
-  static Future<String?> extractIngredientsFromFile(File imageFile) async {
-    final bytes = await imageFile.readAsBytes();
-    final base64Data = base64Encode(bytes);
-    return _callEdgeFunction({'image_base64': base64Data});
-  }
-
-  static Future<String?> _callEdgeFunction(Map<String, dynamic> body) async {
-    if (!AppConfig.hasSupabase) return null;
+  static Future<File?> _downloadToTemp(String imageUrl) async {
     try {
-      final response = await http
-          .post(
-            Uri.parse(
-              '${AppConfig.supabaseUrl}/functions/v1/extract-ingredients',
-            ),
-            headers: {
-              'Authorization': 'Bearer ${AppConfig.supabaseAnonKey}',
-              'Content-Type': 'application/json',
-            },
-            body: jsonEncode(body),
-          )
-          .timeout(const Duration(seconds: 30));
+      final response = await http.get(Uri.parse(imageUrl));
       if (response.statusCode != 200) return null;
-      final data = json.decode(response.body) as Map<String, dynamic>;
-      return data['ingredients_text'] as String?;
-    } catch (_) {
+      final dir = await getTemporaryDirectory();
+      final file = File(
+        '${dir.path}/ocr_${DateTime.now().millisecondsSinceEpoch}.jpg',
+      );
+      await file.writeAsBytes(response.bodyBytes);
+      return file;
+    } catch (e) {
+      debugPrint('OCR download error: $e');
       return null;
     }
   }

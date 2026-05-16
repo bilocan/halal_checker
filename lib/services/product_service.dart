@@ -248,9 +248,19 @@ class ProductService {
     }
   }
 
-  // Try the Supabase Edge Function. Returns null on any failure so the caller
-  // can fall back to direct OpenFoodFacts + keyword analysis.
+  // Try the Supabase Edge Function. Retries once on failure before returning
+  // null so the caller can fall back to direct OpenFoodFacts + keyword analysis.
   Future<Product?> _fetchFromBackend(
+    String barcode, {
+    bool force = false,
+  }) async {
+    final result = await _fetchFromBackendOnce(barcode, force: force);
+    if (result != null) return result;
+    debugPrint('[Backend $barcode] retrying once...');
+    return _fetchFromBackendOnce(barcode, force: force);
+  }
+
+  Future<Product?> _fetchFromBackendOnce(
     String barcode, {
     bool force = false,
   }) async {

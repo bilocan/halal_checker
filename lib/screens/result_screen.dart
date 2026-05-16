@@ -1792,9 +1792,24 @@ class _ResultScreenState extends State<ResultScreen> {
     );
 
     final text = await OcrService.extractIngredientsFromFile(file);
+    debugPrint(
+      'OCR result: ${text == null ? "null" : "${text.length} chars: ${text.substring(0, text.length.clamp(0, 120))}"}',
+    );
 
     if (!context.mounted) return;
     Navigator.pop(context); // close loading overlay
+
+    // Show snackbar before reopening the sheet so it surfaces above it.
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          text != null && text.isNotEmpty ? loc.ocrSuccess : loc.ocrFailed,
+        ),
+        duration: Duration(seconds: text != null && text.isNotEmpty ? 3 : 5),
+      ),
+    );
+
+    if (!context.mounted) return;
 
     // Reopen the dialog pre-filled with the picked photo and OCR result.
     _showContributeIngredientsDialog(
@@ -1804,17 +1819,6 @@ class _ResultScreenState extends State<ResultScreen> {
       initialPreviewFile: file,
       initialText: text ?? '',
     );
-
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            text != null && text.isNotEmpty ? loc.ocrSuccess : loc.ocrFailed,
-          ),
-          duration: Duration(seconds: text != null && text.isNotEmpty ? 3 : 5),
-        ),
-      );
-    }
   }
 
   void _showContributeIngredientsDialog(
@@ -1864,7 +1868,7 @@ class _ResultScreenState extends State<ResultScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setSheetState) => Padding(
+        builder: (ctx, setSheetState) => SingleChildScrollView(
           padding: EdgeInsets.fromLTRB(
             24,
             24,
@@ -1965,21 +1969,55 @@ class _ResultScreenState extends State<ResultScreen> {
               ],
               // Preview — shown after any selection (OFF image, gallery, or camera)
               if (previewFile != null || previewUrl != null) ...[
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: previewFile != null
-                      ? Image.file(
-                          previewFile!,
-                          height: 140,
-                          width: double.infinity,
-                          fit: BoxFit.contain,
-                        )
-                      : CachedNetworkImage(
-                          imageUrl: previewUrl!,
-                          height: 140,
-                          width: double.infinity,
-                          fit: BoxFit.contain,
+                GestureDetector(
+                  onTap: () => showDialog(
+                    context: context,
+                    builder: (_) => Dialog(
+                      backgroundColor: Colors.black,
+                      insetPadding: EdgeInsets.zero,
+                      child: InteractiveViewer(
+                        minScale: 0.5,
+                        maxScale: 6,
+                        child: previewFile != null
+                            ? Image.file(previewFile!, fit: BoxFit.contain)
+                            : CachedNetworkImage(
+                                imageUrl: previewUrl!,
+                                fit: BoxFit.contain,
+                              ),
+                      ),
+                    ),
+                  ),
+                  child: Stack(
+                    alignment: Alignment.bottomRight,
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: previewFile != null
+                            ? Image.file(
+                                previewFile!,
+                                height: 180,
+                                width: double.infinity,
+                                fit: BoxFit.contain,
+                              )
+                            : CachedNetworkImage(
+                                imageUrl: previewUrl!,
+                                height: 180,
+                                width: double.infinity,
+                                fit: BoxFit.contain,
+                              ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(6),
+                        child: Icon(
+                          Icons.zoom_in,
+                          color: Colors.white.withValues(alpha: 0.8),
+                          shadows: const [
+                            Shadow(blurRadius: 4, color: Colors.black54),
+                          ],
                         ),
+                      ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 12),
               ],
