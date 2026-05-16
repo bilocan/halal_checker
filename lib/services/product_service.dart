@@ -325,8 +325,20 @@ class ProductService {
       }
     }
 
-    // Step 1: Check local cache (fast path — no network).
-    // Skip stale "unknown" entries — they may predate category-based analysis.
+    // Fetch shared DB product first — a fast Supabase REST read (not the Edge
+    // Function). Used for community-approved image URLs at every return point
+    // so that approved images are always current, even on a cache hit.
+    final dbProduct = await _fetchFromSharedDb(barcode);
+    debugPrint(
+      '[Lookup $barcode] sharedDB (imageSource): '
+      'found=${dbProduct != null} isUnknown=${dbProduct?.isUnknown} '
+      'front=${dbProduct?.imageFrontUrl} '
+      'ingredients=${dbProduct?.imageIngredientsUrl}',
+    );
+
+    // Step 1: Check local cache (fast path — analysis data only).
+    // Community image URLs from the DB are merged in before returning so that
+    // approved images are applied even when the analysis result is cached.
     var hadStaleUnknown = false;
     if (!forceBackendRefresh) {
       final cached = await _cache.getProduct(barcode);
@@ -335,42 +347,24 @@ class ProductService {
         'found=${cached != null} isUnknown=${cached?.isUnknown}',
       );
       if (cached != null) {
-        if (!cached.isUnknown) return cached;
+        if (!cached.isUnknown) return _mergeApprovedImages(cached, dbProduct);
         hadStaleUnknown = true;
       }
     }
 
     // Step 2: Shared DB read — cheaper than an Edge Function invocation for
     // barcodes another user has already scanned (no AI, no OFf fetch needed).
-    // We always save the DB row as dbProduct so image URLs from approved
-    // community submissions are available for Step 4 merging even when the
-    // product is still unknown (no ingredient data).
-    Product? dbProduct;
-    if (!forceBackendRefresh) {
-      dbProduct = await _fetchFromSharedDb(barcode);
+    if (!forceBackendRefresh && dbProduct != null) {
       debugPrint(
         '[Lookup $barcode] Step 2 (sharedDB): '
-        'found=${dbProduct != null} isUnknown=${dbProduct?.isUnknown} '
-        'isNonFood=${dbProduct?.isNonFood} '
-        'ingredients=${dbProduct?.imageIngredientsUrl}',
+        'isUnknown=${dbProduct.isUnknown} isNonFood=${dbProduct.isNonFood}',
       );
-      if (dbProduct != null) {
-        if (!dbProduct.isUnknown) {
-          final safe = _applyKeywordSafety(dbProduct);
-          await _cache.saveProduct(barcode, safe);
-          return safe;
-        }
-        hadStaleUnknown = true;
+      if (!dbProduct.isUnknown) {
+        final safe = _applyKeywordSafety(dbProduct);
+        await _cache.saveProduct(barcode, safe);
+        return safe;
       }
-    } else {
-      // On force-refresh, skip the early-return but still fetch the shared DB
-      // row so its approved image URLs survive the raw OFF re-fetch in Step 4.
-      dbProduct = await _fetchFromSharedDb(barcode);
-      debugPrint(
-        '[Lookup $barcode] Step 2 (imageSource for force-refresh): '
-        'ingredients=${dbProduct?.imageIngredientsUrl} '
-        'nutrition=${dbProduct?.imageNutritionUrl}',
-      );
+      hadStaleUnknown = true;
     }
 
     debugPrint(
@@ -392,7 +386,9 @@ class ProductService {
       'isNonFood=${backendProduct?.isNonFood}',
     );
     if (backendProduct != null) {
-      final safe = _applyKeywordSafety(backendProduct);
+      final safe = _applyKeywordSafety(
+        _mergeApprovedImages(backendProduct, dbProduct),
+      );
       // Fall through to Step 4 only when the backend returned unknown —
       // OBF/OPF cross-check may confirm the product is non-food.
       if (!safe.isUnknown) {
@@ -487,12 +483,14 @@ class ProductService {
 
   static Product _mergeApprovedImages(Product base, Product? approved) {
     if (approved == null) return base;
+    // Approved (community) images take priority over the base (OFF) image so
+    // that a user-submitted replacement is always shown instead of the bad one.
     return base.copyWith(
-      imageUrl: base.imageUrl ?? approved.imageUrl,
-      imageFrontUrl: base.imageFrontUrl ?? approved.imageFrontUrl,
+      imageUrl: approved.imageUrl ?? base.imageUrl,
+      imageFrontUrl: approved.imageFrontUrl ?? base.imageFrontUrl,
       imageIngredientsUrl:
-          base.imageIngredientsUrl ?? approved.imageIngredientsUrl,
-      imageNutritionUrl: base.imageNutritionUrl ?? approved.imageNutritionUrl,
+          approved.imageIngredientsUrl ?? base.imageIngredientsUrl,
+      imageNutritionUrl: approved.imageNutritionUrl ?? base.imageNutritionUrl,
     );
   }
 
