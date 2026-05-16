@@ -260,6 +260,8 @@ class AppLocalizations {
       'suggestionApproveFailed': 'Could not approve suggestion.',
       'suggestionRejected': 'Suggestion rejected',
       'suggestionRejectFailed': 'Could not reject suggestion.',
+      'photoIngredientsButton': 'Check Ingredients Photo',
+      'photoAnalysisProductName': 'Photo Analysis',
     },
     'tr': {
       'appTitle': 'HalalScan',
@@ -506,6 +508,8 @@ class AppLocalizations {
       'suggestionApproveFailed': 'Öneri onaylanamadı.',
       'suggestionRejected': 'Öneri reddedildi',
       'suggestionRejectFailed': 'Öneri reddedilemedi.',
+      'photoIngredientsButton': 'Malzeme Fotoğrafını Kontrol Et',
+      'photoAnalysisProductName': 'Fotoğraf Analizi',
     },
     'de': {
       'appTitle': 'HalalScan',
@@ -764,6 +768,8 @@ class AppLocalizations {
       'suggestionApproveFailed': 'Vorschlag konnte nicht genehmigt werden.',
       'suggestionRejected': 'Vorschlag abgelehnt',
       'suggestionRejectFailed': 'Vorschlag konnte nicht abgelehnt werden.',
+      'photoIngredientsButton': 'Zutatenfoto prüfen',
+      'photoAnalysisProductName': 'Fotoanalyse',
     },
   };
 
@@ -1010,6 +1016,8 @@ class AppLocalizations {
   String get suggestionApproveFailed => _translate('suggestionApproveFailed');
   String get suggestionRejected => _translate('suggestionRejected');
   String get suggestionRejectFailed => _translate('suggestionRejectFailed');
+  String get photoIngredientsButton => _translate('photoIngredientsButton');
+  String get photoAnalysisProductName => _translate('photoAnalysisProductName');
 
   static AppLocalizations of(BuildContext context) {
     final localizations = Localizations.of<AppLocalizations>(

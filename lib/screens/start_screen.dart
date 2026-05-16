@@ -2,13 +2,16 @@ import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show AuthState;
 import '../app_colors.dart';
 import '../config.dart';
 import '../main.dart';
+import '../models/product.dart';
 import '../services/analysis_service.dart';
 import '../services/auth_service.dart';
 import '../services/database_service.dart';
+import '../services/ocr_service.dart';
 import '../services/product_service.dart';
 import '../services/version_service.dart';
 import '../localization/app_localizations.dart';
@@ -90,6 +93,100 @@ class _StartScreenState extends State<StartScreen> {
       MaterialPageRoute(builder: (_) => const HomeScreen()),
     );
     await _loadRecentScans();
+  }
+
+  Future<void> _analyzeIngredientsPhoto() async {
+    final loc = AppLocalizations.of(context);
+
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      builder: (_) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt),
+              title: Text(loc.takePhotoOfIngredients),
+              onTap: () => Navigator.pop(context, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: Text(loc.extractFromExistingImage),
+              onTap: () => Navigator.pop(context, ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (source == null || !mounted) return;
+
+    XFile? photo;
+    try {
+      photo = await ImagePicker().pickImage(source: source, imageQuality: 85);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(loc.cameraError)));
+      }
+      return;
+    }
+    if (photo == null || !mounted) return;
+
+    setState(() => _isLoadingProduct = true);
+    try {
+      final text = await OcrService.extractIngredientsFromFile(
+        File(photo.path),
+      );
+      if (!mounted) return;
+      if (text == null || text.isEmpty) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(loc.ocrFailed)));
+        return;
+      }
+
+      final ingredients = text
+          .split(RegExp(r'[,;\n]+'))
+          .map((e) => e.trim())
+          .where((e) => e.isNotEmpty)
+          .toList();
+
+      final analysis = ProductService.analyzeWithKeywords(ingredients);
+      final barcode = 'photo_${DateTime.now().millisecondsSinceEpoch}';
+
+      final product = Product(
+        barcode: barcode,
+        name: loc.photoAnalysisProductName,
+        ingredients: ingredients,
+        isHalal: analysis.isHalal,
+        haramIngredients: analysis.haram,
+        suspiciousIngredients: analysis.suspicious,
+        ingredientWarnings: analysis.warnings,
+        ingredientTranslations: analysis.translations,
+        labels: const [],
+        explanation: analysis.explanation,
+        analyzedByAI: false,
+        analysisMethod: 'keyword',
+      );
+
+      await DatabaseService.instance.insertScan(
+        barcode: barcode,
+        productName: product.name,
+        isHalal: product.isHalal,
+      );
+
+      if (!mounted) return;
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ResultScreen(product: product, barcode: barcode),
+        ),
+      );
+      if (mounted) await _loadRecentScans();
+    } finally {
+      if (mounted) setState(() => _isLoadingProduct = false);
+    }
   }
 
   Future<void> _openResult(
@@ -374,6 +471,26 @@ class _StartScreenState extends State<StartScreen> {
                   ),
                 ),
                 const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  onPressed: _analyzeIngredientsPhoto,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: kGreen,
+                    side: const BorderSide(color: kGreenLight),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  icon: const Icon(Icons.camera_alt_outlined),
+                  label: Text(
+                    localizations.photoIngredientsButton,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
                 OutlinedButton.icon(
                   onPressed: () => Navigator.push(
                     context,
