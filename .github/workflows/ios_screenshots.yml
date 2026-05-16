@@ -1,26 +1,33 @@
 name: iOS App Store Screenshots
 
 on:
-  workflow_dispatch:  # Manual trigger from GitHub UI
+  workflow_dispatch:
     inputs:
       flutter_version:
-        description: 'Flutter version'
+        description: 'Flutter version (leave blank for latest stable)'
         required: false
-        default: 'stable'
+        default: ''
 
 jobs:
   screenshots:
     runs-on: macos-latest
-    
+    timeout-minutes: 30
+
     strategy:
       matrix:
         device:
           - name: "iPhone 16 Pro Max"
+            slug: "iphone-16-pro-max"
             udid_hint: "iPhone 16 Pro Max"
           - name: "iPhone 14 Plus"
+            slug: "iphone-14-plus"
             udid_hint: "iPhone 14 Plus"
-          - name: "iPhone 8 Plus"
-            udid_hint: "iPhone 8 Plus"
+          - name: "iPhone SE (3rd generation)"
+            slug: "iphone-se-3rd"
+            udid_hint: "iPhone SE (3rd generation)"
+          - name: "iPad Pro 13-inch (M4)"
+            slug: "ipad-pro-13-m4"
+            udid_hint: "iPad Pro 13-inch (M4)"
 
     steps:
       - name: Checkout code
@@ -33,6 +40,16 @@ jobs:
           channel: 'stable'
           cache: true
 
+      - name: Create dart defines
+        run: |
+          cat > dart_defines.json << 'EOF'
+          {
+            "SUPABASE_URL": "${{ secrets.SUPABASE_URL }}",
+            "SUPABASE_ANON_KEY": "${{ secrets.SUPABASE_ANON_KEY }}",
+            "GOOGLE_WEB_CLIENT_ID": "${{ secrets.GOOGLE_WEB_CLIENT_ID }}"
+          }
+          EOF
+
       - name: Install dependencies
         run: flutter pub get
 
@@ -41,43 +58,44 @@ jobs:
 
       - name: Boot simulator
         run: |
-          UDID=$(xcrun simctl list devices available | grep "${{ matrix.device.udid_hint }}" | head -1 | grep -E -o '[0-9A-F-]{36}')
+          HINT="${{ matrix.device.udid_hint }}"
+          DEVICE_TYPE=$(xcrun simctl list devicetypes --json | jq -r --arg hint "$HINT" '.devicetypes[] | select(.name | contains($hint)) | .identifier' | head -1)
+          RUNTIME=$(xcrun simctl list runtimes --json | jq -r '[.runtimes[] | select(.name | startswith("iOS")) | select(.isAvailable == true)] | sort_by(.version) | last | .identifier')
+          if [ -z "$DEVICE_TYPE" ] || [ -z "$RUNTIME" ]; then
+            echo "Error: Cannot find device type or runtime for ${{ matrix.device.name }}"
+            xcrun simctl list devicetypes | grep "$HINT" || true
+            xcrun simctl list runtimes
+            exit 1
+          fi
+          UDID=$(xcrun simctl create "${{ matrix.device.name }}-screenshots" "$DEVICE_TYPE" "$RUNTIME")
           echo "SIMULATOR_UDID=$UDID" >> $GITHUB_ENV
           xcrun simctl boot "$UDID"
+          xcrun simctl bootstatus "$UDID" -b
           echo "Booted: ${{ matrix.device.name }} ($UDID)"
+          echo "Waiting for simulator to settle..."
+          sleep 120
 
-      - name: Build Flutter app for simulator
-        run: flutter build ios --simulator --no-codesign
-
-      - name: Install app on simulator
+      - name: Build app for simulator
         run: |
-          APP_PATH=$(find build/ios/iphonesimulator -name "*.app" | head -1)
-          echo "Installing: $APP_PATH"
-          xcrun simctl install "$SIMULATOR_UDID" "$APP_PATH"
-
-      - name: Launch app and wait for it to load
-        run: |
-          # Replace with your actual bundle ID
-          BUNDLE_ID=$(defaults read "$(find build/ios/iphonesimulator -name "*.app" | head -1)/Info" CFBundleIdentifier)
-          echo "Bundle ID: $BUNDLE_ID"
-          echo "BUNDLE_ID=$BUNDLE_ID" >> $GITHUB_ENV
-          xcrun simctl launch "$SIMULATOR_UDID" "$BUNDLE_ID"
-          sleep 5  # Wait for app to fully load
+          flutter build ios --simulator --no-codesign \
+            --target=lib/main_screenshots.dart \
+            --dart-define-from-file=dart_defines.json
 
       - name: Take screenshots
         run: |
-          mkdir -p screenshots/${{ matrix.device.name }}
-          
-          # Screenshot 1 - initial screen (already open)
-          xcrun simctl io "$SIMULATOR_UDID" screenshot "screenshots/${{ matrix.device.name }}/01_home.png"
-          sleep 2
+          APP_PATH=$(find build/ios/iphonesimulator -name "*.app" | head -1)
+          BUNDLE_ID=$(/usr/libexec/PlistBuddy -c "Print CFBundleIdentifier" "$APP_PATH/Info.plist")
+          xcrun simctl install "$SIMULATOR_UDID" "$APP_PATH"
+          xcrun simctl launch "$SIMULATOR_UDID" "$BUNDLE_ID"
+          mkdir -p screenshots
+          sleep 10  && xcrun simctl io "$SIMULATOR_UDID" screenshot "screenshots/01_start.png"
+          sleep 15  && xcrun simctl io "$SIMULATOR_UDID" screenshot "screenshots/02_directory.png"
+          sleep 15  && xcrun simctl io "$SIMULATOR_UDID" screenshot "screenshots/03_result_halal.png"
+          sleep 15  && xcrun simctl io "$SIMULATOR_UDID" screenshot "screenshots/04_result_haram.png"
 
-          # Add more navigation steps here if needed, e.g.:
-          # xcrun simctl io "$SIMULATOR_UDID" screenshot "screenshots/${{ matrix.device.name }}/02_feature.png"
-
-      - name: Upload screenshots as artifacts
+      - name: Upload screenshots
         uses: actions/upload-artifact@v4
         with:
-          name: screenshots-${{ matrix.device.name }}
+          name: screenshots-${{ matrix.device.slug }}
           path: screenshots/
           retention-days: 30

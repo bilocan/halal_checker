@@ -15,7 +15,8 @@
       "Bash(npx --version)",
       "Bash(command -v fnm)",
       "Read(//usr/local/bin/**)",
-      "WebFetch(domain:world.openfoodfacts.org)"
+      "WebFetch(domain:world.openfoodfacts.org)",
+      "Bash(flutter analyze *)"
     ],
     "additionalDirectories": [
       "/home/bilal/dev/halal_checker/test",

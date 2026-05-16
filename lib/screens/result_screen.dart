@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -160,6 +161,16 @@ class _ResultScreenState extends State<ResultScreen> {
         SnackBar(content: Text(AppLocalizations.of(context).analysisFailed)),
       );
     }
+  }
+
+  void _copyToClipboard(String text, String label) {
+    Clipboard.setData(ClipboardData(text: text));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('$label copied'),
+        duration: const Duration(seconds: 1),
+      ),
+    );
   }
 
   void _reportWithNote() {
@@ -534,9 +545,19 @@ class _ResultScreenState extends State<ResultScreen> {
               const SizedBox(height: 16),
               Text(loc.productNotFound, style: const TextStyle(fontSize: 20)),
               const SizedBox(height: 8),
-              Text(
-                'Barcode: $barcode',
-                style: const TextStyle(color: Colors.grey),
+              GestureDetector(
+                onTap: () => _copyToClipboard(barcode, 'Barcode'),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Barcode: $barcode',
+                      style: const TextStyle(color: Colors.grey),
+                    ),
+                    const SizedBox(width: 4),
+                    Icon(Icons.copy, size: 14, color: Colors.grey.shade400),
+                  ],
+                ),
               ),
               const SizedBox(height: 24),
               ElevatedButton(
@@ -691,7 +712,7 @@ class _ResultScreenState extends State<ResultScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-              Text(
+              SelectableText(
                 product.name,
                 style: const TextStyle(
                   fontSize: 20,
@@ -700,9 +721,19 @@ class _ResultScreenState extends State<ResultScreen> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
-              Text(
-                'Barcode: $barcode',
-                style: const TextStyle(color: Colors.grey),
+              GestureDetector(
+                onTap: () => _copyToClipboard(barcode, 'Barcode'),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Barcode: $barcode',
+                      style: const TextStyle(color: Colors.grey),
+                    ),
+                    const SizedBox(width: 4),
+                    Icon(Icons.copy, size: 14, color: Colors.grey.shade400),
+                  ],
+                ),
               ),
               const SizedBox(height: 12),
               if (product.labels.isNotEmpty)
@@ -783,8 +814,8 @@ class _ResultScreenState extends State<ResultScreen> {
                       color: Colors.grey.shade900,
                     ),
                   ),
-                  if (product.ingredientTranslations.isNotEmpty) ...[
-                    const Spacer(),
+                  const Spacer(),
+                  if (product.ingredientTranslations.isNotEmpty)
                     TextButton.icon(
                       onPressed: () =>
                           setState(() => _showTranslated = !_showTranslated),
@@ -805,7 +836,18 @@ class _ResultScreenState extends State<ResultScreen> {
                         padding: const EdgeInsets.symmetric(horizontal: 8),
                       ),
                     ),
-                  ],
+                  if (ingredients.isNotEmpty)
+                    IconButton(
+                      icon: const Icon(Icons.copy, size: 18),
+                      onPressed: () => _copyToClipboard(
+                        ingredients.join(', '),
+                        'Ingredients',
+                      ),
+                      tooltip: 'Copy ingredients',
+                      visualDensity: VisualDensity.compact,
+                      padding: EdgeInsets.zero,
+                      color: Colors.grey.shade600,
+                    ),
                 ],
               ),
               const SizedBox(height: 8),
@@ -1710,23 +1752,123 @@ class _ResultScreenState extends State<ResultScreen> {
     );
   }
 
-  void _showContributeIngredientsDialog(
+  // Picks an image outside the bottom sheet (avoids Android ActivityResult issues),
+  // runs OCR, then reopens the contribution dialog with the result.
+  Future<void> _pickImageAndContribute(
     BuildContext context,
     Product product,
     AppLocalizations loc,
-  ) {
-    final controller = TextEditingController();
+    ImageSource source,
+  ) async {
+    XFile? photo;
+    try {
+      photo = await ImagePicker().pickImage(source: source, imageQuality: 85);
+    } catch (e) {
+      debugPrint('ImagePicker error ($source): $e');
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            source == ImageSource.camera ? loc.cameraError : loc.ocrFailed,
+          ),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
+
+    if (photo == null || !context.mounted) return;
+
+    final file = File(photo.path);
+
+    // Show loading overlay while OCR runs.
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const PopScope(
+        canPop: false,
+        child: Center(child: CircularProgressIndicator()),
+      ),
+    );
+
+    final text = await OcrService.extractIngredientsFromFile(file);
+    debugPrint(
+      'OCR result: ${text == null ? "null" : "${text.length} chars: ${text.substring(0, text.length.clamp(0, 120))}"}',
+    );
+
+    if (!context.mounted) return;
+    Navigator.pop(context); // close loading overlay
+
+    // Show snackbar before reopening the sheet so it surfaces above it.
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          text != null && text.isNotEmpty ? loc.ocrSuccess : loc.ocrFailed,
+        ),
+        duration: Duration(seconds: text != null && text.isNotEmpty ? 3 : 5),
+      ),
+    );
+
+    if (!context.mounted) return;
+
+    // Reopen the dialog pre-filled with the picked photo and OCR result.
+    _showContributeIngredientsDialog(
+      context,
+      product,
+      loc,
+      initialPreviewFile: file,
+      initialText: text ?? '',
+    );
+  }
+
+  void _showContributeIngredientsDialog(
+    BuildContext context,
+    Product product,
+    AppLocalizations loc, {
+    File? initialPreviewFile,
+    String? initialText,
+  }) {
+    final controller = TextEditingController(text: initialText ?? '');
     var isLoading = false;
     var isExtracting = false;
+    File? previewFile = initialPreviewFile;
+    String? previewUrl;
+
+    Future<void> runOcrOnUrl(
+      String url,
+      StateSetter setSheetState,
+      BuildContext ctx,
+    ) async {
+      if (ctx.mounted) setSheetState(() => isExtracting = true);
+      final text = await OcrService.extractIngredientsFromImage(url);
+      if (!context.mounted) return;
+      if (ctx.mounted) {
+        setSheetState(() => isExtracting = false);
+        if (text != null && text.isNotEmpty) controller.text = text;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            text != null && text.isNotEmpty
+                ? loc.ocrSuccess
+                : loc.ocrNoIngredientsFound,
+          ),
+          duration: Duration(seconds: text != null && text.isNotEmpty ? 3 : 5),
+        ),
+      );
+    }
+
+    final offImages = _candidateImageUrls(product);
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      enableDrag: false,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setSheetState) => Padding(
+        builder: (ctx, setSheetState) => SingleChildScrollView(
           padding: EdgeInsets.fromLTRB(
             24,
             24,
@@ -1756,63 +1898,156 @@ class _ResultScreenState extends State<ResultScreen> {
                 style: const TextStyle(color: Colors.grey, fontSize: 13),
               ),
               const SizedBox(height: 16),
-              // OCR button — try all available product images
-              if (_candidateImageUrls(product).isNotEmpty) ...[
-                OutlinedButton.icon(
-                  icon: isExtracting
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.document_scanner, size: 18),
-                  label: Text(
-                    isExtracting
-                        ? loc.extractingIngredients
-                        : loc.extractFromExistingImage,
+              // OpenFoodFacts product images — tappable thumbnails
+              if (offImages.isNotEmpty) ...[
+                Text(
+                  loc.productImages,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey,
+                    fontWeight: FontWeight.w600,
                   ),
-                  onPressed: isExtracting || isLoading
-                      ? null
-                      : () async {
-                          setSheetState(() => isExtracting = true);
-                          final text =
-                              await OcrService.extractIngredientsFromImages(
-                                _candidateImageUrls(product),
-                              );
-                          if (!ctx.mounted) return;
-                          setSheetState(() => isExtracting = false);
-                          if (text != null && text.isNotEmpty) {
-                            controller.text = text;
-                            ScaffoldMessenger.of(ctx).showSnackBar(
-                              SnackBar(
-                                content: Text(loc.ocrSuccess),
-                                duration: const Duration(seconds: 3),
-                              ),
-                            );
-                          } else {
-                            ScaffoldMessenger.of(ctx).showSnackBar(
-                              SnackBar(
-                                content: Text(loc.ocrNoIngredientsFound),
-                                duration: const Duration(seconds: 5),
-                              ),
-                            );
-                          }
-                        },
                 ),
-                const SizedBox(height: 8),
-              ] else ...[
-                // No product images at all — prompt camera
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Text(
-                    loc.noIngredientsImageHint,
-                    style: TextStyle(
-                      color: Colors.orange.shade700,
-                      fontSize: 13,
+                const SizedBox(height: 6),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: offImages.map((url) {
+                      final selected = previewUrl == url && previewFile == null;
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: GestureDetector(
+                          onTap: isExtracting || isLoading
+                              ? null
+                              : () async {
+                                  setSheetState(() {
+                                    previewUrl = url;
+                                    previewFile = null;
+                                  });
+                                  await runOcrOnUrl(url, setSheetState, ctx);
+                                },
+                          child: Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: selected
+                                    ? Colors.orange.shade700
+                                    : Colors.grey.shade300,
+                                width: 2,
+                              ),
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(6),
+                              child: CachedNetworkImage(
+                                imageUrl: url,
+                                height: 80,
+                                width: 80,
+                                fit: BoxFit.cover,
+                                placeholder: (context, url) => Container(
+                                  height: 80,
+                                  width: 80,
+                                  color: Colors.grey.shade200,
+                                ),
+                                errorWidget: (context, url, e) => Container(
+                                  height: 80,
+                                  width: 80,
+                                  color: Colors.grey.shade200,
+                                  child: const Icon(
+                                    Icons.broken_image,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
+              // Preview — shown after any selection (OFF image, gallery, or camera)
+              if (previewFile != null || previewUrl != null) ...[
+                GestureDetector(
+                  onTap: () => showDialog(
+                    context: context,
+                    builder: (_) => Dialog(
+                      backgroundColor: Colors.black,
+                      insetPadding: EdgeInsets.zero,
+                      child: InteractiveViewer(
+                        minScale: 0.5,
+                        maxScale: 6,
+                        child: previewFile != null
+                            ? Image.file(previewFile!, fit: BoxFit.contain)
+                            : CachedNetworkImage(
+                                imageUrl: previewUrl!,
+                                fit: BoxFit.contain,
+                              ),
+                      ),
                     ),
                   ),
+                  child: Stack(
+                    alignment: Alignment.bottomRight,
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: previewFile != null
+                            ? Image.file(
+                                previewFile!,
+                                height: 180,
+                                width: double.infinity,
+                                fit: BoxFit.contain,
+                              )
+                            : CachedNetworkImage(
+                                imageUrl: previewUrl!,
+                                height: 180,
+                                width: double.infinity,
+                                fit: BoxFit.contain,
+                              ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(6),
+                        child: Icon(
+                          Icons.zoom_in,
+                          color: Colors.white.withValues(alpha: 0.8),
+                          shadows: const [
+                            Shadow(blurRadius: 4, color: Colors.black54),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
+                const SizedBox(height: 12),
               ],
+              // Gallery picker — lets user pick an existing photo from device
+              OutlinedButton.icon(
+                icon: isExtracting
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.photo_library, size: 18),
+                label: Text(
+                  isExtracting
+                      ? loc.extractingIngredients
+                      : loc.extractFromExistingImage,
+                ),
+                onPressed: isExtracting || isLoading
+                    ? null
+                    : () {
+                        Navigator.pop(ctx);
+                        _pickImageAndContribute(
+                          context,
+                          product,
+                          loc,
+                          ImageSource.gallery,
+                        );
+                      },
+              ),
+              const SizedBox(height: 8),
               // Camera capture — take photo of ingredients label
               OutlinedButton.icon(
                 icon: isExtracting
@@ -1829,36 +2064,14 @@ class _ResultScreenState extends State<ResultScreen> {
                 ),
                 onPressed: isExtracting || isLoading
                     ? null
-                    : () async {
-                        final picker = ImagePicker();
-                        final photo = await picker.pickImage(
-                          source: ImageSource.camera,
-                          imageQuality: 85,
+                    : () {
+                        Navigator.pop(ctx);
+                        _pickImageAndContribute(
+                          context,
+                          product,
+                          loc,
+                          ImageSource.camera,
                         );
-                        if (photo == null || !ctx.mounted) return;
-                        setSheetState(() => isExtracting = true);
-                        final text =
-                            await OcrService.extractIngredientsFromFile(
-                              File(photo.path),
-                            );
-                        if (!ctx.mounted) return;
-                        setSheetState(() => isExtracting = false);
-                        if (text != null && text.isNotEmpty) {
-                          controller.text = text;
-                          ScaffoldMessenger.of(ctx).showSnackBar(
-                            SnackBar(
-                              content: Text(loc.ocrSuccess),
-                              duration: const Duration(seconds: 3),
-                            ),
-                          );
-                        } else {
-                          ScaffoldMessenger.of(ctx).showSnackBar(
-                            SnackBar(
-                              content: Text(loc.ocrFailed),
-                              duration: const Duration(seconds: 3),
-                            ),
-                          );
-                        }
                       },
               ),
               const SizedBox(height: 12),
@@ -1921,9 +2134,6 @@ class _ResultScreenState extends State<ResultScreen> {
     );
   }
 
-  /// Build a priority-ordered list of candidate image URLs to try for OCR.
-  /// Ingredients image first, then front label, then general image.
-  /// Nutrition image is excluded (least likely to contain ingredient text).
   List<String> _candidateImageUrls(Product product) {
     final urls = <String>[];
     if (product.imageIngredientsUrl != null) {
