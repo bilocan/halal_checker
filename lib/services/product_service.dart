@@ -193,6 +193,15 @@ class ProductService {
   }
 
   Future<Product?> refreshProduct(String barcode) async {
+    // Managed products are never re-fetched from OFF.
+    // Return the DB row directly so admin data is preserved.
+    final dbProduct = await _fetchFromSharedDb(barcode);
+    if (dbProduct != null && dbProduct.isManaged) {
+      debugPrint('[Refresh $barcode] managed product — returning DB row as-is');
+      await _cache.saveProduct(barcode, dbProduct);
+      return dbProduct;
+    }
+
     await _cache.removeProduct(barcode);
     return _getProduct(barcode, forceBackendRefresh: true);
   }
@@ -242,6 +251,7 @@ class ProductService {
             ? 'ai'
             : 'keyword',
         'requiresHalalCert': row['requires_halal_cert'] ?? false,
+        'isManaged': row['is_managed'] ?? false,
       });
     } catch (_) {
       return null;

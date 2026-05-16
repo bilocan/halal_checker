@@ -27,6 +27,10 @@ class Product {
   /// "requires halal cert" explanation instead of a hardcoded English string.
   final bool requiresHalalCert;
 
+  /// True when an admin has manually curated this product. Managed products
+  /// are never overwritten by Open Food Facts data on refresh.
+  final bool isManaged;
+
   Product({
     required this.barcode,
     required this.name,
@@ -47,6 +51,7 @@ class Product {
     this.analyzedByAI = false,
     this.analysisMethod,
     this.requiresHalalCert = false,
+    this.isManaged = false,
   });
 
   Product copyWith({
@@ -69,6 +74,7 @@ class Product {
     bool? analyzedByAI,
     String? analysisMethod,
     bool? requiresHalalCert,
+    bool? isManaged,
   }) => Product(
     barcode: barcode ?? this.barcode,
     name: name ?? this.name,
@@ -90,6 +96,7 @@ class Product {
     analyzedByAI: analyzedByAI ?? this.analyzedByAI,
     analysisMethod: analysisMethod ?? this.analysisMethod,
     requiresHalalCert: requiresHalalCert ?? this.requiresHalalCert,
+    isManaged: isManaged ?? this.isManaged,
   );
 
   Map<String, dynamic> toJson() => {
@@ -112,6 +119,7 @@ class Product {
     'analyzedByAI': analyzedByAI,
     if (analysisMethod != null) 'analysisMethod': analysisMethod,
     if (requiresHalalCert) 'requiresHalalCert': requiresHalalCert,
+    if (isManaged) 'isManaged': isManaged,
   };
 
   factory Product.fromJson(Map<String, dynamic> json) => Product(
@@ -140,5 +148,6 @@ class Product {
     analyzedByAI: json['analyzedByAI'] as bool? ?? false,
     analysisMethod: json['analysisMethod'] as String?,
     requiresHalalCert: json['requiresHalalCert'] as bool? ?? false,
+    isManaged: json['isManaged'] as bool? ?? false,
   );
 }
