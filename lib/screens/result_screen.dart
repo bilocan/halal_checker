@@ -1600,6 +1600,7 @@ class _ResultScreenState extends State<ResultScreen> {
   }
 
   Widget _buildImageSlot(String? url, String label, ProductImageType type) {
+    debugPrint('[ImageSlot] $label → url=$url');
     if (url != null) return _buildLabelledImage(url, label);
     return GestureDetector(
       onTap: () => _uploadProductImage(type),
@@ -1660,9 +1661,16 @@ class _ResultScreenState extends State<ResultScreen> {
                 fadeInDuration: const Duration(milliseconds: 200),
                 placeholder: (context, url) =>
                     const Center(child: CircularProgressIndicator()),
-                errorWidget: (context, url, error) => const Center(
-                  child: Icon(Icons.broken_image, size: 48, color: Colors.grey),
-                ),
+                errorWidget: (context, url, error) {
+                  debugPrint('[Image] failed to load: $url — $error');
+                  return const Center(
+                    child: Icon(
+                      Icons.broken_image,
+                      size: 48,
+                      color: Colors.grey,
+                    ),
+                  );
+                },
               ),
               Positioned(
                 top: 8,

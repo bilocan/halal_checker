@@ -63,12 +63,18 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
 
   Future<void> _reviewPhoto(int id, String status) async {
     setState(() => _processingPhotoIds.add(id));
-    await ProductImageService.updateSubmissionStatus(id, status);
+    final ok = await ProductImageService.updateSubmissionStatus(id, status);
     if (!mounted) return;
-    setState(() {
-      _processingPhotoIds.remove(id);
-      _photos.removeWhere((p) => (p['id'] as num).toInt() == id);
-    });
+    if (ok) {
+      setState(
+        () => _photos.removeWhere((p) => (p['id'] as num).toInt() == id),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to update — check Supabase logs')),
+      );
+    }
+    setState(() => _processingPhotoIds.remove(id));
   }
 
   Future<void> _run({List<String>? ids}) async {
