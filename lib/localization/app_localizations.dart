@@ -263,6 +263,9 @@ class AppLocalizations {
       'suggestionRejectFailed': 'Could not reject suggestion.',
       'photoIngredientsButton': 'Check Ingredients Photo',
       'photoAnalysisProductName': 'Photo Analysis',
+      'managedProduct': 'Verified by admin',
+      'managedProductNoRefresh':
+          'This product is managed by an admin and cannot be refreshed from external sources.',
     },
     'tr': {
       'appTitle': 'HalalScan',
@@ -512,6 +515,9 @@ class AppLocalizations {
       'suggestionRejectFailed': 'Öneri reddedilemedi.',
       'photoIngredientsButton': 'Malzeme Fotoğrafını Kontrol Et',
       'photoAnalysisProductName': 'Fotoğraf Analizi',
+      'managedProduct': 'Yönetici tarafından doğrulandı',
+      'managedProductNoRefresh':
+          'Bu ürün bir yönetici tarafından yönetiliyor ve dış kaynaklardan yenilenemez.',
     },
     'de': {
       'appTitle': 'HalalScan',
@@ -773,6 +779,9 @@ class AppLocalizations {
       'suggestionRejectFailed': 'Vorschlag konnte nicht abgelehnt werden.',
       'photoIngredientsButton': 'Zutatenfoto prüfen',
       'photoAnalysisProductName': 'Fotoanalyse',
+      'managedProduct': 'Vom Admin verifiziert',
+      'managedProductNoRefresh':
+          'Dieses Produkt wird von einem Admin verwaltet und kann nicht aus externen Quellen aktualisiert werden.',
     },
   };
 
@@ -1022,6 +1031,8 @@ class AppLocalizations {
   String get suggestionRejectFailed => _translate('suggestionRejectFailed');
   String get photoIngredientsButton => _translate('photoIngredientsButton');
   String get photoAnalysisProductName => _translate('photoAnalysisProductName');
+  String get managedProduct => _translate('managedProduct');
+  String get managedProductNoRefresh => _translate('managedProductNoRefresh');
 
   static AppLocalizations of(BuildContext context) {
     final localizations = Localizations.of<AppLocalizations>(
