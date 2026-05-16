@@ -1,9 +1,11 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../app_colors.dart';
 import '../localization/app_localizations.dart';
 import '../models/product_analysis.dart';
 import '../services/analysis_service.dart';
+import '../services/product_image_service.dart';
 import 'rules_management_screen.dart';
 
 class AdminPanelScreen extends StatefulWidget {
@@ -17,16 +19,23 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
   final _service = AnalysisService();
   int _tabIndex = 0;
 
+  // ── analysis tab ──────────────────────────────────────────────────────────
   List<Map<String, dynamic>> _analyses = [];
   final Set<String> _selected = {};
   bool _loading = true;
   bool _running = false;
   String _filter = 'all';
 
+  // ── photos tab ────────────────────────────────────────────────────────────
+  List<Map<String, dynamic>> _photos = [];
+  bool _photosLoading = false;
+  final Set<int> _processingPhotoIds = {};
+
   @override
   void initState() {
     super.initState();
     _load();
+    _loadPhotos();
   }
 
   Future<void> _load() async {
@@ -39,6 +48,26 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
     setState(() {
       _analyses = list ?? [];
       _loading = false;
+    });
+  }
+
+  Future<void> _loadPhotos() async {
+    setState(() => _photosLoading = true);
+    final list = await ProductImageService.getSubmissions();
+    if (!mounted) return;
+    setState(() {
+      _photos = list;
+      _photosLoading = false;
+    });
+  }
+
+  Future<void> _reviewPhoto(int id, String status) async {
+    setState(() => _processingPhotoIds.add(id));
+    await ProductImageService.updateSubmissionStatus(id, status);
+    if (!mounted) return;
+    setState(() {
+      _processingPhotoIds.remove(id);
+      _photos.removeWhere((p) => (p['id'] as num).toInt() == id);
     });
   }
 
@@ -142,15 +171,22 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
               icon: const Icon(Icons.refresh),
               onPressed: _loading ? null : _load,
             ),
+          if (_tabIndex == 2)
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              onPressed: _photosLoading ? null : _loadPhotos,
+            ),
         ],
       ),
       body: Column(
         children: [
           _buildTabBar(loc),
           Expanded(
-            child: _tabIndex == 0
-                ? _buildAnalysisBody()
-                : const RulesManagementScreen(),
+            child: switch (_tabIndex) {
+              0 => _buildAnalysisBody(),
+              1 => const RulesManagementScreen(),
+              _ => _buildPhotosBody(loc),
+            },
           ),
         ],
       ),
@@ -176,6 +212,14 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
               index: 1,
             ),
           ),
+          Expanded(
+            child: _tabButton(
+              label: loc.photosTab,
+              icon: Icons.photo_library_outlined,
+              index: 2,
+              badge: _photos.isNotEmpty ? _photos.length : null,
+            ),
+          ),
         ],
       ),
     );
@@ -185,6 +229,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
     required String label,
     required IconData icon,
     required int index,
+    int? badge,
   }) {
     final selected = _tabIndex == index;
     return InkWell(
@@ -216,11 +261,31 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
                 color: selected ? kGreen : Colors.grey.shade600,
               ),
             ),
+            if (badge != null && badge > 0) ...[
+              const SizedBox(width: 4),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                decoration: BoxDecoration(
+                  color: Colors.orange.shade700,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  '$badge',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ),
     );
   }
+
+  // ── analysis tab ──────────────────────────────────────────────────────────
 
   Widget _buildAnalysisBody() {
     return Column(
@@ -366,7 +431,53 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
       ),
     );
   }
+
+  // ── photos tab ────────────────────────────────────────────────────────────
+
+  Widget _buildPhotosBody(AppLocalizations loc) {
+    if (_photosLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_photos.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.check_circle_outline,
+              size: 56,
+              color: Colors.grey.shade400,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'No pending photo submissions',
+              style: TextStyle(color: Colors.grey.shade500),
+            ),
+          ],
+        ),
+      );
+    }
+    return RefreshIndicator(
+      onRefresh: _loadPhotos,
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: _photos.length,
+        itemBuilder: (_, i) {
+          final row = _photos[i];
+          final id = (row['id'] as num).toInt();
+          return _PhotoSubmissionCard(
+            row: row,
+            isProcessing: _processingPhotoIds.contains(id),
+            onApprove: () => _reviewPhoto(id, 'approved'),
+            onReject: () => _reviewPhoto(id, 'rejected'),
+          );
+        },
+      ),
+    );
+  }
 }
+
+// ── analysis row ─────────────────────────────────────────────────────────────
 
 class _AnalysisRow extends StatelessWidget {
   final Map<String, dynamic> row;
@@ -480,6 +591,175 @@ class _AnalysisRow extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  String _formatAge(DateTime d) {
+    final diff = DateTime.now().difference(d);
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+    if (diff.inHours < 24) return '${diff.inHours}h ago';
+    return '${diff.inDays}d ago';
+  }
+}
+
+// ── photo submission card ─────────────────────────────────────────────────────
+
+class _PhotoSubmissionCard extends StatelessWidget {
+  final Map<String, dynamic> row;
+  final bool isProcessing;
+  final VoidCallback onApprove;
+  final VoidCallback onReject;
+
+  const _PhotoSubmissionCard({
+    required this.row,
+    required this.isProcessing,
+    required this.onApprove,
+    required this.onReject,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final barcode = row['barcode'] as String? ?? '';
+    final productName = row['product_name'] as String? ?? barcode;
+    final imageType = row['image_type'] as String? ?? 'front';
+    final publicUrl = row['public_url'] as String? ?? '';
+    final createdAt = DateTime.tryParse(row['created_at'] as String? ?? '');
+
+    final typeColor = switch (imageType) {
+      'ingredients' => Colors.orange.shade700,
+      'nutrition' => Colors.purple.shade700,
+      _ => Colors.blue.shade700,
+    };
+    final typeBg = switch (imageType) {
+      'ingredients' => Colors.orange.shade50,
+      'nutrition' => Colors.purple.shade50,
+      _ => Colors.blue.shade50,
+    };
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (publicUrl.isNotEmpty)
+            CachedNetworkImage(
+              imageUrl: publicUrl,
+              height: 220,
+              width: double.infinity,
+              fit: BoxFit.contain,
+              placeholder: (_, url) => const SizedBox(
+                height: 220,
+                child: Center(child: CircularProgressIndicator()),
+              ),
+              errorWidget: (_, url, err) => const SizedBox(
+                height: 100,
+                child: Center(
+                  child: Icon(Icons.broken_image, size: 48, color: Colors.grey),
+                ),
+              ),
+            ),
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: typeBg,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: typeColor.withValues(alpha: 0.4),
+                        ),
+                      ),
+                      child: Text(
+                        imageType,
+                        style: TextStyle(
+                          color: typeColor,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    if (createdAt != null) ...[
+                      const SizedBox(width: 8),
+                      Text(
+                        _formatAge(createdAt),
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey.shade500,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  productName,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  barcode,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey.shade600,
+                    fontFamily: 'monospace',
+                  ),
+                ),
+                const SizedBox(height: 10),
+                if (isProcessing)
+                  const Center(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(vertical: 4),
+                      child: CircularProgressIndicator(),
+                    ),
+                  )
+                else
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: onReject,
+                          icon: const Icon(Icons.close, size: 16),
+                          label: const Text('Reject'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.red.shade700,
+                            side: BorderSide(color: Colors.red.shade300),
+                            visualDensity: VisualDensity.compact,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: FilledButton.icon(
+                          onPressed: onApprove,
+                          icon: const Icon(Icons.check, size: 16),
+                          label: const Text('Approve'),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: kGreen,
+                            visualDensity: VisualDensity.compact,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

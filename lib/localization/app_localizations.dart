@@ -229,6 +229,7 @@ class AppLocalizations {
       'noDiscussionsHint': 'Be the first to start one!',
       'analysisTab': 'Analysis',
       'rulesEngineTab': 'Rules Engine',
+      'photosTab': 'Photos',
       'customRulesTab': 'Custom',
       'builtInRulesTab': 'Built-in',
       'suggestionsTab': 'Suggestions',
@@ -477,6 +478,7 @@ class AppLocalizations {
       'noDiscussionsHint': 'İlk tartışmayı siz başlatın!',
       'analysisTab': 'Analiz',
       'rulesEngineTab': 'Kural Motoru',
+      'photosTab': 'Fotoğraflar',
       'customRulesTab': 'Özel',
       'builtInRulesTab': 'Yerleşik',
       'suggestionsTab': 'Öneriler',
@@ -734,6 +736,7 @@ class AppLocalizations {
       'noDiscussionsHint': 'Seien Sie der Erste!',
       'analysisTab': 'Analyse',
       'rulesEngineTab': 'Regelwerk',
+      'photosTab': 'Fotos',
       'customRulesTab': 'Benutzerdefiniert',
       'builtInRulesTab': 'Eingebaut',
       'suggestionsTab': 'Vorschläge',
@@ -985,6 +988,7 @@ class AppLocalizations {
   String get allScans => _translate('allScans');
   String get analysisTab => _translate('analysisTab');
   String get rulesEngineTab => _translate('rulesEngineTab');
+  String get photosTab => _translate('photosTab');
   String get customRulesTab => _translate('customRulesTab');
   String get builtInRulesTab => _translate('builtInRulesTab');
   String get suggestionsTab => _translate('suggestionsTab');

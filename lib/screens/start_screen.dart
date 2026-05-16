@@ -11,6 +11,7 @@ import '../models/product.dart';
 import '../services/analysis_service.dart';
 import '../services/auth_service.dart';
 import '../services/database_service.dart';
+import '../services/ingredient_sanitizer.dart';
 import '../services/ocr_service.dart';
 import '../services/product_service.dart';
 import '../services/version_service.dart';
@@ -146,11 +147,7 @@ class _StartScreenState extends State<StartScreen> {
         return;
       }
 
-      final ingredients = text
-          .split(RegExp(r'[,;\n]+'))
-          .map((e) => e.trim())
-          .where((e) => e.isNotEmpty)
-          .toList();
+      final ingredients = IngredientSanitizer.sanitize(text);
 
       final analysis = ProductService.analyzeWithKeywords(ingredients);
       final barcode = 'photo_${DateTime.now().millisecondsSinceEpoch}';

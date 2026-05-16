@@ -1,0 +1,3 @@
+tags:
+  manual:
+    skip: "Manual test — requires a connected device and test asset images. Run with: flutter test integration_test/ocr_pipeline_test.dart"

@@ -66,4 +66,37 @@ class ProductImageService {
       return false;
     }
   }
+
+  /// Returns all submissions with [status] (default: 'pending'), newest first.
+  static Future<List<Map<String, dynamic>>> getSubmissions({
+    String status = 'pending',
+  }) async {
+    if (!AppConfig.hasSupabase) return [];
+    try {
+      final rows = await _db
+          .from('product_image_submissions')
+          .select()
+          .eq('status', status)
+          .order('created_at');
+      return List<Map<String, dynamic>>.from(rows);
+    } catch (e) {
+      debugPrint('getSubmissions error: $e');
+      return [];
+    }
+  }
+
+  /// Sets a submission's status to 'approved' or 'rejected'.
+  static Future<bool> updateSubmissionStatus(int id, String status) async {
+    if (!AppConfig.hasSupabase) return false;
+    try {
+      await _db
+          .from('product_image_submissions')
+          .update({'status': status})
+          .eq('id', id);
+      return true;
+    } catch (e) {
+      debugPrint('updateSubmissionStatus error: $e');
+      return false;
+    }
+  }
 }
