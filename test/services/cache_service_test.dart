@@ -37,34 +37,24 @@ void main() {
       expect(result.name, equals('Test Product'));
     });
 
-    test('returns null for expired entry (cachedAt > 30 days ago)', () async {
-      final cache = CacheService();
-      await cache.saveProduct('expired_bc', _makeProduct('expired_bc'));
+    test(
+      'returns product even when _cachedAt is very old (cache never expires)',
+      () async {
+        final cache = CacheService();
+        await cache.saveProduct('old_bc', _makeProduct('old_bc'));
 
-      final prefs = await SharedPreferences.getInstance();
-      const key = 'halal_cache_expired_bc';
-      final raw = prefs.getString(key)!;
-      final map = jsonDecode(raw) as Map<String, dynamic>;
-      map['_cachedAt'] = DateTime(2000).toIso8601String();
-      await prefs.setString(key, jsonEncode(map));
+        final prefs = await SharedPreferences.getInstance();
+        const key = 'halal_cache_old_bc';
+        final raw = prefs.getString(key)!;
+        final map = jsonDecode(raw) as Map<String, dynamic>;
+        map['_cachedAt'] = DateTime(2000).toIso8601String();
+        await prefs.setString(key, jsonEncode(map));
 
-      expect(await cache.getProduct('expired_bc'), isNull);
-    });
-
-    test('removes expired entry from prefs', () async {
-      final cache = CacheService();
-      await cache.saveProduct('stale_bc', _makeProduct('stale_bc'));
-
-      final prefs = await SharedPreferences.getInstance();
-      const key = 'halal_cache_stale_bc';
-      final raw = prefs.getString(key)!;
-      final map = jsonDecode(raw) as Map<String, dynamic>;
-      map['_cachedAt'] = DateTime(2000).toIso8601String();
-      await prefs.setString(key, jsonEncode(map));
-
-      await cache.getProduct('stale_bc');
-      expect(prefs.getString(key), isNull);
-    });
+        final result = await cache.getProduct('old_bc');
+        expect(result, isNotNull);
+        expect(result!.barcode, equals('old_bc'));
+      },
+    );
 
     test('returns null and removes entry for corrupt JSON', () async {
       final prefs = await SharedPreferences.getInstance();
@@ -75,14 +65,16 @@ void main() {
       expect(prefs.getString('halal_cache_corrupt'), isNull);
     });
 
-    test('returns null and removes entry when _cachedAt is missing', () async {
+    test('returns product even when _cachedAt is missing', () async {
       final prefs = await SharedPreferences.getInstance();
       final product = _makeProduct('no_ts');
       final map = product.toJson();
-      // omit _cachedAt key
+      // omit _cachedAt — cache is permanent so missing timestamp is fine
       await prefs.setString('halal_cache_no_ts', jsonEncode(map));
 
-      expect(await CacheService().getProduct('no_ts'), isNull);
+      final result = await CacheService().getProduct('no_ts');
+      expect(result, isNotNull);
+      expect(result!.barcode, equals('no_ts'));
     });
   });
 
