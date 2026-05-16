@@ -31,6 +31,10 @@ class AppLocalizations {
       'pleaseEnterValidBarcode': 'Please enter a valid barcode.',
       'productNotFound': 'Product not found',
       'noProductImageAvailable': 'No product image available',
+      'uploadProductPhoto': 'Upload Photo',
+      'uploadPhotoHint': 'Help others by contributing a photo of this product',
+      'photoUploaded': 'Photo submitted — thank you!',
+      'photoUploadFailed': 'Could not upload photo. Please try again.',
       'additionalImages': 'Additional Images',
       'ingredients': 'Ingredients',
       'flaggedIngredients': 'Flagged Ingredients',
@@ -283,6 +287,11 @@ class AppLocalizations {
       'pleaseEnterValidBarcode': 'Lütfen geçerli bir barkod girin.',
       'productNotFound': 'Ürün bulunamadı',
       'noProductImageAvailable': 'Ürün resmi yok',
+      'uploadProductPhoto': 'Fotoğraf Yükle',
+      'uploadPhotoHint':
+          'Bu ürünün fotoğrafını ekleyerek diğerlerine yardım edin',
+      'photoUploaded': 'Fotoğraf gönderildi — teşekkürler!',
+      'photoUploadFailed': 'Fotoğraf yüklenemedi. Lütfen tekrar deneyin.',
       'additionalImages': 'Ek Görseller',
       'ingredients': 'İçindekiler',
       'flaggedIngredients': 'İşaretli İçindekiler',
@@ -525,6 +534,12 @@ class AppLocalizations {
       'pleaseEnterValidBarcode': 'Bitte geben Sie einen gültigen Barcode ein.',
       'productNotFound': 'Produkt nicht gefunden',
       'noProductImageAvailable': 'Kein Produktbild verfügbar',
+      'uploadProductPhoto': 'Foto hochladen',
+      'uploadPhotoHint':
+          'Helfen Sie anderen, indem Sie ein Foto dieses Produkts beitragen',
+      'photoUploaded': 'Foto eingereicht — vielen Dank!',
+      'photoUploadFailed':
+          'Foto konnte nicht hochgeladen werden. Bitte erneut versuchen.',
       'additionalImages': 'Zusätzliche Bilder',
       'ingredients': 'Zutaten',
       'flaggedIngredients': 'Markierte Zutaten',
@@ -780,6 +795,10 @@ class AppLocalizations {
   String get pleaseEnterValidBarcode => _translate('pleaseEnterValidBarcode');
   String get productNotFound => _translate('productNotFound');
   String get noProductImageAvailable => _translate('noProductImageAvailable');
+  String get uploadProductPhoto => _translate('uploadProductPhoto');
+  String get uploadPhotoHint => _translate('uploadPhotoHint');
+  String get photoUploaded => _translate('photoUploaded');
+  String get photoUploadFailed => _translate('photoUploadFailed');
   String get additionalImages => _translate('additionalImages');
   String get ingredients => _translate('ingredients');
   String get flaggedIngredients => _translate('flaggedIngredients');

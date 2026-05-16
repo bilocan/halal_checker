@@ -20,6 +20,7 @@ import '../services/database_service.dart';
 import '../services/ingredient_contribution_service.dart';
 import '../services/issue_report_service.dart';
 import '../services/ocr_service.dart';
+import '../services/product_image_service.dart';
 import '../services/product_service.dart';
 import 'deep_analysis_screen.dart';
 import 'discussion_screen.dart';
@@ -42,6 +43,7 @@ class _ResultScreenState extends State<ResultScreen> {
   List<FeedbackItem> _feedbacks = [];
   bool _isLoadingFeedback = false;
   bool _isRefreshing = false;
+  ProductImageType? _uploadingImageType;
   bool _showTranslated = false;
   String _note = '';
   bool _isFlagged = false;
@@ -524,6 +526,63 @@ class _ResultScreenState extends State<ResultScreen> {
     }
   }
 
+  Future<void> _uploadProductImage(ProductImageType type) async {
+    if (AuthService.currentUser == null) {
+      _showSignInRequired(context);
+      return;
+    }
+    final loc = AppLocalizations.of(context);
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      builder: (_) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt),
+              title: Text(loc.takePhotoOfIngredients),
+              onTap: () => Navigator.pop(context, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: Text(loc.extractFromExistingImage),
+              onTap: () => Navigator.pop(context, ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (source == null || !mounted) return;
+
+    XFile? photo;
+    try {
+      photo = await ImagePicker().pickImage(source: source, imageQuality: 85);
+    } catch (e) {
+      debugPrint('ImagePicker error ($source): $e');
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(loc.cameraError)));
+      return;
+    }
+    if (photo == null || !mounted) return;
+
+    setState(() => _uploadingImageType = type);
+    final success = await ProductImageService.uploadImage(
+      barcode: widget.barcode,
+      imageFile: File(photo.path),
+      type: type,
+      productName: widget.product?.name,
+    );
+    if (!mounted) return;
+    setState(() => _uploadingImageType = null);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(success ? loc.photoUploaded : loc.photoUploadFailed),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context);
@@ -760,29 +819,54 @@ class _ResultScreenState extends State<ResultScreen> {
               else
                 Container(
                   width: double.infinity,
-                  height: 120,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: Colors.grey.shade300),
                     color: Colors.grey.shade100,
                   ),
+                  padding: const EdgeInsets.symmetric(vertical: 20),
                   child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.image, size: 48, color: Colors.grey),
-                        const SizedBox(height: 8),
-                        Text(
-                          loc.noProductImageAvailable,
-                          style: const TextStyle(color: Colors.grey),
-                        ),
-                      ],
-                    ),
+                    child: _uploadingImageType == ProductImageType.front
+                        ? const CircularProgressIndicator()
+                        : Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(
+                                Icons.image,
+                                size: 40,
+                                color: Colors.grey,
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                loc.noProductImageAvailable,
+                                style: const TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 13,
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              OutlinedButton.icon(
+                                onPressed: () =>
+                                    _uploadProductImage(ProductImageType.front),
+                                icon: const Icon(Icons.add_a_photo, size: 16),
+                                label: Text(loc.uploadProductPhoto),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: kGreen,
+                                  side: const BorderSide(color: kGreen),
+                                  visualDensity: VisualDensity.compact,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 6,
+                                  ),
+                                  textStyle: const TextStyle(fontSize: 13),
+                                ),
+                              ),
+                            ],
+                          ),
                   ),
                 ),
               const SizedBox(height: 24),
-              if (product.imageIngredientsUrl != null ||
-                  product.imageNutritionUrl != null) ...[
+              if (!product.isNonFood) ...[
                 Text(
                   loc.additionalImages,
                   style: TextStyle(
@@ -792,16 +876,16 @@ class _ResultScreenState extends State<ResultScreen> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                if (product.imageIngredientsUrl != null)
-                  _buildLabelledImage(
-                    product.imageIngredientsUrl!,
-                    loc.ingredients,
-                  ),
-                if (product.imageNutritionUrl != null)
-                  _buildLabelledImage(
-                    product.imageNutritionUrl!,
-                    loc.nutritionLabel,
-                  ),
+                _buildImageSlot(
+                  product.imageIngredientsUrl,
+                  loc.ingredients,
+                  ProductImageType.ingredients,
+                ),
+                _buildImageSlot(
+                  product.imageNutritionUrl,
+                  loc.nutritionLabel,
+                  ProductImageType.nutrition,
+                ),
                 const SizedBox(height: 24),
               ],
               Row(
@@ -1511,6 +1595,45 @@ class _ResultScreenState extends State<ResultScreen> {
             child: Icon(Icons.zoom_in, color: Colors.white70, size: 22),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildImageSlot(String? url, String label, ProductImageType type) {
+    if (url != null) return _buildLabelledImage(url, label);
+    return GestureDetector(
+      onTap: () => _uploadProductImage(type),
+      child: Container(
+        width: double.infinity,
+        height: 100,
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.grey.shade300),
+          color: Colors.grey.shade50,
+        ),
+        child: Center(
+          child: _uploadingImageType == type
+              ? const CircularProgressIndicator()
+              : Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.add_a_photo,
+                      color: Colors.grey.shade400,
+                      size: 26,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      label,
+                      style: TextStyle(
+                        color: Colors.grey.shade500,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+        ),
       ),
     );
   }
