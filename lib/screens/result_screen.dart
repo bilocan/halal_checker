@@ -804,17 +804,65 @@ class _ResultScreenState extends State<ResultScreen> {
               if (product.labels.isNotEmpty) const SizedBox(height: 12),
               const SizedBox(height: 24),
               if (product.imageFrontUrl != null || product.imageUrl != null)
-                Container(
-                  width: double.infinity,
-                  height: 200,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey.shade300),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: _buildProductImage(product, loc),
-                  ),
+                Stack(
+                  children: [
+                    Container(
+                      width: double.infinity,
+                      height: 200,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey.shade300),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: _buildProductImage(product, loc),
+                      ),
+                    ),
+                    Positioned(
+                      bottom: 8,
+                      right: 8,
+                      child: _uploadingImageType == ProductImageType.front
+                          ? const SizedBox(
+                              width: 28,
+                              height: 28,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.5,
+                              ),
+                            )
+                          : GestureDetector(
+                              onTap: () =>
+                                  _uploadProductImage(ProductImageType.front),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.black54,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.edit,
+                                      color: Colors.white,
+                                      size: 13,
+                                    ),
+                                    SizedBox(width: 4),
+                                    Text(
+                                      'Replace',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 11,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                    ),
+                  ],
                 )
               else
                 Container(
@@ -1601,7 +1649,47 @@ class _ResultScreenState extends State<ResultScreen> {
 
   Widget _buildImageSlot(String? url, String label, ProductImageType type) {
     debugPrint('[ImageSlot] $label → url=$url');
-    if (url != null) return _buildLabelledImage(url, label);
+    if (url != null) {
+      return Stack(
+        children: [
+          _buildLabelledImage(url, label),
+          Positioned(
+            bottom: 18,
+            right: 8,
+            child: _uploadingImageType == type
+                ? const SizedBox(
+                    width: 28,
+                    height: 28,
+                    child: CircularProgressIndicator(strokeWidth: 2.5),
+                  )
+                : GestureDetector(
+                    onTap: () => _uploadProductImage(type),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.black54,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.edit, color: Colors.white, size: 13),
+                          SizedBox(width: 4),
+                          Text(
+                            'Replace',
+                            style: TextStyle(color: Colors.white, fontSize: 11),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+          ),
+        ],
+      );
+    }
     return GestureDetector(
       onTap: () => _uploadProductImage(type),
       child: Container(

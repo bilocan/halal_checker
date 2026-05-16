@@ -629,7 +629,9 @@ class _PhotoSubmissionCard extends StatelessWidget {
     final barcode = row['barcode'] as String? ?? '';
     final productName = row['product_name'] as String? ?? barcode;
     final imageType = row['image_type'] as String? ?? 'front';
-    final publicUrl = row['public_url'] as String? ?? '';
+    final submittedUrl = row['public_url'] as String? ?? '';
+    final currentUrl = row['current_image_url'] as String?;
+    final hasReplacement = currentUrl != null && currentUrl.isNotEmpty;
     final createdAt = DateTime.tryParse(row['created_at'] as String? ?? '');
 
     final typeColor = switch (imageType) {
@@ -649,20 +651,53 @@ class _PhotoSubmissionCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (publicUrl.isNotEmpty)
-            CachedNetworkImage(
-              imageUrl: publicUrl,
-              height: 220,
-              width: double.infinity,
-              fit: BoxFit.contain,
-              placeholder: (_, url) => const SizedBox(
-                height: 220,
-                child: Center(child: CircularProgressIndicator()),
+          // Image comparison: old on left, new on right (or just new if no old)
+          if (hasReplacement)
+            IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(
+                    child: _imagePanel(
+                      context,
+                      currentUrl,
+                      'Current',
+                      Colors.grey.shade700,
+                    ),
+                  ),
+                  Container(width: 1, color: Colors.grey.shade300),
+                  Expanded(
+                    child: _imagePanel(
+                      context,
+                      submittedUrl,
+                      'New',
+                      Colors.green.shade700,
+                    ),
+                  ),
+                ],
               ),
-              errorWidget: (_, url, err) => const SizedBox(
-                height: 100,
-                child: Center(
-                  child: Icon(Icons.broken_image, size: 48, color: Colors.grey),
+            )
+          else if (submittedUrl.isNotEmpty)
+            GestureDetector(
+              onTap: () => _showFullscreen(context, submittedUrl),
+              child: CachedNetworkImage(
+                imageUrl: submittedUrl,
+                height: 220,
+                width: double.infinity,
+                fit: BoxFit.contain,
+                placeholder: (_, _) => const SizedBox(
+                  height: 220,
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+                errorWidget: (_, _, _) => const SizedBox(
+                  height: 100,
+                  child: Center(
+                    child: Icon(
+                      Icons.broken_image,
+                      size: 48,
+                      color: Colors.grey,
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -694,6 +729,28 @@ class _PhotoSubmissionCard extends StatelessWidget {
                         ),
                       ),
                     ),
+                    if (hasReplacement) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.amber.shade50,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.amber.shade400),
+                        ),
+                        child: Text(
+                          'replacement',
+                          style: TextStyle(
+                            color: Colors.amber.shade800,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
                     if (createdAt != null) ...[
                       const SizedBox(width: 8),
                       Text(
@@ -764,6 +821,105 @@ class _PhotoSubmissionCard extends StatelessWidget {
                   ),
               ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static void _showFullscreen(BuildContext context, String url) {
+    showDialog<void>(
+      context: context,
+      barrierColor: Colors.black87,
+      builder: (ctx) => Dialog.fullscreen(
+        backgroundColor: Colors.black,
+        child: Stack(
+          children: [
+            Center(
+              child: InteractiveViewer(
+                minScale: 0.5,
+                maxScale: 6.0,
+                child: CachedNetworkImage(
+                  imageUrl: url,
+                  fit: BoxFit.contain,
+                  placeholder: (_, _) =>
+                      const Center(child: CircularProgressIndicator()),
+                  errorWidget: (_, _, _) => const Icon(
+                    Icons.broken_image,
+                    size: 64,
+                    color: Colors.white38,
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              top: 40,
+              right: 12,
+              child: SafeArea(
+                child: IconButton(
+                  style: IconButton.styleFrom(backgroundColor: Colors.black54),
+                  icon: const Icon(Icons.close, color: Colors.white, size: 24),
+                  onPressed: () => Navigator.pop(ctx),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _imagePanel(
+    BuildContext context,
+    String url,
+    String label,
+    Color labelColor,
+  ) {
+    return GestureDetector(
+      onTap: () => _showFullscreen(context, url),
+      child: Stack(
+        children: [
+          CachedNetworkImage(
+            imageUrl: url,
+            height: 200,
+            width: double.infinity,
+            fit: BoxFit.contain,
+            placeholder: (_, _) => const SizedBox(
+              height: 200,
+              child: Center(child: CircularProgressIndicator()),
+            ),
+            errorWidget: (_, _, _) => const SizedBox(
+              height: 120,
+              child: Center(
+                child: Icon(Icons.broken_image, size: 36, color: Colors.grey),
+              ),
+            ),
+          ),
+          Positioned(
+            top: 6,
+            left: 6,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: Colors.black54,
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Text(
+                label,
+                style: TextStyle(
+                  color: labelColor == Colors.green.shade700
+                      ? Colors.greenAccent
+                      : Colors.white70,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+          const Positioned(
+            bottom: 6,
+            right: 6,
+            child: Icon(Icons.zoom_in, color: Colors.white54, size: 18),
           ),
         ],
       ),

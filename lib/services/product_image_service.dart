@@ -68,6 +68,9 @@ class ProductImageService {
   }
 
   /// Returns all submissions with [status] (default: 'pending'), newest first.
+  /// Each row includes a `current_image_url` key carrying the image URL
+  /// currently stored in the `products` table for that barcode + image_type,
+  /// so the admin can compare old vs new before approving.
   static Future<List<Map<String, dynamic>>> getSubmissions({
     String status = 'pending',
   }) async {
@@ -78,7 +81,38 @@ class ProductImageService {
           .select()
           .eq('status', status)
           .order('created_at');
-      return List<Map<String, dynamic>>.from(rows);
+
+      final submissions = List<Map<String, dynamic>>.from(rows);
+      if (submissions.isEmpty) return [];
+
+      // Fetch current image URLs from the products table for comparison.
+      final barcodes = submissions
+          .map((r) => r['barcode'] as String)
+          .toSet()
+          .toList();
+      final products = await _db
+          .from('products')
+          .select(
+            'barcode, image_front_url, image_ingredients_url, image_nutrition_url',
+          )
+          .inFilter('barcode', barcodes);
+
+      final productMap = {
+        for (final p in List<Map<String, dynamic>>.from(products))
+          p['barcode'] as String: p,
+      };
+
+      return submissions.map((row) {
+        final product = productMap[row['barcode'] as String?];
+        final imageType = row['image_type'] as String? ?? '';
+        final currentUrl = switch (imageType) {
+          'front' => product?['image_front_url'] as String?,
+          'ingredients' => product?['image_ingredients_url'] as String?,
+          'nutrition' => product?['image_nutrition_url'] as String?,
+          _ => null,
+        };
+        return {...row, 'current_image_url': currentUrl};
+      }).toList();
     } catch (e) {
       debugPrint('getSubmissions error: $e');
       return [];
