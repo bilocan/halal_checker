@@ -77,4 +77,45 @@ void main() {
       expect(p.analyzedByAI, isTrue);
     });
   });
+
+  group('Product — isManaged field', () {
+    test('isManaged defaults to false when absent', () {
+      final p = Product.fromJson(_baseJson());
+      expect(p.isManaged, isFalse);
+    });
+
+    test('isManaged: true parsed correctly', () {
+      final json = _baseJson();
+      json['isManaged'] = true;
+      final p = Product.fromJson(json);
+      expect(p.isManaged, isTrue);
+    });
+
+    test('isManaged survives toJson/fromJson round-trip', () {
+      final json = _baseJson();
+      json['isManaged'] = true;
+      final original = Product.fromJson(json);
+      final roundTripped = Product.fromJson(original.toJson());
+      expect(roundTripped.isManaged, isTrue);
+    });
+
+    test('isManaged false is omitted from toJson', () {
+      final p = Product.fromJson(_baseJson());
+      expect(p.toJson().containsKey('isManaged'), isFalse);
+    });
+
+    test('copyWith preserves isManaged when not overridden', () {
+      final json = _baseJson();
+      json['isManaged'] = true;
+      final p = Product.fromJson(json);
+      final copy = p.copyWith(isHalal: false);
+      expect(copy.isManaged, isTrue);
+    });
+
+    test('copyWith can override isManaged', () {
+      final p = Product.fromJson(_baseJson());
+      final updated = p.copyWith(isManaged: true);
+      expect(updated.isManaged, isTrue);
+    });
+  });
 }

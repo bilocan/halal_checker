@@ -483,6 +483,19 @@ class _ResultScreenState extends State<ResultScreen> {
 
   Future<void> _refreshProductData() async {
     if (_isRefreshing) return;
+
+    // Managed products cannot be refreshed from OFF.
+    if (widget.product?.isManaged == true) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context).managedProductNoRefresh),
+          ),
+        );
+      }
+      return;
+    }
+
     setState(() => _isRefreshing = true);
 
     try {
@@ -768,6 +781,37 @@ class _ResultScreenState extends State<ResultScreen> {
                         ],
                       ),
                     ),
+                    if (product.isManaged) ...[
+                      const SizedBox(height: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white24,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.verified,
+                              color: Colors.white70,
+                              size: 14,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              loc.managedProduct,
+                              style: const TextStyle(
+                                color: Colors.white70,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),

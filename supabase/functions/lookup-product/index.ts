@@ -255,6 +255,7 @@ function toProduct(row: Record<string, any>) {
     analyzedByAI:          row.analyzed_by_ai,
     analysisMethod:        row.analyzed_by_ai ? 'ai' : 'keyword',
     requiresHalalCert:     row.requires_halal_cert ?? false,
+    isManaged:             row.is_managed ?? false,
   }
 }
 
@@ -287,11 +288,17 @@ Deno.serve(async (req) => {
       .eq('barcode', barcode)
       .maybeSingle()
 
-    if (cached && !force) {
+    // Managed products are never overwritten by OFF data.
+    // Return the DB row as-is regardless of the force flag.
+    if (cached?.is_managed) {
+      console.log(`[${barcode}] managed product — returning DB row as-is`)
       return new Response(
         JSON.stringify({ product: toProduct(cached) }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       )
+    }
+
+    if (cached && !force) {
       return new Response(
         JSON.stringify({ product: toProduct(cached) }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
