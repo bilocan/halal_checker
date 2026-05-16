@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -160,6 +161,16 @@ class _ResultScreenState extends State<ResultScreen> {
         SnackBar(content: Text(AppLocalizations.of(context).analysisFailed)),
       );
     }
+  }
+
+  void _copyToClipboard(String text, String label) {
+    Clipboard.setData(ClipboardData(text: text));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('$label copied'),
+        duration: const Duration(seconds: 1),
+      ),
+    );
   }
 
   void _reportWithNote() {
@@ -534,9 +545,19 @@ class _ResultScreenState extends State<ResultScreen> {
               const SizedBox(height: 16),
               Text(loc.productNotFound, style: const TextStyle(fontSize: 20)),
               const SizedBox(height: 8),
-              Text(
-                'Barcode: $barcode',
-                style: const TextStyle(color: Colors.grey),
+              GestureDetector(
+                onTap: () => _copyToClipboard(barcode, 'Barcode'),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Barcode: $barcode',
+                      style: const TextStyle(color: Colors.grey),
+                    ),
+                    const SizedBox(width: 4),
+                    Icon(Icons.copy, size: 14, color: Colors.grey.shade400),
+                  ],
+                ),
               ),
               const SizedBox(height: 24),
               ElevatedButton(
@@ -691,7 +712,7 @@ class _ResultScreenState extends State<ResultScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-              Text(
+              SelectableText(
                 product.name,
                 style: const TextStyle(
                   fontSize: 20,
@@ -700,9 +721,19 @@ class _ResultScreenState extends State<ResultScreen> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
-              Text(
-                'Barcode: $barcode',
-                style: const TextStyle(color: Colors.grey),
+              GestureDetector(
+                onTap: () => _copyToClipboard(barcode, 'Barcode'),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Barcode: $barcode',
+                      style: const TextStyle(color: Colors.grey),
+                    ),
+                    const SizedBox(width: 4),
+                    Icon(Icons.copy, size: 14, color: Colors.grey.shade400),
+                  ],
+                ),
               ),
               const SizedBox(height: 12),
               if (product.labels.isNotEmpty)
@@ -783,8 +814,8 @@ class _ResultScreenState extends State<ResultScreen> {
                       color: Colors.grey.shade900,
                     ),
                   ),
-                  if (product.ingredientTranslations.isNotEmpty) ...[
-                    const Spacer(),
+                  const Spacer(),
+                  if (product.ingredientTranslations.isNotEmpty)
                     TextButton.icon(
                       onPressed: () =>
                           setState(() => _showTranslated = !_showTranslated),
@@ -805,7 +836,18 @@ class _ResultScreenState extends State<ResultScreen> {
                         padding: const EdgeInsets.symmetric(horizontal: 8),
                       ),
                     ),
-                  ],
+                  if (ingredients.isNotEmpty)
+                    IconButton(
+                      icon: const Icon(Icons.copy, size: 18),
+                      onPressed: () => _copyToClipboard(
+                        ingredients.join(', '),
+                        'Ingredients',
+                      ),
+                      tooltip: 'Copy ingredients',
+                      visualDensity: VisualDensity.compact,
+                      padding: EdgeInsets.zero,
+                      color: Colors.grey.shade600,
+                    ),
                 ],
               ),
               const SizedBox(height: 8),
