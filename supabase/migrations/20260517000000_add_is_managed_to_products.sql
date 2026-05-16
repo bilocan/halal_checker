@@ -4,26 +4,32 @@
 -- external data from overwriting admin corrections.
 ALTER TABLE products ADD COLUMN IF NOT EXISTS is_managed BOOLEAN NOT NULL DEFAULT false;
 
--- Automatically mark a product as managed when an admin resolves its
--- analysis (status → 'resolved'). Uses SECURITY DEFINER so the trigger
--- can update the products table regardless of RLS policies.
-CREATE OR REPLACE FUNCTION mark_product_managed_on_resolve()
+-- Replace the existing product_analyses BEFORE UPDATE trigger with one
+-- that also marks the product as managed when an admin resolves the
+-- analysis (status → 'resolved'). SECURITY DEFINER lets it update
+-- the products table regardless of RLS policies.
+DROP TRIGGER IF EXISTS product_analyses_updated_at ON product_analyses;
+
+CREATE OR REPLACE FUNCTION product_analyses_before_update()
 RETURNS TRIGGER
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 AS $$
 BEGIN
+  NEW.updated_at = NOW();
+
   IF NEW.status = 'resolved' AND OLD.status IS DISTINCT FROM 'resolved' THEN
     UPDATE products
     SET is_managed = true
     WHERE barcode = NEW.barcode;
   END IF;
+
   RETURN NEW;
 END;
 $$;
 
-CREATE TRIGGER on_analysis_resolved_mark_managed
-  AFTER UPDATE ON product_analyses
+CREATE TRIGGER product_analyses_updated_at
+  BEFORE UPDATE ON product_analyses
   FOR EACH ROW
-  EXECUTE FUNCTION mark_product_managed_on_resolve();
+  EXECUTE FUNCTION product_analyses_before_update();
