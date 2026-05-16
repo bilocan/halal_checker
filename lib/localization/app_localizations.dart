@@ -112,8 +112,10 @@ class AppLocalizations {
       'ocrFailed':
           'Could not read ingredients from the image. You can type them manually below.',
       'ocrSuccess': 'Ingredients extracted — please review before submitting.',
-      'extractFromExistingImage': 'Extract from existing image',
+      'productImages': 'Product images',
+      'extractFromExistingImage': 'Pick from gallery',
       'takePhotoOfIngredients': 'Take photo of ingredients',
+      'cameraError': 'Could not open camera. Please check camera permissions.',
       'noIngredientsImageHint':
           'No ingredients image available for this product. Please take a photo of the ingredient list on the packaging.',
       'ocrNoIngredientsFound':
@@ -353,8 +355,10 @@ class AppLocalizations {
       'extractingIngredients': 'İçerikler görüntüden okunuyor…',
       'ocrFailed': 'Görüntüden içerik okunamadı. Aşağıya elle yazabilirsiniz.',
       'ocrSuccess': 'İçerikler çıkarıldı — göndermeden önce gözden geçirin.',
-      'extractFromExistingImage': 'Mevcut görüntüden çıkar',
+      'productImages': 'Ürün görselleri',
+      'extractFromExistingImage': 'Galeriden seç',
       'takePhotoOfIngredients': 'İçerik fotoğrafı çek',
+      'cameraError': 'Kamera açılamadı. Lütfen kamera izinlerini kontrol edin.',
       'noIngredientsImageHint':
           'Bu ürün için içerik görseli mevcut değil. Lütfen ambalajdaki içerik listesinin fotoğrafını çekin.',
       'ocrNoIngredientsFound':
@@ -597,8 +601,11 @@ class AppLocalizations {
       'ocrFailed':
           'Zutaten konnten nicht aus dem Bild gelesen werden. Sie können sie unten manuell eingeben.',
       'ocrSuccess': 'Zutaten extrahiert — bitte vor dem Absenden überprüfen.',
-      'extractFromExistingImage': 'Aus vorhandenem Bild extrahieren',
+      'productImages': 'Produktbilder',
+      'extractFromExistingImage': 'Aus Galerie auswählen',
       'takePhotoOfIngredients': 'Foto der Zutaten aufnehmen',
+      'cameraError':
+          'Kamera konnte nicht geöffnet werden. Bitte Kameraberechtigungen prüfen.',
       'noIngredientsImageHint':
           'Kein Zutatenbild für dieses Produkt verfügbar. Bitte fotografieren Sie die Zutatenliste auf der Verpackung.',
       'ocrNoIngredientsFound':
@@ -943,8 +950,10 @@ class AppLocalizations {
   String get extractingIngredients => _translate('extractingIngredients');
   String get ocrFailed => _translate('ocrFailed');
   String get ocrSuccess => _translate('ocrSuccess');
+  String get productImages => _translate('productImages');
   String get extractFromExistingImage => _translate('extractFromExistingImage');
   String get takePhotoOfIngredients => _translate('takePhotoOfIngredients');
+  String get cameraError => _translate('cameraError');
   String get noIngredientsImageHint => _translate('noIngredientsImageHint');
   String get ocrNoIngredientsFound => _translate('ocrNoIngredientsFound');
   String get flaggedOnly => _translate('flaggedOnly');

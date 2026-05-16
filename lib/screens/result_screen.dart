@@ -1718,10 +1718,69 @@ class _ResultScreenState extends State<ResultScreen> {
     final controller = TextEditingController();
     var isLoading = false;
     var isExtracting = false;
+    File? previewFile;
+    String? previewUrl;
+
+    Future<void> runOcrOnFile(
+      File file,
+      StateSetter setSheetState,
+      BuildContext ctx,
+    ) async {
+      setSheetState(() => isExtracting = true);
+      final text = await OcrService.extractIngredientsFromFile(file);
+      if (!ctx.mounted) return;
+      setSheetState(() => isExtracting = false);
+      if (text != null && text.isNotEmpty) {
+        controller.text = text;
+        ScaffoldMessenger.of(ctx).showSnackBar(
+          SnackBar(
+            content: Text(loc.ocrSuccess),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(ctx).showSnackBar(
+          SnackBar(
+            content: Text(loc.ocrFailed),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
+
+    Future<void> runOcrOnUrl(
+      String url,
+      StateSetter setSheetState,
+      BuildContext ctx,
+    ) async {
+      setSheetState(() => isExtracting = true);
+      final text = await OcrService.extractIngredientsFromImage(url);
+      if (!ctx.mounted) return;
+      setSheetState(() => isExtracting = false);
+      if (text != null && text.isNotEmpty) {
+        controller.text = text;
+        ScaffoldMessenger.of(ctx).showSnackBar(
+          SnackBar(
+            content: Text(loc.ocrSuccess),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(ctx).showSnackBar(
+          SnackBar(
+            content: Text(loc.ocrNoIngredientsFound),
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+    }
+
+    final offImages = _candidateImageUrls(product);
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      enableDrag: false,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -1756,63 +1815,129 @@ class _ResultScreenState extends State<ResultScreen> {
                 style: const TextStyle(color: Colors.grey, fontSize: 13),
               ),
               const SizedBox(height: 16),
-              // OCR button — try all available product images
-              if (_candidateImageUrls(product).isNotEmpty) ...[
-                OutlinedButton.icon(
-                  icon: isExtracting
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.document_scanner, size: 18),
-                  label: Text(
-                    isExtracting
-                        ? loc.extractingIngredients
-                        : loc.extractFromExistingImage,
-                  ),
-                  onPressed: isExtracting || isLoading
-                      ? null
-                      : () async {
-                          setSheetState(() => isExtracting = true);
-                          final text =
-                              await OcrService.extractIngredientsFromImages(
-                                _candidateImageUrls(product),
-                              );
-                          if (!ctx.mounted) return;
-                          setSheetState(() => isExtracting = false);
-                          if (text != null && text.isNotEmpty) {
-                            controller.text = text;
-                            ScaffoldMessenger.of(ctx).showSnackBar(
-                              SnackBar(
-                                content: Text(loc.ocrSuccess),
-                                duration: const Duration(seconds: 3),
-                              ),
-                            );
-                          } else {
-                            ScaffoldMessenger.of(ctx).showSnackBar(
-                              SnackBar(
-                                content: Text(loc.ocrNoIngredientsFound),
-                                duration: const Duration(seconds: 5),
-                              ),
-                            );
-                          }
-                        },
-                ),
-                const SizedBox(height: 8),
-              ] else ...[
-                // No product images at all — prompt camera
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Text(
-                    loc.noIngredientsImageHint,
-                    style: TextStyle(
-                      color: Colors.orange.shade700,
-                      fontSize: 13,
-                    ),
+              // OpenFoodFacts product images — tappable thumbnails
+              if (offImages.isNotEmpty) ...[
+                Text(
+                  loc.productImages,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
+                const SizedBox(height: 6),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: offImages.map((url) {
+                      final selected = previewUrl == url && previewFile == null;
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: GestureDetector(
+                          onTap: isExtracting || isLoading
+                              ? null
+                              : () async {
+                                  setSheetState(() {
+                                    previewUrl = url;
+                                    previewFile = null;
+                                  });
+                                  await runOcrOnUrl(url, setSheetState, ctx);
+                                },
+                          child: Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: selected
+                                    ? Colors.orange.shade700
+                                    : Colors.grey.shade300,
+                                width: 2,
+                              ),
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(6),
+                              child: CachedNetworkImage(
+                                imageUrl: url,
+                                height: 80,
+                                width: 80,
+                                fit: BoxFit.cover,
+                                placeholder: (context, url) => Container(
+                                  height: 80,
+                                  width: 80,
+                                  color: Colors.grey.shade200,
+                                ),
+                                errorWidget: (context, url, e) => Container(
+                                  height: 80,
+                                  width: 80,
+                                  color: Colors.grey.shade200,
+                                  child: const Icon(
+                                    Icons.broken_image,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+                const SizedBox(height: 12),
               ],
+              // Preview — shown after any selection (OFF image, gallery, or camera)
+              if (previewFile != null || previewUrl != null) ...[
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: previewFile != null
+                      ? Image.file(
+                          previewFile!,
+                          height: 140,
+                          width: double.infinity,
+                          fit: BoxFit.contain,
+                        )
+                      : CachedNetworkImage(
+                          imageUrl: previewUrl!,
+                          height: 140,
+                          width: double.infinity,
+                          fit: BoxFit.contain,
+                        ),
+                ),
+                const SizedBox(height: 12),
+              ],
+              // Gallery picker — lets user pick an existing photo from device
+              OutlinedButton.icon(
+                icon: isExtracting
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.photo_library, size: 18),
+                label: Text(
+                  isExtracting
+                      ? loc.extractingIngredients
+                      : loc.extractFromExistingImage,
+                ),
+                onPressed: isExtracting || isLoading
+                    ? null
+                    : () async {
+                        final photo = await ImagePicker().pickImage(
+                          source: ImageSource.gallery,
+                          imageQuality: 85,
+                        );
+                        if (photo == null || !ctx.mounted) return;
+                        setSheetState(() {
+                          previewFile = File(photo.path);
+                          previewUrl = null;
+                        });
+                        await runOcrOnFile(
+                          File(photo.path),
+                          setSheetState,
+                          ctx,
+                        );
+                      },
+              ),
+              const SizedBox(height: 8),
               // Camera capture — take photo of ingredients label
               OutlinedButton.icon(
                 icon: isExtracting
@@ -1830,31 +1955,26 @@ class _ResultScreenState extends State<ResultScreen> {
                 onPressed: isExtracting || isLoading
                     ? null
                     : () async {
-                        final picker = ImagePicker();
-                        final photo = await picker.pickImage(
-                          source: ImageSource.camera,
-                          imageQuality: 85,
-                        );
-                        if (photo == null || !ctx.mounted) return;
-                        setSheetState(() => isExtracting = true);
-                        final text =
-                            await OcrService.extractIngredientsFromFile(
-                              File(photo.path),
-                            );
-                        if (!ctx.mounted) return;
-                        setSheetState(() => isExtracting = false);
-                        if (text != null && text.isNotEmpty) {
-                          controller.text = text;
-                          ScaffoldMessenger.of(ctx).showSnackBar(
-                            SnackBar(
-                              content: Text(loc.ocrSuccess),
-                              duration: const Duration(seconds: 3),
-                            ),
+                        try {
+                          final photo = await ImagePicker().pickImage(
+                            source: ImageSource.camera,
+                            imageQuality: 85,
                           );
-                        } else {
+                          if (photo == null || !ctx.mounted) return;
+                          setSheetState(() {
+                            previewFile = File(photo.path);
+                            previewUrl = null;
+                          });
+                          await runOcrOnFile(
+                            File(photo.path),
+                            setSheetState,
+                            ctx,
+                          );
+                        } catch (_) {
+                          if (!ctx.mounted) return;
                           ScaffoldMessenger.of(ctx).showSnackBar(
                             SnackBar(
-                              content: Text(loc.ocrFailed),
+                              content: Text(loc.cameraError),
                               duration: const Duration(seconds: 3),
                             ),
                           );
@@ -1921,9 +2041,6 @@ class _ResultScreenState extends State<ResultScreen> {
     );
   }
 
-  /// Build a priority-ordered list of candidate image URLs to try for OCR.
-  /// Ingredients image first, then front label, then general image.
-  /// Nutrition image is excluded (least likely to contain ingredient text).
   List<String> _candidateImageUrls(Product product) {
     final urls = <String>[];
     if (product.imageIngredientsUrl != null) {
