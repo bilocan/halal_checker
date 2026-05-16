@@ -1710,69 +1710,106 @@ class _ResultScreenState extends State<ResultScreen> {
     );
   }
 
-  void _showContributeIngredientsDialog(
+  // Picks an image outside the bottom sheet (avoids Android ActivityResult issues),
+  // runs OCR, then reopens the contribution dialog with the result.
+  Future<void> _pickImageAndContribute(
     BuildContext context,
     Product product,
     AppLocalizations loc,
-  ) {
-    final controller = TextEditingController();
+    ImageSource source,
+  ) async {
+    XFile? photo;
+    try {
+      photo = await ImagePicker().pickImage(source: source, imageQuality: 85);
+    } catch (e) {
+      debugPrint('ImagePicker error ($source): $e');
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            source == ImageSource.camera ? loc.cameraError : loc.ocrFailed,
+          ),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
+
+    if (photo == null || !context.mounted) return;
+
+    final file = File(photo.path);
+
+    // Show loading overlay while OCR runs.
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const PopScope(
+        canPop: false,
+        child: Center(child: CircularProgressIndicator()),
+      ),
+    );
+
+    final text = await OcrService.extractIngredientsFromFile(file);
+
+    if (!context.mounted) return;
+    Navigator.pop(context); // close loading overlay
+
+    // Reopen the dialog pre-filled with the picked photo and OCR result.
+    _showContributeIngredientsDialog(
+      context,
+      product,
+      loc,
+      initialPreviewFile: file,
+      initialText: text ?? '',
+    );
+
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            text != null && text.isNotEmpty ? loc.ocrSuccess : loc.ocrFailed,
+          ),
+          duration: Duration(seconds: text != null && text.isNotEmpty ? 3 : 5),
+        ),
+      );
+    }
+  }
+
+  void _showContributeIngredientsDialog(
+    BuildContext context,
+    Product product,
+    AppLocalizations loc, {
+    File? initialPreviewFile,
+    String? initialText,
+  }) {
+    final controller = TextEditingController(text: initialText ?? '');
     var isLoading = false;
     var isExtracting = false;
-    File? previewFile;
+    File? previewFile = initialPreviewFile;
     String? previewUrl;
-
-    Future<void> runOcrOnFile(
-      File file,
-      StateSetter setSheetState,
-      BuildContext ctx,
-    ) async {
-      setSheetState(() => isExtracting = true);
-      final text = await OcrService.extractIngredientsFromFile(file);
-      if (!ctx.mounted) return;
-      setSheetState(() => isExtracting = false);
-      if (text != null && text.isNotEmpty) {
-        controller.text = text;
-        ScaffoldMessenger.of(ctx).showSnackBar(
-          SnackBar(
-            content: Text(loc.ocrSuccess),
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      } else {
-        ScaffoldMessenger.of(ctx).showSnackBar(
-          SnackBar(
-            content: Text(loc.ocrFailed),
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      }
-    }
 
     Future<void> runOcrOnUrl(
       String url,
       StateSetter setSheetState,
       BuildContext ctx,
     ) async {
-      setSheetState(() => isExtracting = true);
+      if (ctx.mounted) setSheetState(() => isExtracting = true);
       final text = await OcrService.extractIngredientsFromImage(url);
-      if (!ctx.mounted) return;
-      setSheetState(() => isExtracting = false);
-      if (text != null && text.isNotEmpty) {
-        controller.text = text;
-        ScaffoldMessenger.of(ctx).showSnackBar(
-          SnackBar(
-            content: Text(loc.ocrSuccess),
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      } else {
-        ScaffoldMessenger.of(ctx).showSnackBar(
-          SnackBar(
-            content: Text(loc.ocrNoIngredientsFound),
-            duration: const Duration(seconds: 5),
-          ),
-        );
+      if (!context.mounted) return;
+      if (ctx.mounted) {
+        setSheetState(() => isExtracting = false);
+        if (text != null && text.isNotEmpty) controller.text = text;
       }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            text != null && text.isNotEmpty
+                ? loc.ocrSuccess
+                : loc.ocrNoIngredientsFound,
+          ),
+          duration: Duration(seconds: text != null && text.isNotEmpty ? 3 : 5),
+        ),
+      );
     }
 
     final offImages = _candidateImageUrls(product);
@@ -1920,20 +1957,13 @@ class _ResultScreenState extends State<ResultScreen> {
                 ),
                 onPressed: isExtracting || isLoading
                     ? null
-                    : () async {
-                        final photo = await ImagePicker().pickImage(
-                          source: ImageSource.gallery,
-                          imageQuality: 85,
-                        );
-                        if (photo == null || !ctx.mounted) return;
-                        setSheetState(() {
-                          previewFile = File(photo.path);
-                          previewUrl = null;
-                        });
-                        await runOcrOnFile(
-                          File(photo.path),
-                          setSheetState,
-                          ctx,
+                    : () {
+                        Navigator.pop(ctx);
+                        _pickImageAndContribute(
+                          context,
+                          product,
+                          loc,
+                          ImageSource.gallery,
                         );
                       },
               ),
@@ -1954,31 +1984,14 @@ class _ResultScreenState extends State<ResultScreen> {
                 ),
                 onPressed: isExtracting || isLoading
                     ? null
-                    : () async {
-                        try {
-                          final photo = await ImagePicker().pickImage(
-                            source: ImageSource.camera,
-                            imageQuality: 85,
-                          );
-                          if (photo == null || !ctx.mounted) return;
-                          setSheetState(() {
-                            previewFile = File(photo.path);
-                            previewUrl = null;
-                          });
-                          await runOcrOnFile(
-                            File(photo.path),
-                            setSheetState,
-                            ctx,
-                          );
-                        } catch (_) {
-                          if (!ctx.mounted) return;
-                          ScaffoldMessenger.of(ctx).showSnackBar(
-                            SnackBar(
-                              content: Text(loc.cameraError),
-                              duration: const Duration(seconds: 3),
-                            ),
-                          );
-                        }
+                    : () {
+                        Navigator.pop(ctx);
+                        _pickImageAndContribute(
+                          context,
+                          product,
+                          loc,
+                          ImageSource.camera,
+                        );
                       },
               ),
               const SizedBox(height: 12),

@@ -21,6 +21,7 @@ class MainActivity : FlutterActivity() {
             { flutterEngine.plugins.add(dev.fluttercommunity.plus.packageinfo.PackageInfoPlugin()) },
             { flutterEngine.plugins.add(io.flutter.plugins.sharedpreferences.SharedPreferencesPlugin()) },
             { flutterEngine.plugins.add(com.tekartik.sqflite.SqflitePlugin()) },
+            { flutterEngine.plugins.add(io.flutter.plugins.imagepicker.ImagePickerPlugin()) },
             { flutterEngine.plugins.add(io.flutter.plugins.urllauncher.UrlLauncherPlugin()) },
         )
 
