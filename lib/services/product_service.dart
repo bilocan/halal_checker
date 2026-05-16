@@ -283,7 +283,14 @@ class ProductService {
         debugPrint('[Backend $barcode] response had null product');
         return null;
       }
-      return Product.fromJson(data['product'] as Map<String, dynamic>);
+      final product = Product.fromJson(data['product'] as Map<String, dynamic>);
+      debugPrint(
+        '[Backend $barcode] images — '
+        'front=${product.imageFrontUrl} '
+        'ingredients=${product.imageIngredientsUrl} '
+        'nutrition=${product.imageNutritionUrl}',
+      );
+      return product;
     } catch (e) {
       debugPrint('[Backend $barcode] exception: $e');
       return null;
@@ -335,13 +342,17 @@ class ProductService {
 
     // Step 2: Shared DB read — cheaper than an Edge Function invocation for
     // barcodes another user has already scanned (no AI, no OFf fetch needed).
-    // Skip stale "unknown" entries — they may predate category-based analysis.
+    // We always save the DB row as dbProduct so image URLs from approved
+    // community submissions are available for Step 4 merging even when the
+    // product is still unknown (no ingredient data).
+    Product? dbProduct;
     if (!forceBackendRefresh) {
-      final dbProduct = await _fetchFromSharedDb(barcode);
+      dbProduct = await _fetchFromSharedDb(barcode);
       debugPrint(
         '[Lookup $barcode] Step 2 (sharedDB): '
         'found=${dbProduct != null} isUnknown=${dbProduct?.isUnknown} '
-        'isNonFood=${dbProduct?.isNonFood}',
+        'isNonFood=${dbProduct?.isNonFood} '
+        'ingredients=${dbProduct?.imageIngredientsUrl}',
       );
       if (dbProduct != null) {
         if (!dbProduct.isUnknown) {
@@ -351,6 +362,15 @@ class ProductService {
         }
         hadStaleUnknown = true;
       }
+    } else {
+      // On force-refresh, skip the early-return but still fetch the shared DB
+      // row so its approved image URLs survive the raw OFF re-fetch in Step 4.
+      dbProduct = await _fetchFromSharedDb(barcode);
+      debugPrint(
+        '[Lookup $barcode] Step 2 (imageSource for force-refresh): '
+        'ingredients=${dbProduct?.imageIngredientsUrl} '
+        'nutrition=${dbProduct?.imageNutritionUrl}',
+      );
     }
 
     debugPrint(
@@ -389,6 +409,10 @@ class ProductService {
 
     // Step 4: Fallback — try each open food database in order.
     // OBF (beauty) and OPF (general products) are non-food databases.
+    //
+    // Image URLs from Step 3 (edge function) are preserved here so that
+    // approved community photos survive the raw OFF fetch, which has no
+    // knowledge of our product_image_submissions table.
     const nonFoodUrls = {_obfBaseUrl, _opfBaseUrl};
     Product? offUnknown;
     for (final baseUrl in [_offBaseUrl, _obfBaseUrl, _opfBaseUrl]) {
@@ -417,7 +441,17 @@ class ProductService {
           debugPrint('[Lookup $barcode] Step 4: OFf unknown — probing OBF/OPF');
           continue;
         }
-        final safe = _applyKeywordSafety(product);
+        debugPrint(
+          '[Lookup $barcode] Step 4 merge: '
+          'backendIngredients=${backendProduct?.imageIngredientsUrl} '
+          'dbIngredients=${dbProduct?.imageIngredientsUrl}',
+        );
+        final safe = _applyKeywordSafety(
+          _mergeApprovedImages(
+            _mergeApprovedImages(product, backendProduct),
+            dbProduct,
+          ),
+        );
         await _cache.saveProduct(barcode, safe);
         if (kDebugMode && hadStaleTestFixture) {
           await TestProductRepository.instance.upsert(safe);
@@ -431,7 +465,17 @@ class ProductService {
     );
     // OBF/OPF had no entry — return the OFf unknown result if we have one.
     if (offUnknown != null) {
-      final safe = _applyKeywordSafety(offUnknown);
+      debugPrint(
+        '[Lookup $barcode] Step 4 merge (offUnknown): '
+        'backendIngredients=${backendProduct?.imageIngredientsUrl} '
+        'dbIngredients=${dbProduct?.imageIngredientsUrl}',
+      );
+      final safe = _applyKeywordSafety(
+        _mergeApprovedImages(
+          _mergeApprovedImages(offUnknown, backendProduct),
+          dbProduct,
+        ),
+      );
       await _cache.saveProduct(barcode, safe);
       if (kDebugMode && hadStaleTestFixture) {
         await TestProductRepository.instance.upsert(safe);
@@ -439,6 +483,17 @@ class ProductService {
       return safe;
     }
     return null;
+  }
+
+  static Product _mergeApprovedImages(Product base, Product? approved) {
+    if (approved == null) return base;
+    return base.copyWith(
+      imageUrl: base.imageUrl ?? approved.imageUrl,
+      imageFrontUrl: base.imageFrontUrl ?? approved.imageFrontUrl,
+      imageIngredientsUrl:
+          base.imageIngredientsUrl ?? approved.imageIngredientsUrl,
+      imageNutritionUrl: base.imageNutritionUrl ?? approved.imageNutritionUrl,
+    );
   }
 
   Future<Product?> _fetchFromFoodApi(String barcode, String baseUrl) async {

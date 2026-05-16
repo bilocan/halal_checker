@@ -31,6 +31,10 @@ class AppLocalizations {
       'pleaseEnterValidBarcode': 'Please enter a valid barcode.',
       'productNotFound': 'Product not found',
       'noProductImageAvailable': 'No product image available',
+      'uploadProductPhoto': 'Upload Photo',
+      'uploadPhotoHint': 'Help others by contributing a photo of this product',
+      'photoUploaded': 'Photo submitted — thank you!',
+      'photoUploadFailed': 'Could not upload photo. Please try again.',
       'additionalImages': 'Additional Images',
       'ingredients': 'Ingredients',
       'flaggedIngredients': 'Flagged Ingredients',
@@ -225,6 +229,7 @@ class AppLocalizations {
       'noDiscussionsHint': 'Be the first to start one!',
       'analysisTab': 'Analysis',
       'rulesEngineTab': 'Rules Engine',
+      'photosTab': 'Photos',
       'customRulesTab': 'Custom',
       'builtInRulesTab': 'Built-in',
       'suggestionsTab': 'Suggestions',
@@ -256,6 +261,8 @@ class AppLocalizations {
       'suggestionApproveFailed': 'Could not approve suggestion.',
       'suggestionRejected': 'Suggestion rejected',
       'suggestionRejectFailed': 'Could not reject suggestion.',
+      'photoIngredientsButton': 'Check Ingredients Photo',
+      'photoAnalysisProductName': 'Photo Analysis',
     },
     'tr': {
       'appTitle': 'HalalScan',
@@ -283,6 +290,11 @@ class AppLocalizations {
       'pleaseEnterValidBarcode': 'Lütfen geçerli bir barkod girin.',
       'productNotFound': 'Ürün bulunamadı',
       'noProductImageAvailable': 'Ürün resmi yok',
+      'uploadProductPhoto': 'Fotoğraf Yükle',
+      'uploadPhotoHint':
+          'Bu ürünün fotoğrafını ekleyerek diğerlerine yardım edin',
+      'photoUploaded': 'Fotoğraf gönderildi — teşekkürler!',
+      'photoUploadFailed': 'Fotoğraf yüklenemedi. Lütfen tekrar deneyin.',
       'additionalImages': 'Ek Görseller',
       'ingredients': 'İçindekiler',
       'flaggedIngredients': 'İşaretli İçindekiler',
@@ -466,6 +478,7 @@ class AppLocalizations {
       'noDiscussionsHint': 'İlk tartışmayı siz başlatın!',
       'analysisTab': 'Analiz',
       'rulesEngineTab': 'Kural Motoru',
+      'photosTab': 'Fotoğraflar',
       'customRulesTab': 'Özel',
       'builtInRulesTab': 'Yerleşik',
       'suggestionsTab': 'Öneriler',
@@ -497,6 +510,8 @@ class AppLocalizations {
       'suggestionApproveFailed': 'Öneri onaylanamadı.',
       'suggestionRejected': 'Öneri reddedildi',
       'suggestionRejectFailed': 'Öneri reddedilemedi.',
+      'photoIngredientsButton': 'Malzeme Fotoğrafını Kontrol Et',
+      'photoAnalysisProductName': 'Fotoğraf Analizi',
     },
     'de': {
       'appTitle': 'HalalScan',
@@ -525,6 +540,12 @@ class AppLocalizations {
       'pleaseEnterValidBarcode': 'Bitte geben Sie einen gültigen Barcode ein.',
       'productNotFound': 'Produkt nicht gefunden',
       'noProductImageAvailable': 'Kein Produktbild verfügbar',
+      'uploadProductPhoto': 'Foto hochladen',
+      'uploadPhotoHint':
+          'Helfen Sie anderen, indem Sie ein Foto dieses Produkts beitragen',
+      'photoUploaded': 'Foto eingereicht — vielen Dank!',
+      'photoUploadFailed':
+          'Foto konnte nicht hochgeladen werden. Bitte erneut versuchen.',
       'additionalImages': 'Zusätzliche Bilder',
       'ingredients': 'Zutaten',
       'flaggedIngredients': 'Markierte Zutaten',
@@ -715,6 +736,7 @@ class AppLocalizations {
       'noDiscussionsHint': 'Seien Sie der Erste!',
       'analysisTab': 'Analyse',
       'rulesEngineTab': 'Regelwerk',
+      'photosTab': 'Fotos',
       'customRulesTab': 'Benutzerdefiniert',
       'builtInRulesTab': 'Eingebaut',
       'suggestionsTab': 'Vorschläge',
@@ -749,6 +771,8 @@ class AppLocalizations {
       'suggestionApproveFailed': 'Vorschlag konnte nicht genehmigt werden.',
       'suggestionRejected': 'Vorschlag abgelehnt',
       'suggestionRejectFailed': 'Vorschlag konnte nicht abgelehnt werden.',
+      'photoIngredientsButton': 'Zutatenfoto prüfen',
+      'photoAnalysisProductName': 'Fotoanalyse',
     },
   };
 
@@ -780,6 +804,10 @@ class AppLocalizations {
   String get pleaseEnterValidBarcode => _translate('pleaseEnterValidBarcode');
   String get productNotFound => _translate('productNotFound');
   String get noProductImageAvailable => _translate('noProductImageAvailable');
+  String get uploadProductPhoto => _translate('uploadProductPhoto');
+  String get uploadPhotoHint => _translate('uploadPhotoHint');
+  String get photoUploaded => _translate('photoUploaded');
+  String get photoUploadFailed => _translate('photoUploadFailed');
   String get additionalImages => _translate('additionalImages');
   String get ingredients => _translate('ingredients');
   String get flaggedIngredients => _translate('flaggedIngredients');
@@ -960,6 +988,7 @@ class AppLocalizations {
   String get allScans => _translate('allScans');
   String get analysisTab => _translate('analysisTab');
   String get rulesEngineTab => _translate('rulesEngineTab');
+  String get photosTab => _translate('photosTab');
   String get customRulesTab => _translate('customRulesTab');
   String get builtInRulesTab => _translate('builtInRulesTab');
   String get suggestionsTab => _translate('suggestionsTab');
@@ -991,6 +1020,8 @@ class AppLocalizations {
   String get suggestionApproveFailed => _translate('suggestionApproveFailed');
   String get suggestionRejected => _translate('suggestionRejected');
   String get suggestionRejectFailed => _translate('suggestionRejectFailed');
+  String get photoIngredientsButton => _translate('photoIngredientsButton');
+  String get photoAnalysisProductName => _translate('photoAnalysisProductName');
 
   static AppLocalizations of(BuildContext context) {
     final localizations = Localizations.of<AppLocalizations>(

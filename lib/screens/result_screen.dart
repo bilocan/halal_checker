@@ -20,6 +20,7 @@ import '../services/database_service.dart';
 import '../services/ingredient_contribution_service.dart';
 import '../services/issue_report_service.dart';
 import '../services/ocr_service.dart';
+import '../services/product_image_service.dart';
 import '../services/product_service.dart';
 import 'deep_analysis_screen.dart';
 import 'discussion_screen.dart';
@@ -42,6 +43,7 @@ class _ResultScreenState extends State<ResultScreen> {
   List<FeedbackItem> _feedbacks = [];
   bool _isLoadingFeedback = false;
   bool _isRefreshing = false;
+  ProductImageType? _uploadingImageType;
   bool _showTranslated = false;
   String _note = '';
   bool _isFlagged = false;
@@ -524,6 +526,63 @@ class _ResultScreenState extends State<ResultScreen> {
     }
   }
 
+  Future<void> _uploadProductImage(ProductImageType type) async {
+    if (AuthService.currentUser == null) {
+      _showSignInRequired(context);
+      return;
+    }
+    final loc = AppLocalizations.of(context);
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      builder: (_) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt),
+              title: Text(loc.takePhotoOfIngredients),
+              onTap: () => Navigator.pop(context, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: Text(loc.extractFromExistingImage),
+              onTap: () => Navigator.pop(context, ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (source == null || !mounted) return;
+
+    XFile? photo;
+    try {
+      photo = await ImagePicker().pickImage(source: source, imageQuality: 85);
+    } catch (e) {
+      debugPrint('ImagePicker error ($source): $e');
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(loc.cameraError)));
+      return;
+    }
+    if (photo == null || !mounted) return;
+
+    setState(() => _uploadingImageType = type);
+    final success = await ProductImageService.uploadImage(
+      barcode: widget.barcode,
+      imageFile: File(photo.path),
+      type: type,
+      productName: widget.product?.name,
+    );
+    if (!mounted) return;
+    setState(() => _uploadingImageType = null);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(success ? loc.photoUploaded : loc.photoUploadFailed),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context);
@@ -745,44 +804,117 @@ class _ResultScreenState extends State<ResultScreen> {
               if (product.labels.isNotEmpty) const SizedBox(height: 12),
               const SizedBox(height: 24),
               if (product.imageFrontUrl != null || product.imageUrl != null)
-                Container(
-                  width: double.infinity,
-                  height: 200,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey.shade300),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: _buildProductImage(product, loc),
-                  ),
+                Stack(
+                  children: [
+                    Container(
+                      width: double.infinity,
+                      height: 200,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey.shade300),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: _buildProductImage(product, loc),
+                      ),
+                    ),
+                    Positioned(
+                      bottom: 8,
+                      right: 8,
+                      child: _uploadingImageType == ProductImageType.front
+                          ? const SizedBox(
+                              width: 28,
+                              height: 28,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.5,
+                              ),
+                            )
+                          : GestureDetector(
+                              onTap: () =>
+                                  _uploadProductImage(ProductImageType.front),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.black54,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.edit,
+                                      color: Colors.white,
+                                      size: 13,
+                                    ),
+                                    SizedBox(width: 4),
+                                    Text(
+                                      'Replace',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 11,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                    ),
+                  ],
                 )
               else
                 Container(
                   width: double.infinity,
-                  height: 120,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: Colors.grey.shade300),
                     color: Colors.grey.shade100,
                   ),
+                  padding: const EdgeInsets.symmetric(vertical: 20),
                   child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.image, size: 48, color: Colors.grey),
-                        const SizedBox(height: 8),
-                        Text(
-                          loc.noProductImageAvailable,
-                          style: const TextStyle(color: Colors.grey),
-                        ),
-                      ],
-                    ),
+                    child: _uploadingImageType == ProductImageType.front
+                        ? const CircularProgressIndicator()
+                        : Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(
+                                Icons.image,
+                                size: 40,
+                                color: Colors.grey,
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                loc.noProductImageAvailable,
+                                style: const TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 13,
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              OutlinedButton.icon(
+                                onPressed: () =>
+                                    _uploadProductImage(ProductImageType.front),
+                                icon: const Icon(Icons.add_a_photo, size: 16),
+                                label: Text(loc.uploadProductPhoto),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: kGreen,
+                                  side: const BorderSide(color: kGreen),
+                                  visualDensity: VisualDensity.compact,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 6,
+                                  ),
+                                  textStyle: const TextStyle(fontSize: 13),
+                                ),
+                              ),
+                            ],
+                          ),
                   ),
                 ),
               const SizedBox(height: 24),
-              if (product.imageIngredientsUrl != null ||
-                  product.imageNutritionUrl != null) ...[
+              if (!product.isNonFood) ...[
                 Text(
                   loc.additionalImages,
                   style: TextStyle(
@@ -792,16 +924,16 @@ class _ResultScreenState extends State<ResultScreen> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                if (product.imageIngredientsUrl != null)
-                  _buildLabelledImage(
-                    product.imageIngredientsUrl!,
-                    loc.ingredients,
-                  ),
-                if (product.imageNutritionUrl != null)
-                  _buildLabelledImage(
-                    product.imageNutritionUrl!,
-                    loc.nutritionLabel,
-                  ),
+                _buildImageSlot(
+                  product.imageIngredientsUrl,
+                  loc.ingredients,
+                  ProductImageType.ingredients,
+                ),
+                _buildImageSlot(
+                  product.imageNutritionUrl,
+                  loc.nutritionLabel,
+                  ProductImageType.nutrition,
+                ),
                 const SizedBox(height: 24),
               ],
               Row(
@@ -1515,6 +1647,86 @@ class _ResultScreenState extends State<ResultScreen> {
     );
   }
 
+  Widget _buildImageSlot(String? url, String label, ProductImageType type) {
+    debugPrint('[ImageSlot] $label → url=$url');
+    if (url != null) {
+      return Stack(
+        children: [
+          _buildLabelledImage(url, label),
+          Positioned(
+            bottom: 18,
+            right: 8,
+            child: _uploadingImageType == type
+                ? const SizedBox(
+                    width: 28,
+                    height: 28,
+                    child: CircularProgressIndicator(strokeWidth: 2.5),
+                  )
+                : GestureDetector(
+                    onTap: () => _uploadProductImage(type),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.black54,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.edit, color: Colors.white, size: 13),
+                          SizedBox(width: 4),
+                          Text(
+                            'Replace',
+                            style: TextStyle(color: Colors.white, fontSize: 11),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+          ),
+        ],
+      );
+    }
+    return GestureDetector(
+      onTap: () => _uploadProductImage(type),
+      child: Container(
+        width: double.infinity,
+        height: 100,
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.grey.shade300),
+          color: Colors.grey.shade50,
+        ),
+        child: Center(
+          child: _uploadingImageType == type
+              ? const CircularProgressIndicator()
+              : Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.add_a_photo,
+                      color: Colors.grey.shade400,
+                      size: 26,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      label,
+                      style: TextStyle(
+                        color: Colors.grey.shade500,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildLabelledImage(String imageUrl, String label) {
     return GestureDetector(
       onTap: () => _showFullscreenImage(imageUrl, label: label),
@@ -1537,9 +1749,16 @@ class _ResultScreenState extends State<ResultScreen> {
                 fadeInDuration: const Duration(milliseconds: 200),
                 placeholder: (context, url) =>
                     const Center(child: CircularProgressIndicator()),
-                errorWidget: (context, url, error) => const Center(
-                  child: Icon(Icons.broken_image, size: 48, color: Colors.grey),
-                ),
+                errorWidget: (context, url, error) {
+                  debugPrint('[Image] failed to load: $url — $error');
+                  return const Center(
+                    child: Icon(
+                      Icons.broken_image,
+                      size: 48,
+                      color: Colors.grey,
+                    ),
+                  );
+                },
               ),
               Positioned(
                 top: 8,
