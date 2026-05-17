@@ -14,6 +14,21 @@ class IngredientContributionService {
   static http.Client _httpClient = http.Client();
   static bool _supabaseAvailable = AppConfig.hasSupabase;
 
+  // ── test seams ─────────────────────────────────────────────────────────────
+
+  @visibleForTesting
+  static Future<List<Map<String, dynamic>>> Function(String)?
+  fakeFetchContributions;
+  @visibleForTesting
+  static Future<Map<String, dynamic>?> Function(int)? fakeGetContribution;
+  @visibleForTesting
+  static Future<void> Function(int, String)? fakeUpdateContributionStatus;
+  @visibleForTesting
+  static Future<void> Function(String, Map<String, dynamic>)? fakeUpdateProduct;
+
+  @visibleForTesting
+  static void enableForTesting() => _supabaseAvailable = true;
+
   @visibleForTesting
   static void setHttpClientForTesting(http.Client client) {
     _httpClient = client;
@@ -24,6 +39,10 @@ class IngredientContributionService {
   static void resetForTesting() {
     _httpClient = http.Client();
     _supabaseAvailable = AppConfig.hasSupabase;
+    fakeFetchContributions = null;
+    fakeGetContribution = null;
+    fakeUpdateContributionStatus = null;
+    fakeUpdateProduct = null;
   }
 
   /// Submit user-contributed ingredient text for a barcode.
@@ -65,15 +84,21 @@ class IngredientContributionService {
   static Future<List<Map<String, dynamic>>> getContributions({
     String status = 'pending',
   }) async {
-    if (!AppConfig.hasSupabase) return [];
+    if (!_supabaseAvailable) return [];
     try {
-      // Use the foreign key constraint name for the join
-      final rows = await _db
-          .from('ingredient_contributions')
-          .select('*, products!ingredient_contributions_barcode_fkey(name)')
-          .eq('status', status)
-          .order('created_at', ascending: false);
-      return List<Map<String, dynamic>>.from(rows as List);
+      final rows = fakeFetchContributions != null
+          ? await fakeFetchContributions!(status)
+          : List<Map<String, dynamic>>.from(
+              await _db
+                      .from('ingredient_contributions')
+                      .select(
+                        '*, products!ingredient_contributions_barcode_fkey(name)',
+                      )
+                      .eq('status', status)
+                      .order('created_at', ascending: false)
+                  as List,
+            );
+      return rows;
     } catch (e) {
       debugPrint('getContributions error: $e');
       return [];
@@ -85,73 +110,57 @@ class IngredientContributionService {
   /// runs the rule machine analysis, and updates the product's halal status.
   /// Returns true on success, false on failure.
   static Future<bool> updateStatus(int id, String status) async {
-    if (!AppConfig.hasSupabase) return false;
+    if (!_supabaseAvailable) return false;
     try {
-      // First, get the contribution to extract barcode and ingredient_text
-      final response = await _db
-          .from('ingredient_contributions')
-          .select('barcode, ingredient_text')
-          .eq('id', id)
-          .single();
+      final response = fakeGetContribution != null
+          ? await fakeGetContribution!(id)
+          : Map<String, dynamic>.from(
+              await _db
+                      .from('ingredient_contributions')
+                      .select('barcode, ingredient_text')
+                      .eq('id', id)
+                      .single()
+                  as Map,
+            );
 
-      final barcode = response['barcode'] as String?;
-      final ingredientText = response['ingredient_text'] as String?;
+      final barcode = response?['barcode'] as String?;
+      final ingredientText = response?['ingredient_text'] as String?;
 
-      // Update the contribution status
-      await _db
-          .from('ingredient_contributions')
-          .update({'status': status})
-          .eq('id', id);
+      if (fakeUpdateContributionStatus != null) {
+        await fakeUpdateContributionStatus!(id, status);
+      } else {
+        await _db
+            .from('ingredient_contributions')
+            .update({'status': status})
+            .eq('id', id);
+      }
 
-      // If approved and we have ingredient text, update the product and analyze
       if (status == 'approved' && barcode != null && ingredientText != null) {
-        // Parse the ingredient text into a clean ingredient list
         final ingredients = IngredientSanitizer.sanitize(ingredientText);
 
-        debugPrint(
-          '[IngredientContribution] Approved contribution $id: '
-          'parsed ${ingredients.length} ingredients from text',
-        );
-
-        // Run rule-based analysis on the ingredients
-        final rulesEngine = const HalalRulesEngine();
-        final analysisResult = rulesEngine.analyzeIngredients(ingredients);
-
-        // Determine halal status based on analysis
-        final isHalal = analysisResult.isHalal;
-        final haramList = analysisResult.haram;
-        final suspiciousList = analysisResult.suspicious;
-        final warnings = analysisResult.warnings;
-        final explanation = analysisResult.explanation;
-
-        debugPrint(
-          '[IngredientContribution] Analysis for $barcode: '
-          'isHalal=$isHalal, haram=${haramList.length}, '
-          'suspicious=${suspiciousList.length}',
-        );
-
-        // Update the product with ingredients and analysis results
         if (ingredients.isNotEmpty) {
-          await _db
-              .from('products')
-              .update({
-                'ingredients': jsonEncode(ingredients),
-                'is_halal': isHalal,
-                'is_unknown': false,
-                'haram_ingredients': jsonEncode(haramList),
-                'suspicious_ingredients': jsonEncode(suspiciousList),
-                'ingredient_warnings': jsonEncode(warnings),
-                'explanation': explanation,
-                'analyzed_by_ai': false,
-                'is_managed': true,
-                'fetched_at': DateTime.now().toIso8601String(),
-              })
-              .eq('barcode', barcode);
-
-          debugPrint(
-            '[IngredientContribution] Updated product $barcode in database: '
-            'isHalal=$isHalal, ingredients=${ingredients.length}',
-          );
+          final rulesEngine = const HalalRulesEngine();
+          final analysisResult = rulesEngine.analyzeIngredients(ingredients);
+          final productData = {
+            'ingredients': jsonEncode(ingredients),
+            'is_halal': analysisResult.isHalal,
+            'is_unknown': false,
+            'haram_ingredients': jsonEncode(analysisResult.haram),
+            'suspicious_ingredients': jsonEncode(analysisResult.suspicious),
+            'ingredient_warnings': jsonEncode(analysisResult.warnings),
+            'explanation': analysisResult.explanation,
+            'analyzed_by_ai': false,
+            'is_managed': true,
+            'fetched_at': DateTime.now().toIso8601String(),
+          };
+          if (fakeUpdateProduct != null) {
+            await fakeUpdateProduct!(barcode, productData);
+          } else {
+            await _db
+                .from('products')
+                .update(productData)
+                .eq('barcode', barcode);
+          }
         }
       }
 
