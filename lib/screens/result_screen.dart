@@ -18,6 +18,7 @@ import '../services/community_service.dart';
 import '../services/feedback_service.dart';
 import '../services/database_service.dart';
 import '../services/ingredient_contribution_service.dart';
+import '../services/ingredient_sanitizer.dart';
 import '../services/issue_report_service.dart';
 import '../services/ocr_service.dart';
 import '../services/product_image_service.dart';
@@ -2080,7 +2081,7 @@ class _ResultScreenState extends State<ResultScreen> {
       product,
       loc,
       initialPreviewFile: file,
-      initialText: text ?? '',
+      initialOcrText: text,
     );
   }
 
@@ -2089,9 +2090,21 @@ class _ResultScreenState extends State<ResultScreen> {
     Product product,
     AppLocalizations loc, {
     File? initialPreviewFile,
-    String? initialText,
+    String? initialOcrText,
   }) {
-    final controller = TextEditingController(text: initialText ?? '');
+    final initSections = initialOcrText != null
+        ? IngredientSanitizer.sanitizeByLanguage(initialOcrText)
+        : <String, List<String>>{};
+    var rawOcrSections = initSections;
+    var selectedLangs = initSections.keys.toSet();
+
+    List<String> chipsFromSections() => [
+      for (final l in rawOcrSections.keys)
+        if (selectedLangs.contains(l)) ...rawOcrSections[l]!,
+    ];
+
+    var chips = selectedLangs.isEmpty ? <String>[] : chipsFromSections();
+    final addController = TextEditingController();
     var isLoading = false;
     var isExtracting = false;
     File? previewFile = initialPreviewFile;
@@ -2107,7 +2120,15 @@ class _ResultScreenState extends State<ResultScreen> {
       if (!context.mounted) return;
       if (ctx.mounted) {
         setSheetState(() => isExtracting = false);
-        if (text != null && text.isNotEmpty) controller.text = text;
+        if (text != null && text.isNotEmpty) {
+          final sections = IngredientSanitizer.sanitizeByLanguage(text);
+          setSheetState(() {
+            rawOcrSections = sections;
+            selectedLangs = sections.keys.toSet();
+            chips = chipsFromSections();
+            addController.clear();
+          });
+        }
       }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -2338,15 +2359,186 @@ class _ResultScreenState extends State<ResultScreen> {
                       },
               ),
               const SizedBox(height: 12),
-              TextField(
-                controller: controller,
-                maxLines: 5,
-                decoration: InputDecoration(
-                  labelText: loc.ingredientTextLabel,
-                  hintText: loc.ingredientTextHint,
-                  border: const OutlineInputBorder(),
-                  alignLabelWithHint: true,
+              // ── Language selector (shown after OCR with multiple sections) ──
+              if (rawOcrSections.length > 1) ...[
+                const SizedBox(height: 4),
+                Text(
+                  'Language',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey.shade600,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
+                const SizedBox(height: 4),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 4,
+                  children: rawOcrSections.keys.map((lang) {
+                    return FilterChip(
+                      label: Text(IngredientSanitizer.langDisplayName(lang)),
+                      selected: selectedLangs.contains(lang),
+                      selectedColor: Colors.orange.shade100,
+                      onSelected: (val) {
+                        setSheetState(() {
+                          if (val) {
+                            selectedLangs.add(lang);
+                          } else {
+                            selectedLangs.remove(lang);
+                          }
+                          chips = chipsFromSections();
+                          addController.clear();
+                        });
+                      },
+                    );
+                  }).toList(),
+                ),
+              ],
+              const SizedBox(height: 12),
+              // ── Ingredient chips ──────────────────────────────────────
+              if (chips.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Text(
+                    'No ingredients added yet.',
+                    style: TextStyle(color: Colors.grey.shade400, fontSize: 13),
+                  ),
+                )
+              else
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 4,
+                  children: chips.asMap().entries.map((entry) {
+                    return InputChip(
+                      label: Text(
+                        entry.value,
+                        style: const TextStyle(fontSize: 13),
+                      ),
+                      deleteIcon: const Icon(Icons.close, size: 16),
+                      onDeleted: () =>
+                          setSheetState(() => chips.removeAt(entry.key)),
+                      // Tap opens a dialog — no scroll needed, no data lost.
+                      onPressed: () {
+                        final editCtrl = TextEditingController(
+                          text: chips[entry.key],
+                        );
+                        showDialog<void>(
+                          context: context,
+                          builder: (dialogCtx) => AlertDialog(
+                            title: const Text('Edit ingredient'),
+                            content: TextField(
+                              controller: editCtrl,
+                              autofocus: true,
+                              decoration: const InputDecoration(
+                                border: OutlineInputBorder(),
+                              ),
+                              onSubmitted: (_) {
+                                final v = editCtrl.text.trim();
+                                setSheetState(() {
+                                  if (v.isEmpty) {
+                                    chips.removeAt(entry.key);
+                                  } else {
+                                    chips[entry.key] = v;
+                                  }
+                                });
+                                Navigator.pop(dialogCtx);
+                              },
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(dialogCtx),
+                                child: const Text('Cancel'),
+                              ),
+                              TextButton(
+                                onPressed: () {
+                                  final v = editCtrl.text.trim();
+                                  setSheetState(() {
+                                    if (v.isEmpty) {
+                                      chips.removeAt(entry.key);
+                                    } else {
+                                      chips[entry.key] = v;
+                                    }
+                                  });
+                                  Navigator.pop(dialogCtx);
+                                },
+                                child: const Text('OK'),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      visualDensity: VisualDensity.compact,
+                    );
+                  }).toList(),
+                ),
+              const SizedBox(height: 8),
+              // ── Add ingredient row ────────────────────────────────────
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: addController,
+                      decoration: InputDecoration(
+                        hintText: loc.ingredientTextHint,
+                        border: const OutlineInputBorder(),
+                        isDense: true,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
+                      ),
+                      textInputAction: TextInputAction.done,
+                      onSubmitted: (v) {
+                        final parts = v
+                            .split(',')
+                            .map((s) => s.trim())
+                            .where((s) => s.isNotEmpty)
+                            .toList();
+                        if (parts.isEmpty) return;
+                        setSheetState(() {
+                          chips.addAll(parts);
+                          addController.clear();
+                        });
+                      },
+                      onChanged: (v) {
+                        if (!v.contains(',')) return;
+                        final parts = v
+                            .split(',')
+                            .map((s) => s.trim())
+                            .where((s) => s.isNotEmpty)
+                            .toList();
+                        if (parts.isEmpty) return;
+                        setSheetState(() {
+                          chips.addAll(parts);
+                          addController.clear();
+                        });
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton.filled(
+                    icon: const Icon(Icons.add),
+                    style: IconButton.styleFrom(
+                      backgroundColor: Colors.orange.shade700,
+                      foregroundColor: Colors.white,
+                    ),
+                    onPressed: isExtracting || isLoading
+                        ? null
+                        : () {
+                            final parts = addController.text
+                                .split(',')
+                                .map((s) => s.trim())
+                                .where((s) => s.isNotEmpty)
+                                .toList();
+                            if (parts.isEmpty) return;
+                            setSheetState(() {
+                              chips.addAll(parts);
+                              addController.clear();
+                            });
+                          },
+                  ),
+                ],
               ),
               const SizedBox(height: 16),
               ElevatedButton.icon(
@@ -2368,8 +2560,8 @@ class _ResultScreenState extends State<ResultScreen> {
                 onPressed: isLoading || isExtracting
                     ? null
                     : () async {
-                        final text = controller.text.trim();
-                        if (text.isEmpty) return;
+                        if (chips.isEmpty) return;
+                        final text = chips.join(', ');
                         setSheetState(() => isLoading = true);
                         final ok =
                             await IngredientContributionService.submitIngredients(
