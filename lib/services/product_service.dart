@@ -495,7 +495,9 @@ class ProductService {
     if (approved == null) return base;
     // Approved (community) images take priority over the base (OFF) image so
     // that a user-submitted replacement is always shown instead of the bad one.
+    // Product name from the remote DB is also preferred to keep it in sync.
     return base.copyWith(
+      name: approved.name,
       imageUrl: approved.imageUrl ?? base.imageUrl,
       imageFrontUrl: approved.imageFrontUrl ?? base.imageFrontUrl,
       imageIngredientsUrl:
