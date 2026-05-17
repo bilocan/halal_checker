@@ -7,6 +7,15 @@ import 'package:path_provider/path_provider.dart';
 class OcrService {
   OcrService._();
 
+  static http.Client _httpClient = http.Client();
+
+  @visibleForTesting
+  static void setHttpClientForTesting(http.Client client) =>
+      _httpClient = client;
+
+  @visibleForTesting
+  static void resetForTesting() => _httpClient = http.Client();
+
   /// Extract text from a local image file using on-device ML Kit OCR.
   static Future<String?> extractIngredientsFromFile(File imageFile) async {
     final recognizer = TextRecognizer(script: TextRecognitionScript.latin);
@@ -49,7 +58,7 @@ class OcrService {
 
   static Future<File?> _downloadToTemp(String imageUrl) async {
     try {
-      final response = await http.get(Uri.parse(imageUrl));
+      final response = await _httpClient.get(Uri.parse(imageUrl));
       if (response.statusCode != 200) return null;
       final dir = await getTemporaryDirectory();
       final file = File(

@@ -11,6 +11,20 @@ class IngredientContributionService {
   IngredientContributionService._();
 
   static SupabaseClient get _db => Supabase.instance.client;
+  static http.Client _httpClient = http.Client();
+  static bool _supabaseAvailable = AppConfig.hasSupabase;
+
+  @visibleForTesting
+  static void setHttpClientForTesting(http.Client client) {
+    _httpClient = client;
+    _supabaseAvailable = true;
+  }
+
+  @visibleForTesting
+  static void resetForTesting() {
+    _httpClient = http.Client();
+    _supabaseAvailable = AppConfig.hasSupabase;
+  }
 
   /// Submit user-contributed ingredient text for a barcode.
   /// Returns true on success, false on failure.
@@ -18,10 +32,10 @@ class IngredientContributionService {
     required String barcode,
     required String ingredientText,
   }) async {
-    if (!AppConfig.hasSupabase) return false;
+    if (!_supabaseAvailable) return false;
     try {
       final user = AuthService.currentUser;
-      final response = await http
+      final response = await _httpClient
           .post(
             Uri.parse(
               '${AppConfig.supabaseUrl}/rest/v1/ingredient_contributions',
