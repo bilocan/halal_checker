@@ -66,5 +66,9 @@ void main() {
         expect(AuthService.avatarUrl, isNull);
       },
     );
+
+    test('authStateChanges is a broadcast stream (isBroadcast == true)', () {
+      expect(AuthService.authStateChanges.isBroadcast, isTrue);
+    });
   });
 }

@@ -142,5 +142,19 @@ void main() {
       );
       expect(result, isNull);
     });
+
+    // ── empty-string edge cases ───────────────────────────────────────────────
+
+    test('getChallenges with empty barcode returns empty list', () async {
+      expect(await CommunityService.getChallenges(''), isEmpty);
+    });
+
+    test('getDiscussions with empty barcode returns empty list', () async {
+      expect(await CommunityService.getDiscussions(''), isEmpty);
+    });
+
+    test('getComments with empty discussionId returns empty list', () async {
+      expect(await CommunityService.getComments(''), isEmpty);
+    });
   });
 }

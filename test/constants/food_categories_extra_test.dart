@@ -170,4 +170,64 @@ void main() {
       expect(shared, isEmpty, reason: 'shared categories: $shared');
     });
   });
+
+  // ── animalProduct language-prefix format ──────────────────────────────────
+
+  group('FoodCategories — animalProduct uses valid language prefixes', () {
+    const validPrefixes = {'en:', 'de:', 'tr:'};
+
+    test('every animalProduct entry starts with a valid language prefix', () {
+      for (final cat in FoodCategories.animalProduct) {
+        final hasValidPrefix = validPrefixes.any((p) => cat.startsWith(p));
+        expect(
+          hasValidPrefix,
+          isTrue,
+          reason: '"$cat" does not start with a known language prefix',
+        );
+      }
+    });
+  });
+
+  // ── label casing ──────────────────────────────────────────────────────────
+
+  group('FoodCategories — halalCertificationLabels are lowercase', () {
+    test('all certification labels are lowercase', () {
+      for (final label in FoodCategories.halalCertificationLabels) {
+        expect(
+          label,
+          equals(label.toLowerCase()),
+          reason: '"$label" is not lowercase',
+        );
+      }
+    });
+  });
+
+  group('FoodCategories — veganOrVegetarianLabels are lowercase', () {
+    test('all vegan/vegetarian labels are lowercase', () {
+      for (final label in FoodCategories.veganOrVegetarianLabels) {
+        expect(
+          label,
+          equals(label.toLowerCase()),
+          reason: '"$label" is not lowercase',
+        );
+      }
+    });
+  });
+
+  // ── animalProductNameTerms minimum length ─────────────────────────────────
+
+  group(
+    'FoodCategories — animalProductNameTerms are distinctive (≥4 chars)',
+    () {
+      test('no term is shorter than 4 characters', () {
+        for (final term in FoodCategories.animalProductNameTerms) {
+          expect(
+            term.length,
+            greaterThanOrEqualTo(4),
+            reason: '"$term" is too short to be a distinctive meat term',
+          );
+        }
+      });
+    },
+  );
 }
