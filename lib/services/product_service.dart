@@ -396,7 +396,6 @@ class ProductService {
     }
   }
 
-  @visibleForTesting
   Future<Product?> fetchFromSharedDbForDebug(String barcode) =>
       _fetchFromSharedDb(barcode);
 
