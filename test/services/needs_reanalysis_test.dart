@@ -17,6 +17,13 @@ const _kBarcode = '1234567890';
 const _kSupabaseUrl = 'https://test.supabase.co';
 const _kAnonKey = 'test_anon_key';
 
+// Timestamps used to express staleness:
+//   _kUpdated > _kAnalysed  → stale  (source data changed after last analysis)
+//   _kUpdated <= _kAnalysed → fresh
+const _kAnalysed = '2026-01-01T01:00:00.000Z'; // last_analysed_at
+const _kUpdated = '2026-01-01T02:00:00.000Z'; // updated_at — newer → stale
+const _kFresh = '2026-01-01T00:00:00.000Z'; // updated_at — older → fresh
+
 // ── fixture builders ──────────────────────────────────────────────────────────
 
 // Supabase REST row (snake_case) returned by _fetchFromSharedDb.
@@ -30,7 +37,7 @@ Map<String, dynamic> _dbRow({
   List<dynamic> haramIngredients = const [],
   List<dynamic> suspiciousIngredients = const [],
   bool isManaged = false,
-  bool needsReanalysis = false,
+  bool isStale = false, // true = updated_at > last_analysed_at
 }) => {
   'barcode': barcode,
   'name': name,
@@ -50,8 +57,9 @@ Map<String, dynamic> _dbRow({
   'analyzed_by_ai': false,
   'requires_halal_cert': false,
   'is_managed': isManaged,
-  'needs_reanalysis': needsReanalysis,
-  'fetched_at': '2026-01-01T00:00:00.000Z',
+  'fetched_at': _kFresh,
+  'last_analysed_at': _kAnalysed,
+  'updated_at': isStale ? _kUpdated : _kFresh, // _kUpdated > _kAnalysed → stale
 };
 
 // Edge Function product JSON (camelCase) returned by _fetchFromBackend.
@@ -62,7 +70,6 @@ Map<String, dynamic> _efProduct({
   bool isUnknown = false,
   List<dynamic> haramIngredients = const [],
   List<dynamic> suspiciousIngredients = const [],
-  bool needsReanalysis = false,
 }) => {
   'barcode': barcode,
   'name': name,
@@ -83,7 +90,8 @@ Map<String, dynamic> _efProduct({
   'analysisMethod': 'keyword',
   'requiresHalalCert': false,
   'isManaged': false,
-  'needsReanalysis': needsReanalysis,
+  'lastAnalysedAt': _kAnalysed,
+  'updatedAt': _kFresh,
 };
 
 // Minimal halal OFf response for Step 4 fallback tests.
@@ -104,7 +112,6 @@ final _offHalalJson = jsonEncode({
 // - Supabase GET  → Supabase REST (product row or empty list)
 // - Supabase POST → Edge Function (product JSON or 500)
 // - OFf / OBF / OPF GET → OpenFoodFacts
-// Passes each request to [onRequest] before responding (for call tracking).
 MockClient _makeClient({
   Map<String, dynamic>? dbRow, // null = product not in DB
   Map<String, dynamic>? efResponse, // null = EF returns 500
@@ -157,8 +164,8 @@ void main() {
 
   // ── Product model ─────────────────────────────────────────────────────────
 
-  group('Product.needsReanalysis — model', () {
-    test('defaults to false', () {
+  group('Product.updatedAt / lastAnalysedAt — model', () {
+    test('updatedAt defaults to null', () {
       final p = Product(
         barcode: '123',
         name: 'X',
@@ -169,10 +176,11 @@ void main() {
         ingredientWarnings: {},
         labels: [],
       );
-      expect(p.needsReanalysis, isFalse);
+      expect(p.updatedAt, isNull);
+      expect(p.lastAnalysedAt, isNull);
     });
 
-    test('fromJson deserializes true', () {
+    test('fromJson deserializes both timestamps', () {
       final p = Product.fromJson({
         'barcode': '123',
         'name': 'X',
@@ -186,12 +194,15 @@ void main() {
         'labels': <dynamic>[],
         'explanation': '',
         'analyzedByAI': false,
-        'needsReanalysis': true,
+        'updatedAt': _kUpdated,
+        'lastAnalysedAt': _kAnalysed,
       });
-      expect(p.needsReanalysis, isTrue);
+      expect(p.updatedAt, isNotNull);
+      expect(p.lastAnalysedAt, isNotNull);
+      expect(p.updatedAt!.isAfter(p.lastAnalysedAt!), isTrue);
     });
 
-    test('fromJson defaults to false when key absent', () {
+    test('fromJson defaults timestamps to null when absent', () {
       final p = Product.fromJson({
         'barcode': '123',
         'name': 'X',
@@ -206,10 +217,11 @@ void main() {
         'explanation': '',
         'analyzedByAI': false,
       });
-      expect(p.needsReanalysis, isFalse);
+      expect(p.updatedAt, isNull);
+      expect(p.lastAnalysedAt, isNull);
     });
 
-    test('toJson includes key when true', () {
+    test('toJson includes timestamps when set', () {
       final p = Product(
         barcode: '123',
         name: 'X',
@@ -219,12 +231,15 @@ void main() {
         suspiciousIngredients: [],
         ingredientWarnings: {},
         labels: [],
-        needsReanalysis: true,
+        updatedAt: DateTime.parse(_kUpdated),
+        lastAnalysedAt: DateTime.parse(_kAnalysed),
       );
-      expect(p.toJson(), containsPair('needsReanalysis', true));
+      final j = p.toJson();
+      expect(j.containsKey('updatedAt'), isTrue);
+      expect(j.containsKey('lastAnalysedAt'), isTrue);
     });
 
-    test('toJson omits key when false', () {
+    test('toJson omits timestamps when null', () {
       final p = Product(
         barcode: '123',
         name: 'X',
@@ -235,10 +250,11 @@ void main() {
         ingredientWarnings: {},
         labels: [],
       );
-      expect(p.toJson().containsKey('needsReanalysis'), isFalse);
+      expect(p.toJson().containsKey('updatedAt'), isFalse);
+      expect(p.toJson().containsKey('lastAnalysedAt'), isFalse);
     });
 
-    test('copyWith can set needsReanalysis', () {
+    test('copyWith can update timestamps', () {
       final original = Product(
         barcode: '123',
         name: 'X',
@@ -249,12 +265,14 @@ void main() {
         ingredientWarnings: {},
         labels: [],
       );
-      final copy = original.copyWith(needsReanalysis: true);
-      expect(original.needsReanalysis, isFalse);
-      expect(copy.needsReanalysis, isTrue);
+      final ts = DateTime.parse(_kUpdated);
+      final copy = original.copyWith(updatedAt: ts);
+      expect(original.updatedAt, isNull);
+      expect(copy.updatedAt, equals(ts));
     });
 
-    test('copyWith preserves needsReanalysis when not overridden', () {
+    test('copyWith preserves timestamps when not overridden', () {
+      final ts = DateTime.parse(_kUpdated);
       final original = Product(
         barcode: '123',
         name: 'X',
@@ -264,16 +282,16 @@ void main() {
         suspiciousIngredients: [],
         ingredientWarnings: {},
         labels: [],
-        needsReanalysis: true,
+        updatedAt: ts,
       );
       final copy = original.copyWith(name: 'Y');
-      expect(copy.needsReanalysis, isTrue);
+      expect(copy.updatedAt, equals(ts));
     });
   });
 
-  // ── pipeline behavior ─────────────────────────────────────────────────────
+  // ── pipeline behaviour ────────────────────────────────────────────────────
 
-  group('needsReanalysis — pipeline', () {
+  group('stale re-analysis — pipeline', () {
     setUp(() async {
       await TestProductRepository.instance.closeForTesting();
       _setUp();
@@ -281,95 +299,82 @@ void main() {
 
     tearDown(_tearDown);
 
-    // Step 2 short-circuits when needsReanalysis=false.
-    test(
-      'DB hit needsReanalysis=false → returned directly, no EF call',
-      () async {
-        var efCalled = false;
-        ProductService().setHttpClientForTesting(
-          _makeClient(
-            dbRow: _dbRow(isHalal: true, needsReanalysis: false),
-            onRequest: (req) {
-              if (req.method == 'POST') efCalled = true;
-            },
-          ),
-        );
+    // Step 2 short-circuits when fresh (updated_at <= last_analysed_at).
+    test('DB hit fresh → returned directly, no EF call', () async {
+      var efCalled = false;
+      ProductService().setHttpClientForTesting(
+        _makeClient(
+          dbRow: _dbRow(isHalal: true, isStale: false),
+          onRequest: (req) {
+            if (req.method == 'POST') efCalled = true;
+          },
+        ),
+      );
 
-        final p = await ProductService().getProduct(_kBarcode);
+      final p = await ProductService().getProduct(_kBarcode);
 
-        expect(p, isNotNull);
-        expect(p!.isHalal, isTrue);
-        expect(efCalled, isFalse);
-      },
-    );
+      expect(p, isNotNull);
+      expect(p!.isHalal, isTrue);
+      expect(efCalled, isFalse);
+    });
 
-    // Step 2 must NOT short-circuit when needsReanalysis=true.
-    test(
-      'DB hit needsReanalysis=true → EF is called for fresh analysis',
-      () async {
-        var efCalled = false;
-        ProductService().setHttpClientForTesting(
-          _makeClient(
-            dbRow: _dbRow(isHalal: false, needsReanalysis: true),
-            efResponse: _efProduct(isHalal: true, name: 'Fresh EF Product'),
-            onRequest: (req) {
-              if (req.method == 'POST') efCalled = true;
-            },
-          ),
-        );
+    // Step 2 must NOT short-circuit when stale (updated_at > last_analysed_at).
+    test('DB hit stale → EF is called for fresh analysis', () async {
+      var efCalled = false;
+      ProductService().setHttpClientForTesting(
+        _makeClient(
+          dbRow: _dbRow(isHalal: false, isStale: true),
+          efResponse: _efProduct(isHalal: true),
+          onRequest: (req) {
+            if (req.method == 'POST') efCalled = true;
+          },
+        ),
+      );
 
-        final p = await ProductService().getProduct(_kBarcode);
+      final p = await ProductService().getProduct(_kBarcode);
 
-        // EF was called; verdict from EF (halal) overrides DB row (not halal).
-        // Note: name comes from _mergeApprovedImages which always uses the DB name.
-        expect(efCalled, isTrue);
-        expect(p, isNotNull);
-        expect(p!.isHalal, isTrue);
-      },
-    );
+      // EF was called; verdict from EF (halal) overrides DB row (not halal).
+      expect(efCalled, isTrue);
+      expect(p, isNotNull);
+      expect(p!.isHalal, isTrue);
+    });
 
     // EF returns a halal verdict after re-analysis.
-    test(
-      'needsReanalysis=true + EF returns halal → product is halal',
-      () async {
-        ProductService().setHttpClientForTesting(
-          _makeClient(
-            dbRow: _dbRow(isHalal: false, needsReanalysis: true),
-            efResponse: _efProduct(isHalal: true),
-          ),
-        );
+    test('stale + EF returns halal → product is halal', () async {
+      ProductService().setHttpClientForTesting(
+        _makeClient(
+          dbRow: _dbRow(isHalal: false, isStale: true),
+          efResponse: _efProduct(isHalal: true),
+        ),
+      );
 
-        final p = await ProductService().getProduct(_kBarcode);
+      final p = await ProductService().getProduct(_kBarcode);
 
-        expect(p!.isHalal, isTrue);
-        expect(p.haramIngredients, isEmpty);
-      },
-    );
+      expect(p!.isHalal, isTrue);
+      expect(p.haramIngredients, isEmpty);
+    });
 
     // EF returns a not-halal verdict after re-analysis.
-    test(
-      'needsReanalysis=true + EF returns haram → product is not halal',
-      () async {
-        ProductService().setHttpClientForTesting(
-          _makeClient(
-            dbRow: _dbRow(needsReanalysis: true),
-            efResponse: _efProduct(isHalal: false, haramIngredients: ['pork']),
-          ),
-        );
+    test('stale + EF returns haram → product is not halal', () async {
+      ProductService().setHttpClientForTesting(
+        _makeClient(
+          dbRow: _dbRow(isStale: true),
+          efResponse: _efProduct(isHalal: false, haramIngredients: ['pork']),
+        ),
+      );
 
-        final p = await ProductService().getProduct(_kBarcode);
+      final p = await ProductService().getProduct(_kBarcode);
 
-        expect(p!.isHalal, isFalse);
-        expect(p.haramIngredients, contains('pork'));
-      },
-    );
+      expect(p!.isHalal, isFalse);
+      expect(p.haramIngredients, contains('pork'));
+    });
 
     // When the EF fails the client falls through to OFf direct fetch (Step 4).
-    test('needsReanalysis=true + EF fails → falls through to OFf', () async {
+    test('stale + EF fails → falls through to OFf', () async {
       var offCalled = false;
       ProductService().setHttpClientForTesting(
         _makeClient(
-          dbRow: _dbRow(needsReanalysis: true),
+          dbRow: _dbRow(isStale: true),
           efResponse: null, // 500
           offBody: _offHalalJson,
           onRequest: (req) {
@@ -405,118 +410,106 @@ void main() {
       expect(p, isNotNull);
     });
 
-    // Managed product: isManaged=true takes priority in Step 1; needsReanalysis ignored.
-    test(
-      'managed product needsReanalysis=true → managed DB row returned',
-      () async {
-        // Pre-populate local cache so Step 1 runs.
-        final dbProduct = Product(
-          barcode: _kBarcode,
-          name: 'Managed Product',
-          ingredients: const ['chicken'],
-          isHalal: true,
-          haramIngredients: const [],
-          suspiciousIngredients: const [],
-          ingredientWarnings: const {},
-          labels: const [],
-          isManaged: true,
-          needsReanalysis: true,
-        );
-        await CacheService().saveProduct(_kBarcode, dbProduct);
+    // Managed product: isManaged=true takes priority in Step 1; staleness ignored.
+    test('managed product stale → managed DB row returned directly', () async {
+      // Pre-populate local cache so Step 1 runs.
+      final dbProduct = Product(
+        barcode: _kBarcode,
+        name: 'Managed Product',
+        ingredients: const ['chicken'],
+        isHalal: true,
+        haramIngredients: const [],
+        suspiciousIngredients: const [],
+        ingredientWarnings: const {},
+        labels: const [],
+        isManaged: true,
+        updatedAt: DateTime.parse(_kUpdated),
+        lastAnalysedAt: DateTime.parse(_kAnalysed),
+      );
+      await CacheService().saveProduct(_kBarcode, dbProduct);
 
-        var efCalled = false;
-        ProductService().setHttpClientForTesting(
-          _makeClient(
-            dbRow: _dbRow(isManaged: true, needsReanalysis: true),
-            onRequest: (req) {
-              if (req.method == 'POST') efCalled = true;
-            },
-          ),
-        );
+      var efCalled = false;
+      ProductService().setHttpClientForTesting(
+        _makeClient(
+          dbRow: _dbRow(isManaged: true, isStale: true),
+          onRequest: (req) {
+            if (req.method == 'POST') efCalled = true;
+          },
+        ),
+      );
 
-        final p = await ProductService().getProduct(_kBarcode);
+      final p = await ProductService().getProduct(_kBarcode);
 
-        // Managed product takes priority; no EF call.
-        expect(p, isNotNull);
-        expect(p!.isManaged, isTrue);
-        expect(efCalled, isFalse);
-      },
-    );
+      // Managed product takes priority; no EF call.
+      expect(p, isNotNull);
+      expect(p!.isManaged, isTrue);
+      expect(efCalled, isFalse);
+    });
 
-    // Local cache with needsReanalysis=false in DB → cache served (Step 1).
-    test(
-      'cached product + DB needsReanalysis=false → cache returned, no EF',
-      () async {
-        // Warm the local cache via a first lookup.
-        ProductService().setHttpClientForTesting(
-          _makeClient(dbRow: _dbRow(isHalal: true, needsReanalysis: false)),
-        );
-        await ProductService().getProduct(_kBarcode);
+    // Local cache with fresh DB row → cache served (Step 1).
+    test('cached product + DB fresh → cache returned, no EF', () async {
+      // Warm the local cache via a first lookup.
+      ProductService().setHttpClientForTesting(
+        _makeClient(dbRow: _dbRow(isHalal: true, isStale: false)),
+      );
+      await ProductService().getProduct(_kBarcode);
 
-        // Second lookup: same DB row (still false), expect cache hit.
-        var efCalled = false;
-        ProductService().setHttpClientForTesting(
-          _makeClient(
-            dbRow: _dbRow(isHalal: true, needsReanalysis: false),
-            onRequest: (req) {
-              if (req.method == 'POST') efCalled = true;
-            },
-          ),
-        );
+      // Second lookup: same DB row (still fresh), expect cache hit.
+      var efCalled = false;
+      ProductService().setHttpClientForTesting(
+        _makeClient(
+          dbRow: _dbRow(isHalal: true, isStale: false),
+          onRequest: (req) {
+            if (req.method == 'POST') efCalled = true;
+          },
+        ),
+      );
 
-        final p = await ProductService().getProduct(_kBarcode);
+      final p = await ProductService().getProduct(_kBarcode);
 
-        expect(p, isNotNull);
-        expect(efCalled, isFalse);
-      },
-    );
+      expect(p, isNotNull);
+      expect(efCalled, isFalse);
+    });
 
-    // Local cache present but DB now has needsReanalysis=true → cache bypassed.
-    test(
-      'cached product + DB needsReanalysis=true → cache bypassed, EF called',
-      () async {
-        // Warm the local cache.
-        ProductService().setHttpClientForTesting(
-          _makeClient(dbRow: _dbRow(isHalal: true, needsReanalysis: false)),
-        );
-        await ProductService().getProduct(_kBarcode);
+    // Local cache present but DB is now stale → cache bypassed.
+    test('cached product + DB stale → cache bypassed, EF called', () async {
+      // Warm the local cache.
+      ProductService().setHttpClientForTesting(
+        _makeClient(dbRow: _dbRow(isHalal: true, isStale: false)),
+      );
+      await ProductService().getProduct(_kBarcode);
 
-        // Now DB row has needsReanalysis=true (e.g. admin edited the product).
-        // EF verdict: not halal (pork found).
-        var efCalled = false;
-        ProductService().setHttpClientForTesting(
-          _makeClient(
-            dbRow: _dbRow(isHalal: true, needsReanalysis: true),
-            efResponse: _efProduct(isHalal: false, haramIngredients: ['lard']),
-            onRequest: (req) {
-              if (req.method == 'POST') efCalled = true;
-            },
-          ),
-        );
+      // DB row is now stale (e.g. admin edited the product after the cache was written).
+      // EF verdict: not halal (lard found).
+      var efCalled = false;
+      ProductService().setHttpClientForTesting(
+        _makeClient(
+          dbRow: _dbRow(isHalal: true, isStale: true),
+          efResponse: _efProduct(isHalal: false, haramIngredients: ['lard']),
+          onRequest: (req) {
+            if (req.method == 'POST') efCalled = true;
+          },
+        ),
+      );
 
-        final p = await ProductService().getProduct(_kBarcode);
+      final p = await ProductService().getProduct(_kBarcode);
 
-        // EF was called; fresh verdict (not halal) overrides stale cache (halal).
-        expect(efCalled, isTrue);
-        expect(p!.isHalal, isFalse);
-        expect(p.haramIngredients, contains('lard'));
-      },
-    );
+      // EF was called; fresh verdict (not halal) overrides stale cache (halal).
+      expect(efCalled, isTrue);
+      expect(p!.isHalal, isFalse);
+      expect(p.haramIngredients, contains('lard'));
+    });
 
     // Haram keyword in ingredients: keyword safety override still applies after EF.
     test(
-      'needsReanalysis=true + EF says halal but has pork → keyword override wins',
+      'stale + EF says halal but has pork → keyword override wins',
       () async {
         ProductService().setHttpClientForTesting(
           _makeClient(
-            dbRow: _dbRow(needsReanalysis: true),
-            // EF mistakenly says halal despite pork in ingredients.
-            efResponse: _efProduct(
-              isHalal: true,
-              haramIngredients: [],
-              // Return pork in the ingredients list so the client-side keyword
-              // safety override can catch it.
-            )..['ingredients'] = ['pork', 'salt'],
+            dbRow: _dbRow(isStale: true),
+            // EF mistakenly says halal despite pork in ingredients list.
+            efResponse: _efProduct(isHalal: true)
+              ..['ingredients'] = ['pork', 'salt'],
           ),
         );
 
@@ -528,57 +521,43 @@ void main() {
       },
     );
 
-    // isUnknown=true in DB has same fall-through behaviour regardless of flag.
-    test(
-      'DB has isUnknown=true + needsReanalysis=false → falls through (unchanged)',
-      () async {
-        var efCalled = false;
-        ProductService().setHttpClientForTesting(
-          _makeClient(
-            dbRow: _dbRow(
-              isHalal: false,
-              isUnknown: true,
-              needsReanalysis: false,
-            ),
-            efResponse: _efProduct(isHalal: true),
-            onRequest: (req) {
-              if (req.method == 'POST') efCalled = true;
-            },
-          ),
-        );
+    // isUnknown=true in DB has same fall-through behaviour regardless of staleness.
+    test('DB has isUnknown=true + fresh → falls through (unchanged)', () async {
+      var efCalled = false;
+      ProductService().setHttpClientForTesting(
+        _makeClient(
+          dbRow: _dbRow(isHalal: false, isUnknown: true, isStale: false),
+          efResponse: _efProduct(isHalal: true),
+          onRequest: (req) {
+            if (req.method == 'POST') efCalled = true;
+          },
+        ),
+      );
 
-        await ProductService().getProduct(_kBarcode);
+      await ProductService().getProduct(_kBarcode);
 
-        // isUnknown=true alone already causes fall-through; EF must be called.
-        expect(efCalled, isTrue);
-      },
-    );
+      // isUnknown=true alone causes fall-through; EF must be called.
+      expect(efCalled, isTrue);
+    });
 
-    // Both isUnknown=true and needsReanalysis=true → still falls through once.
-    test(
-      'DB has isUnknown=true + needsReanalysis=true → EF called once',
-      () async {
-        var efCallCount = 0;
-        ProductService().setHttpClientForTesting(
-          _makeClient(
-            dbRow: _dbRow(
-              isHalal: false,
-              isUnknown: true,
-              needsReanalysis: true,
-            ),
-            efResponse: _efProduct(isHalal: true),
-            onRequest: (req) {
-              if (req.method == 'POST') efCallCount++;
-            },
-          ),
-        );
+    // Both isUnknown=true and stale → still falls through to EF exactly once.
+    test('DB has isUnknown=true + stale → EF called once', () async {
+      var efCallCount = 0;
+      ProductService().setHttpClientForTesting(
+        _makeClient(
+          dbRow: _dbRow(isHalal: false, isUnknown: true, isStale: true),
+          efResponse: _efProduct(isHalal: true),
+          onRequest: (req) {
+            if (req.method == 'POST') efCallCount++;
+          },
+        ),
+      );
 
-        final p = await ProductService().getProduct(_kBarcode);
+      final p = await ProductService().getProduct(_kBarcode);
 
-        // Only one EF call despite two fall-through reasons.
-        expect(efCallCount, 1);
-        expect(p!.isHalal, isTrue);
-      },
-    );
+      // Only one EF call despite two fall-through reasons.
+      expect(efCallCount, 1);
+      expect(p!.isHalal, isTrue);
+    });
   });
 }

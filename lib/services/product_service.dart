@@ -114,6 +114,14 @@ class ProductService {
     return _rulesEngine.matchesKeyword(ingredient, keyword);
   }
 
+  // A product is stale when its source data changed after the last analysis.
+  // The DB trigger bumps updated_at on ingredient/name/label/is_non_food edits.
+  static bool _isStale(Product? p) {
+    if (p == null || p.updatedAt == null) return false;
+    final analysed = p.lastAnalysedAt;
+    return analysed == null || analysed.isBefore(p.updatedAt!);
+  }
+
   // Returns true when the product name suggests it is a meat/animal product,
   // used as a fallback when OFf category data is absent or unknown.
   static bool _nameIndicatesAnimalProduct(String nameLower) {
@@ -367,7 +375,7 @@ class ProductService {
             : 'keyword',
         'requiresHalalCert': row['requires_halal_cert'] ?? false,
         'isManaged': row['is_managed'] ?? false,
-        'needsReanalysis': row['needs_reanalysis'] ?? false,
+        'updatedAt': row['updated_at'],
         'lastAnalysedAt': row['last_analysed_at'],
       });
     } catch (_) {
@@ -486,10 +494,10 @@ class ProductService {
             await _cache.saveProduct(barcode, safe);
             return safe;
           }
-          if (dbProduct == null || !dbProduct.needsReanalysis) {
+          if (!_isStale(dbProduct)) {
             return _mergeApprovedImages(cached, dbProduct);
           }
-          // needsReanalysis=true: fall through so the Edge Function re-analyses
+          // stale (updated_at > last_analysed_at): fall through so the EF re-analyses
         }
         hadStaleUnknown = true;
       }
@@ -502,7 +510,7 @@ class ProductService {
         '[Lookup $barcode] Step 2 (sharedDB): '
         'isUnknown=${dbProduct.isUnknown} isNonFood=${dbProduct.isNonFood}',
       );
-      if (!dbProduct.isUnknown && !dbProduct.needsReanalysis) {
+      if (!dbProduct.isUnknown && !_isStale(dbProduct)) {
         final safe = _applyKeywordSafety(dbProduct);
         await _cache.saveProduct(barcode, safe);
         return safe;
