@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
@@ -5,8 +7,10 @@ import '../app_colors.dart';
 import '../localization/app_localizations.dart';
 import '../models/product_analysis.dart';
 import '../services/analysis_service.dart';
+import '../services/cache_service.dart';
 import '../services/ingredient_contribution_service.dart';
 import '../services/product_image_service.dart';
+import '../services/product_service.dart';
 import 'rules_management_screen.dart';
 
 class AdminPanelScreen extends StatefulWidget {
@@ -96,12 +100,51 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
 
   Future<void> _reviewContribution(int id, String status) async {
     setState(() => _processingContributionIds.add(id));
+
+    // Get the barcode before updating (needed for re-analysis on approval)
+    final contribution = _contributions.firstWhere(
+      (c) => (c['id'] as num).toInt() == id,
+      orElse: () => <String, dynamic>{},
+    );
+    final barcode = contribution['barcode'] as String?;
+
     final ok = await IngredientContributionService.updateStatus(id, status);
     if (!mounted) return;
     if (ok) {
       setState(
         () => _contributions.removeWhere((c) => (c['id'] as num).toInt() == id),
       );
+
+      // Trigger rule-based re-analysis of the product when contribution is approved
+      if (status == 'approved' && barcode != null && barcode.isNotEmpty) {
+        debugPrint(
+          '[AdminPanel] Triggering rule-based re-analysis for barcode: $barcode '
+          'after ingredient contribution approval',
+        );
+        // Clear the local cache immediately to ensure the next lookup
+        // fetches the updated product from the remote database
+        unawaited(
+          CacheService().removeProduct(barcode).then((_) {
+            debugPrint('[AdminPanel] Cleared local cache for $barcode');
+          }),
+        );
+        // Also trigger a background refresh to pre-populate the cache
+        // with the updated product data
+        unawaited(
+          ProductService().refreshProduct(barcode).then((product) {
+            if (product != null) {
+              debugPrint(
+                '[AdminPanel] Rule-based re-analysis completed for $barcode: '
+                'isHalal=${product.isHalal}',
+              );
+            } else {
+              debugPrint(
+                '[AdminPanel] Rule-based re-analysis failed for $barcode',
+              );
+            }
+          }),
+        );
+      }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Failed to update — check Supabase logs')),
@@ -299,6 +342,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               icon,
@@ -306,12 +350,15 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
               color: selected ? kGreen : Colors.grey.shade500,
             ),
             const SizedBox(width: 6),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
-                color: selected ? kGreen : Colors.grey.shade600,
+            Flexible(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+                  color: selected ? kGreen : Colors.grey.shade600,
+                ),
+                overflow: TextOverflow.ellipsis,
               ),
             ),
             if (badge != null && badge > 0) ...[
