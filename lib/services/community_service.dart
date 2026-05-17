@@ -7,19 +7,84 @@ import 'auth_service.dart';
 
 class CommunityService {
   static SupabaseClient get _db => Supabase.instance.client;
-  static String? get _uid => AuthService.currentUser?.id;
+  static String? get _uid => _uidOverride ?? AuthService.currentUser?.id;
+
+  // ── test seams ─────────────────────────────────────────────────────────────
+  // Each nullable lambda replaces exactly one Supabase query when set.
+  // Production code is unchanged when all are null.
+
+  static bool _supabaseAvailable = AppConfig.hasSupabase;
+  static String? _uidOverride;
+
+  @visibleForTesting
+  static Future<List<Map<String, dynamic>>> Function(String)?
+  fakeFetchChallenges;
+  @visibleForTesting
+  static Future<Map<String, dynamic>?> Function(Map<String, dynamic>)?
+  fakeInsertChallenge;
+  @visibleForTesting
+  static Future<List<Map<String, dynamic>>> Function(String)?
+  fakeFetchDiscussions;
+  @visibleForTesting
+  static Future<List<Map<String, dynamic>>> Function(List<String>)?
+  fakeFetchCommentCounts;
+  @visibleForTesting
+  static Future<Map<String, dynamic>?> Function(Map<String, dynamic>)?
+  fakeInsertDiscussion;
+  @visibleForTesting
+  static Future<List<Map<String, dynamic>>> Function(String)? fakeFetchComments;
+  @visibleForTesting
+  static Future<List<Map<String, dynamic>>> Function(List<String>)?
+  fakeFetchVotes;
+  @visibleForTesting
+  static Future<Map<String, dynamic>?> Function(Map<String, dynamic>)?
+  fakeInsertComment;
+  @visibleForTesting
+  static Future<bool> Function(String commentId, String uid)? fakeSoftDelete;
+  @visibleForTesting
+  static Future<void> Function(String commentId, String uid)? fakeDeleteVote;
+  @visibleForTesting
+  static Future<void> Function(Map<String, dynamic>)? fakeUpsertVote;
+
+  @visibleForTesting
+  static void enableForTesting({String? uid}) {
+    _supabaseAvailable = true;
+    _uidOverride = uid;
+  }
+
+  @visibleForTesting
+  static void resetForTesting() {
+    _supabaseAvailable = AppConfig.hasSupabase;
+    _uidOverride = null;
+    fakeFetchChallenges = null;
+    fakeInsertChallenge = null;
+    fakeFetchDiscussions = null;
+    fakeFetchCommentCounts = null;
+    fakeInsertDiscussion = null;
+    fakeFetchComments = null;
+    fakeFetchVotes = null;
+    fakeInsertComment = null;
+    fakeSoftDelete = null;
+    fakeDeleteVote = null;
+    fakeUpsertVote = null;
+  }
 
   // ── challenges ─────────────────────────────────────────────────────────────
 
   static Future<List<IngredientChallenge>> getChallenges(String barcode) async {
-    if (!AppConfig.hasSupabase) return [];
+    if (!_supabaseAvailable) return [];
     try {
-      final rows = await _db
-          .from('ingredient_challenges')
-          .select('*, profiles(username)')
-          .eq('barcode', barcode)
-          .order('created_at', ascending: false);
-      return rows.map((r) => IngredientChallenge.fromJson(r)).toList();
+      final rows = fakeFetchChallenges != null
+          ? await fakeFetchChallenges!(barcode)
+          : List<Map<String, dynamic>>.from(
+              await _db
+                      .from('ingredient_challenges')
+                      .select('*, profiles(username)')
+                      .eq('barcode', barcode)
+                      .order('created_at', ascending: false)
+                  as List,
+            );
+      return rows.map(IngredientChallenge.fromJson).toList();
     } catch (_) {
       return [];
     }
@@ -33,20 +98,27 @@ class CommunityService {
     required String reason,
   }) async {
     final uid = _uid;
-    if (!AppConfig.hasSupabase || uid == null) return null;
+    if (!_supabaseAvailable || uid == null) return null;
     try {
-      final row = await _db
-          .from('ingredient_challenges')
-          .insert({
-            'barcode': barcode,
-            'ingredient': ingredient,
-            'current_verdict': currentVerdict,
-            'claimed_verdict': claimedVerdict,
-            'reason': reason,
-            'created_by': uid,
-          })
-          .select('*, profiles(username)')
-          .single();
+      final payload = {
+        'barcode': barcode,
+        'ingredient': ingredient,
+        'current_verdict': currentVerdict,
+        'claimed_verdict': claimedVerdict,
+        'reason': reason,
+        'created_by': uid,
+      };
+      final row = fakeInsertChallenge != null
+          ? await fakeInsertChallenge!(payload)
+          : Map<String, dynamic>.from(
+              await _db
+                      .from('ingredient_challenges')
+                      .insert(payload)
+                      .select('*, profiles(username)')
+                      .single()
+                  as Map,
+            );
+      if (row == null) return null;
       return IngredientChallenge.fromJson(row);
     } catch (_) {
       return null;
@@ -56,30 +128,37 @@ class CommunityService {
   // ── discussions ────────────────────────────────────────────────────────────
 
   static Future<List<Discussion>> getDiscussions(String barcode) async {
-    if (!AppConfig.hasSupabase) return [];
+    if (!_supabaseAvailable) return [];
     try {
-      final rows = await _db
-          .from('discussions')
-          .select('*, profiles(username)')
-          .eq('barcode', barcode)
-          .order('created_at', ascending: false);
+      final rows = fakeFetchDiscussions != null
+          ? await fakeFetchDiscussions!(barcode)
+          : List<Map<String, dynamic>>.from(
+              await _db
+                      .from('discussions')
+                      .select('*, profiles(username)')
+                      .eq('barcode', barcode)
+                      .order('created_at', ascending: false)
+                  as List,
+            );
       final ids = rows.map((r) => r['id'] as String).toList();
       Map<String, int> counts = {};
       if (ids.isNotEmpty) {
-        final countRows = await _db
-            .from('comments')
-            .select('discussion_id')
-            .inFilter('discussion_id', ids)
-            .eq('is_deleted', false);
-        counts = aggregateCommentCounts(
-          List<Map<String, dynamic>>.from(countRows as List),
-        );
+        final countRows = fakeFetchCommentCounts != null
+            ? await fakeFetchCommentCounts!(ids)
+            : List<Map<String, dynamic>>.from(
+                await _db
+                        .from('comments')
+                        .select('discussion_id')
+                        .inFilter('discussion_id', ids)
+                        .eq('is_deleted', false)
+                    as List,
+              );
+        counts = aggregateCommentCounts(countRows);
       }
       return rows.map((r) {
-        final m = Map<String, dynamic>.from(r as Map);
         return Discussion.fromJson({
-          ...m,
-          'comment_count': counts[m['id']] ?? 0,
+          ...r,
+          'comment_count': counts[r['id']] ?? 0,
         });
       }).toList();
     } catch (_) {
@@ -105,19 +184,25 @@ class CommunityService {
     String? title,
   }) async {
     final uid = _uid;
-    if (!AppConfig.hasSupabase || uid == null) return null;
+    if (!_supabaseAvailable || uid == null) return null;
     try {
-      final row = await _db
-          .from('discussions')
-          .insert({
-            'barcode': barcode,
-            if (challengeId != null) 'challenge_id': challengeId,
-            if (title != null && title.isNotEmpty) 'title': title,
-            'created_by': uid,
-          })
-          .select('*, profiles(username)')
-          .single();
-      return Discussion.fromJson(row);
+      final payload = <String, dynamic>{
+        'barcode': barcode,
+        'challenge_id': ?challengeId,
+        if (title != null && title.isNotEmpty) 'title': title,
+        'created_by': uid,
+      };
+      final row = fakeInsertDiscussion != null
+          ? await fakeInsertDiscussion!(payload)
+          : Map<String, dynamic>.from(
+              await _db
+                      .from('discussions')
+                      .insert(payload)
+                      .select('*, profiles(username)')
+                      .single()
+                  as Map,
+            );
+      return row != null ? Discussion.fromJson(row) : null;
     } catch (_) {
       return null;
     }
@@ -126,37 +211,43 @@ class CommunityService {
   // ── comments ───────────────────────────────────────────────────────────────
 
   static Future<List<Comment>> getComments(String discussionId) async {
-    if (!AppConfig.hasSupabase) return [];
+    if (!_supabaseAvailable) return [];
     final uid = _uid;
     try {
-      final rows = await _db
-          .from('comments')
-          .select('*, profiles(username, avatar_url)')
-          .eq('discussion_id', discussionId)
-          .order('created_at');
+      final rows = fakeFetchComments != null
+          ? await fakeFetchComments!(discussionId)
+          : List<Map<String, dynamic>>.from(
+              await _db
+                      .from('comments')
+                      .select('*, profiles(username, avatar_url)')
+                      .eq('discussion_id', discussionId)
+                      .order('created_at')
+                  as List,
+            );
 
       final commentIds = rows.map((r) => r['id'] as String).toList();
       final Map<String, int> scores = {};
       final Map<String, int> myVotes = {};
 
       if (commentIds.isNotEmpty) {
-        final voteRows = await _db
-            .from('comment_votes')
-            .select('comment_id, value, user_id')
-            .inFilter('comment_id', commentIds);
-        final agg = aggregateVotes(
-          List<Map<String, dynamic>>.from(voteRows as List),
-          uid,
-        );
+        final voteRows = fakeFetchVotes != null
+            ? await fakeFetchVotes!(commentIds)
+            : List<Map<String, dynamic>>.from(
+                await _db
+                        .from('comment_votes')
+                        .select('comment_id, value, user_id')
+                        .inFilter('comment_id', commentIds)
+                    as List,
+              );
+        final agg = aggregateVotes(voteRows, uid);
         scores.addAll(agg.scores);
         myVotes.addAll(agg.myVotes);
       }
 
       return rows.map((r) {
-        final m = Map<String, dynamic>.from(r as Map);
-        final id = m['id'] as String;
+        final id = r['id'] as String;
         return Comment.fromJson({
-          ...m,
+          ...r,
           'vote_score': scores[id] ?? 0,
           'my_vote': myVotes[id],
         });
@@ -189,19 +280,27 @@ class CommunityService {
     String? parentId,
   }) async {
     final uid = _uid;
-    if (!AppConfig.hasSupabase || uid == null) return null;
+    if (!_supabaseAvailable || uid == null) return null;
     try {
-      final row = await _db
-          .from('comments')
-          .insert({
-            'discussion_id': discussionId,
-            'body': body,
-            if (parentId != null) 'parent_id': parentId,
-            'created_by': uid,
-          })
-          .select('*, profiles(username, avatar_url)')
-          .single();
-      return Comment.fromJson({...row, 'vote_score': 0, 'my_vote': null});
+      final payload = <String, dynamic>{
+        'discussion_id': discussionId,
+        'body': body,
+        'parent_id': ?parentId,
+        'created_by': uid,
+      };
+      final row = fakeInsertComment != null
+          ? await fakeInsertComment!(payload)
+          : Map<String, dynamic>.from(
+              await _db
+                      .from('comments')
+                      .insert(payload)
+                      .select('*, profiles(username, avatar_url)')
+                      .single()
+                  as Map,
+            );
+      return row != null
+          ? Comment.fromJson({...row, 'vote_score': 0, 'my_vote': null})
+          : null;
     } catch (_) {
       return null;
     }
@@ -209,8 +308,9 @@ class CommunityService {
 
   static Future<bool> softDeleteComment(String commentId) async {
     final uid = _uid;
-    if (!AppConfig.hasSupabase || uid == null) return false;
+    if (!_supabaseAvailable || uid == null) return false;
     try {
+      if (fakeSoftDelete != null) return await fakeSoftDelete!(commentId, uid);
       await _db
           .from('comments')
           .update({'body': '', 'is_deleted': true})
@@ -231,21 +331,26 @@ class CommunityService {
     int? currentMyVote,
   }) async {
     final uid = _uid;
-    if (!AppConfig.hasSupabase || uid == null) return null;
+    if (!_supabaseAvailable || uid == null) return null;
     try {
       if (currentMyVote == value) {
-        await _db
-            .from('comment_votes')
-            .delete()
-            .eq('comment_id', commentId)
-            .eq('user_id', uid);
+        if (fakeDeleteVote != null) {
+          await fakeDeleteVote!(commentId, uid);
+        } else {
+          await _db
+              .from('comment_votes')
+              .delete()
+              .eq('comment_id', commentId)
+              .eq('user_id', uid);
+        }
         return 0;
       }
-      await _db.from('comment_votes').upsert({
-        'comment_id': commentId,
-        'user_id': uid,
-        'value': value,
-      });
+      final payload = {'comment_id': commentId, 'user_id': uid, 'value': value};
+      if (fakeUpsertVote != null) {
+        await fakeUpsertVote!(payload);
+      } else {
+        await _db.from('comment_votes').upsert(payload);
+      }
       return value;
     } catch (_) {
       return null;
