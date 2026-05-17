@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../config.dart';
@@ -63,17 +64,16 @@ class CommunityService {
           .eq('barcode', barcode)
           .order('created_at', ascending: false);
       final ids = rows.map((r) => r['id'] as String).toList();
-      final Map<String, int> counts = {};
+      Map<String, int> counts = {};
       if (ids.isNotEmpty) {
         final countRows = await _db
             .from('comments')
             .select('discussion_id')
             .inFilter('discussion_id', ids)
             .eq('is_deleted', false);
-        for (final r in countRows) {
-          final id = r['discussion_id'] as String;
-          counts[id] = (counts[id] ?? 0) + 1;
-        }
+        counts = aggregateCommentCounts(
+          List<Map<String, dynamic>>.from(countRows as List),
+        );
       }
       return rows.map((r) {
         final m = Map<String, dynamic>.from(r as Map);
@@ -85,6 +85,18 @@ class CommunityService {
     } catch (_) {
       return [];
     }
+  }
+
+  @visibleForTesting
+  static Map<String, int> aggregateCommentCounts(
+    List<Map<String, dynamic>> rows,
+  ) {
+    final Map<String, int> counts = {};
+    for (final r in rows) {
+      final id = r['discussion_id'] as String;
+      counts[id] = (counts[id] ?? 0) + 1;
+    }
+    return counts;
   }
 
   static Future<Discussion?> startDiscussion({
@@ -132,13 +144,12 @@ class CommunityService {
             .from('comment_votes')
             .select('comment_id, value, user_id')
             .inFilter('comment_id', commentIds);
-        for (final v in voteRows) {
-          final cid = v['comment_id'] as String;
-          scores[cid] = (scores[cid] ?? 0) + (v['value'] as int);
-          if (uid != null && v['user_id'] == uid) {
-            myVotes[cid] = v['value'] as int;
-          }
-        }
+        final agg = aggregateVotes(
+          List<Map<String, dynamic>>.from(voteRows as List),
+          uid,
+        );
+        scores.addAll(agg.scores);
+        myVotes.addAll(agg.myVotes);
       }
 
       return rows.map((r) {
@@ -153,6 +164,23 @@ class CommunityService {
     } catch (_) {
       return [];
     }
+  }
+
+  @visibleForTesting
+  static ({Map<String, int> scores, Map<String, int> myVotes}) aggregateVotes(
+    List<Map<String, dynamic>> voteRows,
+    String? uid,
+  ) {
+    final Map<String, int> scores = {};
+    final Map<String, int> myVotes = {};
+    for (final v in voteRows) {
+      final cid = v['comment_id'] as String;
+      scores[cid] = (scores[cid] ?? 0) + (v['value'] as int);
+      if (uid != null && v['user_id'] == uid) {
+        myVotes[cid] = v['value'] as int;
+      }
+    }
+    return (scores: scores, myVotes: myVotes);
   }
 
   static Future<Comment?> postComment({

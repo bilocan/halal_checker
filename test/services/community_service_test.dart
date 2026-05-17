@@ -157,4 +157,130 @@ void main() {
       expect(await CommunityService.getComments(''), isEmpty);
     });
   });
+
+  // ── aggregateCommentCounts ────────────────────────────────────────────────
+
+  group('CommunityService.aggregateCommentCounts', () {
+    test('empty rows → empty map', () {
+      expect(CommunityService.aggregateCommentCounts([]), isEmpty);
+    });
+
+    test('single row → count 1 for that discussion', () {
+      final result = CommunityService.aggregateCommentCounts([
+        {'discussion_id': 'disc-1'},
+      ]);
+      expect(result, {'disc-1': 1});
+    });
+
+    test('two rows for same discussion → count 2', () {
+      final result = CommunityService.aggregateCommentCounts([
+        {'discussion_id': 'disc-1'},
+        {'discussion_id': 'disc-1'},
+      ]);
+      expect(result['disc-1'], 2);
+    });
+
+    test('rows across multiple discussions → independent counts', () {
+      final result = CommunityService.aggregateCommentCounts([
+        {'discussion_id': 'disc-a'},
+        {'discussion_id': 'disc-b'},
+        {'discussion_id': 'disc-a'},
+        {'discussion_id': 'disc-c'},
+        {'discussion_id': 'disc-a'},
+      ]);
+      expect(result['disc-a'], 3);
+      expect(result['disc-b'], 1);
+      expect(result['disc-c'], 1);
+    });
+
+    test('discussion absent from rows is absent from result map', () {
+      final result = CommunityService.aggregateCommentCounts([
+        {'discussion_id': 'disc-1'},
+      ]);
+      expect(result.containsKey('disc-2'), isFalse);
+    });
+  });
+
+  // ── aggregateVotes ────────────────────────────────────────────────────────
+
+  group('CommunityService.aggregateVotes', () {
+    test('empty rows → empty scores and myVotes', () {
+      final (:scores, :myVotes) = CommunityService.aggregateVotes([], null);
+      expect(scores, isEmpty);
+      expect(myVotes, isEmpty);
+    });
+
+    test('single upvote → score +1', () {
+      final (:scores, :myVotes) = CommunityService.aggregateVotes([
+        {'comment_id': 'cmt-1', 'value': 1, 'user_id': 'user-a'},
+      ], null);
+      expect(scores['cmt-1'], 1);
+      expect(myVotes, isEmpty);
+    });
+
+    test('single downvote → score -1', () {
+      final (:scores, :myVotes) = CommunityService.aggregateVotes([
+        {'comment_id': 'cmt-1', 'value': -1, 'user_id': 'user-a'},
+      ], null);
+      expect(scores['cmt-1'], -1);
+    });
+
+    test('upvote + downvote on same comment → score 0', () {
+      final (:scores, :myVotes) = CommunityService.aggregateVotes([
+        {'comment_id': 'cmt-1', 'value': 1, 'user_id': 'user-a'},
+        {'comment_id': 'cmt-1', 'value': -1, 'user_id': 'user-b'},
+      ], null);
+      expect(scores['cmt-1'], 0);
+      expect(myVotes, isEmpty);
+    });
+
+    test('current user upvote recorded in myVotes', () {
+      final (:scores, :myVotes) = CommunityService.aggregateVotes([
+        {'comment_id': 'cmt-1', 'value': 1, 'user_id': 'uid-me'},
+        {'comment_id': 'cmt-1', 'value': 1, 'user_id': 'uid-other'},
+      ], 'uid-me');
+      expect(myVotes['cmt-1'], 1);
+      expect(scores['cmt-1'], 2);
+    });
+
+    test('current user downvote recorded as -1 in myVotes', () {
+      final (:scores, :myVotes) = CommunityService.aggregateVotes([
+        {'comment_id': 'cmt-2', 'value': -1, 'user_id': 'uid-me'},
+      ], 'uid-me');
+      expect(myVotes['cmt-2'], -1);
+      expect(scores['cmt-2'], -1);
+    });
+
+    test('null uid → myVotes always empty regardless of votes', () {
+      final (:scores, :myVotes) = CommunityService.aggregateVotes([
+        {'comment_id': 'cmt-1', 'value': 1, 'user_id': 'uid-other'},
+        {'comment_id': 'cmt-1', 'value': 1, 'user_id': 'uid-another'},
+      ], null);
+      expect(myVotes, isEmpty);
+      expect(scores['cmt-1'], 2);
+    });
+
+    test('votes across multiple comments tracked independently', () {
+      final (:scores, :myVotes) = CommunityService.aggregateVotes([
+        {'comment_id': 'cmt-1', 'value': 1, 'user_id': 'user-a'},
+        {'comment_id': 'cmt-2', 'value': -1, 'user_id': 'user-b'},
+        {'comment_id': 'cmt-1', 'value': 1, 'user_id': 'user-b'},
+        {'comment_id': 'cmt-1', 'value': 1, 'user_id': 'user-c'},
+      ], 'user-a');
+      expect(scores['cmt-1'], 3);
+      expect(scores['cmt-2'], -1);
+      expect(myVotes['cmt-1'], 1);
+      expect(myVotes.containsKey('cmt-2'), isFalse);
+    });
+
+    test('current user vote overwrites if they appear twice (last wins)', () {
+      // Should not happen in practice, but the aggregator uses assignment.
+      final (:scores, :myVotes) = CommunityService.aggregateVotes([
+        {'comment_id': 'cmt-1', 'value': 1, 'user_id': 'uid-me'},
+        {'comment_id': 'cmt-1', 'value': -1, 'user_id': 'uid-me'},
+      ], 'uid-me');
+      expect(myVotes['cmt-1'], -1);
+      expect(scores['cmt-1'], 0);
+    });
+  });
 }
