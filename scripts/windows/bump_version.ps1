@@ -97,8 +97,7 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 # ── Check tag doesn't already exist ────────────────────────────────────
-git rev-parse $tag 2>$null | Out-Null
-if ($LASTEXITCODE -eq 0) {
+if (git tag --list $tag) {
     Write-Error "Tag $tag already exists."
     exit 1
 }
