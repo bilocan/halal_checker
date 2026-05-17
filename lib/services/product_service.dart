@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
@@ -193,17 +194,70 @@ class ProductService {
   }
 
   Future<Product?> refreshProduct(String barcode) async {
+    await _loadCustomKeywords();
+    await _cache.removeProduct(barcode);
+
     // Managed products are never re-fetched from OFF.
     // Return the DB row directly so admin data is preserved.
-    final dbProduct = await _fetchFromSharedDb(barcode);
+    var dbProduct = await _fetchFromSharedDb(barcode);
     if (dbProduct != null && dbProduct.isManaged) {
-      debugPrint('[Refresh $barcode] managed product — returning DB row as-is');
-      await _cache.saveProduct(barcode, dbProduct);
-      return dbProduct;
+      // Heal stale DB rows from before the is_unknown / isHalal fixes.
+      var needsPatch = false;
+      if (dbProduct.isUnknown && dbProduct.ingredients.isNotEmpty) {
+        dbProduct = dbProduct.copyWith(isUnknown: false);
+        needsPatch = true;
+      }
+      // is_halal was stored incorrectly when a suspicious-only verdict was
+      // written as false (suspicious != halal). Re-derive from ingredients.
+      if (!dbProduct.isHalal &&
+          dbProduct.haramIngredients.isEmpty &&
+          !dbProduct.requiresHalalCert &&
+          !dbProduct.isNonFood &&
+          dbProduct.ingredients.isNotEmpty) {
+        final reanalyzed = analyzeWithKeywords(dbProduct.ingredients);
+        dbProduct = dbProduct.copyWith(isHalal: reanalyzed.isHalal);
+        needsPatch = true;
+      }
+      if (needsPatch) {
+        unawaited(
+          _patchManagedProduct(
+            barcode,
+            isUnknown: dbProduct.isUnknown,
+            isHalal: dbProduct.isHalal,
+          ),
+        );
+      }
+      debugPrint('[Refresh $barcode] managed product — returning DB row');
+      final safe = _applyKeywordSafety(dbProduct);
+      await _cache.saveProduct(barcode, safe);
+      return safe;
     }
 
-    await _cache.removeProduct(barcode);
     return _getProduct(barcode, forceBackendRefresh: true);
+  }
+
+  Future<void> _patchManagedProduct(
+    String barcode, {
+    required bool isUnknown,
+    required bool isHalal,
+  }) async {
+    if (!AppConfig.hasSupabase) return;
+    try {
+      await _httpClient
+          .patch(
+            Uri.parse(
+              '${AppConfig.supabaseUrl}/rest/v1/products'
+              '?barcode=eq.${Uri.encodeComponent(barcode)}',
+            ),
+            headers: {
+              'Authorization': 'Bearer ${AppConfig.supabaseAnonKey}',
+              'apikey': AppConfig.supabaseAnonKey,
+              'Content-Type': 'application/json',
+            },
+            body: jsonEncode({'is_unknown': isUnknown, 'is_halal': isHalal}),
+          )
+          .timeout(const Duration(seconds: 10));
+    } catch (_) {}
   }
 
   // Read from the shared products table directly, bypassing the Edge Function.
@@ -306,6 +360,10 @@ class ProductService {
       return null;
     }
   }
+
+  @visibleForTesting
+  Future<Product?> fetchFromSharedDbForDebug(String barcode) =>
+      _fetchFromSharedDb(barcode);
 
   Future<Product?> getProduct(String barcode) =>
       _getProduct(barcode, forceBackendRefresh: false);

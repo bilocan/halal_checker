@@ -104,7 +104,7 @@ class IngredientContributionService {
         final analysisResult = rulesEngine.analyzeIngredients(ingredients);
 
         // Determine halal status based on analysis
-        final isHalal = analysisResult.verdict == HalalRuleVerdict.halal;
+        final isHalal = analysisResult.isHalal;
         final haramList = analysisResult.haram;
         final suspiciousList = analysisResult.suspicious;
         final warnings = analysisResult.warnings;
@@ -123,6 +123,7 @@ class IngredientContributionService {
               .update({
                 'ingredients': jsonEncode(ingredients),
                 'is_halal': isHalal,
+                'is_unknown': false,
                 'haram_ingredients': jsonEncode(haramList),
                 'suspicious_ingredients': jsonEncode(suspiciousList),
                 'ingredient_warnings': jsonEncode(warnings),

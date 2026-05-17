@@ -29,4 +29,9 @@ class CacheService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('$_prefix$barcode');
   }
+
+  Future<String?> getRaw(String barcode) async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('$_prefix$barcode');
+  }
 }
