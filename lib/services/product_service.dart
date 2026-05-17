@@ -357,7 +357,17 @@ class ProductService {
         'found=${cached != null} isUnknown=${cached?.isUnknown}',
       );
       if (cached != null) {
-        if (!cached.isUnknown) return _mergeApprovedImages(cached, dbProduct);
+        if (!cached.isUnknown) {
+          // Managed (admin-curated) products always come from the DB so that
+          // admin edits are reflected immediately instead of serving a stale
+          // local cache entry that predates the curation.
+          if (dbProduct != null && dbProduct.isManaged) {
+            final safe = _applyKeywordSafety(dbProduct);
+            await _cache.saveProduct(barcode, safe);
+            return safe;
+          }
+          return _mergeApprovedImages(cached, dbProduct);
+        }
         hadStaleUnknown = true;
       }
     }
