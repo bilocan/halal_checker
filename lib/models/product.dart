@@ -31,6 +31,12 @@ class Product {
   /// are never overwritten by Open Food Facts data on refresh.
   final bool isManaged;
 
+  /// True when the stored verdict is stale and the rules engine must re-run
+  /// on the next lookup. Set server-side after any manual edit to product
+  /// fields (ingredients, name, labels). Reset to false by the Edge Function
+  /// after it re-runs keyword analysis and writes the fresh verdict.
+  final bool needsReanalysis;
+
   Product({
     required this.barcode,
     required this.name,
@@ -52,6 +58,7 @@ class Product {
     this.analysisMethod,
     this.requiresHalalCert = false,
     this.isManaged = false,
+    this.needsReanalysis = false,
   });
 
   Product copyWith({
@@ -75,6 +82,7 @@ class Product {
     String? analysisMethod,
     bool? requiresHalalCert,
     bool? isManaged,
+    bool? needsReanalysis,
   }) => Product(
     barcode: barcode ?? this.barcode,
     name: name ?? this.name,
@@ -97,6 +105,7 @@ class Product {
     analysisMethod: analysisMethod ?? this.analysisMethod,
     requiresHalalCert: requiresHalalCert ?? this.requiresHalalCert,
     isManaged: isManaged ?? this.isManaged,
+    needsReanalysis: needsReanalysis ?? this.needsReanalysis,
   );
 
   Map<String, dynamic> toJson() => {
@@ -120,6 +129,7 @@ class Product {
     if (analysisMethod != null) 'analysisMethod': analysisMethod,
     if (requiresHalalCert) 'requiresHalalCert': requiresHalalCert,
     if (isManaged) 'isManaged': isManaged,
+    if (needsReanalysis) 'needsReanalysis': needsReanalysis,
   };
 
   factory Product.fromJson(Map<String, dynamic> json) => Product(
@@ -149,5 +159,6 @@ class Product {
     analysisMethod: json['analysisMethod'] as String?,
     requiresHalalCert: json['requiresHalalCert'] as bool? ?? false,
     isManaged: json['isManaged'] as bool? ?? false,
+    needsReanalysis: json['needsReanalysis'] as bool? ?? false,
   );
 }

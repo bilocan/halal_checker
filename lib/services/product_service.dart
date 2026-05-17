@@ -21,6 +21,31 @@ class ProductService {
   @visibleForTesting
   void setHttpClientForTesting(http.Client client) => _httpClient = client;
 
+  String? _testSupabaseUrl;
+  String? _testSupabaseKey;
+
+  bool get _hasSupabase => _testSupabaseUrl != null || AppConfig.hasSupabase;
+  String get _supabaseUrl => _testSupabaseUrl ?? AppConfig.supabaseUrl;
+  String get _supabaseKey => _testSupabaseKey ?? AppConfig.supabaseAnonKey;
+
+  @visibleForTesting
+  void enableSupabaseForTesting({required String url, required String key}) {
+    _testSupabaseUrl = url;
+    _testSupabaseKey = key;
+  }
+
+  @visibleForTesting
+  void resetForTesting() {
+    _testSupabaseUrl = null;
+    _testSupabaseKey = null;
+    _customKeywordsFuture = null;
+    _cachedCustomEngine = null;
+    _customHaramKeywords.clear();
+    _customSuspiciousKeywords.clear();
+    _customHaramVariants.clear();
+    _customSuspiciousVariants.clear();
+  }
+
   static const String _offBaseUrl =
       'https://world.openfoodfacts.org/api/v0/product';
   static const String _obfBaseUrl =
@@ -299,17 +324,17 @@ class ProductService {
   // This saves an invocation (Supabase free tier: 500K/month) for barcodes that
   // are already cached in the shared DB — no OFf fetch, no AI call needed.
   Future<Product?> _fetchFromSharedDb(String barcode) async {
-    if (!AppConfig.hasSupabase) return null;
+    if (!_hasSupabase) return null;
     try {
       final response = await _httpClient
           .get(
             Uri.parse(
-              '${AppConfig.supabaseUrl}/rest/v1/products'
+              '$_supabaseUrl/rest/v1/products'
               '?barcode=eq.${Uri.encodeComponent(barcode)}&select=*&limit=1',
             ),
             headers: {
-              'Authorization': 'Bearer ${AppConfig.supabaseAnonKey}',
-              'apikey': AppConfig.supabaseAnonKey,
+              'Authorization': 'Bearer $_supabaseKey',
+              'apikey': _supabaseKey,
             },
           )
           .timeout(const Duration(seconds: 10));
@@ -341,6 +366,7 @@ class ProductService {
             : 'keyword',
         'requiresHalalCert': row['requires_halal_cert'] ?? false,
         'isManaged': row['is_managed'] ?? false,
+        'needsReanalysis': row['needs_reanalysis'] ?? false,
       });
     } catch (_) {
       return null;
@@ -363,13 +389,13 @@ class ProductService {
     String barcode, {
     bool force = false,
   }) async {
-    if (!AppConfig.hasSupabase) return null;
+    if (!_hasSupabase) return null;
     try {
       final response = await _httpClient
           .post(
-            Uri.parse('${AppConfig.supabaseUrl}/functions/v1/lookup-product'),
+            Uri.parse('$_supabaseUrl/functions/v1/lookup-product'),
             headers: {
-              'Authorization': 'Bearer ${AppConfig.supabaseAnonKey}',
+              'Authorization': 'Bearer $_supabaseKey',
               'Content-Type': 'application/json',
             },
             body: jsonEncode({'barcode': barcode, if (force) 'force': true}),
@@ -458,7 +484,10 @@ class ProductService {
             await _cache.saveProduct(barcode, safe);
             return safe;
           }
-          return _mergeApprovedImages(cached, dbProduct);
+          if (dbProduct == null || !dbProduct.needsReanalysis) {
+            return _mergeApprovedImages(cached, dbProduct);
+          }
+          // needsReanalysis=true: fall through so the Edge Function re-analyses
         }
         hadStaleUnknown = true;
       }
@@ -471,12 +500,12 @@ class ProductService {
         '[Lookup $barcode] Step 2 (sharedDB): '
         'isUnknown=${dbProduct.isUnknown} isNonFood=${dbProduct.isNonFood}',
       );
-      if (!dbProduct.isUnknown) {
+      if (!dbProduct.isUnknown && !dbProduct.needsReanalysis) {
         final safe = _applyKeywordSafety(dbProduct);
         await _cache.saveProduct(barcode, safe);
         return safe;
       }
-      hadStaleUnknown = true;
+      if (dbProduct.isUnknown) hadStaleUnknown = true;
     }
 
     debugPrint(
