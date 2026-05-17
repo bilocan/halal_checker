@@ -38,8 +38,9 @@ class SeedDataService {
     final raw = await rootBundle.loadString('test_data/seed_barcodes.txt');
     final barcodes = raw
         .split('\n')
+        .map((l) => l.contains('#') ? l.substring(0, l.indexOf('#')) : l)
         .map((l) => l.trim())
-        .where((l) => l.isNotEmpty && !l.startsWith('#'))
+        .where((l) => l.isNotEmpty)
         .toList();
 
     if (barcodes.isEmpty) return;

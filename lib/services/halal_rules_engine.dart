@@ -80,6 +80,45 @@ class HalalRulesEngine {
   static bool isFattyAlcohol(String ingredient) =>
       IngredientKeywords.fattyAlcoholPrefix.hasMatch(ingredient);
 
+  // Negation words in DE/FR/NL/EN/IT/ES/TR/CS/SR — word-boundary aware.
+  // Used to suppress false positives like "enthält keine Zutaten vom Schwein".
+  static final RegExp _negationWord = RegExp(
+    r'\b(?:keine?|nicht|ohne|frei\s+von|sans|pas|geen|zonder|vrij\s+van|'
+    r'no|not|without|free\s+from|senza|sin|içermez|içermemektedir|'
+    r'neobsahuje|nema)\b',
+    caseSensitive: false,
+  );
+
+  // Returns the first variant of [canonical] that matches [valueLower], or null.
+  String? _matchingVariant(String valueLower, String canonical) {
+    final variants =
+        rules.haramVariants[canonical] ??
+        rules.suspiciousVariants[canonical] ??
+        [canonical];
+    for (final v in variants) {
+      if (_matchesVariant(valueLower, v)) return v;
+    }
+    return null;
+  }
+
+  // True when the [variant] match in [chunkLower] is preceded by a negation word,
+  // meaning the sentence explicitly states the ingredient is absent.
+  static bool _isNegated(String chunkLower, String variant) {
+    final int idx;
+    if (variant.contains(' ')) {
+      idx = chunkLower.indexOf(variant.toLowerCase());
+    } else {
+      final escaped = RegExp.escape(variant);
+      final m = RegExp(
+        '${IngredientKeywords.wPre}$escaped${IngredientKeywords.wPost}',
+        caseSensitive: false,
+      ).firstMatch(chunkLower);
+      idx = m?.start ?? -1;
+    }
+    if (idx < 0) return false;
+    return _negationWord.hasMatch(chunkLower.substring(0, idx));
+  }
+
   static bool _matchesVariant(String value, String variant) {
     if (variant.contains(' ')) {
       return value.toLowerCase().contains(variant.toLowerCase());
@@ -116,7 +155,8 @@ class HalalRulesEngine {
 
       var matchedHaram = false;
       for (final entry in rules.haram.entries) {
-        if (matchesKeyword(lower, entry.key)) {
+        final variant = _matchingVariant(lower, entry.key);
+        if (variant != null && !_isNegated(lower, variant)) {
           warnings[ingredient] = entry.value;
           if (_needsTranslation(ingredient, entry.key)) {
             translations[ingredient] = entry.key;
@@ -137,7 +177,8 @@ class HalalRulesEngine {
       if (matchedHaram) continue;
 
       for (final entry in rules.suspicious.entries) {
-        if (matchesKeyword(lower, entry.key)) {
+        final variant = _matchingVariant(lower, entry.key);
+        if (variant != null && !_isNegated(lower, variant)) {
           warnings[ingredient] = entry.value;
           if (_needsTranslation(ingredient, entry.key)) {
             translations[ingredient] = entry.key;

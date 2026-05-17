@@ -37,6 +37,57 @@ void main() {
       expect(result.haram, isEmpty);
       expect(result.verdict, HalalRuleVerdict.halal);
     });
+
+    group('negation suppression', () {
+      // Regression: barcode 8690766143732 — ingredient text contains allergen-free
+      // declarations ("enthält keine Zutaten vom Schwein", "ne contient pas … porc")
+      // which were falsely triggering the pork keyword.
+      test('German "keine" before keyword suppresses haram match', () {
+        final result = engine.analyzeIngredients([
+          'enthält keine zutaten vom schwein',
+        ]);
+        expect(result.verdict, HalalRuleVerdict.halal);
+        expect(result.haram, isEmpty);
+      });
+
+      test('French "pas" before keyword suppresses haram match', () {
+        final result = engine.analyzeIngredients([
+          "ne contient pas d'ingrédients provenant de porc",
+        ]);
+        expect(result.verdict, HalalRuleVerdict.halal);
+        expect(result.haram, isEmpty);
+      });
+
+      test('Dutch "geen" before keyword suppresses haram match', () {
+        final result = engine.analyzeIngredients(['bevat geen varkensvlees']);
+        expect(result.verdict, HalalRuleVerdict.halal);
+        expect(result.haram, isEmpty);
+      });
+
+      test('English "no" before keyword suppresses haram match', () {
+        final result = engine.analyzeIngredients(['contains no pork']);
+        expect(result.verdict, HalalRuleVerdict.halal);
+        expect(result.haram, isEmpty);
+      });
+
+      test('actual pork ingredient without negation is still flagged', () {
+        final result = engine.analyzeIngredients(['schwein', 'salz']);
+        expect(result.verdict, HalalRuleVerdict.haram);
+        expect(result.haram, contains('schwein'));
+      });
+
+      test(
+        'negation in one chunk does not suppress a real match in another',
+        () {
+          final result = engine.analyzeIngredients([
+            'enthält keine zutaten vom schwein',
+            'schweinefleisch',
+          ]);
+          expect(result.verdict, HalalRuleVerdict.haram);
+          expect(result.haram, contains('schweinefleisch'));
+        },
+      );
+    });
   });
 
   group('HalalRulesEngine custom rule sets', () {
