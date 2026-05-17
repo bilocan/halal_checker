@@ -163,7 +163,7 @@ class AppLocalizations {
       'explanationClean':
           'No ingredients matched known animal-derived or alcohol-related keywords. This is an automated assessment based on ingredient text.',
       'explanationSuspiciousOnly':
-          'No definitely haram ingredients found, but some ingredients may be animal-derived. This is an automated assessment based on ingredient text.',
+          'No definitely haram ingredients found, but {ingredients} may be animal-derived. This is an automated assessment based on ingredient text.',
       'explanationHaram':
           'This product contains one or more ingredients that may be animal-derived or alcohol-related. Review the flagged ingredients below for details.',
       'unknown': '? UNKNOWN',
@@ -416,7 +416,7 @@ class AppLocalizations {
       'explanationClean':
           'Bilinen hayvansal kaynaklı veya alkol içerikli anahtar kelimelerle eşleşen içerik bulunamadı. Bu, içerik metnine dayalı otomatik bir değerlendirmedir.',
       'explanationSuspiciousOnly':
-          'Kesinlikle haram içerik bulunamadı, ancak bazı içerikler hayvansal kaynaklı olabilir. Bu, içerik metnine dayalı otomatik bir değerlendirmedir.',
+          'Kesinlikle haram içerik bulunamadı, ancak {ingredients} hayvansal kaynaklı olabilir. Bu, içerik metnine dayalı otomatik bir değerlendirmedir.',
       'explanationHaram':
           'Bu ürün, hayvansal kaynaklı veya alkol içerikli olabilecek bir veya daha fazla içerik barındırmaktadır. Ayrıntılar için işaretlenen içerikleri inceleyin.',
       'unknown': '? BİLİNMİYOR',
@@ -677,7 +677,7 @@ class AppLocalizations {
       'explanationClean':
           'Keine Zutaten stimmten mit bekannten tierischen oder alkoholbezogenen Begriffen überein. Dies ist eine automatische Bewertung anhand des Zutatentexts.',
       'explanationSuspiciousOnly':
-          'Keine eindeutig verbotenen Zutaten gefunden, aber einige könnten tierischen Ursprungs sein. Dies ist eine automatische Bewertung anhand des Zutatentexts.',
+          'Keine eindeutig verbotenen Zutaten gefunden, aber {ingredients} könnten tierischen Ursprungs sein. Dies ist eine automatische Bewertung anhand des Zutatentexts.',
       'explanationHaram':
           'Dieses Produkt enthält eine oder mehrere Zutaten, die tierischen Ursprungs oder alkoholbezogen sein könnten. Prüfen Sie die markierten Zutaten.',
       'unknown': '? UNBEKANNT',
@@ -921,8 +921,9 @@ class AppLocalizations {
   String get deletedFromHistory => _translate('deletedFromHistory');
   String get undo => _translate('undo');
   String get explanationClean => _translate('explanationClean');
-  String get explanationSuspiciousOnly =>
-      _translate('explanationSuspiciousOnly');
+  String explanationSuspiciousOnlyWith(List<String> ingredients) => _translate(
+    'explanationSuspiciousOnly',
+  ).replaceAll('{ingredients}', ingredients.join(', '));
   String get explanationHaram => _translate('explanationHaram');
   String get unknown => _translate('unknown');
   String get noCert => _translate('noCert');

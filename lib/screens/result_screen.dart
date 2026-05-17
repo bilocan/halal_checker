@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
@@ -13,6 +15,7 @@ import '../models/product.dart';
 import '../models/feedback.dart';
 import '../models/product_analysis.dart';
 import '../services/analysis_service.dart';
+import '../services/cache_service.dart';
 import '../services/auth_service.dart';
 import '../services/community_service.dart';
 import '../services/feedback_service.dart';
@@ -484,18 +487,6 @@ class _ResultScreenState extends State<ResultScreen> {
   Future<void> _refreshProductData() async {
     if (_isRefreshing) return;
 
-    // Managed products cannot be refreshed from OFF.
-    if (widget.product?.isManaged == true) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context).managedProductNoRefresh),
-          ),
-        );
-      }
-      return;
-    }
-
     setState(() => _isRefreshing = true);
 
     try {
@@ -537,6 +528,122 @@ class _ResultScreenState extends State<ResultScreen> {
       if (mounted) {
         setState(() => _isRefreshing = false);
       }
+    }
+  }
+
+  Future<void> _showLocalDbDebug() async {
+    final barcode = widget.barcode;
+    final cacheRaw = await CacheService().getRaw(barcode);
+    final dbProduct = await _productService.fetchFromSharedDbForDebug(barcode);
+
+    if (!mounted) return;
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Local DB — $barcode'),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                '── SharedPreferences cache ──',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 4),
+              if (cacheRaw == null)
+                const Text('(empty)', style: TextStyle(color: Colors.grey))
+              else
+                _debugField('isHalal', _jsonField(cacheRaw, 'isHalal')),
+              if (cacheRaw != null)
+                _debugField('isUnknown', _jsonField(cacheRaw, 'isUnknown')),
+              if (cacheRaw != null)
+                _debugField('isManaged', _jsonField(cacheRaw, 'isManaged')),
+              if (cacheRaw != null)
+                _debugField(
+                  'ingredients#',
+                  _jsonListLen(cacheRaw, 'ingredients'),
+                ),
+              if (cacheRaw != null)
+                _debugField('_cachedAt', _jsonField(cacheRaw, '_cachedAt')),
+              const SizedBox(height: 12),
+              const Text(
+                '── Remote DB (products table) ──',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 4),
+              if (dbProduct == null)
+                const Text('(not found)', style: TextStyle(color: Colors.grey))
+              else ...[
+                _debugField('isHalal', '${dbProduct.isHalal}'),
+                _debugField('isUnknown', '${dbProduct.isUnknown}'),
+                _debugField('isManaged', '${dbProduct.isManaged}'),
+                _debugField('ingredients#', '${dbProduct.ingredients.length}'),
+                _debugField(
+                  'ingredients',
+                  dbProduct.ingredients.take(5).join(', '),
+                ),
+              ],
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () async {
+              await CacheService().removeProduct(barcode);
+              if (ctx.mounted) Navigator.pop(ctx);
+              if (mounted) {
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(const SnackBar(content: Text('Cache cleared')));
+              }
+            },
+            child: const Text('Clear cache'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static Widget _debugField(String label, String value) => Padding(
+    padding: const EdgeInsets.only(bottom: 2),
+    child: RichText(
+      text: TextSpan(
+        style: const TextStyle(
+          fontSize: 12,
+          color: Colors.black87,
+          fontFamily: 'monospace',
+        ),
+        children: [
+          TextSpan(
+            text: '$label: ',
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+          TextSpan(text: value),
+        ],
+      ),
+    ),
+  );
+
+  static String _jsonField(String raw, String key) {
+    try {
+      final m = (jsonDecode(raw) as Map<String, dynamic>);
+      return '${m[key]}';
+    } catch (_) {
+      return '?';
+    }
+  }
+
+  static String _jsonListLen(String raw, String key) {
+    try {
+      final m = (jsonDecode(raw) as Map<String, dynamic>);
+      final v = m[key];
+      return v is List ? '${v.length}' : '?';
+    } catch (_) {
+      return '?';
     }
   }
 
@@ -678,6 +785,12 @@ class _ResultScreenState extends State<ResultScreen> {
         backgroundColor: kGreen,
         foregroundColor: Colors.white,
         actions: [
+          if (kDebugMode)
+            IconButton(
+              icon: const Icon(Icons.bug_report_outlined),
+              onPressed: _showLocalDbDebug,
+              tooltip: 'Local DB debug',
+            ),
           IconButton(
             icon: Icon(_isFlagged ? Icons.bookmark : Icons.bookmark_border),
             onPressed: _toggleFlag,
@@ -2614,7 +2727,7 @@ class _ResultScreenState extends State<ResultScreen> {
     if (isHalal) {
       return suspiciousIngredients.isEmpty
           ? loc.explanationClean
-          : loc.explanationSuspiciousOnly;
+          : loc.explanationSuspiciousOnlyWith(suspiciousIngredients);
     }
     return loc.explanationHaram;
   }

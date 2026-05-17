@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
@@ -193,17 +194,105 @@ class ProductService {
   }
 
   Future<Product?> refreshProduct(String barcode) async {
-    // Managed products are never re-fetched from OFF.
-    // Return the DB row directly so admin data is preserved.
+    await _loadCustomKeywords();
+    await _cache.removeProduct(barcode);
+
+    // Managed products: re-run keyword analysis on the stored ingredients and
+    // write the updated verdict back to Supabase. No OFF re-fetch needed.
     final dbProduct = await _fetchFromSharedDb(barcode);
     if (dbProduct != null && dbProduct.isManaged) {
-      debugPrint('[Refresh $barcode] managed product — returning DB row as-is');
-      await _cache.saveProduct(barcode, dbProduct);
-      return dbProduct;
+      final reanalyzed = _reanalyzeStoredProduct(dbProduct);
+      await _patchManagedProductAnalysis(barcode, reanalyzed);
+      await _cache.saveProduct(barcode, reanalyzed);
+      if (kDebugMode) {
+        await TestProductRepository.instance.upsert(reanalyzed);
+      }
+      debugPrint('[Refresh $barcode] managed product — re-analyzed and saved');
+      return reanalyzed;
     }
 
-    await _cache.removeProduct(barcode);
     return _getProduct(barcode, forceBackendRefresh: true);
+  }
+
+  Product _reanalyzeStoredProduct(Product product) {
+    if (product.ingredients.isEmpty) return product;
+    final kwResult = analyzeWithKeywords(product.ingredients);
+    final customResult = _customKeywordAnalysis(product.ingredients);
+    final allHaram = {...kwResult.haram, ...customResult.haram}.toList();
+    final allSuspicious = {
+      ...kwResult.suspicious,
+      ...customResult.suspicious,
+    }.toList();
+
+    // Re-derive requiresHalalCert from name + labels. OFF category data is not
+    // stored, so we fall back to name-based detection only.
+    final nameLower = product.name.toLowerCase();
+    final nameIsAnimalProduct = _nameIndicatesAnimalProduct(nameLower);
+    final hasVeganOrVegetarianEvidence =
+        product.labels.any(
+          (l) =>
+              FoodCategories.veganOrVegetarianLabels.contains(l.toLowerCase()),
+        ) ||
+        _nameIndicatesVeganOrVegetarian(nameLower);
+    final hasHalalCert = product.labels.any(
+      (l) => FoodCategories.halalCertificationLabels.contains(l.toLowerCase()),
+    );
+    final requiresHalalCert =
+        nameIsAnimalProduct &&
+        !hasVeganOrVegetarianEvidence &&
+        !hasHalalCert &&
+        allHaram.isEmpty;
+
+    return product.copyWith(
+      isHalal: allHaram.isEmpty && !requiresHalalCert,
+      isUnknown: false,
+      haramIngredients: allHaram,
+      suspiciousIngredients: allSuspicious,
+      ingredientWarnings: {...kwResult.warnings, ...customResult.warnings},
+      ingredientTranslations: {
+        ...kwResult.translations,
+        ...customResult.translations,
+      },
+      explanation: kwResult.explanation,
+      analyzedByAI: false,
+      analysisMethod: 'keyword',
+      requiresHalalCert: requiresHalalCert,
+    );
+  }
+
+  Future<void> _patchManagedProductAnalysis(
+    String barcode,
+    Product product,
+  ) async {
+    if (!AppConfig.hasSupabase) return;
+    try {
+      await _httpClient
+          .patch(
+            Uri.parse(
+              '${AppConfig.supabaseUrl}/rest/v1/products'
+              '?barcode=eq.${Uri.encodeComponent(barcode)}',
+            ),
+            headers: {
+              'Authorization': 'Bearer ${AppConfig.supabaseAnonKey}',
+              'apikey': AppConfig.supabaseAnonKey,
+              'Content-Type': 'application/json',
+            },
+            body: jsonEncode({
+              'is_halal': product.isHalal,
+              'is_unknown': product.isUnknown,
+              'haram_ingredients': jsonEncode(product.haramIngredients),
+              'suspicious_ingredients': jsonEncode(
+                product.suspiciousIngredients,
+              ),
+              'ingredient_warnings': jsonEncode(product.ingredientWarnings),
+              'explanation': product.explanation,
+              'analyzed_by_ai': false,
+              'requires_halal_cert': product.requiresHalalCert,
+              'fetched_at': DateTime.now().toIso8601String(),
+            }),
+          )
+          .timeout(const Duration(seconds: 10));
+    } catch (_) {}
   }
 
   // Read from the shared products table directly, bypassing the Edge Function.
@@ -306,6 +395,9 @@ class ProductService {
       return null;
     }
   }
+
+  Future<Product?> fetchFromSharedDbForDebug(String barcode) =>
+      _fetchFromSharedDb(barcode);
 
   Future<Product?> getProduct(String barcode) =>
       _getProduct(barcode, forceBackendRefresh: false);
