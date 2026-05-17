@@ -256,6 +256,7 @@ function toProduct(row: Record<string, any>) {
     analysisMethod:        row.analyzed_by_ai ? 'ai' : 'keyword',
     requiresHalalCert:     row.requires_halal_cert ?? false,
     isManaged:             row.is_managed ?? false,
+    needsReanalysis:       row.needs_reanalysis ?? false,
   }
 }
 
@@ -294,6 +295,81 @@ Deno.serve(async (req) => {
       console.log(`[${barcode}] managed product — returning DB row as-is`)
       return new Response(
         JSON.stringify({ product: toProduct(cached) }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      )
+    }
+
+    // Product fields were manually edited — re-run the rules engine on the
+    // stored ingredients without touching Open Food Facts or AI.
+    if (cached?.needs_reanalysis) {
+      console.log(`[${barcode}] needs_reanalysis — re-running rules engine on stored data`)
+
+      const { data: kwRows } = await supabase
+        .from('keywords')
+        .select('canonical, category, reason, variants')
+      const reHaramEntries: [string, string, ...string[]][] = []
+      const reSuspiciousEntries: [string, string, ...string[]][] = []
+      if (kwRows) {
+        for (const kw of kwRows) {
+          const variants = Array.isArray(kw.variants) && kw.variants.length > 0
+            ? kw.variants as string[]
+            : [kw.canonical as string]
+          const entry: [string, string, ...string[]] = [kw.canonical as string, kw.reason as string, ...variants]
+          if (kw.category === 'haram') reHaramEntries.push(entry)
+          else reSuspiciousEntries.push(entry)
+        }
+      }
+
+      const storedIngredients: string[] = Array.isArray(cached.ingredients) ? cached.ingredients : []
+      const kw = keywordAnalysis(storedIngredients, reHaramEntries, reSuspiciousEntries)
+
+      let reHalal      = kw.isHalal
+      let reUnknown    = kw.isUnknown
+      let reHaram      = kw.haram
+      let reSuspicious = kw.suspicious
+      let reWarnings   = kw.warnings
+      let reExplanation = kw.explanation
+
+      if (reUnknown) {
+        const nameKw = keywordAnalysis([(cached.name ?? '').toLowerCase()], reHaramEntries, reSuspiciousEntries)
+        if (!nameKw.isHalal) {
+          reHalal = false; reUnknown = false
+          reHaram = nameKw.haram; reWarnings = nameKw.warnings
+          reExplanation = `No ingredient list found, but the product name contains a haram indicator: ${nameKw.haram.join(', ')}.`
+        }
+      }
+
+      const reRow = {
+        barcode:               cached.barcode,
+        name:                  cached.name,
+        ingredients:           cached.ingredients,
+        is_halal:              reHalal,
+        is_unknown:            reUnknown,
+        is_non_food:           cached.is_non_food,
+        haram_ingredients:     reHaram,
+        suspicious_ingredients: reSuspicious,
+        ingredient_warnings:   reWarnings,
+        labels:                cached.labels,
+        image_url:             cached.image_url,
+        image_front_url:       cached.image_front_url,
+        image_ingredients_url: cached.image_ingredients_url,
+        image_nutrition_url:   cached.image_nutrition_url,
+        explanation:           reExplanation,
+        analyzed_by_ai:        false,
+        requires_halal_cert:   cached.requires_halal_cert,
+        is_managed:            cached.is_managed,
+        needs_reanalysis:      false,
+        fetched_at:            new Date().toISOString(),
+      }
+
+      const { data: reUpserted } = await supabase
+        .from('products')
+        .upsert(reRow)
+        .select()
+        .maybeSingle()
+
+      return new Response(
+        JSON.stringify({ product: toProduct(reUpserted ?? reRow) }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       )
     }
@@ -699,7 +775,7 @@ Deno.serve(async (req) => {
       explanation,
       analyzed_by_ai:         analyzedByAI,
       requires_halal_cert:    requiresHalalCert,
-      requires_halal_cert:    requiresHalalCert,
+      needs_reanalysis:       false,
       fetched_at:             new Date().toISOString(),
     }
 

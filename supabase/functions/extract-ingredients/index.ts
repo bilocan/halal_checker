@@ -88,7 +88,9 @@ async function extractFromSingleImage(
   geminiEnabled: boolean,
   claudeKey: string | null,
   claudeEnabled: boolean,
-): Promise<string | null> {
+): Promise<{ text: string | null; hadError: boolean }> {
+  let hadError = false
+
   // Try Gemini first (free tier)
   if (geminiEnabled && geminiKey) {
     try {
@@ -118,7 +120,7 @@ async function extractFromSingleImage(
             const p = JSON.parse(text.replace(/```json\n?|\n?```/g, '').trim())
             if (p.ingredients_text && looksLikeIngredients(p.ingredients_text)) {
               console.log('[extract-ingredients] Gemini vision: success')
-              return p.ingredients_text
+              return { text: p.ingredients_text, hadError: false }
             }
             if (p.ingredients_text) {
               console.log('[extract-ingredients] Gemini vision: extracted text failed validation (likely nutrition table)')
@@ -128,10 +130,12 @@ async function extractFromSingleImage(
           }
         } else {
           console.error(`[extract-ingredients] Gemini vision: HTTP ${geminiRes.status}`)
+          hadError = true
         }
       }
     } catch (e) {
       console.error('[extract-ingredients] Gemini vision: exception:', e)
+      hadError = true
     }
   }
 
@@ -139,7 +143,7 @@ async function extractFromSingleImage(
   if (claudeEnabled && claudeKey) {
     try {
       const img = await resolveImage(imageUrl, imageBase64)
-      if (!img) return null
+      if (!img) return { text: null, hadError }
       const imageContent = {
         type: 'image' as const,
         source: { type: 'base64' as const, media_type: img.mimeType as 'image/jpeg', data: img.base64 },
@@ -171,7 +175,7 @@ async function extractFromSingleImage(
           const p = JSON.parse(text.replace(/```json\n?|\n?```/g, '').trim())
           if (p.ingredients_text && looksLikeIngredients(p.ingredients_text)) {
             console.log('[extract-ingredients] Claude vision: success')
-            return p.ingredients_text
+            return { text: p.ingredients_text, hadError: false }
           }
           if (p.ingredients_text) {
             console.log('[extract-ingredients] Claude vision: extracted text failed validation (likely nutrition table)')
@@ -182,13 +186,15 @@ async function extractFromSingleImage(
       } else {
         const errBody = await claudeRes.text()
         console.error(`[extract-ingredients] Claude vision: HTTP ${claudeRes.status} — ${errBody}`)
+        hadError = true
       }
     } catch (e) {
       console.error('[extract-ingredients] Claude vision: exception:', e)
+      hadError = true
     }
   }
 
-  return null
+  return { text: null, hadError }
 }
 
 Deno.serve(async (req) => {
@@ -216,21 +222,23 @@ Deno.serve(async (req) => {
 
     // Single image (base64 or URL) — direct extraction
     if (imageBase64 || (imageUrl && imageUrls.length === 0)) {
-      const result = await extractFromSingleImage(imageUrl, imageBase64, geminiKey, geminiEnabled, claudeKey, claudeEnabled)
+      const { text, hadError } = await extractFromSingleImage(imageUrl, imageBase64, geminiKey, geminiEnabled, claudeKey, claudeEnabled)
       return new Response(
-        JSON.stringify({ ingredients_text: result }),
+        JSON.stringify({ ingredients_text: text, reason: text ? undefined : (hadError ? 'model_error' : 'not_found') }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       )
     }
 
     // Multiple image URLs — try each in order until one yields valid ingredients
     const candidates = imageUrl ? [imageUrl, ...imageUrls.filter(u => u !== imageUrl)] : imageUrls
+    let anyError = false
     for (const url of candidates) {
       console.log(`[extract-ingredients] Trying image: ${url}`)
-      const result = await extractFromSingleImage(url, null, geminiKey, geminiEnabled, claudeKey, claudeEnabled)
-      if (result) {
+      const { text, hadError } = await extractFromSingleImage(url, null, geminiKey, geminiEnabled, claudeKey, claudeEnabled)
+      if (hadError) anyError = true
+      if (text) {
         return new Response(
-          JSON.stringify({ ingredients_text: result }),
+          JSON.stringify({ ingredients_text: text }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
         )
       }
@@ -238,7 +246,7 @@ Deno.serve(async (req) => {
 
     // None of the images yielded valid ingredients
     return new Response(
-      JSON.stringify({ ingredients_text: null }),
+      JSON.stringify({ ingredients_text: null, reason: anyError ? 'model_error' : 'not_found' }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     )
   } catch (err) {
