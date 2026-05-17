@@ -15,3 +15,4 @@
 # --- add new barcodes below ---
 90098369       # mineral water
 742948341318   # non-food product
+8690766143732  # milk choc w/ pistachio & kadayif — had "keine Schwein / pas porc" false positive (negation fix)
