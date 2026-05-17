@@ -257,6 +257,7 @@ function toProduct(row: Record<string, any>) {
     requiresHalalCert:     row.requires_halal_cert ?? false,
     isManaged:             row.is_managed ?? false,
     needsReanalysis:       row.needs_reanalysis ?? false,
+    lastAnalysedAt:        row.last_analysed_at ?? null,
   }
 }
 
@@ -359,6 +360,7 @@ Deno.serve(async (req) => {
         requires_halal_cert:   cached.requires_halal_cert,
         is_managed:            cached.is_managed,
         needs_reanalysis:      false,
+        last_analysed_at:      new Date().toISOString(),
         fetched_at:            new Date().toISOString(),
       }
 
@@ -776,6 +778,7 @@ Deno.serve(async (req) => {
       analyzed_by_ai:         analyzedByAI,
       requires_halal_cert:    requiresHalalCert,
       needs_reanalysis:       false,
+      last_analysed_at:       new Date().toISOString(),
       fetched_at:             new Date().toISOString(),
     }
 

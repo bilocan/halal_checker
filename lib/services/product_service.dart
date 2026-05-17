@@ -313,6 +313,7 @@ class ProductService {
               'explanation': product.explanation,
               'analyzed_by_ai': false,
               'requires_halal_cert': product.requiresHalalCert,
+              'last_analysed_at': DateTime.now().toIso8601String(),
               'fetched_at': DateTime.now().toIso8601String(),
             }),
           )
@@ -367,6 +368,7 @@ class ProductService {
         'requiresHalalCert': row['requires_halal_cert'] ?? false,
         'isManaged': row['is_managed'] ?? false,
         'needsReanalysis': row['needs_reanalysis'] ?? false,
+        'lastAnalysedAt': row['last_analysed_at'],
       });
     } catch (_) {
       return null;

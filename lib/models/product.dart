@@ -37,6 +37,11 @@ class Product {
   /// after it re-runs keyword analysis and writes the fresh verdict.
   final bool needsReanalysis;
 
+  /// When the rules engine (or AI) last analysed this product.
+  /// Null for legacy records that predate this field.
+  /// Distinct from fetched_at, which tracks the Open Food Facts fetch time.
+  final DateTime? lastAnalysedAt;
+
   Product({
     required this.barcode,
     required this.name,
@@ -59,6 +64,7 @@ class Product {
     this.requiresHalalCert = false,
     this.isManaged = false,
     this.needsReanalysis = false,
+    this.lastAnalysedAt,
   });
 
   Product copyWith({
@@ -83,6 +89,7 @@ class Product {
     bool? requiresHalalCert,
     bool? isManaged,
     bool? needsReanalysis,
+    DateTime? lastAnalysedAt,
   }) => Product(
     barcode: barcode ?? this.barcode,
     name: name ?? this.name,
@@ -106,6 +113,7 @@ class Product {
     requiresHalalCert: requiresHalalCert ?? this.requiresHalalCert,
     isManaged: isManaged ?? this.isManaged,
     needsReanalysis: needsReanalysis ?? this.needsReanalysis,
+    lastAnalysedAt: lastAnalysedAt ?? this.lastAnalysedAt,
   );
 
   Map<String, dynamic> toJson() => {
@@ -130,6 +138,8 @@ class Product {
     if (requiresHalalCert) 'requiresHalalCert': requiresHalalCert,
     if (isManaged) 'isManaged': isManaged,
     if (needsReanalysis) 'needsReanalysis': needsReanalysis,
+    if (lastAnalysedAt != null)
+      'lastAnalysedAt': lastAnalysedAt!.toIso8601String(),
   };
 
   factory Product.fromJson(Map<String, dynamic> json) => Product(
@@ -160,5 +170,8 @@ class Product {
     requiresHalalCert: json['requiresHalalCert'] as bool? ?? false,
     isManaged: json['isManaged'] as bool? ?? false,
     needsReanalysis: json['needsReanalysis'] as bool? ?? false,
+    lastAnalysedAt: json['lastAnalysedAt'] != null
+        ? DateTime.tryParse(json['lastAnalysedAt'] as String)
+        : null,
   );
 }
