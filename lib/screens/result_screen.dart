@@ -2727,7 +2727,7 @@ class _ResultScreenState extends State<ResultScreen> {
     if (isHalal) {
       return suspiciousIngredients.isEmpty
           ? loc.explanationClean
-          : loc.explanationSuspiciousOnly;
+          : loc.explanationSuspiciousOnlyWith(suspiciousIngredients);
     }
     return loc.explanationHaram;
   }

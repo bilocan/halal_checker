@@ -197,50 +197,73 @@ class ProductService {
     await _loadCustomKeywords();
     await _cache.removeProduct(barcode);
 
-    // Managed products are never re-fetched from OFF.
-    // Return the DB row directly so admin data is preserved.
-    var dbProduct = await _fetchFromSharedDb(barcode);
+    // Managed products: re-run keyword analysis on the stored ingredients and
+    // write the updated verdict back to Supabase. No OFF re-fetch needed.
+    final dbProduct = await _fetchFromSharedDb(barcode);
     if (dbProduct != null && dbProduct.isManaged) {
-      // Heal stale DB rows from before the is_unknown / isHalal fixes.
-      var needsPatch = false;
-      if (dbProduct.isUnknown && dbProduct.ingredients.isNotEmpty) {
-        dbProduct = dbProduct.copyWith(isUnknown: false);
-        needsPatch = true;
+      final reanalyzed = _reanalyzeStoredProduct(dbProduct);
+      await _patchManagedProductAnalysis(barcode, reanalyzed);
+      await _cache.saveProduct(barcode, reanalyzed);
+      if (kDebugMode) {
+        await TestProductRepository.instance.upsert(reanalyzed);
       }
-      // is_halal was stored incorrectly when a suspicious-only verdict was
-      // written as false (suspicious != halal). Re-derive from ingredients.
-      if (!dbProduct.isHalal &&
-          dbProduct.haramIngredients.isEmpty &&
-          !dbProduct.requiresHalalCert &&
-          !dbProduct.isNonFood &&
-          dbProduct.ingredients.isNotEmpty) {
-        final reanalyzed = analyzeWithKeywords(dbProduct.ingredients);
-        dbProduct = dbProduct.copyWith(isHalal: reanalyzed.isHalal);
-        needsPatch = true;
-      }
-      if (needsPatch) {
-        unawaited(
-          _patchManagedProduct(
-            barcode,
-            isUnknown: dbProduct.isUnknown,
-            isHalal: dbProduct.isHalal,
-          ),
-        );
-      }
-      debugPrint('[Refresh $barcode] managed product — returning DB row');
-      final safe = _applyKeywordSafety(dbProduct);
-      await _cache.saveProduct(barcode, safe);
-      return safe;
+      debugPrint('[Refresh $barcode] managed product — re-analyzed and saved');
+      return reanalyzed;
     }
 
     return _getProduct(barcode, forceBackendRefresh: true);
   }
 
-  Future<void> _patchManagedProduct(
-    String barcode, {
-    required bool isUnknown,
-    required bool isHalal,
-  }) async {
+  Product _reanalyzeStoredProduct(Product product) {
+    if (product.ingredients.isEmpty) return product;
+    final kwResult = analyzeWithKeywords(product.ingredients);
+    final customResult = _customKeywordAnalysis(product.ingredients);
+    final allHaram = {...kwResult.haram, ...customResult.haram}.toList();
+    final allSuspicious = {
+      ...kwResult.suspicious,
+      ...customResult.suspicious,
+    }.toList();
+
+    // Re-derive requiresHalalCert from name + labels. OFF category data is not
+    // stored, so we fall back to name-based detection only.
+    final nameLower = product.name.toLowerCase();
+    final nameIsAnimalProduct = _nameIndicatesAnimalProduct(nameLower);
+    final hasVeganOrVegetarianEvidence =
+        product.labels.any(
+          (l) =>
+              FoodCategories.veganOrVegetarianLabels.contains(l.toLowerCase()),
+        ) ||
+        _nameIndicatesVeganOrVegetarian(nameLower);
+    final hasHalalCert = product.labels.any(
+      (l) => FoodCategories.halalCertificationLabels.contains(l.toLowerCase()),
+    );
+    final requiresHalalCert =
+        nameIsAnimalProduct &&
+        !hasVeganOrVegetarianEvidence &&
+        !hasHalalCert &&
+        allHaram.isEmpty;
+
+    return product.copyWith(
+      isHalal: allHaram.isEmpty && !requiresHalalCert,
+      isUnknown: false,
+      haramIngredients: allHaram,
+      suspiciousIngredients: allSuspicious,
+      ingredientWarnings: {...kwResult.warnings, ...customResult.warnings},
+      ingredientTranslations: {
+        ...kwResult.translations,
+        ...customResult.translations,
+      },
+      explanation: kwResult.explanation,
+      analyzedByAI: false,
+      analysisMethod: 'keyword',
+      requiresHalalCert: requiresHalalCert,
+    );
+  }
+
+  Future<void> _patchManagedProductAnalysis(
+    String barcode,
+    Product product,
+  ) async {
     if (!AppConfig.hasSupabase) return;
     try {
       await _httpClient
@@ -254,7 +277,19 @@ class ProductService {
               'apikey': AppConfig.supabaseAnonKey,
               'Content-Type': 'application/json',
             },
-            body: jsonEncode({'is_unknown': isUnknown, 'is_halal': isHalal}),
+            body: jsonEncode({
+              'is_halal': product.isHalal,
+              'is_unknown': product.isUnknown,
+              'haram_ingredients': jsonEncode(product.haramIngredients),
+              'suspicious_ingredients': jsonEncode(
+                product.suspiciousIngredients,
+              ),
+              'ingredient_warnings': jsonEncode(product.ingredientWarnings),
+              'explanation': product.explanation,
+              'analyzed_by_ai': false,
+              'requires_halal_cert': product.requiresHalalCert,
+              'fetched_at': DateTime.now().toIso8601String(),
+            }),
           )
           .timeout(const Duration(seconds: 10));
     } catch (_) {}
