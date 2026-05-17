@@ -73,8 +73,13 @@ class KeywordService {
 
   // ── Admin CRUD for keywords table ─────────────────────────────────────────
 
-  static String? get _jwt =>
-      Supabase.instance.client.auth.currentSession?.accessToken;
+  static String? get _jwt {
+    try {
+      return Supabase.instance.client.auth.currentSession?.accessToken;
+    } catch (_) {
+      return null;
+    }
+  }
 
   Map<String, String> get _adminHeaders => {
     'apikey': _anonKey,
