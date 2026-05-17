@@ -27,7 +27,18 @@ jobs:
         run: flutter analyze --no-fatal-infos
 
       - name: Run tests
-        run: flutter test test/services/ test/constants/ test/models/ --coverage --reporter=github
+        run: flutter test test/services/ test/constants/ test/models/ test/config_test.dart --coverage --reporter=github
+
+      - name: Install lcov
+        run: sudo apt-get install -y lcov
+
+      - name: Remove const-only files from coverage
+        run: |
+          lcov --remove coverage/lcov.info \
+            '*/constants/food_categories.dart' \
+            '*/constants/ingredient_keywords.dart' \
+            '*/constants/ingredient_display_names.dart' \
+            --output-file coverage/lcov.info --ignore-errors unused
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5

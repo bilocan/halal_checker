@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../config.dart';
@@ -34,6 +35,21 @@ class IssueReportResult {
 }
 
 class IssueReportService {
+  static http.Client _httpClient = http.Client();
+  static bool _supabaseAvailable = AppConfig.hasSupabase;
+
+  @visibleForTesting
+  static void setHttpClientForTesting(http.Client client) {
+    _httpClient = client;
+    _supabaseAvailable = true;
+  }
+
+  @visibleForTesting
+  static void resetForTesting() {
+    _httpClient = http.Client();
+    _supabaseAvailable = AppConfig.hasSupabase;
+  }
+
   static Future<IssueReportResult> reportWrongResult({
     required String barcode,
     required String productName,
@@ -41,11 +57,11 @@ class IssueReportService {
     required ExpectedResult expectedResult,
     String? note,
   }) async {
-    if (!AppConfig.hasSupabase) {
+    if (!_supabaseAvailable) {
       return const IssueReportResult(success: false);
     }
     try {
-      final response = await http
+      final response = await _httpClient
           .post(
             Uri.parse('${AppConfig.supabaseUrl}/functions/v1/report-issue'),
             headers: {

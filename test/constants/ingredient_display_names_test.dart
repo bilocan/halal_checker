@@ -68,4 +68,25 @@ void main() {
       }
     });
   });
+
+  // ── fallback for keywords with no display entry ───────────────────────────
+
+  group(
+    'IngredientDisplayNames.of — haram/suspicious keywords without display entry fall back',
+    () {
+      test('haram key with no display entry returns canonical', () {
+        // 'prosecco' is in IngredientKeywords.haram but has no display name entry
+        expect(IngredientDisplayNames.of('prosecco', 'de'), equals('prosecco'));
+      });
+
+      test('suspicious key with no display entry returns canonical', () {
+        // 'e322' is in IngredientKeywords.suspicious but has no display name entry
+        expect(IngredientDisplayNames.of('e322', 'tr'), equals('e322'));
+      });
+
+      test('completely unknown key returns canonical regardless of locale', () {
+        expect(IngredientDisplayNames.of('xylitol', 'fr'), equals('xylitol'));
+      });
+    },
+  );
 }

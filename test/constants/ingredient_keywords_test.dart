@@ -151,5 +151,103 @@ void main() {
     test('wPost is non-empty', () {
       expect(IngredientKeywords.wPost, isNotEmpty);
     });
+    test('wPre compiles as a valid regex', () {
+      expect(() => RegExp(IngredientKeywords.wPre), returnsNormally);
+    });
+    test('wPost compiles as a valid regex', () {
+      expect(() => RegExp(IngredientKeywords.wPost), returnsNormally);
+    });
   });
+
+  // ── canonical key present in own variant list ─────────────────────────────
+
+  group('IngredientKeywords — haramVariants contains its canonical key', () {
+    test('every haramVariants list contains the canonical key itself', () {
+      for (final entry in IngredientKeywords.haramVariants.entries) {
+        expect(
+          entry.value,
+          contains(entry.key),
+          reason: '"${entry.key}" missing from its own haramVariants list',
+        );
+      }
+    });
+  });
+
+  group(
+    'IngredientKeywords — suspiciousVariants contains its canonical key',
+    () {
+      test(
+        'every suspiciousVariants list contains the canonical key itself',
+        () {
+          for (final entry in IngredientKeywords.suspiciousVariants.entries) {
+            expect(
+              entry.value,
+              contains(entry.key),
+              reason:
+                  '"${entry.key}" missing from its own suspiciousVariants list',
+            );
+          }
+        },
+      );
+    },
+  );
+
+  // ── e-number hyphenated forms ─────────────────────────────────────────────
+
+  group('IngredientKeywords — haram e-numbers include hyphenated form', () {
+    for (final key in ['e120', 'e441', 'e542', 'e904']) {
+      test(
+        'haramVariants["$key"] contains "${key.replaceFirst('e', 'e-')}"',
+        () {
+          final hyphenated = key.replaceFirst('e', 'e-');
+          expect(
+            IngredientKeywords.haramVariants[key],
+            contains(hyphenated),
+            reason: '"$hyphenated" missing from haramVariants["$key"]',
+          );
+        },
+      );
+    }
+  });
+
+  group('IngredientKeywords — suspicious e-numbers include hyphenated form', () {
+    for (final key in ['e920', 'e322', 'e471', 'e472', 'e473', 'e927']) {
+      test(
+        'suspiciousVariants["$key"] contains "${key.replaceFirst('e', 'e-')}"',
+        () {
+          final hyphenated = key.replaceFirst('e', 'e-');
+          expect(
+            IngredientKeywords.suspiciousVariants[key],
+            contains(hyphenated),
+            reason: '"$hyphenated" missing from suspiciousVariants["$key"]',
+          );
+        },
+      );
+    }
+  });
+
+  // ── alcoholFamily is a subset of alcohol + ethanol variants ───────────────
+
+  group(
+    'IngredientKeywords — alcoholFamily is a subset of alcohol/ethanol variants',
+    () {
+      test(
+        'every alcoholFamily term appears in haramVariants alcohol or ethanol',
+        () {
+          final alcoholVariants = {
+            ...IngredientKeywords.haramVariants['alcohol']!,
+            ...IngredientKeywords.haramVariants['ethanol']!,
+          };
+          for (final term in IngredientKeywords.alcoholFamily) {
+            expect(
+              alcoholVariants.contains(term),
+              isTrue,
+              reason:
+                  '"$term" is in alcoholFamily but not in alcohol/ethanol variants',
+            );
+          }
+        },
+      );
+    },
+  );
 }
