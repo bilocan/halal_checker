@@ -8,6 +8,8 @@ import '../config.dart';
 class AuthService {
   static const _sessionKey = 'supabase_session_active';
   static bool _initialized = false;
+  static bool _supabaseAvailable = AppConfig.hasSupabase;
+  static User? _currentUserOverride;
 
   static final _authController = StreamController<AuthState>.broadcast();
 
@@ -15,10 +17,24 @@ class AuthService {
   /// whenever Supabase eventually initializes and emits auth state changes.
   static Stream<AuthState> get authStateChanges => _authController.stream;
 
+  @visibleForTesting
+  static void setCurrentUserForTesting(User? user) =>
+      _currentUserOverride = user;
+
+  @visibleForTesting
+  static void enableForTesting() => _supabaseAvailable = true;
+
+  @visibleForTesting
+  static void resetForTesting() {
+    _currentUserOverride = null;
+    _supabaseAvailable = AppConfig.hasSupabase;
+    _initialized = false;
+  }
+
   /// Call once from main() — initializes Supabase only if the user previously
   /// signed in and has a stored session. Skipped entirely for new installs.
   static Future<void> initializeIfSessionExists() async {
-    if (!AppConfig.hasSupabase) return;
+    if (!_supabaseAvailable) return;
     try {
       final prefs = await SharedPreferences.getInstance();
       if (prefs.getBool(_sessionKey) ?? false) {
@@ -75,6 +91,7 @@ class AuthService {
   }
 
   static User? get currentUser {
+    if (_currentUserOverride != null) return _currentUserOverride;
     if (!_initialized) return null;
     try {
       return Supabase.instance.client.auth.currentUser;
