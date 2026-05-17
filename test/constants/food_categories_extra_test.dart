@@ -230,4 +230,170 @@ void main() {
       });
     },
   );
+
+  // ── haram completeness ────────────────────────────────────────────────────
+
+  group('FoodCategories — haram contains all alcohol categories', () {
+    const expected = {
+      'en:alcoholic-beverages',
+      'en:beers',
+      'en:wines',
+      'en:spirits',
+      'en:champagnes',
+      'en:ciders',
+      'en:sake',
+    };
+    test('all 7 alcohol category tags are present', () {
+      expect(FoodCategories.haram, containsAll(expected));
+    });
+    test('haram size matches expected (no silent additions)', () {
+      expect(FoodCategories.haram.length, expected.length);
+    });
+  });
+
+  // ── halalCertificationLabels completeness ─────────────────────────────────
+
+  group('FoodCategories — halalCertificationLabels completeness', () {
+    const expected = {
+      'halal',
+      'halal certified',
+      'halal certificate',
+      'certified halal',
+      'hfa halal',
+      'halal hfa',
+      'ifanca',
+      'isna halal',
+      'muis halal',
+      'muslim consumer group',
+    };
+    test('all 10 certification labels are present', () {
+      expect(FoodCategories.halalCertificationLabels, containsAll(expected));
+    });
+    test('size matches expected (no silent additions)', () {
+      expect(FoodCategories.halalCertificationLabels.length, expected.length);
+    });
+  });
+
+  // ── veganOrVegetarianLabels completeness ─────────────────────────────────
+
+  group('FoodCategories — veganOrVegetarianLabels completeness', () {
+    const expected = {
+      'vegan',
+      'vegetarian',
+      'vegan certified',
+      'vegetarian friendly',
+      'en:vegan',
+      'en:vegetarian',
+    };
+    test('all 6 vegan/vegetarian labels are present', () {
+      expect(FoodCategories.veganOrVegetarianLabels, containsAll(expected));
+    });
+    test('size matches expected (no silent additions)', () {
+      expect(FoodCategories.veganOrVegetarianLabels.length, expected.length);
+    });
+  });
+
+  // ── animalProductNameTerms casing and language coverage ───────────────────
+
+  group('FoodCategories — animalProductNameTerms casing', () {
+    test('all terms are lowercase (for case-insensitive name matching)', () {
+      for (final term in FoodCategories.animalProductNameTerms) {
+        expect(
+          term,
+          equals(term.toLowerCase()),
+          reason: '"$term" is not lowercase',
+        );
+      }
+    });
+  });
+
+  group('FoodCategories — animalProductNameTerms language coverage', () {
+    test('contains French term "viande"', () {
+      expect(FoodCategories.animalProductNameTerms.contains('viande'), isTrue);
+    });
+    test('contains Turkish term "kıyma"', () {
+      expect(FoodCategories.animalProductNameTerms.contains('kıyma'), isTrue);
+    });
+    test('contains Turkish term "köfte"', () {
+      expect(FoodCategories.animalProductNameTerms.contains('köfte'), isTrue);
+    });
+    test('contains English multi-word term "chicken breast"', () {
+      expect(
+        FoodCategories.animalProductNameTerms.contains('chicken breast'),
+        isTrue,
+      );
+    });
+    test(
+      'does not contain plain "chicken" (too generic, handled by category)',
+      () {
+        expect(
+          FoodCategories.animalProductNameTerms.contains('chicken'),
+          isFalse,
+        );
+      },
+    );
+  });
+
+  // ── cross-set integrity: label sets ──────────────────────────────────────
+
+  group('FoodCategories — cross-set integrity: label sets', () {
+    test(
+      'halalCertificationLabels and veganOrVegetarianLabels are disjoint',
+      () {
+        final shared = FoodCategories.halalCertificationLabels.intersection(
+          FoodCategories.veganOrVegetarianLabels,
+        );
+        expect(shared, isEmpty, reason: 'shared labels: $shared');
+      },
+    );
+
+    test(
+      'veganOrVegetarianNameTerms is a subset of veganOrVegetarianLabels',
+      () {
+        for (final term in FoodCategories.veganOrVegetarianNameTerms) {
+          expect(
+            FoodCategories.veganOrVegetarianLabels.contains(term),
+            isTrue,
+            reason: '"$term" in nameTerms but missing from labels',
+          );
+        }
+      },
+    );
+  });
+
+  // ── nonFood pet-food entries ──────────────────────────────────────────────
+
+  group('FoodCategories — nonFood pet-food subcategories', () {
+    test('contains en:pet-food', () {
+      expect(FoodCategories.nonFood.contains('en:pet-food'), isTrue);
+    });
+    test('contains en:cat-food', () {
+      expect(FoodCategories.nonFood.contains('en:cat-food'), isTrue);
+    });
+    test('contains en:dog-food', () {
+      expect(FoodCategories.nonFood.contains('en:dog-food'), isTrue);
+    });
+    test('contains en:pet-care', () {
+      expect(FoodCategories.nonFood.contains('en:pet-care'), isTrue);
+    });
+  });
+
+  // ── halal water-variant coverage ─────────────────────────────────────────
+
+  group('FoodCategories — halal water variants', () {
+    const waterVariants = {
+      'en:waters',
+      'en:bottled-waters',
+      'en:mineral-waters',
+      'en:spring-waters',
+      'en:carbonated-waters',
+      'en:sparkling-waters',
+      'en:still-waters',
+      'en:flavoured-waters',
+      'en:drinking-water',
+    };
+    test('all major water variants are present', () {
+      expect(FoodCategories.halal, containsAll(waterVariants));
+    });
+  });
 }
