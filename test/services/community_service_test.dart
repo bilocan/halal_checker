@@ -105,5 +105,42 @@ void main() {
       );
       expect(result, isNull);
     });
+
+    test('vote retract (currentMyVote == value) returns null', () async {
+      final result = await CommunityService.vote(
+        commentId: 'cmt-uuid',
+        value: 1,
+        currentMyVote: 1,
+      );
+      expect(result, isNull);
+    });
+
+    // ── edge cases ────────────────────────────────────────────────────────────
+
+    test(
+      'startDiscussion with no title and no challengeId returns null',
+      () async {
+        final result = await CommunityService.startDiscussion(
+          barcode: '111222333',
+        );
+        expect(result, isNull);
+      },
+    );
+
+    test(
+      'getChallenges for a different barcode still returns empty list',
+      () async {
+        final result = await CommunityService.getChallenges('000000000000');
+        expect(result, isEmpty);
+      },
+    );
+
+    test('postComment with empty body returns null', () async {
+      final result = await CommunityService.postComment(
+        discussionId: 'disc-uuid',
+        body: '',
+      );
+      expect(result, isNull);
+    });
   });
 }

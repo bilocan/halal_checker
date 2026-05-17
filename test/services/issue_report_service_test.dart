@@ -49,16 +49,62 @@ void main() {
   // AppConfig.hasSupabase is false in tests (no --dart-define flags), so
   // reportWrongResult returns failure immediately without network calls.
 
+  // AppConfig.hasSupabase is false in tests (no --dart-define flags), so
+  // reportWrongResult returns failure immediately without any network call.
   group('IssueReportService — no Supabase config', () {
-    test('reportWrongResult returns success: false', () async {
-      final result = await IssueReportService.reportWrongResult(
-        barcode: '111222333',
-        productName: 'Test Product',
-        currentResult: 'halal',
-        expectedResult: ExpectedResult.haram,
-      );
-      expect(result.success, isFalse);
-    });
+    test(
+      'reportWrongResult returns success: false for haram expected',
+      () async {
+        final result = await IssueReportService.reportWrongResult(
+          barcode: '111222333',
+          productName: 'Test Product',
+          currentResult: 'halal',
+          expectedResult: ExpectedResult.haram,
+        );
+        expect(result.success, isFalse);
+        expect(result.issueUrl, isNull);
+        expect(result.issueNumber, isNull);
+      },
+    );
+
+    test(
+      'reportWrongResult returns success: false for halal expected',
+      () async {
+        final result = await IssueReportService.reportWrongResult(
+          barcode: '111222333',
+          productName: 'Test Product',
+          currentResult: 'haram',
+          expectedResult: ExpectedResult.halal,
+        );
+        expect(result.success, isFalse);
+      },
+    );
+
+    test(
+      'reportWrongResult returns success: false for nonFood expected',
+      () async {
+        final result = await IssueReportService.reportWrongResult(
+          barcode: '111222333',
+          productName: 'Test Product',
+          currentResult: 'halal',
+          expectedResult: ExpectedResult.nonFood,
+        );
+        expect(result.success, isFalse);
+      },
+    );
+
+    test(
+      'reportWrongResult returns success: false for unknown expected',
+      () async {
+        final result = await IssueReportService.reportWrongResult(
+          barcode: '111222333',
+          productName: 'Test Product',
+          currentResult: 'halal',
+          expectedResult: ExpectedResult.unknown,
+        );
+        expect(result.success, isFalse);
+      },
+    );
 
     test('reportWrongResult with note returns success: false', () async {
       final result = await IssueReportService.reportWrongResult(
@@ -67,6 +113,17 @@ void main() {
         currentResult: 'halal',
         expectedResult: ExpectedResult.haram,
         note: 'Contains gelatin',
+      );
+      expect(result.success, isFalse);
+    });
+
+    test('reportWrongResult with empty note returns success: false', () async {
+      final result = await IssueReportService.reportWrongResult(
+        barcode: '111222333',
+        productName: 'Test Product',
+        currentResult: 'halal',
+        expectedResult: ExpectedResult.haram,
+        note: '',
       );
       expect(result.success, isFalse);
     });

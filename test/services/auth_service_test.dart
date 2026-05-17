@@ -40,5 +40,31 @@ void main() {
     test('initializeIfSessionExists completes without error', () async {
       await expectLater(AuthService.initializeIfSessionExists(), completes);
     });
+
+    test(
+      'authStateChanges is a broadcast stream that accepts multiple listeners',
+      () async {
+        // A single-subscription stream throws StateError on a second listen;
+        // a broadcast stream must not.
+        final sub1 = AuthService.authStateChanges.listen((_) {});
+        final sub2 = AuthService.authStateChanges.listen((_) {});
+        await sub1.cancel();
+        await sub2.cancel();
+      },
+    );
+
+    test('signOut can be called repeatedly without error', () async {
+      await expectLater(AuthService.signOut(), completes);
+      await expectLater(AuthService.signOut(), completes);
+    });
+
+    test(
+      'currentUser, displayName, and avatarUrl are all null before init',
+      () {
+        expect(AuthService.currentUser, isNull);
+        expect(AuthService.displayName, isNull);
+        expect(AuthService.avatarUrl, isNull);
+      },
+    );
   });
 }

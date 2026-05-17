@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:halal_checker/constants/ingredient_keywords.dart';
 import 'package:halal_checker/services/halal_rules_engine.dart';
 
 void main() {
@@ -106,6 +107,209 @@ void main() {
       expect(result.verdict, HalalRuleVerdict.haram);
       expect(result.haram, contains('additive x'));
       expect(result.warnings['additive x'], 'Custom haram rule');
+    });
+
+    test('merge preserves base rules alongside custom rules', () {
+      final customEngine = engine.merge(
+        const HalalKeywordRuleSet(haram: {'mycustomthing': 'Custom'}),
+      );
+
+      final result = customEngine.analyzeIngredients(['pork', 'mycustomthing']);
+
+      expect(result.haram, containsAll(['pork', 'mycustomthing']));
+    });
+  });
+
+  group('HalalRulesResult fields', () {
+    test('checkedValues contains all analyzed ingredients', () {
+      final result = engine.analyzeIngredients(['water', 'salt', 'pork']);
+      expect(result.checkedValues, containsAll(['water', 'salt', 'pork']));
+      expect(result.checkedValues.length, 3);
+    });
+
+    test('checkedValues is unmodifiable', () {
+      final result = engine.analyzeIngredients(['water']);
+      expect(
+        () => (result.checkedValues as dynamic).add('extra'),
+        throwsUnsupportedError,
+      );
+    });
+
+    test(
+      'checkedRuleCount equals default haram + suspicious keyword count',
+      () {
+        final result = engine.analyzeIngredients([]);
+        expect(
+          result.checkedRuleCount,
+          IngredientKeywords.haram.length +
+              IngredientKeywords.suspicious.length,
+        );
+      },
+    );
+
+    test('translations populated when ingredient is in another language', () {
+      // 'alkohol' matches canonical 'alcohol' via haramVariants but does not contain 'alcohol'
+      final result = engine.analyzeIngredients(['alkohol']);
+      expect(result.translations, containsPair('alkohol', 'alcohol'));
+    });
+
+    test(
+      'translations absent when ingredient text already contains canonical',
+      () {
+        // 'pork fat' contains 'pork', so _needsTranslation returns false
+        final result = engine.analyzeIngredients(['pork fat']);
+        expect(result.translations.containsKey('pork fat'), isFalse);
+      },
+    );
+  });
+
+  group('explanation strings', () {
+    test('haram explanation names the offending ingredient', () {
+      final result = engine.analyzeIngredients(['pork', 'salt']);
+      expect(result.explanation, contains('pork'));
+      expect(result.explanation, contains('not permissible'));
+    });
+
+    test('suspicious-only explanation mentions verification needed', () {
+      final result = engine.analyzeIngredients(['e471']);
+      expect(result.explanation, contains('require verification'));
+    });
+
+    test('clean list explanation says no haram detected', () {
+      final result = engine.analyzeIngredients(['water', 'salt']);
+      expect(result.explanation, contains('No haram or suspicious'));
+    });
+
+    test('empty ingredient list explanation says no data available', () {
+      final result = engine.analyzeIngredients([]);
+      expect(result.explanation, contains('No ingredient data'));
+    });
+  });
+
+  group('HalalRulesEngine static helpers', () {
+    test('isFattyAlcohol returns true for cosmetic fatty alcohols', () {
+      expect(HalalRulesEngine.isFattyAlcohol('cetyl alcohol'), isTrue);
+      expect(HalalRulesEngine.isFattyAlcohol('stearyl alcohol'), isTrue);
+      expect(HalalRulesEngine.isFattyAlcohol('lauryl alcohol'), isTrue);
+    });
+
+    test('isFattyAlcohol returns false for ethanol and plain alcohol', () {
+      expect(HalalRulesEngine.isFattyAlcohol('ethanol'), isFalse);
+      expect(HalalRulesEngine.isFattyAlcohol('alcohol'), isFalse);
+    });
+
+    test('canonicalDisplay returns locale-specific name when available', () {
+      expect(HalalRulesEngine.canonicalDisplay('alcohol', 'de'), 'Alkohol');
+      expect(HalalRulesEngine.canonicalDisplay('alcohol', 'tr'), 'alkol');
+    });
+
+    test('canonicalDisplay falls back to canonical for unknown locale', () {
+      expect(HalalRulesEngine.canonicalDisplay('alcohol', 'xx'), 'alcohol');
+    });
+  });
+
+  group('HalalRulesEngine.matchesKeyword', () {
+    test('returns true when ingredient contains a known keyword variant', () {
+      expect(engine.matchesKeyword('pork rinds', 'pork'), isTrue);
+      expect(engine.matchesKeyword('alkohol', 'alcohol'), isTrue);
+      expect(engine.matchesKeyword('bier', 'beer'), isTrue);
+    });
+
+    test('returns false for unrelated ingredients', () {
+      expect(engine.matchesKeyword('water', 'pork'), isFalse);
+      expect(engine.matchesKeyword('salt', 'alcohol'), isFalse);
+    });
+
+    test('respects fatty-alcohol exclusion', () {
+      expect(engine.matchesKeyword('cetyl alcohol', 'alcohol'), isFalse);
+    });
+
+    test('respects alcohol-free exclusion', () {
+      expect(engine.matchesKeyword('malt alcohol-free', 'alcohol'), isFalse);
+    });
+  });
+
+  group('HalalKeywordRuleSet', () {
+    test('ruleCount equals haram + suspicious keyword counts', () {
+      const ruleSet = HalalKeywordRuleSet();
+      expect(
+        ruleSet.ruleCount,
+        IngredientKeywords.haram.length + IngredientKeywords.suspicious.length,
+      );
+    });
+
+    test('custom rule set ruleCount reflects only its own rules', () {
+      const ruleSet = HalalKeywordRuleSet(
+        haram: {'x': 'reason x', 'y': 'reason y'},
+        suspicious: {'z': 'reason z'},
+      );
+      expect(ruleSet.ruleCount, 3);
+    });
+  });
+
+  group('multilingual variant detection', () {
+    test('German bier is detected as beer (haram)', () {
+      final result = engine.analyzeIngredients(['bier']);
+      expect(result.verdict, HalalRuleVerdict.haram);
+      expect(result.haram, contains('bier'));
+    });
+
+    test('German wein is detected as wine (haram)', () {
+      final result = engine.analyzeIngredients(['wein']);
+      expect(result.verdict, HalalRuleVerdict.haram);
+    });
+
+    test('Turkish bira is detected as beer (haram)', () {
+      final result = engine.analyzeIngredients(['bira']);
+      expect(result.verdict, HalalRuleVerdict.haram);
+    });
+
+    test('German schweinefleisch is detected as pork (haram)', () {
+      final result = engine.analyzeIngredients(['schweinefleisch']);
+      expect(result.verdict, HalalRuleVerdict.haram);
+    });
+  });
+
+  group('verdict priority', () {
+    test('haram wins when both haram and suspicious ingredients present', () {
+      final result = engine.analyzeIngredients(['pork', 'e471', 'flour']);
+      expect(result.verdict, HalalRuleVerdict.haram);
+      expect(result.haram, contains('pork'));
+      expect(result.suspicious, contains('e471'));
+      expect(result.isHalal, isFalse);
+    });
+
+    test('empty ingredient list gives halal verdict', () {
+      final result = engine.analyzeIngredients([]);
+      expect(result.verdict, HalalRuleVerdict.halal);
+      expect(result.isHalal, isTrue);
+      expect(result.matches, isEmpty);
+    });
+  });
+
+  group('additional negation languages', () {
+    test('Italian "senza" before keyword suppresses haram match', () {
+      final result = engine.analyzeIngredients(['senza maiale']);
+      expect(result.verdict, HalalRuleVerdict.halal);
+      expect(result.haram, isEmpty);
+    });
+
+    test('Spanish "sin" before keyword suppresses haram match', () {
+      final result = engine.analyzeIngredients(['sin cerdo']);
+      expect(result.verdict, HalalRuleVerdict.halal);
+      expect(result.haram, isEmpty);
+    });
+
+    test('"without" before keyword suppresses haram match', () {
+      final result = engine.analyzeIngredients(['made without alcohol']);
+      expect(result.verdict, HalalRuleVerdict.halal);
+      expect(result.haram, isEmpty);
+    });
+
+    test('"free from" before keyword suppresses haram match', () {
+      final result = engine.analyzeIngredients(['free from pork']);
+      expect(result.verdict, HalalRuleVerdict.halal);
+      expect(result.haram, isEmpty);
     });
   });
 }
