@@ -8,11 +8,7 @@
 --                                      pg_net so re-analysis runs immediately, without
 --                                      waiting for the next user scan.
 --
--- pg_net setup (run once in the Supabase SQL editor — replace the placeholders):
---   ALTER DATABASE postgres SET app.supabase_url = 'https://<ref>.supabase.co';
---   ALTER DATABASE postgres SET app.anon_key     = '<your-anon-key>';
--- If these settings are absent the HTTP trigger is silently skipped; re-analysis
--- still happens on the next user scan via the Edge Function's staleness check.
+-- pg_net setup: see migration 20260518000002 — URL and key are stored in app_config.
 
 -- 1. Drop the superseded boolean
 ALTER TABLE products DROP COLUMN IF EXISTS needs_reanalysis;

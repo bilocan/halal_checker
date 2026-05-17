@@ -290,6 +290,7 @@ class ProductService {
       analyzedByAI: false,
       analysisMethod: 'keyword',
       requiresHalalCert: requiresHalalCert,
+      lastAnalysedAt: DateTime.now().toUtc(),
     );
   }
 

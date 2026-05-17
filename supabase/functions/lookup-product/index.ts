@@ -307,10 +307,14 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Source data changed since last analysis (updated_at > last_analysed_at).
-    // Re-run the rules engine on stored ingredients without touching OFf or AI.
-    if (cached && isStale(cached)) {
-      console.log(`[${barcode}] stale (updated_at > last_analysed_at) — re-running rules engine on stored data`)
+    // Re-run keyword analysis on stored data when either:
+    //   • source data changed since last analysis (updated_at > last_analysed_at), OR
+    //   • caller requested a force refresh on an already-known product.
+    // OFf is only ever fetched on the very first scan (cached === null below).
+    // Unknown products with force=true fall through so OFf can be retried.
+    if (cached && (isStale(cached) || (force && !cached.is_unknown))) {
+      const reason = isStale(cached) ? 'stale (updated_at > last_analysed_at)' : 'force-refresh'
+      console.log(`[${barcode}] ${reason} — re-running rules engine on stored data`)
 
       const { data: kwRows } = await supabase
         .from('keywords')
@@ -367,7 +371,7 @@ Deno.serve(async (req) => {
         requires_halal_cert:   cached.requires_halal_cert,
         is_managed:            cached.is_managed,
         last_analysed_at:      new Date().toISOString(),
-        fetched_at:            new Date().toISOString(),
+        fetched_at:            cached.fetched_at,
       }
 
       const { data: reUpserted } = await supabase
@@ -784,7 +788,7 @@ Deno.serve(async (req) => {
       analyzed_by_ai:         analyzedByAI,
       requires_halal_cert:    requiresHalalCert,
       last_analysed_at:       new Date().toISOString(),
-      fetched_at:             new Date().toISOString(),
+      fetched_at:             cached?.fetched_at ?? new Date().toISOString(),
     }
 
     const { data: upserted, error: upsertErr } = await supabase
