@@ -291,6 +291,7 @@ jobs:
           APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
           APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
           APP_STORE_CONNECT_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_KEY_BASE64 }}
+          VERSION_NAME: ${{ steps.version.outputs.name }}
         run: |
           set -euo pipefail
           pip install cryptography --quiet 2>/dev/null
@@ -318,31 +319,27 @@ jobs:
           )
           rm -f "$KEY_FILE"
 
-          # Wait for Apple to process the build (can take a few minutes)
-          echo "Waiting for build to be processed by App Store Connect..."
+          # Wait for Apple to process the build (can take a few minutes).
+          # Filter by this release's version so a VALID build from a previous
+          # deployment is never mistaken for the newly uploaded one.
+          echo "Waiting for v$VERSION_NAME build to be processed by App Store Connect..."
           APP_ID=$(curl -gsS --fail-with-body \
             -H "Authorization: Bearer $JWT" \
             "https://api.appstoreconnect.apple.com/v1/apps?filter[bundleId]=app.halalscan" \
             | jq -r '.data[0].id')
 
-          # Poll for the build to appear (up to 5 minutes)
+          # Poll until the build for this exact version appears as VALID (up to 5 minutes).
           BUILD_ID=""
           for i in $(seq 1 30); do
             BUILD_ID=$(curl -gsS \
               -H "Authorization: Bearer $JWT" \
-              "https://api.appstoreconnect.apple.com/v1/builds?filter[app]=$APP_ID&sort=-uploadedDate&limit=1" \
+              "https://api.appstoreconnect.apple.com/v1/builds?filter[app]=$APP_ID&filter[preReleaseVersion.version]=$VERSION_NAME&filter[processingState]=VALID&sort=-uploadedDate&limit=1" \
               | jq -r '.data[0].id // empty')
             if [ -n "$BUILD_ID" ]; then
-              PROCESSING=$(curl -gsS \
-                -H "Authorization: Bearer $JWT" \
-                "https://api.appstoreconnect.apple.com/v1/builds/$BUILD_ID" \
-                | jq -r '.data.attributes.processingState')
-              if [ "$PROCESSING" = "VALID" ]; then
-                echo "Build $BUILD_ID is ready."
-                break
-              fi
-              echo "Build processing state: $PROCESSING (attempt $i/30)"
+              echo "Build $BUILD_ID for v$VERSION_NAME is ready."
+              break
             fi
+            echo "Waiting for v$VERSION_NAME build to be processed... (attempt $i/30)"
             sleep 10
           done
 
@@ -443,7 +440,7 @@ jobs:
 
           VERSION_ID=$(curl -gsS --fail-with-body \
             -H "Authorization: Bearer $JWT" \
-            "https://api.appstoreconnect.apple.com/v1/apps/$APP_ID/appStoreVersions?filter[platform]=IOS&filter[appStoreState]=PREPARE_FOR_SUBMISSION" \
+            "https://api.appstoreconnect.apple.com/v1/apps/$APP_ID/appStoreVersions?filter[platform]=IOS&filter[appStoreState]=PREPARE_FOR_SUBMISSION&filter[versionString]=$VERSION" \
             | jq -r '.data[0].id')
 
           if [ -z "$VERSION_ID" ] || [ "$VERSION_ID" = "null" ]; then
@@ -526,7 +523,7 @@ jobs:
 
           VERSION_ID=$(curl -gsS --fail-with-body \
             -H "Authorization: Bearer $JWT" \
-            "https://api.appstoreconnect.apple.com/v1/apps/$APP_ID/appStoreVersions?filter[platform]=IOS&filter[appStoreState]=PENDING_DEVELOPER_RELEASE" \
+            "https://api.appstoreconnect.apple.com/v1/apps/$APP_ID/appStoreVersions?filter[platform]=IOS&filter[appStoreState]=PENDING_DEVELOPER_RELEASE&filter[versionString]=$VERSION" \
             | jq -r '.data[0].id')
 
           if [ -z "$VERSION_ID" ] || [ "$VERSION_ID" = "null" ]; then
