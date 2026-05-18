@@ -380,6 +380,19 @@ Deno.serve(async (req) => {
         .select()
         .maybeSingle()
 
+      await supabase.from('product_analysis').upsert({
+        barcode:               cached.barcode,
+        is_halal:              reHalal,
+        is_unknown:            reUnknown,
+        is_non_food:           cached.is_non_food,
+        haram_ingredients:     reHaram,
+        suspicious_ingredients: reSuspicious,
+        ingredient_warnings:   reWarnings,
+        explanation:           reExplanation,
+        analyzed_by_ai:        false,
+        analyzed_at:           new Date().toISOString(),
+      })
+
       return new Response(
         JSON.stringify({ product: toProduct(reUpserted ?? reRow) }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
@@ -798,9 +811,21 @@ Deno.serve(async (req) => {
       .maybeSingle()
 
     if (upsertErr) {
-      // Log but don't crash — return the analysed product even if caching failed.
       console.error('upsert error', upsertErr)
     }
+
+    await supabase.from('product_analysis').upsert({
+      barcode,
+      is_halal:               isHalal,
+      is_unknown:             isUnknown,
+      is_non_food:            isNonFood,
+      haram_ingredients:      haramIngredients,
+      suspicious_ingredients: suspiciousIngredients,
+      ingredient_warnings:    ingredientWarnings,
+      explanation,
+      analyzed_by_ai:         analyzedByAI,
+      analyzed_at:            new Date().toISOString(),
+    })
 
     return new Response(
       JSON.stringify({ product: toProduct(upserted ?? row) }),
