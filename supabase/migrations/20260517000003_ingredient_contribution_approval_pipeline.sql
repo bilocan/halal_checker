@@ -1,5 +1,6 @@
 -- 1. Allow authenticated users to update ingredient contribution status.
 --    Mirrors the equivalent policy on product_image_submissions.
+DROP POLICY IF EXISTS "Authenticated users can update ingredient contribution status" ON ingredient_contributions;
 CREATE POLICY "Authenticated users can update ingredient contribution status"
   ON ingredient_contributions FOR UPDATE
   TO authenticated
@@ -41,6 +42,7 @@ BEGIN
 END;
 $$;
 
+DROP TRIGGER IF EXISTS on_ingredient_contribution_approved ON ingredient_contributions;
 CREATE TRIGGER on_ingredient_contribution_approved
   AFTER UPDATE ON ingredient_contributions
   FOR EACH ROW
@@ -83,6 +85,7 @@ BEGIN
 END;
 $$;
 
+DROP TRIGGER IF EXISTS preserve_approved_ingredients_on_product_upsert ON products;
 CREATE TRIGGER preserve_approved_ingredients_on_product_upsert
   BEFORE INSERT OR UPDATE ON products
   FOR EACH ROW

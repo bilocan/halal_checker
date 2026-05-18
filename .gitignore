@@ -53,3 +53,4 @@ app.*.map.json
 # supabase
 supabase/.temp/
 pubspec.lock
+dart_defines.local.json
