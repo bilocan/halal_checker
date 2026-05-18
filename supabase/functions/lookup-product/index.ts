@@ -256,8 +256,16 @@ function toProduct(row: Record<string, any>) {
     analysisMethod:        row.analyzed_by_ai ? 'ai' : 'keyword',
     requiresHalalCert:     row.requires_halal_cert ?? false,
     isManaged:             row.is_managed ?? false,
-    needsReanalysis:       row.needs_reanalysis ?? false,
+    updatedAt:             row.updated_at ?? null,
+    lastAnalysedAt:        row.last_analysed_at ?? null,
   }
+}
+
+// deno-lint-ignore no-explicit-any
+function isStale(row: Record<string, any>): boolean {
+  if (!row.updated_at) return false
+  if (!row.last_analysed_at) return true
+  return new Date(row.last_analysed_at) < new Date(row.updated_at)
 }
 
 // ── main handler ─────────────────────────────────────────────────────────────
@@ -299,10 +307,14 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Product fields were manually edited — re-run the rules engine on the
-    // stored ingredients without touching Open Food Facts or AI.
-    if (cached?.needs_reanalysis) {
-      console.log(`[${barcode}] needs_reanalysis — re-running rules engine on stored data`)
+    // Re-run keyword analysis on stored data when either:
+    //   • source data changed since last analysis (updated_at > last_analysed_at), OR
+    //   • caller requested a force refresh on an already-known product.
+    // OFf is only ever fetched on the very first scan (cached === null below).
+    // Unknown products with force=true fall through so OFf can be retried.
+    if (cached && (isStale(cached) || (force && !cached.is_unknown))) {
+      const reason = isStale(cached) ? 'stale (updated_at > last_analysed_at)' : 'force-refresh'
+      console.log(`[${barcode}] ${reason} — re-running rules engine on stored data`)
 
       const { data: kwRows } = await supabase
         .from('keywords')
@@ -358,8 +370,8 @@ Deno.serve(async (req) => {
         analyzed_by_ai:        false,
         requires_halal_cert:   cached.requires_halal_cert,
         is_managed:            cached.is_managed,
-        needs_reanalysis:      false,
-        fetched_at:            new Date().toISOString(),
+        last_analysed_at:      new Date().toISOString(),
+        fetched_at:            cached.fetched_at,
       }
 
       const { data: reUpserted } = await supabase
@@ -367,6 +379,19 @@ Deno.serve(async (req) => {
         .upsert(reRow)
         .select()
         .maybeSingle()
+
+      await supabase.from('product_analysis').upsert({
+        barcode:               cached.barcode,
+        is_halal:              reHalal,
+        is_unknown:            reUnknown,
+        is_non_food:           cached.is_non_food,
+        haram_ingredients:     reHaram,
+        suspicious_ingredients: reSuspicious,
+        ingredient_warnings:   reWarnings,
+        explanation:           reExplanation,
+        analyzed_by_ai:        false,
+        analyzed_at:           new Date().toISOString(),
+      })
 
       return new Response(
         JSON.stringify({ product: toProduct(reUpserted ?? reRow) }),
@@ -775,8 +800,8 @@ Deno.serve(async (req) => {
       explanation,
       analyzed_by_ai:         analyzedByAI,
       requires_halal_cert:    requiresHalalCert,
-      needs_reanalysis:       false,
-      fetched_at:             new Date().toISOString(),
+      last_analysed_at:       new Date().toISOString(),
+      fetched_at:             cached?.fetched_at ?? new Date().toISOString(),
     }
 
     const { data: upserted, error: upsertErr } = await supabase
@@ -786,9 +811,21 @@ Deno.serve(async (req) => {
       .maybeSingle()
 
     if (upsertErr) {
-      // Log but don't crash — return the analysed product even if caching failed.
       console.error('upsert error', upsertErr)
     }
+
+    await supabase.from('product_analysis').upsert({
+      barcode,
+      is_halal:               isHalal,
+      is_unknown:             isUnknown,
+      is_non_food:            isNonFood,
+      haram_ingredients:      haramIngredients,
+      suspicious_ingredients: suspiciousIngredients,
+      ingredient_warnings:    ingredientWarnings,
+      explanation,
+      analyzed_by_ai:         analyzedByAI,
+      analyzed_at:            new Date().toISOString(),
+    })
 
     return new Response(
       JSON.stringify({ product: toProduct(upserted ?? row) }),

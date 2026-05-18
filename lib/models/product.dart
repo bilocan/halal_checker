@@ -31,11 +31,17 @@ class Product {
   /// are never overwritten by Open Food Facts data on refresh.
   final bool isManaged;
 
-  /// True when the stored verdict is stale and the rules engine must re-run
-  /// on the next lookup. Set server-side after any manual edit to product
-  /// fields (ingredients, name, labels). Reset to false by the Edge Function
-  /// after it re-runs keyword analysis and writes the fresh verdict.
-  final bool needsReanalysis;
+  /// When product source data (ingredients, name, labels, is_non_food) last
+  /// changed. A DB trigger bumps this on every admin edit to those fields.
+  /// Null for legacy rows that predate this column.
+  /// A product is stale when:
+  ///   updatedAt != null && (lastAnalysedAt == null || lastAnalysedAt < updatedAt)
+  final DateTime? updatedAt;
+
+  /// When the rules engine (or AI) last analysed this product.
+  /// Null for legacy records that predate this field.
+  /// Distinct from fetched_at, which tracks the Open Food Facts fetch time.
+  final DateTime? lastAnalysedAt;
 
   Product({
     required this.barcode,
@@ -58,7 +64,8 @@ class Product {
     this.analysisMethod,
     this.requiresHalalCert = false,
     this.isManaged = false,
-    this.needsReanalysis = false,
+    this.updatedAt,
+    this.lastAnalysedAt,
   });
 
   Product copyWith({
@@ -82,7 +89,8 @@ class Product {
     String? analysisMethod,
     bool? requiresHalalCert,
     bool? isManaged,
-    bool? needsReanalysis,
+    DateTime? updatedAt,
+    DateTime? lastAnalysedAt,
   }) => Product(
     barcode: barcode ?? this.barcode,
     name: name ?? this.name,
@@ -105,7 +113,8 @@ class Product {
     analysisMethod: analysisMethod ?? this.analysisMethod,
     requiresHalalCert: requiresHalalCert ?? this.requiresHalalCert,
     isManaged: isManaged ?? this.isManaged,
-    needsReanalysis: needsReanalysis ?? this.needsReanalysis,
+    updatedAt: updatedAt ?? this.updatedAt,
+    lastAnalysedAt: lastAnalysedAt ?? this.lastAnalysedAt,
   );
 
   Map<String, dynamic> toJson() => {
@@ -129,7 +138,9 @@ class Product {
     if (analysisMethod != null) 'analysisMethod': analysisMethod,
     if (requiresHalalCert) 'requiresHalalCert': requiresHalalCert,
     if (isManaged) 'isManaged': isManaged,
-    if (needsReanalysis) 'needsReanalysis': needsReanalysis,
+    if (updatedAt != null) 'updatedAt': updatedAt!.toIso8601String(),
+    if (lastAnalysedAt != null)
+      'lastAnalysedAt': lastAnalysedAt!.toIso8601String(),
   };
 
   factory Product.fromJson(Map<String, dynamic> json) => Product(
@@ -159,6 +170,11 @@ class Product {
     analysisMethod: json['analysisMethod'] as String?,
     requiresHalalCert: json['requiresHalalCert'] as bool? ?? false,
     isManaged: json['isManaged'] as bool? ?? false,
-    needsReanalysis: json['needsReanalysis'] as bool? ?? false,
+    updatedAt: json['updatedAt'] != null
+        ? DateTime.tryParse(json['updatedAt'] as String)
+        : null,
+    lastAnalysedAt: json['lastAnalysedAt'] != null
+        ? DateTime.tryParse(json['lastAnalysedAt'] as String)
+        : null,
   );
 }
