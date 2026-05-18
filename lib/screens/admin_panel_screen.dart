@@ -329,7 +329,10 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
   }) {
     final selected = _tabIndex == index;
     return InkWell(
-      onTap: () => setState(() => _tabIndex = index),
+      onTap: () {
+        setState(() => _tabIndex = index);
+        if (index == 3) _loadContributions();
+      },
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
