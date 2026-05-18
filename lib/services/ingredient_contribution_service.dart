@@ -158,7 +158,10 @@ class IngredientContributionService {
             'analyzed_at': DateTime.now().toIso8601String(),
           };
           if (fakeUpdateProduct != null) {
-            await fakeUpdateProduct!(barcode, productsData);
+            await fakeUpdateProduct!(barcode, {
+              ...productsData,
+              ...analysisData,
+            });
           } else {
             // Best-effort: the DB trigger already updated products/product_analysis
             // via SECURITY DEFINER. These writes fail silently if RLS blocks them.
