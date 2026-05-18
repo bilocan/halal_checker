@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show AuthState;
 import '../app_colors.dart';
@@ -306,6 +307,77 @@ class _StartScreenState extends State<StartScreen> {
   }
 
   Future<void> _signIn(BuildContext context) async {
+    final loc = AppLocalizations.of(context);
+    await showModalBottomSheet<void>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                loc.signIn,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 20),
+              SignInWithAppleButton(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  _signInWithApple();
+                },
+              ),
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  _signInWithGoogle();
+                },
+                icon: const Icon(Icons.login),
+                label: const Text('Sign in with Google'),
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size(double.infinity, 44),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _signInWithApple() async {
+    final messenger = ScaffoldMessenger.of(context);
+    final loc = AppLocalizations.of(context);
+    try {
+      final success = await AuthService.signInWithApple();
+      if (!success && mounted) {
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(loc.signInFailed),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      messenger.showSnackBar(SnackBar(content: Text(loc.signInFailed)));
+    }
+  }
+
+  Future<void> _signInWithGoogle() async {
     final messenger = ScaffoldMessenger.of(context);
     final loc = AppLocalizations.of(context);
     try {

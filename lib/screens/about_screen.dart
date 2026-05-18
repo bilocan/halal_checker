@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../app_colors.dart';
 import '../localization/app_localizations.dart';
@@ -153,6 +154,19 @@ class _AboutScreenState extends State<AboutScreen> {
                 ),
               ),
             ),
+          const SizedBox(height: 8),
+          TextButton(
+            onPressed: () => launchUrl(
+              Uri.parse(
+                'https://gist.github.com/bilocan/b61ebb96d2b847aa6964262d506d6143',
+              ),
+              mode: LaunchMode.externalApplication,
+            ),
+            child: Text(
+              loc.privacyPolicy,
+              style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
+            ),
+          ),
         ],
       ),
     );
