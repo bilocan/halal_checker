@@ -292,7 +292,7 @@ Deno.serve(async (req) => {
 
     // 1. Cache hit?
     const { data: cached } = await supabase
-      .from('products')
+      .from('products_full')
       .select('*')
       .eq('barcode', barcode)
       .maybeSingle()
@@ -374,11 +374,21 @@ Deno.serve(async (req) => {
         fetched_at:            cached.fetched_at,
       }
 
-      const { data: reUpserted } = await supabase
-        .from('products')
-        .upsert(reRow)
-        .select()
-        .maybeSingle()
+      await supabase.from('products').upsert({
+        barcode:               cached.barcode,
+        name:                  cached.name,
+        ingredients:           cached.ingredients,
+        is_non_food:           cached.is_non_food,
+        labels:                cached.labels,
+        image_url:             cached.image_url,
+        image_front_url:       cached.image_front_url,
+        image_ingredients_url: cached.image_ingredients_url,
+        image_nutrition_url:   cached.image_nutrition_url,
+        requires_halal_cert:   cached.requires_halal_cert,
+        is_managed:            cached.is_managed,
+        last_analysed_at:      new Date().toISOString(),
+        fetched_at:            cached.fetched_at,
+      })
 
       await supabase.from('product_analysis').upsert({
         barcode:               cached.barcode,
@@ -394,7 +404,7 @@ Deno.serve(async (req) => {
       })
 
       return new Response(
-        JSON.stringify({ product: toProduct(reUpserted ?? reRow) }),
+        JSON.stringify({ product: toProduct(reRow) }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       )
     }
@@ -780,7 +790,7 @@ Deno.serve(async (req) => {
       isUnknown = false
     }
 
-    // 5. Upsert to DB
+    // 5. Upsert to DB — products owns source data, product_analysis owns the verdict.
     const row = {
       barcode,
       name,
@@ -792,7 +802,6 @@ Deno.serve(async (req) => {
       suspicious_ingredients: suspiciousIngredients,
       ingredient_warnings:    ingredientWarnings,
       labels,
-      // Preserve community-approved image URLs — never overwrite them with OFF URLs.
       image_url:              cached?.image_url              ?? resolveImg(pd, 'image_url', 'front'),
       image_front_url:        cached?.image_front_url        ?? resolveImg(pd, 'image_front_url', 'front'),
       image_ingredients_url:  cached?.image_ingredients_url  ?? resolveImg(pd, 'image_ingredients_url', 'ingredients'),
@@ -804,11 +813,21 @@ Deno.serve(async (req) => {
       fetched_at:             cached?.fetched_at ?? new Date().toISOString(),
     }
 
-    const { data: upserted, error: upsertErr } = await supabase
-      .from('products')
-      .upsert(row)
-      .select()
-      .maybeSingle()
+    const { error: upsertErr } = await supabase.from('products').upsert({
+      barcode,
+      name,
+      ingredients,
+      is_non_food:            isNonFood,
+      labels,
+      // Preserve community-approved image URLs — never overwrite them with OFF URLs.
+      image_url:              cached?.image_url              ?? resolveImg(pd, 'image_url', 'front'),
+      image_front_url:        cached?.image_front_url        ?? resolveImg(pd, 'image_front_url', 'front'),
+      image_ingredients_url:  cached?.image_ingredients_url  ?? resolveImg(pd, 'image_ingredients_url', 'ingredients'),
+      image_nutrition_url:    cached?.image_nutrition_url    ?? resolveImg(pd, 'image_nutrition_url', 'nutrition'),
+      requires_halal_cert:    requiresHalalCert,
+      last_analysed_at:       new Date().toISOString(),
+      fetched_at:             cached?.fetched_at ?? new Date().toISOString(),
+    })
 
     if (upsertErr) {
       console.error('upsert error', upsertErr)
@@ -828,7 +847,7 @@ Deno.serve(async (req) => {
     })
 
     return new Response(
-      JSON.stringify({ product: toProduct(upserted ?? row) }),
+      JSON.stringify({ product: toProduct(row) }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     )
   } catch (err) {
