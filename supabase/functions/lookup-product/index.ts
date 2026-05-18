@@ -90,7 +90,7 @@ const SUSPICIOUS_ENTRIES: [string, string, ...string[]][] = [
   ['rennet', 'Rennet may be animal-derived',
    'rennet', 'lab', 'labferment', 'présure', 'caglio', 'cuajo',
    'peynir mayası', 'stremsel'],
-  ['whey', 'Whey is a dairy ingredient',
+  ['whey', 'Whey is a dairy ingredient — source verification recommended.',
    'whey', 'molke', 'lactosérum', 'siero di latte',
    'suero de leche', 'peynir suyu', 'wei'],
   ['l-cysteine', 'L-cysteine may be animal-derived',
@@ -99,7 +99,7 @@ const SUSPICIOUS_ENTRIES: [string, string, ...string[]][] = [
    'natural flavour', 'natural flavor', 'natürliches aroma',
    'natürliche aromen', 'arôme naturel', 'aroma naturale',
    'aroma natural', 'doğal aroma', 'natuurlijk aroma'],
-  ['flavouring', 'Flavouring may include animal-derived extracts',
+  ['flavouring', 'Aroma / Flavouring — source often unknown.',
    'flavouring', 'flavoring', 'aroma', 'arôme', 'smaakstof'],
   ['enzymes', 'Enzymes may be extracted from animal sources',
    'enzymes', 'enzyme', 'enzimi', 'enzimas', 'enzim', 'enzymen'],
@@ -114,19 +114,40 @@ const ALCOHOL_FAMILY = new Set([
 
 const FATTY_ALCOHOL_PREFIX = /\b(cetyl|stearyl|behenyl|lauryl|myristyl|arachidyl|oleyl|cetostearyl|lanolin|isostearyl|octyldodecyl|decyl)\s+/i
 
+// Negation words across all supported languages (EN/DE/FR/NL/IT/ES/TR/CS/SR/HU).
+// Used to suppress false positives like "enthält keine Zutaten vom Schwein".
+const NEGATION_WORDS = /\b(?:keine?|nicht|ohne|frei\s+von|sans|pas|geen|zonder|vrij\s+van|no|not|without|free\s+from|free\s+of|senza|sin|içermez|içermemektedir|neobsahuje|bez|nema|nem|mentes)\b/i
+
 function escape(s: string) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') }
+
+// Unicode-aware word boundaries covering basic Latin + extended Latin (À-ɏ, U+00C0-U+024F).
+// ß (U+00DF) is added explicitly to guard against case-folding edge cases.
+// Mirrors IngredientKeywords.wPre / wPost in the Dart client.
+const wPre = '(?<![a-zA-Z\\dÀ-ɏß])'
+const wPost = '(?![a-zA-Z\\dÀ-ɏß])'
 
 function matchesVariant(ingredient: string, variant: string): boolean {
   if (variant.includes(' ')) return ingredient.includes(variant)
   if (ALCOHOL_FAMILY.has(variant)) {
     if (FATTY_ALCOHOL_PREFIX.test(ingredient)) return false
-    return new RegExp(`\\b${escape(variant)}\\b(?![-\\s]*free)`, 'i').test(ingredient)
+    return new RegExp(`${wPre}${escape(variant)}${wPost}(?![-\\s]*free)`, 'i').test(ingredient)
   }
-  return new RegExp(`\\b${escape(variant)}\\b`, 'i').test(ingredient)
+  return new RegExp(`${wPre}${escape(variant)}${wPost}`, 'i').test(ingredient)
 }
 
-function matchesEntry(ingredient: string, entry: [string, string, ...string[]]): boolean {
-  return (entry.slice(2) as string[]).some(v => matchesVariant(ingredient, v))
+// True when the matched variant is preceded by a negation word in the same
+// ingredient chunk, e.g. "enthält keine Zutaten vom Schwein" → negated.
+function isNegated(chunk: string, variant: string): boolean {
+  const lower = chunk.toLowerCase()
+  let idx: number
+  if (variant.includes(' ')) {
+    idx = lower.indexOf(variant.toLowerCase())
+  } else {
+    const m = new RegExp(`${wPre}${escape(variant)}${wPost}`, 'i').exec(lower)
+    idx = m ? m.index : -1
+  }
+  if (idx < 0) return false
+  return NEGATION_WORDS.test(lower.substring(0, idx))
 }
 
 function keywordAnalysis(
@@ -144,13 +165,15 @@ function keywordAnalysis(
     const lower = ing.toLowerCase()
     let foundHaram = false
     for (const entry of allHaram) {
-      if (matchesEntry(lower, entry)) {
+      const matchedVariant = (entry.slice(2) as string[]).find(v => matchesVariant(lower, v))
+      if (matchedVariant && !isNegated(lower, matchedVariant)) {
         warnings[ing] = entry[1]; haram.push(ing); foundHaram = true; break
       }
     }
     if (foundHaram) continue
     for (const entry of allSuspicious) {
-      if (matchesEntry(lower, entry)) {
+      const matchedVariant = (entry.slice(2) as string[]).find(v => matchesVariant(lower, v))
+      if (matchedVariant && !isNegated(lower, matchedVariant)) {
         warnings[ing] = entry[1]; suspicious.push(ing); break
       }
     }

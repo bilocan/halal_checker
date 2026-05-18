@@ -9,6 +9,11 @@ class Product {
   final List<String> suspiciousIngredients;
   final Map<String, String> ingredientWarnings;
   final Map<String, String> ingredientTranslations;
+
+  /// Maps ingredient text → canonical keyword (e.g. "poudre de lactosérum" → "whey").
+  /// Used by the UI to look up localized reason strings per device locale.
+  /// Empty for products fetched from cache before this field was introduced.
+  final Map<String, String> ingredientCanonicals;
   final List<String> labels;
   final String? imageUrl;
   final String? imageFrontUrl;
@@ -54,6 +59,7 @@ class Product {
     required this.suspiciousIngredients,
     required this.ingredientWarnings,
     this.ingredientTranslations = const {},
+    this.ingredientCanonicals = const {},
     required this.labels,
     this.imageUrl,
     this.imageFrontUrl,
@@ -79,6 +85,7 @@ class Product {
     List<String>? suspiciousIngredients,
     Map<String, String>? ingredientWarnings,
     Map<String, String>? ingredientTranslations,
+    Map<String, String>? ingredientCanonicals,
     List<String>? labels,
     String? imageUrl,
     String? imageFrontUrl,
@@ -103,6 +110,7 @@ class Product {
     ingredientWarnings: ingredientWarnings ?? this.ingredientWarnings,
     ingredientTranslations:
         ingredientTranslations ?? this.ingredientTranslations,
+    ingredientCanonicals: ingredientCanonicals ?? this.ingredientCanonicals,
     labels: labels ?? this.labels,
     imageUrl: imageUrl ?? this.imageUrl,
     imageFrontUrl: imageFrontUrl ?? this.imageFrontUrl,
@@ -128,6 +136,8 @@ class Product {
     'suspiciousIngredients': suspiciousIngredients,
     'ingredientWarnings': ingredientWarnings,
     'ingredientTranslations': ingredientTranslations,
+    if (ingredientCanonicals.isNotEmpty)
+      'ingredientCanonicals': ingredientCanonicals,
     'labels': labels,
     'imageUrl': imageUrl,
     'imageFrontUrl': imageFrontUrl,
@@ -159,6 +169,9 @@ class Product {
     ),
     ingredientTranslations: json['ingredientTranslations'] != null
         ? Map<String, String>.from(json['ingredientTranslations'] as Map)
+        : const {},
+    ingredientCanonicals: json['ingredientCanonicals'] != null
+        ? Map<String, String>.from(json['ingredientCanonicals'] as Map)
         : const {},
     labels: List<String>.from(json['labels'] as List),
     imageUrl: json['imageUrl'] as String?,

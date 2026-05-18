@@ -25,6 +25,7 @@ import '../services/ingredient_sanitizer.dart';
 import '../services/issue_report_service.dart';
 import '../services/ocr_service.dart';
 import '../services/product_image_service.dart';
+import '../constants/ingredient_keywords.dart';
 import '../services/product_service.dart';
 import 'deep_analysis_screen.dart';
 import 'discussion_screen.dart';
@@ -1157,6 +1158,17 @@ class _ResultScreenState extends State<ResultScreen> {
               ] else
                 ...ingredients.map((ingredient) {
                   final warning = product.ingredientWarnings[ingredient];
+                  final isHaramIngredient = product.haramIngredients.contains(
+                    ingredient,
+                  );
+                  final canonical = product.ingredientCanonicals[ingredient];
+                  final localizedWarning = canonical != null
+                      ? (IngredientKeywords.localizedReason(
+                              canonical,
+                              Localizations.localeOf(context).languageCode,
+                            ) ??
+                            warning)
+                      : warning;
                   final fattyAlcohol =
                       warning == null &&
                       ProductService.isFattyAlcohol(ingredient);
@@ -1165,12 +1177,16 @@ class _ResultScreenState extends State<ResultScreen> {
                     child: ListTile(
                       leading: Icon(
                         warning != null
-                            ? Icons.warning
+                            ? (isHaramIngredient
+                                  ? Icons.warning
+                                  : Icons.warning_amber_outlined)
                             : fattyAlcohol
                             ? Icons.info_outline
                             : Icons.check_circle_outline,
                         color: warning != null
-                            ? Colors.red
+                            ? (isHaramIngredient
+                                  ? Colors.red
+                                  : Colors.orange.shade700)
                             : fattyAlcohol
                             ? Colors.blue.shade400
                             : kGreen,
@@ -1180,8 +1196,8 @@ class _ResultScreenState extends State<ResultScreen> {
                         product.ingredientTranslations[ingredient],
                         showTranslated: _showTranslated,
                       ),
-                      subtitle: warning != null
-                          ? Text(warning)
+                      subtitle: localizedWarning != null
+                          ? SelectableText(localizedWarning)
                           : fattyAlcohol
                           ? Text(
                               loc.fattyAlcoholNote,
@@ -1211,6 +1227,14 @@ class _ResultScreenState extends State<ResultScreen> {
                 const SizedBox(height: 8),
                 ...product.haramIngredients.map((e) {
                   final warning = product.ingredientWarnings[e];
+                  final canonical = product.ingredientCanonicals[e];
+                  final displayWarning = canonical != null
+                      ? (IngredientKeywords.localizedReason(
+                              canonical,
+                              Localizations.localeOf(context).languageCode,
+                            ) ??
+                            warning)
+                      : warning;
                   return ListTile(
                     leading: const Icon(Icons.error, color: Colors.red),
                     title: _ingredientTitle(
@@ -1218,7 +1242,9 @@ class _ResultScreenState extends State<ResultScreen> {
                       product.ingredientTranslations[e],
                       showTranslated: _showTranslated,
                     ),
-                    subtitle: Text(warning ?? loc.foundInIngredients),
+                    subtitle: SelectableText(
+                      displayWarning ?? loc.foundInIngredients,
+                    ),
                     dense: true,
                   );
                 }),
@@ -1239,6 +1265,14 @@ class _ResultScreenState extends State<ResultScreen> {
                 const SizedBox(height: 8),
                 ...suspiciousIngredients.map((e) {
                   final warning = product.ingredientWarnings[e];
+                  final canonical = product.ingredientCanonicals[e];
+                  final displayWarning = canonical != null
+                      ? (IngredientKeywords.localizedReason(
+                              canonical,
+                              Localizations.localeOf(context).languageCode,
+                            ) ??
+                            warning)
+                      : warning;
                   return ListTile(
                     leading: Icon(Icons.warning, color: Colors.orange.shade600),
                     title: _ingredientTitle(
@@ -1246,7 +1280,9 @@ class _ResultScreenState extends State<ResultScreen> {
                       product.ingredientTranslations[e],
                       showTranslated: _showTranslated,
                     ),
-                    subtitle: Text(warning ?? loc.mayBeAnimalDerivedNote),
+                    subtitle: SelectableText(
+                      displayWarning ?? loc.mayBeAnimalDerivedNote,
+                    ),
                     dense: true,
                   );
                 }),

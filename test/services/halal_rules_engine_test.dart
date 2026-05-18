@@ -311,6 +311,30 @@ void main() {
       expect(result.verdict, HalalRuleVerdict.halal);
       expect(result.haram, isEmpty);
     });
+
+    test('Hungarian "nem" before keyword suppresses haram match', () {
+      final result = engine.analyzeIngredients(['nem tartalmaz schwein']);
+      expect(result.verdict, HalalRuleVerdict.halal);
+      expect(result.haram, isEmpty);
+    });
+
+    test('Hungarian "mentes" before keyword suppresses haram match', () {
+      final result = engine.analyzeIngredients(['mentes schwein']);
+      expect(result.verdict, HalalRuleVerdict.halal);
+      expect(result.haram, isEmpty);
+    });
+
+    test('CS/SR "bez" before keyword suppresses haram match', () {
+      final result = engine.analyzeIngredients(['bez schwein']);
+      expect(result.verdict, HalalRuleVerdict.halal);
+      expect(result.haram, isEmpty);
+    });
+
+    test('"free of" before keyword suppresses haram match', () {
+      final result = engine.analyzeIngredients(['free of pork']);
+      expect(result.verdict, HalalRuleVerdict.halal);
+      expect(result.haram, isEmpty);
+    });
   });
 
   group('false positive regressions', () {
@@ -373,6 +397,28 @@ void main() {
     test('natural flavouring is still suspicious', () {
       final result = engine.analyzeIngredients(['natural flavouring']);
       expect(result.suspicious, isNotEmpty);
+    });
+
+    // "lactosérum" (FR whey) contains "rum" after the accented "é".
+    // ASCII \b treats "é" as a non-word char, creating a false boundary.
+    // wPre/wPost cover À-ɏ so "é" is treated as a word char → no match.
+    test('lactosérum does not false-positive on "rum"', () {
+      final result = engine.analyzeIngredients(['poudre de lactosérum (lait)']);
+      expect(result.haram, isEmpty);
+    });
+
+    test('standalone rum is still haram', () {
+      final result = engine.analyzeIngredients(['rum']);
+      expect(result.verdict, HalalRuleVerdict.haram);
+    });
+
+    // Dutch "aroma's" (plural of aroma) is a vague flavouring term and must
+    // be flagged, unlike "aroma vanillin" or "aroma tee-extrakt" which name
+    // a specific source and are intentionally excluded.
+    test("Dutch aroma's is suspicious with flavouring canonical", () {
+      final result = engine.analyzeIngredients(["aroma's"]);
+      expect(result.suspicious, equals(["aroma's"]));
+      expect(result.canonicals["aroma's"], equals('flavouring'));
     });
   });
 }

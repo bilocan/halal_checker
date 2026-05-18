@@ -150,6 +150,7 @@ class ProductService {
     List<String> suspicious,
     Map<String, String> warnings,
     Map<String, String> translations,
+    Map<String, String> canonicals,
     String explanation,
   })
   analyzeWithKeywords(List<String> ingredients) {
@@ -161,6 +162,7 @@ class ProductService {
       suspicious: result.suspicious,
       warnings: result.warnings,
       translations: result.translations,
+      canonicals: result.canonicals,
       explanation: result.explanation,
     );
   }
@@ -189,6 +191,18 @@ class ProductService {
     final kwCheck = analyzeWithKeywords(product.ingredients);
     final customCheck = _customKeywordAnalysis(product.ingredients);
 
+    // Also analyze the already-flagged ingredients directly: their exact strings
+    // (from AI) may differ in case/spacing from product.ingredients entries, so
+    // a plain analyzeWithKeywords pass can miss them. This ensures every flagged
+    // ingredient gets a canonical key that matches what the UI looks up.
+    final flaggedIngredients = [
+      ...product.haramIngredients,
+      ...product.suspiciousIngredients,
+    ];
+    final flaggedCheck = flaggedIngredients.isEmpty
+        ? null
+        : analyzeWithKeywords(flaggedIngredients);
+
     final allHaram = {
       ...product.haramIngredients,
       ...kwCheck.haram,
@@ -204,6 +218,11 @@ class ProductService {
       ...kwCheck.translations,
       ...customCheck.translations,
     };
+    final allCanonicals = {
+      ...product.ingredientCanonicals,
+      ...kwCheck.canonicals,
+      if (flaggedCheck != null) ...flaggedCheck.canonicals,
+    };
     final isNowHaram = allHaram.isNotEmpty;
 
     if (isNowHaram && product.isHalal) {
@@ -217,11 +236,15 @@ class ProductService {
         haramIngredients: allHaram,
         ingredientWarnings: allWarnings,
         ingredientTranslations: allTranslations,
+        ingredientCanonicals: allCanonicals,
         explanation: explanation,
       );
     }
-    if (allTranslations.isNotEmpty) {
-      return product.copyWith(ingredientTranslations: allTranslations);
+    if (allTranslations.isNotEmpty || allCanonicals.isNotEmpty) {
+      return product.copyWith(
+        ingredientTranslations: allTranslations,
+        ingredientCanonicals: allCanonicals,
+      );
     }
     return product;
   }
@@ -286,6 +309,7 @@ class ProductService {
         ...kwResult.translations,
         ...customResult.translations,
       },
+      ingredientCanonicals: kwResult.canonicals,
       explanation: kwResult.explanation,
       analyzedByAI: false,
       analysisMethod: 'keyword',
@@ -496,7 +520,16 @@ class ProductService {
             return safe;
           }
           if (!_isStale(dbProduct)) {
-            return _mergeApprovedImages(cached, dbProduct);
+            final merged = _mergeApprovedImages(cached, dbProduct);
+            // Backfill ingredientCanonicals for products cached before that
+            // field was introduced (they have warnings but empty canonicals).
+            if (merged.ingredientCanonicals.isEmpty &&
+                merged.ingredientWarnings.isNotEmpty) {
+              final safe = _applyKeywordSafety(merged);
+              await _cache.saveProduct(barcode, safe);
+              return safe;
+            }
+            return merged;
           }
           // stale (updated_at > last_analysed_at): fall through so the EF re-analyses
         }
@@ -982,6 +1015,10 @@ class ProductService {
         ingredientTranslations: {
           ...fallback.translations,
           ...(nameCheck?.translations ?? {}),
+        },
+        ingredientCanonicals: {
+          ...fallback.canonicals,
+          ...(nameCheck?.canonicals ?? {}),
         },
         labels: labels,
         imageUrl: imageUrl,
