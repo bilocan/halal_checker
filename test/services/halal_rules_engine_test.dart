@@ -312,4 +312,67 @@ void main() {
       expect(result.haram, isEmpty);
     });
   });
+
+  group('false positive regressions', () {
+    // Product 9000144046903 — white wine vinegar
+    // "weißweinessig" was matching the Dutch whey variant "wei" at position 0
+    // because Dart's regex engine case-folds ß → SS under caseSensitive:false,
+    // pushing it outside the À-ɏ range in the lookahead character class.
+    test('weißweinessig (product 9000144046903) does not trigger whey', () {
+      final result = engine.analyzeIngredients(['weißweinessig']);
+      expect(result.suspicious, isEmpty);
+      expect(result.haram, isEmpty);
+      expect(result.verdict, HalalRuleVerdict.halal);
+    });
+
+    test('wein still detected as haram when it stands alone', () {
+      final result = engine.analyzeIngredients(['wein']);
+      expect(result.verdict, HalalRuleVerdict.haram);
+    });
+
+    // Product 9008700236522 — tea drink
+    // Bare "aroma" was word-boundary-matching the 'flavouring' suspicious
+    // keyword even when the rest of the token identified a plant-derived source.
+    test(
+      'aroma tee-extrakt token (product 9008700236522) is not suspicious',
+      () {
+        final result = engine.analyzeIngredients([
+          'aroma. tee-extrakt: mind. 1',
+        ]);
+        expect(result.suspicious, isEmpty);
+      },
+    );
+
+    // Product 4000539003004 — Chocolate Cognac
+    // "aroma vanillin" falsely triggered suspicious; cognac keeps it haram.
+    test(
+      'aroma vanillin token (product 4000539003004) does not flag suspicious',
+      () {
+        final result = engine.analyzeIngredients([
+          'aroma vanillin. kann haselnüsse und andere schalenfrüchte enthalten.',
+        ]);
+        expect(result.suspicious, isEmpty);
+      },
+    );
+
+    test('cognac still marks product 4000539003004 as haram', () {
+      final result = engine.analyzeIngredients([
+        'cognac',
+        'aroma vanillin. kann haselnüsse und andere schalenfrüchte enthalten.',
+      ]);
+      expect(result.verdict, HalalRuleVerdict.haram);
+      expect(result.haram, contains('cognac'));
+    });
+
+    // Smoke-test: qualified aroma forms are still caught
+    test('natürliches aroma is still suspicious', () {
+      final result = engine.analyzeIngredients(['natürliches aroma']);
+      expect(result.suspicious, isNotEmpty);
+    });
+
+    test('natural flavouring is still suspicious', () {
+      final result = engine.analyzeIngredients(['natural flavouring']);
+      expect(result.suspicious, isNotEmpty);
+    });
+  });
 }

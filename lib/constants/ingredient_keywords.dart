@@ -172,7 +172,7 @@ class IngredientKeywords {
       'přírodní aroma', // CS
     ],
     'flavouring': [
-      'flavouring', 'flavoring', 'aroma', 'arôme', 'aroma naturale',
+      'flavouring', 'flavoring', 'arôme', 'aroma naturale',
       'doğal aroma', 'natürliches aroma', 'smaakstof',
       'ízesítő', // HU
     ],
@@ -211,6 +211,10 @@ class IngredientKeywords {
 
   // Unicode-aware word boundaries: covers Latin + extended Latin (U+00C0–U+024F)
   // so words like "šunka", "vepřové", "şarap", "pezsgő" match correctly.
-  static const String wPre = '(?<![a-zA-Z\\dÀ-ɏ])';
-  static const String wPost = '(?![a-zA-Z\\dÀ-ɏ])';
+  // ß (U+00DF) is added explicitly because Dart's regex engine, under
+  // caseSensitive: false, case-folds ß → SS and may exclude it from the
+  // À-ɏ range expansion, causing false positives in German compound words
+  // like "weißweinessig" (white wine vinegar).
+  static const String wPre = '(?<![a-zA-Z\\dÀ-ɏß])';
+  static const String wPost = '(?![a-zA-Z\\dÀ-ɏß])';
 }
