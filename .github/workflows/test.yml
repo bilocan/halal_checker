@@ -35,7 +35,7 @@ jobs:
       - name: Upload rules to Supabase Storage
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev'
         run: |
-          curl --fail-with-body -X PUT \
+          curl --fail-with-body -X POST \
             "${{ secrets.SUPABASE_URL }}/storage/v1/object/rules/keyword-rules.json" \
             -H "apikey: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
             -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
