@@ -1,0 +1,60 @@
+---
+description: Codebase indexing verification and @codebase prompt patterns for HalalScan
+alwaysApply: false
+---
+
+# Codebase indexing (HalalScan)
+
+Indexing is on by default when the folder is open. No `settings.json` entry required.
+
+## Verify
+
+1. **Cursor Settings → Indexing** — wait until status bar shows ~80%+ before relying on `@codebase`.
+2. **View included files** — should include `lib/`, `test/`, `supabase/`, `test_data/`, `CLAUDE.md`.
+3. Should **not** include `build/`, `.dart_tool/`, `dart_defines.json` (see `.cursorignore`).
+
+If search is weak: **Ctrl+Shift+P → Reindex** (after large merges or branch switches).
+
+## Where logic lives
+
+| Area | Path |
+|------|------|
+| Lookup pipeline | `lib/services/product_service.dart` |
+| Keywords / override | `lib/services/keyword_service.dart`, constants in `product_service.dart` |
+| Community | `lib/services/community_service.dart` |
+| Edge Function | `supabase/functions/lookup-product/` |
+| Schema | `supabase/migrations/` |
+| Fixtures | `test_data/` |
+
+Platform folders (`android/`, `ios/`, etc.) are mostly native boilerplate — prefer `lib/` and `supabase/` for halal logic.
+
+## @codebase sample prompts
+
+Type `@` in chat and pick **Codebase** so it attaches to the message. Use real symbol names (`getComments`, not `fetchComments`).
+
+**Narrow (one symbol / flow):**
+```
+@codebase Where is CommunityService.getComments defined, and which screens call it?
+```
+
+**Broad (architecture):**
+```
+@codebase How does the product lookup pipeline work from barcode scan to halal verdict? Include test DB, cache, Supabase edge function, and OpenFoodFacts fallback.
+```
+
+**Cross-layer (app + backend):**
+```
+@codebase When a user posts a comment on a discussion, trace the flow from discussion_screen through CommunityService to Supabase tables and RLS.
+```
+
+**Debug-oriented:**
+```
+@codebase ProductService marks something halal but keyword matching should override to not halal. Where is the safety override applied after AI analysis?
+```
+
+**With extra context:**
+```
+@codebase @CLAUDE.md Explain the three halal analysis layers and where keyword lists are defined in code.
+```
+
+After `@codebase` answers, narrow with grep or a single file: `@lib/services/product_service.dart`.
