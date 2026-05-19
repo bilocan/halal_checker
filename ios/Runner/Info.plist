@@ -37,6 +37,8 @@
 			</array>
 		</dict>
 	</array>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>HalalScan may access your location to find nearby stores and products.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>HalalScan needs camera access to scan product barcodes and capture ingredient labels for halal analysis.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
