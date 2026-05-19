@@ -96,6 +96,12 @@
     "matched_canonicals": []
   },
   {
+    "description": "0% alcohol declaration with sugar is halal",
+    "ingredients": ["sugar", "0% alcohol"],
+    "verdict": "halal",
+    "matched_canonicals": []
+  },
+  {
     "description": "cetyl alcohol not flagged as haram",
     "ingredients": ["cetyl alcohol"],
     "verdict": "halal",

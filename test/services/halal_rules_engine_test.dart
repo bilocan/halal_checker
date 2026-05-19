@@ -39,6 +39,14 @@ void main() {
       expect(result.verdict, HalalRuleVerdict.halal);
     });
 
+    test('0% alcohol declaration with halal ingredients is halal', () {
+      final result = engine.analyzeIngredients(['sugar', '0% alcohol']);
+
+      expect(result.verdict, HalalRuleVerdict.halal);
+      expect(result.isHalal, isTrue);
+      expect(result.haram, isEmpty);
+    });
+
     group('negation suppression', () {
       // Regression: barcode 8690766143732 — ingredient text contains allergen-free
       // declarations ("enthält keine Zutaten vom Schwein", "ne contient pas … porc")
@@ -226,6 +234,11 @@ void main() {
 
     test('respects alcohol-free exclusion', () {
       expect(engine.matchesKeyword('malt alcohol-free', 'alcohol'), isFalse);
+    });
+
+    test('respects 0% alcohol declaration exclusion', () {
+      expect(engine.matchesKeyword('0% alcohol', 'alcohol'), isFalse);
+      expect(engine.matchesKeyword('sugar, 0% alcohol', 'alcohol'), isFalse);
     });
   });
 

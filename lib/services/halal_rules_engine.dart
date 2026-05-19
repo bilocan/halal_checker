@@ -131,6 +131,9 @@ class HalalRulesEngine {
     final escaped = RegExp.escape(variant);
     if (IngredientKeywords.alcoholFamily.contains(variant.toLowerCase())) {
       if (IngredientKeywords.fattyAlcoholPrefix.hasMatch(value)) return false;
+      if (IngredientKeywords.isZeroPercentAlcoholDeclaration(value, variant)) {
+        return false;
+      }
       return RegExp(
         '${IngredientKeywords.wPre}$escaped${IngredientKeywords.wPost}(?![-\\s]*free)',
         caseSensitive: false,

@@ -508,6 +508,20 @@ class IngredientKeywords {
     caseSensitive: false,
   );
 
+  /// True when [text] declares zero alcohol for [variant] (e.g. "0% alcohol").
+  static bool isZeroPercentAlcoholDeclaration(String text, String variant) {
+    final v = RegExp.escape(variant);
+    return RegExp(
+      r'\b0(?:[.,]0+)?\s*%\s*' +
+          v +
+          r'(?:\b|(?![a-zA-Z\dÀ-ɏß]))' +
+          r'|\b' +
+          v +
+          r'(?:\b|(?![a-zA-Z\dÀ-ɏß]))\s*(?:\(?\s*)?0(?:[.,]0+)?\s*%',
+      caseSensitive: false,
+    ).hasMatch(text);
+  }
+
   // Unicode-aware word boundaries: covers Latin + extended Latin (U+00C0–U+024F)
   // so words like "šunka", "vepřové", "şarap", "pezsgő" match correctly.
   // ß (U+00DF) is added explicitly because Dart's regex engine, under
