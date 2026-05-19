@@ -217,6 +217,53 @@ void main() {
   });
 
   group('HalalRulesEngine.matchesKeyword', () {
+    test(
+      'German mono- und diglyceride matches when hyphen before und is omitted',
+      () {
+        expect(
+          engine.matchesKeyword(
+            'mono und diglyceride von speisefettsäuren',
+            'e471',
+          ),
+          isTrue,
+        );
+        expect(
+          engine.matchesKeyword(
+            'mono- und diglyceride von speisefettsäuren',
+            'e471',
+          ),
+          isTrue,
+        );
+      },
+    );
+
+    test(
+      'hyphen-optional matching works for custom multi-word suspicious keywords',
+      () {
+        final customEngine = engine.merge(
+          const HalalKeywordRuleSet(
+            suspicious: {
+              'mono- und diglyceride von speisefettsäuren':
+                  'Mono/diglycerides may be animal-derived',
+            },
+            suspiciousVariants: {
+              'mono- und diglyceride von speisefettsäuren': [
+                'mono- und diglyceride von speisefettsäuren',
+              ],
+            },
+          ),
+        );
+
+        expect(
+          customEngine.matchesKeyword(
+            'mono und diglyceride von speisefettsäuren',
+            'mono- und diglyceride von speisefettsäuren',
+          ),
+          isTrue,
+        );
+      },
+    );
+
     test('returns true when ingredient contains a known keyword variant', () {
       expect(engine.matchesKeyword('pork rinds', 'pork'), isTrue);
       expect(engine.matchesKeyword('alkohol', 'alcohol'), isTrue);
@@ -281,6 +328,18 @@ void main() {
       final result = engine.analyzeIngredients(['schweinefleisch']);
       expect(result.verdict, HalalRuleVerdict.haram);
     });
+
+    test(
+      'German mono und diglyceride von speisefettsäuren is suspicious (e471)',
+      () {
+        final result = engine.analyzeIngredients([
+          'mono und diglyceride von speisefettsäuren',
+        ]);
+        expect(result.verdict, HalalRuleVerdict.halal);
+        expect(result.suspicious, contains('mono und diglyceride von speisefettsäuren'));
+        expect(result.canonicals['mono und diglyceride von speisefettsäuren'], 'e471');
+      },
+    );
   });
 
   group('verdict priority', () {

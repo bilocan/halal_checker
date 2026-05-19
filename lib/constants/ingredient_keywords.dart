@@ -140,7 +140,11 @@ class IngredientKeywords {
   static const Map<String, List<String>> suspiciousVariants = {
     'e920': ['e920', 'e-920'],
     'e322': ['e322', 'e-322'],
-    'e471': ['e471', 'e-471'],
+    'e471': [
+      'e471',
+      'e-471',
+      'mono- und diglyceride von speisefettsäuren',
+    ],
     'e472': ['e472', 'e-472'],
     'e473': ['e473', 'e-473'],
     'e927': ['e927', 'e-927'],
@@ -404,6 +408,7 @@ class IngredientKeywords {
     },
     'e471': {
       'en': ['e471', 'e-471'],
+      'de': ['mono- und diglyceride von speisefettsäuren'],
     },
     'e472': {
       'en': ['e472', 'e-472'],

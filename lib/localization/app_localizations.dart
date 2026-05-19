@@ -256,6 +256,20 @@ class AppLocalizations {
       'variantsHint': 'e.g. schmalz, domuz yağı, saindoux',
       'variantsHelperText':
           'Comma-separated multilingual variants for matching',
+      'suggestVariantsLabel': 'Other languages (optional)',
+      'suggestVariantsHint': 'e.g. schwein, domuz, porc',
+      'suggestVariantsHelperText':
+          'Comma-separated spellings in other languages for the same ingredient',
+      'translationsLabel': 'Translations by locale',
+      'translationsHint': 'de: schwein\ntr: domuz',
+      'translationsHelperText':
+          'One per line: locale code and term (de, tr, fr, es, it, nl, sr, hu, cs). Used for matching and UI labels.',
+      'mergeKeywordTitle': 'Merge with existing rule?',
+      'mergeKeywordMessage':
+          '"{alias}" matches the existing rule "{canonical}". Merge aliases into that rule instead of creating a duplicate?',
+      'mergeKeywordConfirm': 'Merge',
+      'approveAsNewRule': 'Create new rule',
+      'suggestionMerged': 'Suggestion merged into existing rule',
       'builtInBadge': 'built-in',
       'approve': 'Approve',
       'reject': 'Reject',
@@ -535,6 +549,20 @@ class AppLocalizations {
       'variantsHint': 'örn. schmalz, domuz yağı, saindoux',
       'variantsHelperText':
           'Eşleştirme için virgülle ayrılmış çok dilli varyantlar',
+      'suggestVariantsLabel': 'Diğer diller (isteğe bağlı)',
+      'suggestVariantsHint': 'örn. schwein, domuz, porc',
+      'suggestVariantsHelperText':
+          'Aynı bileşen için diğer dillerdeki yazılışlar, virgülle ayrılmış',
+      'translationsLabel': 'Dile göre çeviriler',
+      'translationsHint': 'de: schwein\ntr: domuz',
+      'translationsHelperText':
+          'Satır başına bir tane: dil kodu ve terim (de, tr, fr, es, it, nl, sr, hu, cs). Eşleştirme ve arayüz için.',
+      'mergeKeywordTitle': 'Mevcut kurala birleştirilsin mi?',
+      'mergeKeywordMessage':
+          '"{alias}", mevcut "{canonical}" kuralıyla eşleşiyor. Yinelenen kural yerine bu kurala birleştirilsin mi?',
+      'mergeKeywordConfirm': 'Birleştir',
+      'approveAsNewRule': 'Yeni kural oluştur',
+      'suggestionMerged': 'Öneri mevcut kurala birleştirildi',
       'builtInBadge': 'yerleşik',
       'approve': 'Onayla',
       'reject': 'Reddet',
@@ -824,6 +852,20 @@ class AppLocalizations {
       'variantsHint': 'z. B. Schmalz, domuz yağı, saindoux',
       'variantsHelperText':
           'Kommagetrennte mehrsprachige Varianten für den Abgleich',
+      'suggestVariantsLabel': 'Weitere Sprachen (optional)',
+      'suggestVariantsHint': 'z. B. schwein, domuz, porc',
+      'suggestVariantsHelperText':
+          'Kommagetrennte Schreibweisen derselben Zutat in anderen Sprachen',
+      'translationsLabel': 'Übersetzungen nach Sprache',
+      'translationsHint': 'de: schwein\ntr: domuz',
+      'translationsHelperText':
+          'Eine Zeile pro Eintrag: Sprachcode und Begriff (de, tr, fr, es, it, nl, sr, hu, cs). Für Abgleich und Anzeige.',
+      'mergeKeywordTitle': 'Mit bestehender Regel zusammenführen?',
+      'mergeKeywordMessage':
+          '"{alias}" passt zur bestehenden Regel "{canonical}". Aliase dort zusammenführen statt eine Duplikat-Regel anzulegen?',
+      'mergeKeywordConfirm': 'Zusammenführen',
+      'approveAsNewRule': 'Neue Regel anlegen',
+      'suggestionMerged': 'Vorschlag in bestehende Regel übernommen',
       'builtInBadge': 'eingebaut',
       'approve': 'Genehmigen',
       'reject': 'Ablehnen',
@@ -1105,6 +1147,19 @@ class AppLocalizations {
   String get variantsLabel => _translate('variantsLabel');
   String get variantsHint => _translate('variantsHint');
   String get variantsHelperText => _translate('variantsHelperText');
+  String get suggestVariantsLabel => _translate('suggestVariantsLabel');
+  String get suggestVariantsHint => _translate('suggestVariantsHint');
+  String get suggestVariantsHelperText => _translate('suggestVariantsHelperText');
+  String get translationsLabel => _translate('translationsLabel');
+  String get translationsHint => _translate('translationsHint');
+  String get translationsHelperText => _translate('translationsHelperText');
+  String get mergeKeywordTitle => _translate('mergeKeywordTitle');
+  String mergeKeywordMessage(String alias, String canonical) => _translate(
+    'mergeKeywordMessage',
+  ).replaceAll('{alias}', alias).replaceAll('{canonical}', canonical);
+  String get mergeKeywordConfirm => _translate('mergeKeywordConfirm');
+  String get approveAsNewRule => _translate('approveAsNewRule');
+  String get suggestionMerged => _translate('suggestionMerged');
   String get builtInBadge => _translate('builtInBadge');
   String get approve => _translate('approve');
   String get reject => _translate('reject');

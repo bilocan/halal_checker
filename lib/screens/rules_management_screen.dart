@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../app_colors.dart';
 import '../constants/ingredient_keywords.dart';
 import '../localization/app_localizations.dart';
+import '../services/keyword_normalization.dart';
 import '../services/keyword_service.dart';
 
 class RulesManagementScreen extends StatefulWidget {
@@ -129,9 +130,49 @@ class _RulesManagementScreenState extends State<RulesManagementScreen>
 
   Future<void> _approveSuggestion(Map<String, dynamic> suggestion) async {
     final loc = AppLocalizations.of(context);
-    final ok = await _service.approveSuggestion(suggestion);
+    final keyword = suggestion['keyword'] as String;
+    final existing = await _service.findRuleByAlias(keyword);
+
+    Map<String, dynamic>? mergeTarget;
+    if (existing != null &&
+        (existing['canonical'] as String).toLowerCase() !=
+            keyword.trim().toLowerCase()) {
+      if (!mounted) return;
+      final choice = await showDialog<String>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text(loc.mergeKeywordTitle),
+          content: Text(
+            loc.mergeKeywordMessage(keyword, existing['canonical'] as String),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, 'new'),
+              child: Text(loc.approveAsNewRule),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, 'merge'),
+              style: FilledButton.styleFrom(backgroundColor: kGreen),
+              child: Text(loc.mergeKeywordConfirm),
+            ),
+          ],
+        ),
+      );
+      if (choice == null) return;
+      if (choice == 'merge') mergeTarget = existing;
+    } else if (existing != null) {
+      mergeTarget = existing;
+    }
+
+    final ok = await _service.approveSuggestion(
+      suggestion,
+      mergeIntoExisting: mergeTarget,
+    );
     if (!mounted) return;
-    _showSnack(ok ? loc.suggestionApproved : loc.suggestionApproveFailed, ok);
+    final msg = ok
+        ? (mergeTarget != null ? loc.suggestionMerged : loc.suggestionApproved)
+        : loc.suggestionApproveFailed;
+    _showSnack(msg, ok);
     if (ok) {
       _loadRules();
       _loadSuggestions();
@@ -321,6 +362,9 @@ class _RulesManagementScreenState extends State<RulesManagementScreen>
     final category = rule['category'] as String;
     final reason = rule['reason'] as String;
     final variants = rule['variants'] as List?;
+    final translations = KeywordNormalization.parseTranslations(
+      rule['translations'],
+    );
     final isHaram = category == 'haram';
 
     return Card(
@@ -371,6 +415,15 @@ class _RulesManagementScreenState extends State<RulesManagementScreen>
                 '${loc.variantsLabel}: ${variants.join(', ')}',
                 style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
                 maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+            if (translations.isNotEmpty) ...[
+              const SizedBox(height: 2),
+              Text(
+                '${loc.translationsLabel}: ${KeywordNormalization.formatTranslations(translations)}',
+                style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
             ],
@@ -526,8 +579,9 @@ class _RulesManagementScreenState extends State<RulesManagementScreen>
     final keyword = suggestion['keyword'] as String;
     final category = suggestion['category'] as String;
     final reason = suggestion['reason'] as String;
+    final variants = suggestion['variants'] as List?;
     final createdAt = DateTime.tryParse(
-      suggestion['created_at'] as String? ?? '',
+      suggestion['submitted_at'] as String? ?? '',
     );
     final isHaram = category == 'haram';
 
@@ -580,6 +634,13 @@ class _RulesManagementScreenState extends State<RulesManagementScreen>
               reason,
               style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
             ),
+            if (variants != null && variants.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Text(
+                '${loc.variantsLabel}: ${variants.join(', ')}',
+                style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+              ),
+            ],
             if (createdAt != null) ...[
               const SizedBox(height: 4),
               Text(
@@ -645,6 +706,7 @@ class _RuleEditorSheetState extends State<_RuleEditorSheet> {
   final _canonicalCtrl = TextEditingController();
   final _reasonCtrl = TextEditingController();
   final _variantsCtrl = TextEditingController();
+  final _translationsCtrl = TextEditingController();
   String _category = 'haram';
   bool _submitting = false;
 
@@ -661,6 +723,14 @@ class _RuleEditorSheetState extends State<_RuleEditorSheet> {
       if (variants != null) {
         _variantsCtrl.text = variants.join(', ');
       }
+      final translations = KeywordNormalization.parseTranslations(
+        widget.rule!['translations'],
+      );
+      if (translations.isNotEmpty) {
+        _translationsCtrl.text = KeywordNormalization.formatTranslations(
+          translations,
+        );
+      }
     }
   }
 
@@ -669,6 +739,7 @@ class _RuleEditorSheetState extends State<_RuleEditorSheet> {
     _canonicalCtrl.dispose();
     _reasonCtrl.dispose();
     _variantsCtrl.dispose();
+    _translationsCtrl.dispose();
     super.dispose();
   }
 
@@ -688,6 +759,9 @@ class _RuleEditorSheetState extends State<_RuleEditorSheet> {
 
     final service = KeywordService();
     final variants = _parseVariants();
+    final translations = KeywordNormalization.parseTranslationsText(
+      _translationsCtrl.text,
+    );
     bool ok;
 
     if (_isEditing) {
@@ -696,7 +770,8 @@ class _RuleEditorSheetState extends State<_RuleEditorSheet> {
         canonical: _canonicalCtrl.text,
         category: _category,
         reason: _reasonCtrl.text,
-        variants: variants.isNotEmpty ? variants : null,
+        variants: variants,
+        translations: translations,
       );
     } else {
       ok = await service.createRule(
@@ -704,6 +779,7 @@ class _RuleEditorSheetState extends State<_RuleEditorSheet> {
         category: _category,
         reason: _reasonCtrl.text,
         variants: variants.isNotEmpty ? variants : null,
+        translations: translations.isNotEmpty ? translations : null,
       );
     }
 
@@ -818,6 +894,18 @@ class _RuleEditorSheetState extends State<_RuleEditorSheet> {
                   helperMaxLines: 2,
                 ),
                 maxLines: 2,
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _translationsCtrl,
+                decoration: InputDecoration(
+                  labelText: loc.translationsLabel,
+                  hintText: loc.translationsHint,
+                  border: const OutlineInputBorder(),
+                  helperText: loc.translationsHelperText,
+                  helperMaxLines: 3,
+                ),
+                maxLines: 4,
               ),
               const SizedBox(height: 20),
               FilledButton(

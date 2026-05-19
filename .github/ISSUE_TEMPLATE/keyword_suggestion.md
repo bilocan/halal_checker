@@ -15,5 +15,7 @@ The ingredient name or E-number.
 **Reason**
 Why should this keyword be added or changed? Please include sources (scholarly references, food science citations, or authoritative halal certification body rulings preferred).
 
-**Languages**
-If you know the keyword in other languages (TR, DE, FR, IT, ES, NL), list them here.
+**Other languages (variants)**
+If you know the keyword in other languages (TR, DE, FR, IT, ES, NL, SR, HU, CS), list comma-separated spellings here. In the app you can also use **Keywords → Suggest a keyword → Other languages**.
+
+Example: `schwein, domuz, porc`
