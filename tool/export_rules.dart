@@ -19,6 +19,8 @@ void main(List<String> args) {
         e.key: {
           'reason': e.value,
           'variants': IngredientKeywords.haramVariants[e.key] ?? [e.key],
+          'byLang':
+              IngredientKeywords.haramByLang[e.key] ?? <String, List<String>>{},
         },
     },
     'suspicious': {
@@ -26,6 +28,9 @@ void main(List<String> args) {
         e.key: {
           'reason': e.value,
           'variants': IngredientKeywords.suspiciousVariants[e.key] ?? [e.key],
+          'byLang':
+              IngredientKeywords.suspiciousByLang[e.key] ??
+              <String, List<String>>{},
         },
     },
   });
