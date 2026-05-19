@@ -90,7 +90,7 @@ const SUSPICIOUS_ENTRIES: [string, string, ...string[]][] = [
   ['rennet', 'Rennet may be animal-derived',
    'rennet', 'lab', 'labferment', 'présure', 'caglio', 'cuajo',
    'peynir mayası', 'stremsel'],
-  ['whey', 'Whey is a dairy ingredient',
+  ['whey', 'Whey is a dairy ingredient — source verification recommended.',
    'whey', 'molke', 'lactosérum', 'siero di latte',
    'suero de leche', 'peynir suyu', 'wei'],
   ['l-cysteine', 'L-cysteine may be animal-derived',
@@ -99,7 +99,7 @@ const SUSPICIOUS_ENTRIES: [string, string, ...string[]][] = [
    'natural flavour', 'natural flavor', 'natürliches aroma',
    'natürliche aromen', 'arôme naturel', 'aroma naturale',
    'aroma natural', 'doğal aroma', 'natuurlijk aroma'],
-  ['flavouring', 'Flavouring may include animal-derived extracts',
+  ['flavouring', 'Aroma / Flavouring — source often unknown.',
    'flavouring', 'flavoring', 'aroma', 'arôme', 'smaakstof'],
   ['enzymes', 'Enzymes may be extracted from animal sources',
    'enzymes', 'enzyme', 'enzimi', 'enzimas', 'enzim', 'enzymen'],
@@ -114,19 +114,40 @@ const ALCOHOL_FAMILY = new Set([
 
 const FATTY_ALCOHOL_PREFIX = /\b(cetyl|stearyl|behenyl|lauryl|myristyl|arachidyl|oleyl|cetostearyl|lanolin|isostearyl|octyldodecyl|decyl)\s+/i
 
+// Negation words across all supported languages (EN/DE/FR/NL/IT/ES/TR/CS/SR/HU).
+// Used to suppress false positives like "enthält keine Zutaten vom Schwein".
+const NEGATION_WORDS = /\b(?:keine?|nicht|ohne|frei\s+von|sans|pas|geen|zonder|vrij\s+van|no|not|without|free\s+from|free\s+of|senza|sin|içermez|içermemektedir|neobsahuje|bez|nema|nem|mentes)\b/i
+
 function escape(s: string) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') }
+
+// Unicode-aware word boundaries covering basic Latin + extended Latin (À-ɏ, U+00C0-U+024F).
+// ß (U+00DF) is added explicitly to guard against case-folding edge cases.
+// Mirrors IngredientKeywords.wPre / wPost in the Dart client.
+const wPre = '(?<![a-zA-Z\\dÀ-ɏß])'
+const wPost = '(?![a-zA-Z\\dÀ-ɏß])'
 
 function matchesVariant(ingredient: string, variant: string): boolean {
   if (variant.includes(' ')) return ingredient.includes(variant)
   if (ALCOHOL_FAMILY.has(variant)) {
     if (FATTY_ALCOHOL_PREFIX.test(ingredient)) return false
-    return new RegExp(`\\b${escape(variant)}\\b(?![-\\s]*free)`, 'i').test(ingredient)
+    return new RegExp(`${wPre}${escape(variant)}${wPost}(?![-\\s]*free)`, 'i').test(ingredient)
   }
-  return new RegExp(`\\b${escape(variant)}\\b`, 'i').test(ingredient)
+  return new RegExp(`${wPre}${escape(variant)}${wPost}`, 'i').test(ingredient)
 }
 
-function matchesEntry(ingredient: string, entry: [string, string, ...string[]]): boolean {
-  return (entry.slice(2) as string[]).some(v => matchesVariant(ingredient, v))
+// True when the matched variant is preceded by a negation word in the same
+// ingredient chunk, e.g. "enthält keine Zutaten vom Schwein" → negated.
+function isNegated(chunk: string, variant: string): boolean {
+  const lower = chunk.toLowerCase()
+  let idx: number
+  if (variant.includes(' ')) {
+    idx = lower.indexOf(variant.toLowerCase())
+  } else {
+    const m = new RegExp(`${wPre}${escape(variant)}${wPost}`, 'i').exec(lower)
+    idx = m ? m.index : -1
+  }
+  if (idx < 0) return false
+  return NEGATION_WORDS.test(lower.substring(0, idx))
 }
 
 function keywordAnalysis(
@@ -144,13 +165,15 @@ function keywordAnalysis(
     const lower = ing.toLowerCase()
     let foundHaram = false
     for (const entry of allHaram) {
-      if (matchesEntry(lower, entry)) {
+      const matchedVariant = (entry.slice(2) as string[]).find(v => matchesVariant(lower, v))
+      if (matchedVariant && !isNegated(lower, matchedVariant)) {
         warnings[ing] = entry[1]; haram.push(ing); foundHaram = true; break
       }
     }
     if (foundHaram) continue
     for (const entry of allSuspicious) {
-      if (matchesEntry(lower, entry)) {
+      const matchedVariant = (entry.slice(2) as string[]).find(v => matchesVariant(lower, v))
+      if (matchedVariant && !isNegated(lower, matchedVariant)) {
         warnings[ing] = entry[1]; suspicious.push(ing); break
       }
     }
@@ -292,7 +315,7 @@ Deno.serve(async (req) => {
 
     // 1. Cache hit?
     const { data: cached } = await supabase
-      .from('products')
+      .from('products_full')
       .select('*')
       .eq('barcode', barcode)
       .maybeSingle()
@@ -374,11 +397,21 @@ Deno.serve(async (req) => {
         fetched_at:            cached.fetched_at,
       }
 
-      const { data: reUpserted } = await supabase
-        .from('products')
-        .upsert(reRow)
-        .select()
-        .maybeSingle()
+      await supabase.from('products').upsert({
+        barcode:               cached.barcode,
+        name:                  cached.name,
+        ingredients:           cached.ingredients,
+        is_non_food:           cached.is_non_food,
+        labels:                cached.labels,
+        image_url:             cached.image_url,
+        image_front_url:       cached.image_front_url,
+        image_ingredients_url: cached.image_ingredients_url,
+        image_nutrition_url:   cached.image_nutrition_url,
+        requires_halal_cert:   cached.requires_halal_cert,
+        is_managed:            cached.is_managed,
+        last_analysed_at:      new Date().toISOString(),
+        fetched_at:            cached.fetched_at,
+      })
 
       await supabase.from('product_analysis').upsert({
         barcode:               cached.barcode,
@@ -394,7 +427,7 @@ Deno.serve(async (req) => {
       })
 
       return new Response(
-        JSON.stringify({ product: toProduct(reUpserted ?? reRow) }),
+        JSON.stringify({ product: toProduct(reRow) }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       )
     }
@@ -780,7 +813,7 @@ Deno.serve(async (req) => {
       isUnknown = false
     }
 
-    // 5. Upsert to DB
+    // 5. Upsert to DB — products owns source data, product_analysis owns the verdict.
     const row = {
       barcode,
       name,
@@ -792,7 +825,6 @@ Deno.serve(async (req) => {
       suspicious_ingredients: suspiciousIngredients,
       ingredient_warnings:    ingredientWarnings,
       labels,
-      // Preserve community-approved image URLs — never overwrite them with OFF URLs.
       image_url:              cached?.image_url              ?? resolveImg(pd, 'image_url', 'front'),
       image_front_url:        cached?.image_front_url        ?? resolveImg(pd, 'image_front_url', 'front'),
       image_ingredients_url:  cached?.image_ingredients_url  ?? resolveImg(pd, 'image_ingredients_url', 'ingredients'),
@@ -804,11 +836,21 @@ Deno.serve(async (req) => {
       fetched_at:             cached?.fetched_at ?? new Date().toISOString(),
     }
 
-    const { data: upserted, error: upsertErr } = await supabase
-      .from('products')
-      .upsert(row)
-      .select()
-      .maybeSingle()
+    const { error: upsertErr } = await supabase.from('products').upsert({
+      barcode,
+      name,
+      ingredients,
+      is_non_food:            isNonFood,
+      labels,
+      // Preserve community-approved image URLs — never overwrite them with OFF URLs.
+      image_url:              cached?.image_url              ?? resolveImg(pd, 'image_url', 'front'),
+      image_front_url:        cached?.image_front_url        ?? resolveImg(pd, 'image_front_url', 'front'),
+      image_ingredients_url:  cached?.image_ingredients_url  ?? resolveImg(pd, 'image_ingredients_url', 'ingredients'),
+      image_nutrition_url:    cached?.image_nutrition_url    ?? resolveImg(pd, 'image_nutrition_url', 'nutrition'),
+      requires_halal_cert:    requiresHalalCert,
+      last_analysed_at:       new Date().toISOString(),
+      fetched_at:             cached?.fetched_at ?? new Date().toISOString(),
+    })
 
     if (upsertErr) {
       console.error('upsert error', upsertErr)
@@ -828,7 +870,7 @@ Deno.serve(async (req) => {
     })
 
     return new Response(
-      JSON.stringify({ product: toProduct(upserted ?? row) }),
+      JSON.stringify({ product: toProduct(row) }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     )
   } catch (err) {

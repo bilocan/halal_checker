@@ -23,20 +23,33 @@ const SUSPICIOUS_ENTRIES: [string, string, ...string[]][] = [
 
 const ALCOHOL_FAMILY = new Set(['alcohol', 'alkohol'])
 const FATTY_ALCOHOL_PREFIX = /\b(cetyl|stearyl|behenyl|lauryl)\s+/i
+const NEGATION_WORDS = /\b(?:keine?|nicht|ohne|frei\s+von|sans|pas|geen|zonder|vrij\s+van|no|not|without|free\s+from|free\s+of|senza|sin|içermez|içermemektedir|neobsahuje|bez|nema|nem|mentes)\b/i
 
 function escape(s: string) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') }
+
+const wPre = '(?<![a-zA-Z\\dÀ-ɏß])'
+const wPost = '(?![a-zA-Z\\dÀ-ɏß])'
 
 function matchesVariant(ingredient: string, variant: string): boolean {
   if (variant.includes(' ')) return ingredient.includes(variant)
   if (ALCOHOL_FAMILY.has(variant)) {
     if (FATTY_ALCOHOL_PREFIX.test(ingredient)) return false
-    return new RegExp(`\\b${escape(variant)}\\b(?![-\\s]*free)`, 'i').test(ingredient)
+    return new RegExp(`${wPre}${escape(variant)}${wPost}(?![-\\s]*free)`, 'i').test(ingredient)
   }
-  return new RegExp(`\\b${escape(variant)}\\b`, 'i').test(ingredient)
+  return new RegExp(`${wPre}${escape(variant)}${wPost}`, 'i').test(ingredient)
 }
 
-function matchesEntry(ingredient: string, entry: [string, string, ...string[]]): boolean {
-  return (entry.slice(2) as string[]).some(v => matchesVariant(ingredient, v))
+function isNegated(chunk: string, variant: string): boolean {
+  const lower = chunk.toLowerCase()
+  let idx: number
+  if (variant.includes(' ')) {
+    idx = lower.indexOf(variant.toLowerCase())
+  } else {
+    const m = new RegExp(`${wPre}${escape(variant)}${wPost}`, 'i').exec(lower)
+    idx = m ? m.index : -1
+  }
+  if (idx < 0) return false
+  return NEGATION_WORDS.test(lower.substring(0, idx))
 }
 
 function keywordAnalysis(ingredients: string[]) {
@@ -47,13 +60,15 @@ function keywordAnalysis(ingredients: string[]) {
     const lower = ing.toLowerCase()
     let foundHaram = false
     for (const entry of HARAM_ENTRIES) {
-      if (matchesEntry(lower, entry)) {
+      const matchedVariant = (entry.slice(2) as string[]).find(v => matchesVariant(lower, v))
+      if (matchedVariant && !isNegated(lower, matchedVariant)) {
         warnings[ing] = entry[1]; haram.push(ing); foundHaram = true; break
       }
     }
     if (foundHaram) continue
     for (const entry of SUSPICIOUS_ENTRIES) {
-      if (matchesEntry(lower, entry)) {
+      const matchedVariant = (entry.slice(2) as string[]).find(v => matchesVariant(lower, v))
+      if (matchedVariant && !isNegated(lower, matchedVariant)) {
         warnings[ing] = entry[1]; suspicious.push(ing); break
       }
     }
@@ -196,4 +211,65 @@ Deno.test('keywordAnalysis — cetyl alcohol not flagged as haram', () => {
 Deno.test('keywordAnalysis — alcohol-free not flagged as haram', () => {
   const r = keywordAnalysis(['malt (alcohol-free)'])
   assertEquals(r.haram.length, 0)
+})
+
+// ── negation detection ────────────────────────────────────────────────────────
+
+Deno.test('negation — DE keine: enthält keine zutaten vom schwein → halal', () => {
+  const r = keywordAnalysis(['enthält keine zutaten vom schwein'])
+  assertEquals(r.isHalal, true)
+  assertEquals(r.haram.length, 0)
+})
+
+Deno.test('negation — EN no: contains no pork → halal', () => {
+  const r = keywordAnalysis(['contains no pork'])
+  assertEquals(r.isHalal, true)
+})
+
+Deno.test('negation — EN free of: pork free of → halal', () => {
+  const r = keywordAnalysis(['free of pork'])
+  assertEquals(r.isHalal, true)
+})
+
+Deno.test('negation — FR sans: sans porc → halal', () => {
+  const r = keywordAnalysis(['sans porc'])
+  assertEquals(r.isHalal, true)
+})
+
+Deno.test('negation — IT senza: senza gelatina → halal', () => {
+  const r = keywordAnalysis(['senza gelatina'])
+  assertEquals(r.isHalal, true)
+})
+
+Deno.test('negation — ES sin: sin alcohol → halal', () => {
+  const r = keywordAnalysis(['sin alcohol'])
+  assertEquals(r.isHalal, true)
+})
+
+Deno.test('negation — TR içermez: schwein içermez → halal', () => {
+  const r = keywordAnalysis(['pork içermez'])
+  assertEquals(r.isHalal, true)
+})
+
+Deno.test('negation — HU nem: nem tartalmaz schwein → halal', () => {
+  const r = keywordAnalysis(['nem tartalmaz schwein'])
+  assertEquals(r.isHalal, true)
+})
+
+Deno.test('negation — actual pork still flagged', () => {
+  const r = keywordAnalysis(['pork fat', 'salt'])
+  assertEquals(r.isHalal, false)
+  assertEquals(r.haram, ['pork fat'])
+})
+
+// ── Unicode word-boundary regressions ────────────────────────────────────────
+
+Deno.test('unicode boundary — lactosérum does not false-positive on "rum"', () => {
+  const r = keywordAnalysis(['poudre de lactosérum (lait)'])
+  assertEquals(r.haram.length, 0)
+})
+
+Deno.test('unicode boundary — standalone rum is still haram', () => {
+  const r = keywordAnalysis(['rum', 'sugar'])
+  assertEquals(r.isHalal, false)
 })

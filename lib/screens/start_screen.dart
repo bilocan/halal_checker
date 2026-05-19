@@ -269,6 +269,7 @@ class _StartScreenState extends State<StartScreen> {
           offset: const Offset(0, 40),
           onSelected: (value) async {
             if (value == 'signout') await AuthService.signOut();
+            if (value == 'delete') await _confirmDeleteAccount();
           },
           itemBuilder: (_) => [
             PopupMenuItem(
@@ -288,6 +289,19 @@ class _StartScreenState extends State<StartScreen> {
                   const Icon(Icons.logout, size: 18),
                   const SizedBox(width: 8),
                   Text(AppLocalizations.of(context).signOut),
+                ],
+              ),
+            ),
+            PopupMenuItem(
+              value: 'delete',
+              child: Row(
+                children: [
+                  const Icon(Icons.delete_forever, size: 18, color: Colors.red),
+                  const SizedBox(width: 8),
+                  Text(
+                    AppLocalizations.of(context).deleteAccount,
+                    style: const TextStyle(color: Colors.red),
+                  ),
                 ],
               ),
             ),
@@ -394,6 +408,39 @@ class _StartScreenState extends State<StartScreen> {
       if (!mounted) return;
       messenger.showSnackBar(SnackBar(content: Text(loc.signInFailed)));
     }
+  }
+
+  Future<void> _confirmDeleteAccount() async {
+    final loc = AppLocalizations.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(loc.deleteAccountTitle),
+        content: Text(loc.deleteAccountConfirm),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(loc.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: Text(loc.deleteAccount),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    final success = await AuthService.deleteAccount();
+    if (!mounted) return;
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(
+          success ? loc.deleteAccountSuccess : loc.deleteAccountFailed,
+        ),
+      ),
+    );
   }
 
   @override

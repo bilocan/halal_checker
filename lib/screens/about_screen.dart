@@ -158,6 +158,18 @@ class _AboutScreenState extends State<AboutScreen> {
           TextButton(
             onPressed: () => launchUrl(
               Uri.parse(
+                'mailto:bilalgunay@gmail.com?subject=HalalScan%20Support',
+              ),
+              mode: LaunchMode.externalApplication,
+            ),
+            child: Text(
+              'bilalgunay@gmail.com',
+              style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
+            ),
+          ),
+          TextButton(
+            onPressed: () => launchUrl(
+              Uri.parse(
                 'https://gist.github.com/bilocan/b61ebb96d2b847aa6964262d506d6143',
               ),
               mode: LaunchMode.externalApplication,

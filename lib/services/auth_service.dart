@@ -159,6 +159,26 @@ class AuthService {
     }
   }
 
+  /// Permanently deletes the current user's account via a server-side Edge
+  /// Function (which uses the admin API). Returns true on success.
+  static Future<bool> deleteAccount() async {
+    if (!_initialized) return false;
+    try {
+      final response = await Supabase.instance.client.functions.invoke(
+        'delete-account',
+        method: HttpMethod.post,
+      );
+      if (response.status != 200) return false;
+      await Supabase.instance.client.auth.signOut();
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_sessionKey, false);
+      return true;
+    } catch (e) {
+      debugPrint('Delete account error: $e');
+      return false;
+    }
+  }
+
   static String? get displayName =>
       currentUser?.userMetadata?['full_name'] as String?;
   static String? get avatarUrl =>

@@ -141,8 +141,13 @@ class IngredientContributionService {
         if (ingredients.isNotEmpty) {
           final rulesEngine = const HalalRulesEngine();
           final analysisResult = rulesEngine.analyzeIngredients(ingredients);
-          final productData = {
+          final productsData = {
             'ingredients': jsonEncode(ingredients),
+            'is_managed': true,
+            'fetched_at': DateTime.now().toIso8601String(),
+          };
+          final analysisData = {
+            'barcode': barcode,
             'is_halal': analysisResult.isHalal,
             'is_unknown': false,
             'haram_ingredients': jsonEncode(analysisResult.haram),
@@ -150,16 +155,23 @@ class IngredientContributionService {
             'ingredient_warnings': jsonEncode(analysisResult.warnings),
             'explanation': analysisResult.explanation,
             'analyzed_by_ai': false,
-            'is_managed': true,
-            'fetched_at': DateTime.now().toIso8601String(),
+            'analyzed_at': DateTime.now().toIso8601String(),
           };
           if (fakeUpdateProduct != null) {
-            await fakeUpdateProduct!(barcode, productData);
+            await fakeUpdateProduct!(barcode, {
+              ...productsData,
+              ...analysisData,
+            });
           } else {
-            await _db
-                .from('products')
-                .update(productData)
-                .eq('barcode', barcode);
+            // Best-effort: the DB trigger already updated products/product_analysis
+            // via SECURITY DEFINER. These writes fail silently if RLS blocks them.
+            try {
+              await _db
+                  .from('products')
+                  .update(productsData)
+                  .eq('barcode', barcode);
+              await _db.from('product_analysis').upsert(analysisData);
+            } catch (_) {}
           }
         }
       }

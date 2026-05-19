@@ -28,6 +28,10 @@ class HalalRulesResult {
   final List<HalalRuleMatch> matches;
   final Map<String, String> warnings;
   final Map<String, String> translations;
+
+  /// Maps ingredient text → canonical keyword (e.g. "poudre de lactosérum" → "whey").
+  /// Used by the UI to look up localized reason strings.
+  final Map<String, String> canonicals;
   final String explanation;
 
   const HalalRulesResult({
@@ -37,6 +41,7 @@ class HalalRulesResult {
     required this.matches,
     required this.warnings,
     required this.translations,
+    this.canonicals = const {},
     required this.explanation,
   });
 
@@ -84,8 +89,8 @@ class HalalRulesEngine {
   // Used to suppress false positives like "enthält keine Zutaten vom Schwein".
   static final RegExp _negationWord = RegExp(
     r'\b(?:keine?|nicht|ohne|frei\s+von|sans|pas|geen|zonder|vrij\s+van|'
-    r'no|not|without|free\s+from|senza|sin|içermez|içermemektedir|'
-    r'neobsahuje|nema)\b',
+    r'no|not|without|free\s+from|free\s+of|senza|sin|içermez|içermemektedir|'
+    r'neobsahuje|bez|nema|nem|mentes)\b',
     caseSensitive: false,
   );
 
@@ -148,6 +153,7 @@ class HalalRulesEngine {
   HalalRulesResult analyzeIngredients(List<String> ingredients) {
     final warnings = <String, String>{};
     final translations = <String, String>{};
+    final canonicals = <String, String>{};
     final matches = <HalalRuleMatch>[];
 
     for (final ingredient in ingredients) {
@@ -158,6 +164,7 @@ class HalalRulesEngine {
         final variant = _matchingVariant(lower, entry.key);
         if (variant != null && !_isNegated(lower, variant)) {
           warnings[ingredient] = entry.value;
+          canonicals[ingredient] = entry.key;
           if (_needsTranslation(ingredient, entry.key)) {
             translations[ingredient] = entry.key;
           }
@@ -180,6 +187,7 @@ class HalalRulesEngine {
         final variant = _matchingVariant(lower, entry.key);
         if (variant != null && !_isNegated(lower, variant)) {
           warnings[ingredient] = entry.value;
+          canonicals[ingredient] = entry.key;
           if (_needsTranslation(ingredient, entry.key)) {
             translations[ingredient] = entry.key;
           }
@@ -208,6 +216,7 @@ class HalalRulesEngine {
       matches: matches,
       warnings: warnings,
       translations: translations,
+      canonicals: canonicals,
       explanation: _ingredientExplanation(ingredients, matches),
     );
   }

@@ -100,13 +100,20 @@ Deno.serve(async (req) => {
         barcode,
         name: productDataFallback.name ?? 'Unknown product',
         ingredients,
-        haram_ingredients: haramIngredients,
-        suspicious_ingredients: productDataFallback.suspicious_ingredients ?? [],
-        is_halal: haramIngredients.length === 0,
         is_non_food: false,
-        is_unknown: ingredients.length === 0,
-        ingredient_warnings: {},
         fetched_at: new Date().toISOString(),
+      }, { onConflict: 'barcode', ignoreDuplicates: false })
+    await adminClient
+      .from('product_analysis')
+      .upsert({
+        barcode,
+        haram_ingredients:     haramIngredients,
+        suspicious_ingredients: productDataFallback.suspicious_ingredients ?? [],
+        is_halal:              haramIngredients.length === 0,
+        is_non_food:           false,
+        is_unknown:            ingredients.length === 0,
+        ingredient_warnings:   {},
+        analyzed_at:           new Date().toISOString(),
       }, { onConflict: 'barcode', ignoreDuplicates: false })
   }
 

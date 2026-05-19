@@ -63,7 +63,7 @@ async function analyzeOne(
   barcode: string,
 ): Promise<Outcome> {
   const { data: product, error: productErr } = await adminClient
-    .from('products')
+    .from('products_full')
     .select('name, ingredients, haram_ingredients, suspicious_ingredients')
     .eq('barcode', barcode)
     .maybeSingle()
