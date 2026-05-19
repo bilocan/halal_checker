@@ -268,6 +268,12 @@ class AppLocalizations {
       'managedProduct': 'Verified by admin',
       'managedProductNoRefresh':
           'This product is managed by an admin and cannot be refreshed from external sources.',
+      'deleteAccount': 'Delete Account',
+      'deleteAccountTitle': 'Delete Account?',
+      'deleteAccountConfirm':
+          'This will permanently delete your account and all associated data. This action cannot be undone.',
+      'deleteAccountSuccess': 'Your account has been deleted.',
+      'deleteAccountFailed': 'Could not delete account. Please try again.',
     },
     'tr': {
       'appTitle': 'HalalScan',
@@ -522,6 +528,12 @@ class AppLocalizations {
       'managedProduct': 'Yönetici tarafından doğrulandı',
       'managedProductNoRefresh':
           'Bu ürün bir yönetici tarafından yönetiliyor ve dış kaynaklardan yenilenemez.',
+      'deleteAccount': 'Hesabı Sil',
+      'deleteAccountTitle': 'Hesap Silinsin mi?',
+      'deleteAccountConfirm':
+          'Bu işlem hesabınızı ve tüm ilişkili verileri kalıcı olarak silecektir. Bu işlem geri alınamaz.',
+      'deleteAccountSuccess': 'Hesabınız silindi.',
+      'deleteAccountFailed': 'Hesap silinemedi. Lütfen tekrar deneyin.',
     },
     'de': {
       'appTitle': 'HalalScan',
@@ -788,6 +800,13 @@ class AppLocalizations {
       'managedProduct': 'Vom Admin verifiziert',
       'managedProductNoRefresh':
           'Dieses Produkt wird von einem Admin verwaltet und kann nicht aus externen Quellen aktualisiert werden.',
+      'deleteAccount': 'Konto löschen',
+      'deleteAccountTitle': 'Konto löschen?',
+      'deleteAccountConfirm':
+          'Ihr Konto und alle zugehörigen Daten werden dauerhaft gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.',
+      'deleteAccountSuccess': 'Ihr Konto wurde gelöscht.',
+      'deleteAccountFailed':
+          'Konto konnte nicht gelöscht werden. Bitte erneut versuchen.',
     },
   };
 
@@ -1042,6 +1061,11 @@ class AppLocalizations {
   String get photoAnalysisProductName => _translate('photoAnalysisProductName');
   String get managedProduct => _translate('managedProduct');
   String get managedProductNoRefresh => _translate('managedProductNoRefresh');
+  String get deleteAccount => _translate('deleteAccount');
+  String get deleteAccountTitle => _translate('deleteAccountTitle');
+  String get deleteAccountConfirm => _translate('deleteAccountConfirm');
+  String get deleteAccountSuccess => _translate('deleteAccountSuccess');
+  String get deleteAccountFailed => _translate('deleteAccountFailed');
 
   static AppLocalizations of(BuildContext context) {
     final localizations = Localizations.of<AppLocalizations>(
