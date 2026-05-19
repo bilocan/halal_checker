@@ -542,16 +542,20 @@ class _CommentsScreenState extends State<_CommentsScreen> {
                       style: TextStyle(color: Colors.grey.shade500),
                     ),
                   )
-                : ListView.builder(
-                    padding: const EdgeInsets.all(12),
-                    itemCount: _comments.length,
-                    itemBuilder: (_, i) => _CommentTile(
-                      comment: _comments[i],
-                      onReply: (id, username) => setState(() {
-                        _replyToId = id;
-                        _replyToUsername = username;
-                      }),
-                      onVote: (value) => _vote(_comments[i], value),
+                : RefreshIndicator(
+                    onRefresh: _loadComments,
+                    child: ListView.builder(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.all(12),
+                      itemCount: _comments.length,
+                      itemBuilder: (_, i) => _CommentTile(
+                        comment: _comments[i],
+                        onReply: (id, username) => setState(() {
+                          _replyToId = id;
+                          _replyToUsername = username;
+                        }),
+                        onVote: (value) => _vote(_comments[i], value),
+                      ),
                     ),
                   ),
           ),

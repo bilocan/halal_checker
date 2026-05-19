@@ -198,6 +198,21 @@ void main() {
       expect(c.createdByUsername, isNull);
       expect(c.createdByAvatarUrl, isNull);
     });
+
+    test('handles profiles returned as a one-element list', () {
+      final c = Comment.fromJson({
+        ...base(),
+        'profiles': [
+          {'username': 'alice', 'avatar_url': null},
+        ],
+      });
+      expect(c.createdByUsername, 'alice');
+    });
+
+    test('defaults null body to empty string', () {
+      final c = Comment.fromJson({...base(), 'body': null});
+      expect(c.body, '');
+    });
   });
 
   // ── Comment.copyWith ───────────────────────────────────────────────────────

@@ -106,21 +106,33 @@ class Comment {
     this.myVote,
   });
 
-  factory Comment.fromJson(Map<String, dynamic> j) => Comment(
-    id: j['id'] as String,
-    discussionId: j['discussion_id'] as String,
-    parentId: j['parent_id'] as String?,
-    body: j['body'] as String,
-    isDeleted: j['is_deleted'] as bool? ?? false,
-    createdBy: j['created_by'] as String,
-    createdByUsername:
-        (j['profiles'] as Map<String, dynamic>?)?['username'] as String?,
-    createdByAvatarUrl:
-        (j['profiles'] as Map<String, dynamic>?)?['avatar_url'] as String?,
-    createdAt: DateTime.parse(j['created_at'] as String),
-    voteScore: j['vote_score'] as int? ?? 0,
-    myVote: j['my_vote'] as int?,
-  );
+  factory Comment.fromJson(Map<String, dynamic> j) {
+    final profiles = _readProfiles(j['profiles']);
+    return Comment(
+      id: j['id'] as String,
+      discussionId: j['discussion_id'] as String,
+      parentId: j['parent_id'] as String?,
+      body: j['body'] as String? ?? '',
+      isDeleted: j['is_deleted'] as bool? ?? false,
+      createdBy: j['created_by'] as String,
+      createdByUsername: profiles?['username'] as String?,
+      createdByAvatarUrl: profiles?['avatar_url'] as String?,
+      createdAt: DateTime.parse(j['created_at'] as String),
+      voteScore: (j['vote_score'] as num?)?.toInt() ?? 0,
+      myVote: (j['my_vote'] as num?)?.toInt(),
+    );
+  }
+
+  static Map<String, dynamic>? _readProfiles(dynamic raw) {
+    if (raw is Map<String, dynamic>) return raw;
+    if (raw is Map) return Map<String, dynamic>.from(raw);
+    if (raw is List && raw.isNotEmpty) {
+      final first = raw.first;
+      if (first is Map<String, dynamic>) return first;
+      if (first is Map) return Map<String, dynamic>.from(first);
+    }
+    return null;
+  }
 
   Comment copyWith({int? voteScore, int? myVote, bool clearMyVote = false}) =>
       Comment(

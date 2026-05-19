@@ -219,49 +219,109 @@ class CommunityService {
 
   static Future<List<Comment>> getComments(String discussionId) async {
     if (!_supabaseAvailable) return [];
+    if (fakeFetchComments == null && !await AuthService.ensureInitialized()) {
+      return [];
+    }
     final uid = _uid;
     try {
       final rows = fakeFetchComments != null
           ? await fakeFetchComments!(discussionId)
-          : List<Map<String, dynamic>>.from(
-              await _db
-                      .from('comments')
-                      .select('*, profiles(username, avatar_url)')
-                      .eq('discussion_id', discussionId)
-                      .order('created_at')
-                  as List,
-            );
+          : await _fetchCommentRows(discussionId);
 
       final commentIds = rows.map((r) => r['id'] as String).toList();
-      final Map<String, int> scores = {};
-      final Map<String, int> myVotes = {};
+      final scores = <String, int>{};
+      final myVotes = <String, int>{};
 
       if (commentIds.isNotEmpty) {
-        final voteRows = fakeFetchVotes != null
-            ? await fakeFetchVotes!(commentIds)
-            : List<Map<String, dynamic>>.from(
-                await _db
-                        .from('comment_votes')
-                        .select('comment_id, value, user_id')
-                        .inFilter('comment_id', commentIds)
-                    as List,
-              );
-        final agg = aggregateVotes(voteRows, uid);
-        scores.addAll(agg.scores);
-        myVotes.addAll(agg.myVotes);
+        try {
+          final voteRows = fakeFetchVotes != null
+              ? await fakeFetchVotes!(commentIds)
+              : List<Map<String, dynamic>>.from(
+                  await _db
+                          .from('comment_votes')
+                          .select('comment_id, value, user_id')
+                          .inFilter('comment_id', commentIds)
+                      as List,
+                );
+          final agg = aggregateVotes(voteRows, uid);
+          scores.addAll(agg.scores);
+          myVotes.addAll(agg.myVotes);
+        } catch (e, st) {
+          debugPrint('CommunityService.getComments vote fetch failed: $e\n$st');
+        }
       }
 
-      return rows.map((r) {
-        final id = r['id'] as String;
-        return Comment.fromJson({
-          ...r,
-          'vote_score': scores[id] ?? 0,
-          'my_vote': myVotes[id],
-        });
-      }).toList();
-    } catch (_) {
+      final comments = <Comment>[];
+      for (final row in rows) {
+        try {
+          final id = row['id'] as String;
+          comments.add(
+            Comment.fromJson({
+              ...row,
+              'vote_score': scores[id] ?? 0,
+              'my_vote': myVotes[id],
+            }),
+          );
+        } catch (e, st) {
+          debugPrint(
+            'CommunityService.getComments skipped row ${row['id']}: $e\n$st',
+          );
+        }
+      }
+      return comments;
+    } catch (e, st) {
+      debugPrint('CommunityService.getComments error: $e\n$st');
       return [];
     }
+  }
+
+  /// Loads comment rows with [body] explicitly selected, then attaches author profiles.
+  static Future<List<Map<String, dynamic>>> _fetchCommentRows(
+    String discussionId,
+  ) async {
+    final rows = List<Map<String, dynamic>>.from(
+      await _db
+              .from('comments')
+              .select(
+                'id, discussion_id, parent_id, body, is_deleted, '
+                'created_by, created_at',
+              )
+              .eq('discussion_id', discussionId)
+              .order('created_at')
+          as List,
+    );
+    if (rows.isEmpty) return rows;
+
+    final authorIds =
+        rows.map((r) => r['created_by'] as String).toSet().toList();
+    final profilesById = <String, Map<String, dynamic>>{};
+    try {
+      final profileRows = List<Map<String, dynamic>>.from(
+        await _db
+                .from('profiles')
+                .select('id, username, avatar_url')
+                .inFilter('id', authorIds)
+            as List,
+      );
+      for (final p in profileRows) {
+        profilesById[p['id'] as String] = p;
+      }
+    } catch (e, st) {
+      debugPrint('CommunityService.getComments profile fetch failed: $e\n$st');
+    }
+
+    return rows.map((row) {
+      final authorId = row['created_by'] as String;
+      final profile = profilesById[authorId];
+      return {
+        ...row,
+        if (profile != null)
+          'profiles': {
+            'username': profile['username'],
+            'avatar_url': profile['avatar_url'],
+          },
+      };
+    }).toList();
   }
 
   @visibleForTesting
@@ -273,9 +333,10 @@ class CommunityService {
     final Map<String, int> myVotes = {};
     for (final v in voteRows) {
       final cid = v['comment_id'] as String;
-      scores[cid] = (scores[cid] ?? 0) + (v['value'] as int);
+      final value = (v['value'] as num).toInt();
+      scores[cid] = (scores[cid] ?? 0) + value;
       if (uid != null && v['user_id'] == uid) {
-        myVotes[cid] = v['value'] as int;
+        myVotes[cid] = value;
       }
     }
     return (scores: scores, myVotes: myVotes);
