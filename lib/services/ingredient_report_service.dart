@@ -22,6 +22,7 @@ class IngredientReportService {
     String? explanation,
   }) async {
     if (!_supabaseAvailable) return false;
+    if (!await AuthService.ensureInitialized()) return false;
     try {
       final user = AuthService.currentUser;
       await _db.from('ingredient_reports').insert({
@@ -43,6 +44,7 @@ class IngredientReportService {
     String status = 'pending',
   }) async {
     if (!_supabaseAvailable) return [];
+    if (!await AuthService.ensureInitialized()) return [];
     try {
       final rows = List<Map<String, dynamic>>.from(
         await _db
@@ -61,6 +63,7 @@ class IngredientReportService {
 
   static Future<bool> updateStatus(int id, String status) async {
     if (!_supabaseAvailable) return false;
+    if (!await AuthService.ensureInitialized()) return false;
     try {
       await _db
           .from('ingredient_reports')

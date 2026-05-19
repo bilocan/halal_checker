@@ -43,6 +43,10 @@ void main() {
       await expectLater(AuthService.initializeIfSessionExists(), completes);
     });
 
+    test('ensureInitialized returns false without Supabase config', () async {
+      expect(await AuthService.ensureInitialized(), isFalse);
+    });
+
     test(
       'authStateChanges is a broadcast stream that accepts multiple listeners',
       () async {
