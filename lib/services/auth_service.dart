@@ -169,6 +169,7 @@ class AuthService {
         method: HttpMethod.post,
       );
       if (response.status != 200) return false;
+      await Supabase.instance.client.auth.signOut();
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool(_sessionKey, false);
       return true;
