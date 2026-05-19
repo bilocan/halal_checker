@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HalalScan — Support</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      background: #f5f5f7;
+      color: #1d1d1f;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      background: #1a7a4a;
+      color: #fff;
+      padding: 32px 24px;
+      text-align: center;
+    }
+    header h1 { font-size: 2rem; font-weight: 700; letter-spacing: -0.5px; }
+    header p  { margin-top: 8px; font-size: 1rem; opacity: 0.85; }
+    main {
+      max-width: 680px;
+      margin: 40px auto;
+      padding: 0 24px;
+      flex: 1;
+    }
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 28px 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+    }
+    h2 { font-size: 1.2rem; font-weight: 600; margin-bottom: 12px; color: #1a7a4a; }
+    p, li { font-size: 0.97rem; line-height: 1.65; color: #3d3d3d; }
+    ul { padding-left: 20px; }
+    li { margin-bottom: 6px; }
+    a { color: #1a7a4a; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .cta {
+      display: inline-block;
+      margin-top: 16px;
+      background: #1a7a4a;
+      color: #fff;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+    .cta:hover { background: #155f39; text-decoration: none; }
+    footer {
+      text-align: center;
+      padding: 24px;
+      font-size: 0.85rem;
+      color: #888;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>HalalScan</h1>
+    <p>Support &amp; Help Center</p>
+  </header>
+
+  <main>
+    <div class="card">
+      <h2>Contact Support</h2>
+      <p>Have a question, found a bug, or need help with the app? Send us an email and we'll get back to you as soon as possible.</p>
+      <a class="cta" href="mailto:bilalgunay@gmail.com?subject=HalalScan%20Support">Email Support</a>
+    </div>
+
+    <div class="card">
+      <h2>Frequently Asked Questions</h2>
+      <ul>
+        <li><strong>How does HalalScan determine if a product is halal?</strong><br />
+          The app analyzes a product's ingredient list using a combination of AI analysis and a multi-language keyword database covering known haram and suspicious ingredients.</li>
+        <li><strong>What do the verdict labels mean?</strong><br />
+          <em>Halal</em> — no haram ingredients detected. <em>Not Halal</em> — one or more haram ingredients found. <em>Suspicious</em> — contains ingredients that may be haram depending on source or processing.</li>
+        <li><strong>The app didn't find my product. What can I do?</strong><br />
+          Make sure the barcode is well-lit and in focus. If the product still isn't found, it may not yet be in the database — you can report it via the in-app feedback option or by emailing support.</li>
+        <li><strong>Is my scan history stored anywhere?</strong><br />
+          Scan history is stored locally on your device. Anonymous product lookups are cached on the server to improve performance for all users; no personal data is linked to them.</li>
+        <li><strong>How do I delete my local scan history?</strong><br />
+          Open the app, go to History, and use the clear/delete option in the menu.</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h2>Privacy Policy</h2>
+      <p>Read our <a href="https://gist.github.com/bilocan/b61ebb96d2b847aa6964262d506d6143" target="_blank" rel="noopener">Privacy Policy</a> for full details on how data is handled.</p>
+    </div>
+
+    <div class="card">
+      <h2>Report a Bug or Feature Request</h2>
+      <p>You can open an issue on our <a href="https://github.com/bilocan/halal_checker/issues" target="_blank" rel="noopener">GitHub Issues page</a> or email us directly.</p>
+    </div>
+  </main>
+
+  <footer>
+    &copy; 2024 HalalScan &mdash; <a href="mailto:bilalgunay@gmail.com">bilalgunay@gmail.com</a>
+  </footer>
+</body>
+</html>
