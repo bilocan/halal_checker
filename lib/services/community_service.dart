@@ -292,8 +292,10 @@ class CommunityService {
     );
     if (rows.isEmpty) return rows;
 
-    final authorIds =
-        rows.map((r) => r['created_by'] as String).toSet().toList();
+    final authorIds = rows
+        .map((r) => r['created_by'] as String)
+        .toSet()
+        .toList();
     final profilesById = <String, Map<String, dynamic>>{};
     try {
       final profileRows = List<Map<String, dynamic>>.from(
@@ -349,10 +351,7 @@ class CommunityService {
     String? parentId,
   }) async {
     if (!_supabaseAvailable) {
-      return (
-        comment: null,
-        error: 'Community features are not configured.',
-      );
+      return (comment: null, error: 'Community features are not configured.');
     }
 
     User? authUser;
@@ -392,7 +391,8 @@ class CommunityService {
       final row = fakeInsertComment != null
           ? await fakeInsertComment!(payload)
           : Map<String, dynamic>.from(
-              await _db.from('comments').insert(payload).select().single() as Map,
+              await _db.from('comments').insert(payload).select().single()
+                  as Map,
             );
       if (row == null) {
         return (
@@ -400,11 +400,7 @@ class CommunityService {
           error: 'Could not post your comment. Please try again.',
         );
       }
-      final json = <String, dynamic>{
-        ...row,
-        'vote_score': 0,
-        'my_vote': null,
-      };
+      final json = <String, dynamic>{...row, 'vote_score': 0, 'my_vote': null};
       if (authUser != null) {
         json['profiles'] = {
           'username': _usernameFromUser(authUser),

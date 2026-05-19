@@ -84,7 +84,10 @@ void main() {
     });
     test('does not match 0% alcohol declaration', () {
       expect(ProductService.matchesKeyword('0% alcohol', 'alcohol'), isFalse);
-      expect(ProductService.matchesKeyword('sugar, 0% alcohol', 'alcohol'), isFalse);
+      expect(
+        ProductService.matchesKeyword('sugar, 0% alcohol', 'alcohol'),
+        isFalse,
+      );
     });
     test('does not match cetyl alcohol as haram alcohol', () {
       expect(

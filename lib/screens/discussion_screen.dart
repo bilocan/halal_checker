@@ -447,9 +447,9 @@ class _CommentsScreenState extends State<_CommentsScreen> {
     if (!await AuthService.ensureInitialized() ||
         AuthService.currentUser == null) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Sign in to comment.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Sign in to comment.')));
       return;
     }
 
