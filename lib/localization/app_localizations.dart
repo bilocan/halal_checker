@@ -274,6 +274,25 @@ class AppLocalizations {
           'This will permanently delete your account and all associated data. This action cannot be undone.',
       'deleteAccountSuccess': 'Your account has been deleted.',
       'deleteAccountFailed': 'Could not delete account. Please try again.',
+      'reportWrongIngredient': 'Report Wrong Ingredient',
+      'reportWrongIngredientTitle': 'Report wrong ingredient',
+      'reportWrongIngredientSubtitle':
+          'Select the ingredients you believe are incorrectly listed.',
+      'reportWrongIngredientExplanation': 'Explanation (optional)',
+      'reportWrongIngredientExplanationHint':
+          'e.g. this ingredient is plant-based...',
+      'reportWrongIngredientNoSelection':
+          'Please select at least one ingredient.',
+      'reportWrongIngredientSubmitted':
+          'Thank you! Your report has been submitted.',
+      'reportWrongIngredientFailed':
+          'Could not submit report. Please try again.',
+      'reportsTab': 'Reports',
+      'reportedIngredient': 'Reported as wrong',
+      'noReports': 'No pending reports',
+      'openProduct': 'Open product',
+      'resolveReport': 'Resolve',
+      'dismissReport': 'Dismiss',
     },
     'tr': {
       'appTitle': 'HalalScan',
@@ -534,6 +553,23 @@ class AppLocalizations {
           'Bu işlem hesabınızı ve tüm ilişkili verileri kalıcı olarak silecektir. Bu işlem geri alınamaz.',
       'deleteAccountSuccess': 'Hesabınız silindi.',
       'deleteAccountFailed': 'Hesap silinemedi. Lütfen tekrar deneyin.',
+      'reportWrongIngredient': 'Yanlış İçerik Bildir',
+      'reportWrongIngredientTitle': 'Yanlış içerik bildir',
+      'reportWrongIngredientSubtitle':
+          'Yanlış listelendiğini düşündüğünüz içerikleri seçin.',
+      'reportWrongIngredientExplanation': 'Açıklama (isteğe bağlı)',
+      'reportWrongIngredientExplanationHint':
+          'örn. bu içerik bitkisel kaynaklıdır...',
+      'reportWrongIngredientNoSelection': 'Lütfen en az bir içerik seçin.',
+      'reportWrongIngredientSubmitted': 'Teşekkürler! Raporunuz gönderildi.',
+      'reportWrongIngredientFailed':
+          'Rapor gönderilemedi. Lütfen tekrar deneyin.',
+      'reportsTab': 'Raporlar',
+      'reportedIngredient': 'Yanlış olarak bildirildi',
+      'noReports': 'Bekleyen rapor yok',
+      'openProduct': 'Ürünü aç',
+      'resolveReport': 'Çözüldü',
+      'dismissReport': 'Reddet',
     },
     'de': {
       'appTitle': 'HalalScan',
@@ -807,6 +843,25 @@ class AppLocalizations {
       'deleteAccountSuccess': 'Ihr Konto wurde gelöscht.',
       'deleteAccountFailed':
           'Konto konnte nicht gelöscht werden. Bitte erneut versuchen.',
+      'reportWrongIngredient': 'Falschen Inhaltsstoff melden',
+      'reportWrongIngredientTitle': 'Falschen Inhaltsstoff melden',
+      'reportWrongIngredientSubtitle':
+          'Wählen Sie die Inhaltsstoffe aus, die Ihrer Meinung nach falsch aufgeführt sind.',
+      'reportWrongIngredientExplanation': 'Erklärung (optional)',
+      'reportWrongIngredientExplanationHint':
+          'z. B. dieser Inhaltsstoff ist pflanzlichen Ursprungs...',
+      'reportWrongIngredientNoSelection':
+          'Bitte wählen Sie mindestens einen Inhaltsstoff aus.',
+      'reportWrongIngredientSubmitted':
+          'Danke! Ihre Meldung wurde eingereicht.',
+      'reportWrongIngredientFailed':
+          'Meldung konnte nicht gesendet werden. Bitte erneut versuchen.',
+      'reportsTab': 'Meldungen',
+      'reportedIngredient': 'Als falsch gemeldet',
+      'noReports': 'Keine ausstehenden Meldungen',
+      'openProduct': 'Produkt öffnen',
+      'resolveReport': 'Lösen',
+      'dismissReport': 'Ablehnen',
     },
   };
 
@@ -1066,6 +1121,27 @@ class AppLocalizations {
   String get deleteAccountConfirm => _translate('deleteAccountConfirm');
   String get deleteAccountSuccess => _translate('deleteAccountSuccess');
   String get deleteAccountFailed => _translate('deleteAccountFailed');
+  String get reportWrongIngredient => _translate('reportWrongIngredient');
+  String get reportWrongIngredientTitle =>
+      _translate('reportWrongIngredientTitle');
+  String get reportWrongIngredientSubtitle =>
+      _translate('reportWrongIngredientSubtitle');
+  String get reportWrongIngredientExplanation =>
+      _translate('reportWrongIngredientExplanation');
+  String get reportWrongIngredientExplanationHint =>
+      _translate('reportWrongIngredientExplanationHint');
+  String get reportWrongIngredientNoSelection =>
+      _translate('reportWrongIngredientNoSelection');
+  String get reportWrongIngredientSubmitted =>
+      _translate('reportWrongIngredientSubmitted');
+  String get reportWrongIngredientFailed =>
+      _translate('reportWrongIngredientFailed');
+  String get reportsTab => _translate('reportsTab');
+  String get reportedIngredient => _translate('reportedIngredient');
+  String get noReports => _translate('noReports');
+  String get openProduct => _translate('openProduct');
+  String get resolveReport => _translate('resolveReport');
+  String get dismissReport => _translate('dismissReport');
 
   static AppLocalizations of(BuildContext context) {
     final localizations = Localizations.of<AppLocalizations>(

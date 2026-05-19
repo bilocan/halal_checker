@@ -21,6 +21,7 @@ import '../services/community_service.dart';
 import '../services/feedback_service.dart';
 import '../services/database_service.dart';
 import '../services/ingredient_contribution_service.dart';
+import '../services/ingredient_report_service.dart';
 import '../services/ingredient_sanitizer.dart';
 import '../services/issue_report_service.dart';
 import '../services/ocr_service.dart';
@@ -34,8 +35,16 @@ import 'keywords_screen.dart';
 class ResultScreen extends StatefulWidget {
   final Product? product;
   final String barcode;
+  final List<String>? adminReportedIngredients;
+  final String? adminReportExplanation;
 
-  const ResultScreen({super.key, required this.product, required this.barcode});
+  const ResultScreen({
+    super.key,
+    required this.product,
+    required this.barcode,
+    this.adminReportedIngredients,
+    this.adminReportExplanation,
+  });
 
   @override
   State<ResultScreen> createState() => _ResultScreenState();
@@ -1172,45 +1181,108 @@ class _ResultScreenState extends State<ResultScreen> {
                   final fattyAlcohol =
                       warning == null &&
                       ProductService.isFattyAlcohol(ingredient);
+                  final isReported =
+                      widget.adminReportedIngredients?.contains(ingredient) ??
+                      false;
                   return Card(
                     margin: const EdgeInsets.symmetric(vertical: 4),
-                    child: ListTile(
-                      leading: Icon(
-                        warning != null
-                            ? (isHaramIngredient
-                                  ? Icons.warning
-                                  : Icons.warning_amber_outlined)
-                            : fattyAlcohol
-                            ? Icons.info_outline
-                            : Icons.check_circle_outline,
-                        color: warning != null
-                            ? (isHaramIngredient
-                                  ? Colors.red
-                                  : Colors.orange.shade700)
-                            : fattyAlcohol
-                            ? Colors.blue.shade400
-                            : kGreen,
-                      ),
-                      title: _ingredientTitle(
-                        ingredient,
-                        product.ingredientTranslations[ingredient],
-                        showTranslated: _showTranslated,
-                      ),
-                      subtitle: localizedWarning != null
-                          ? SelectableText(localizedWarning)
-                          : fattyAlcohol
-                          ? Text(
-                              loc.fattyAlcoholNote,
-                              style: TextStyle(
-                                color: Colors.blue.shade700,
-                                fontSize: 12,
-                              ),
-                            )
-                          : null,
-                      dense: true,
+                    color: isReported ? Colors.orange.shade50 : null,
+                    shape: isReported
+                        ? RoundedRectangleBorder(
+                            side: BorderSide(
+                              color: Colors.orange.shade400,
+                              width: 1.5,
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                          )
+                        : null,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        ListTile(
+                          leading: Icon(
+                            warning != null
+                                ? (isHaramIngredient
+                                      ? Icons.warning
+                                      : Icons.warning_amber_outlined)
+                                : fattyAlcohol
+                                ? Icons.info_outline
+                                : Icons.check_circle_outline,
+                            color: warning != null
+                                ? (isHaramIngredient
+                                      ? Colors.red
+                                      : Colors.orange.shade700)
+                                : fattyAlcohol
+                                ? Colors.blue.shade400
+                                : kGreen,
+                          ),
+                          title: _ingredientTitle(
+                            ingredient,
+                            product.ingredientTranslations[ingredient],
+                            showTranslated: _showTranslated,
+                          ),
+                          subtitle: localizedWarning != null
+                              ? SelectableText(localizedWarning)
+                              : fattyAlcohol
+                              ? Text(
+                                  loc.fattyAlcoholNote,
+                                  style: TextStyle(
+                                    color: Colors.blue.shade700,
+                                    fontSize: 12,
+                                  ),
+                                )
+                              : null,
+                          dense: true,
+                        ),
+                        if (isReported)
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.report_problem_outlined,
+                                  size: 13,
+                                  color: Colors.orange.shade700,
+                                ),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: Text(
+                                    widget.adminReportExplanation?.isNotEmpty ==
+                                            true
+                                        ? widget.adminReportExplanation!
+                                        : loc.reportedIngredient,
+                                    style: TextStyle(
+                                      color: Colors.orange.shade700,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                      ],
                     ),
                   );
                 }),
+              if (ingredients.isNotEmpty)
+                SizedBox(
+                  width: double.infinity,
+                  child: TextButton.icon(
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.orange.shade700,
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      alignment: Alignment.centerLeft,
+                    ),
+                    onPressed: () =>
+                        _showIngredientReportSheet(context, product),
+                    icon: const Icon(Icons.report_outlined, size: 16),
+                    label: Text(
+                      loc.reportWrongIngredient,
+                      style: const TextStyle(fontSize: 13),
+                    ),
+                  ),
+                ),
               if (!isHalal) ...[
                 const SizedBox(height: 16),
                 Align(
@@ -3166,6 +3238,21 @@ class _ResultScreenState extends State<ResultScreen> {
     replyController.dispose();
   }
 
+  void _showIngredientReportSheet(BuildContext context, Product product) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => _IngredientReportSheet(
+        barcode: widget.barcode,
+        productName: product.name,
+        ingredients: product.ingredients,
+      ),
+    );
+  }
+
   void _showReportDialog(
     BuildContext context,
     Product product, {
@@ -3402,6 +3489,172 @@ class _ReportSheetState extends State<_ReportSheet> {
                     )
                   : Text(
                       loc.reportWrongResult,
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _IngredientReportSheet extends StatefulWidget {
+  final String barcode;
+  final String productName;
+  final List<String> ingredients;
+
+  const _IngredientReportSheet({
+    required this.barcode,
+    required this.productName,
+    required this.ingredients,
+  });
+
+  @override
+  State<_IngredientReportSheet> createState() => _IngredientReportSheetState();
+}
+
+class _IngredientReportSheetState extends State<_IngredientReportSheet> {
+  final Set<String> _selected = {};
+  final _explanationController = TextEditingController();
+  bool _submitting = false;
+
+  @override
+  void dispose() {
+    _explanationController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit(AppLocalizations loc) async {
+    if (_selected.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(loc.reportWrongIngredientNoSelection)),
+      );
+      return;
+    }
+    setState(() => _submitting = true);
+    final ok = await IngredientReportService.submitReport(
+      barcode: widget.barcode,
+      productName: widget.productName,
+      ingredients: _selected.toList(),
+      explanation: _explanationController.text.trim(),
+    );
+    if (!mounted) return;
+    setState(() => _submitting = false);
+    Navigator.pop(context);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          ok
+              ? loc.reportWrongIngredientSubmitted
+              : loc.reportWrongIngredientFailed,
+        ),
+        backgroundColor: ok ? kGreen : Colors.red,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        24,
+        24,
+        24,
+        MediaQuery.of(context).viewInsets.bottom + 32,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            loc.reportWrongIngredientTitle,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            loc.reportWrongIngredientSubtitle,
+            style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+          ),
+          const SizedBox(height: 12),
+          ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.35,
+            ),
+            child: ListView(
+              shrinkWrap: true,
+              children: widget.ingredients.map((ingredient) {
+                final checked = _selected.contains(ingredient);
+                return CheckboxListTile(
+                  value: checked,
+                  onChanged: (_) => setState(() {
+                    if (checked) {
+                      _selected.remove(ingredient);
+                    } else {
+                      _selected.add(ingredient);
+                    }
+                  }),
+                  title: Text(ingredient, style: const TextStyle(fontSize: 13)),
+                  activeColor: Colors.orange.shade700,
+                  controlAffinity: ListTileControlAffinity.leading,
+                  dense: true,
+                  contentPadding: EdgeInsets.zero,
+                );
+              }).toList(),
+            ),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _explanationController,
+            maxLines: 2,
+            maxLength: 200,
+            decoration: InputDecoration(
+              labelText: loc.reportWrongIngredientExplanation,
+              hintText: loc.reportWrongIngredientExplanationHint,
+              border: const OutlineInputBorder(),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 10,
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _submitting ? null : () => _submit(loc),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orange.shade700,
+                foregroundColor: Colors.white,
+                disabledBackgroundColor: Colors.orange.shade200,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              child: _submitting
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : Text(
+                      loc.reportWrongIngredient,
                       style: const TextStyle(fontWeight: FontWeight.w600),
                     ),
             ),
