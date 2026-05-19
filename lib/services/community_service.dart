@@ -183,8 +183,15 @@ class CommunityService {
     String? challengeId,
     String? title,
   }) async {
-    final uid = _uid;
-    if (!_supabaseAvailable || uid == null) return null;
+    if (!_supabaseAvailable) return null;
+    if (fakeInsertDiscussion == null) {
+      if (!await AuthService.ensureInitialized()) return null;
+      final user = _db.auth.currentUser;
+      if (user == null) return null;
+      await _ensureOwnProfile(user);
+    }
+    final uid = fakeInsertDiscussion != null ? _uid : _db.auth.currentUser?.id;
+    if (uid == null) return null;
     try {
       final payload = <String, dynamic>{
         'barcode': barcode,
@@ -274,35 +281,158 @@ class CommunityService {
     return (scores: scores, myVotes: myVotes);
   }
 
+  /// Posts a comment. On failure, [error] explains why (session, RLS, network).
+  static Future<({Comment? comment, String? error})> postCommentResult({
+    required String discussionId,
+    required String body,
+    String? parentId,
+  }) async {
+    if (!_supabaseAvailable) {
+      return (
+        comment: null,
+        error: 'Community features are not configured.',
+      );
+    }
+
+    User? authUser;
+    String? uid;
+    if (fakeInsertComment != null) {
+      uid = _uid;
+      if (uid == null) {
+        return (comment: null, error: 'Sign in to comment.');
+      }
+    } else {
+      if (!await AuthService.ensureInitialized()) {
+        return (
+          comment: null,
+          error: 'Could not connect. Check your connection and try again.',
+        );
+      }
+      try {
+        await _refreshSessionIfNeeded();
+        authUser = _db.auth.currentUser;
+      } catch (e, st) {
+        debugPrint('CommunityService.postComment session error: $e\n$st');
+        authUser = AuthService.currentUser;
+      }
+      uid = authUser?.id;
+      if (uid == null) {
+        return (comment: null, error: 'Sign in to comment.');
+      }
+      await _ensureOwnProfile(authUser!);
+    }
+    try {
+      final payload = <String, dynamic>{
+        'discussion_id': discussionId,
+        'body': body,
+        'created_by': uid,
+        'parent_id': ?parentId,
+      };
+      final row = fakeInsertComment != null
+          ? await fakeInsertComment!(payload)
+          : Map<String, dynamic>.from(
+              await _db.from('comments').insert(payload).select().single() as Map,
+            );
+      if (row == null) {
+        return (
+          comment: null,
+          error: 'Could not post your comment. Please try again.',
+        );
+      }
+      final json = <String, dynamic>{
+        ...row,
+        'vote_score': 0,
+        'my_vote': null,
+      };
+      if (authUser != null) {
+        json['profiles'] = {
+          'username': _usernameFromUser(authUser),
+          'avatar_url': authUser.userMetadata?['avatar_url'],
+        };
+      }
+      final comment = Comment.fromJson(json);
+      return (comment: comment, error: null);
+    } on PostgrestException catch (e, st) {
+      debugPrint(
+        'CommunityService.postComment PostgrestException: ${e.message} '
+        'code=${e.code} details=${e.details}',
+      );
+      debugPrint('$st');
+      return (comment: null, error: _postCommentErrorMessage(e));
+    } catch (e, st) {
+      debugPrint('CommunityService.postComment error: $e\n$st');
+      return (
+        comment: null,
+        error: 'Could not post your comment. Please try again.',
+      );
+    }
+  }
+
   static Future<Comment?> postComment({
     required String discussionId,
     required String body,
     String? parentId,
   }) async {
-    final uid = _uid;
-    if (!_supabaseAvailable || uid == null) return null;
+    final result = await postCommentResult(
+      discussionId: discussionId,
+      body: body,
+      parentId: parentId,
+    );
+    return result.comment;
+  }
+
+  static Future<void> _refreshSessionIfNeeded() async {
+    final session = _db.auth.currentSession;
+    if (session == null) return;
+    final expiresAt = session.expiresAt;
+    if (expiresAt == null) return;
+    final expiry = DateTime.fromMillisecondsSinceEpoch(expiresAt * 1000);
+    if (expiry.isAfter(DateTime.now().add(const Duration(minutes: 2)))) {
+      return;
+    }
+    await _db.auth.refreshSession();
+  }
+
+  static Future<void> _ensureOwnProfile(User user) async {
     try {
-      final payload = <String, dynamic>{
-        'discussion_id': discussionId,
-        'body': body,
-        'parent_id': ?parentId,
-        'created_by': uid,
-      };
-      final row = fakeInsertComment != null
-          ? await fakeInsertComment!(payload)
-          : Map<String, dynamic>.from(
-              await _db
-                      .from('comments')
-                      .insert(payload)
-                      .select('*, profiles(username, avatar_url)')
-                      .single()
-                  as Map,
-            );
-      return row != null
-          ? Comment.fromJson({...row, 'vote_score': 0, 'my_vote': null})
-          : null;
-    } catch (_) {
-      return null;
+      final existing = await _db
+          .from('profiles')
+          .select('id')
+          .eq('id', user.id)
+          .maybeSingle();
+      if (existing != null) return;
+      await _db.from('profiles').insert({
+        'id': user.id,
+        'username': _usernameFromUser(user),
+        'avatar_url': user.userMetadata?['avatar_url'],
+      });
+    } catch (e) {
+      debugPrint('CommunityService._ensureOwnProfile: $e');
+    }
+  }
+
+  static String _usernameFromUser(User user) {
+    final fullName = user.userMetadata?['full_name'] as String?;
+    if (fullName != null && fullName.trim().isNotEmpty) {
+      return fullName.trim();
+    }
+    final email = user.email;
+    if (email != null && email.contains('@')) {
+      return email.split('@').first;
+    }
+    return 'Anonymous';
+  }
+
+  static String _postCommentErrorMessage(PostgrestException e) {
+    switch (e.code) {
+      case '42501':
+        return 'Sign in to comment.';
+      case '23503':
+        return 'This discussion is no longer available.';
+      case 'PGRST301':
+        return 'Your session expired. Sign in again and retry.';
+      default:
+        return 'Could not post your comment. Please try again.';
     }
   }
 
