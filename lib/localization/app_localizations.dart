@@ -1,1226 +1,1710 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:intl/intl.dart' as intl;
 
-class AppLocalizations {
-  final Locale locale;
+import 'app_localizations_de.dart';
+import 'app_localizations_en.dart';
+import 'app_localizations_tr.dart';
 
-  AppLocalizations(this.locale);
+// ignore_for_file: type=lint
 
-  static const Map<String, Map<String, String>> _localizedValues = {
-    'en': {
-      'appTitle': 'HalalScan',
-      'startTitle': 'HalalScan',
-      'tagline': 'Transparent halal, powered by community.',
-      'taglineSubtitle':
-          'Every ingredient checked and explained — shaped by your feedback.',
-      'newScan': 'New Scan',
-      'lastResults': 'Last Results',
-      'noRecentResults': 'No recent scans saved yet.',
-      'noRecentResultsHint': 'Tap the scan button above to get started.',
-      'scanButton': 'Start Scan',
-      'scanAnotherProduct': 'Scan Another Product',
-      'manualEntry': 'Enter barcode manually',
-      'enterBarcodeManually': 'Enter barcode manually',
-      'cancel': 'Cancel',
-      'submit': 'Submit',
-      'scanAgain': 'Scan Again',
-      'readyToScan': 'Ready to scan',
-      'analyzingBarcode': 'Analyzing barcode...',
-      'pointCameraAtBarcode': 'Point camera at barcode on product packaging',
-      'barcodeNotSupported':
-          'Barcode detected but format not supported. Try manual entry.',
-      'pleaseEnterValidBarcode': 'Please enter a valid barcode.',
-      'productNotFound': 'Product not found',
-      'noProductImageAvailable': 'No product image available',
-      'uploadProductPhoto': 'Upload Photo',
-      'uploadPhotoHint': 'Help others by contributing a photo of this product',
-      'photoUploaded': 'Photo submitted — thank you!',
-      'photoUploadFailed': 'Could not upload photo. Please try again.',
-      'additionalImages': 'Additional Images',
-      'ingredients': 'Ingredients',
-      'flaggedIngredients': 'Flagged Ingredients',
-      'mayBeAnimalDerived': 'May Be Animal-Derived',
-      'communityFeedback': 'Community Feedback',
-      'noFeedbackYet': 'No feedback yet. Be the first to share your thoughts!',
-      'provideFeedback': 'Provide Feedback',
-      'replyAsProducer': 'Reply as Producer',
-      'producerReply': 'Producer Reply',
-      'userFeedback': 'User Feedback',
-      'imageNotAvailable': 'Image not available',
-      'fairTrade': 'Fair Trade',
-      'organic': 'Organic',
-      'glutenFree': 'Gluten Free',
-      'vegetarian': 'Vegetarian',
-      'vegan': 'Vegan',
-      'halal': 'HALAL',
-      'notHalal': 'HARAM',
-      'lastScanned': 'Last scanned',
-      'today': 'Today',
-      'yesterday': 'Yesterday',
-      'daysAgo': '{count} days ago',
-      'errorFetchingProduct': 'Error fetching product: {error}',
-      'productCouldNotBeRefreshed': 'Could not refresh product data',
-      'thankYouFeedback': 'Thank you for your feedback!',
-      'errorSubmittingFeedback': 'Error submitting feedback: {error}',
-      'replySubmitted': 'Reply submitted successfully!',
-      'noResultsSaved': 'No saved scan history yet.',
-      'language': 'Language',
-      'english': 'English',
-      'turkish': 'Türkçe',
-      'german': 'Deutsch',
-      'scanHistoryTitle': 'Recent scans',
-      'filterScan': 'Scan product or enter barcode',
-      'openResult': 'Open result',
-      'resultTitle': 'Result',
-      'noIngredientData': 'No ingredient data available.',
-      'foundInIngredients': 'Found in product ingredients.',
-      'mayBeAnimalDerivedNote': 'May be animal-derived.',
-      'couldNotLoadFeedback': 'Could not load feedback.',
-      'couldNotSubmitFeedback': 'Could not submit feedback.',
-      'couldNotSubmitReply': 'Could not submit reply.',
-      'couldNotRefreshProduct': 'Could not refresh product data.',
-      'attachFiles': 'Attach Files',
-      'feedbackInputHint': 'Your feedback...',
-      'replyInputHint': 'Your reply...',
-      'submitReply': 'Submit Reply',
-      'refreshTooltip': 'Refresh product data',
-      'feedbackDialogHint':
-          'Help improve our halal assessment by providing feedback about this product.',
-      'replyDialogHint': 'Provide an official response to this feedback.',
-      'aiAnalysis': 'AI Analysis',
-      'keywordAnalysis': 'Keyword Analysis',
-      'analysisTransparency': 'Analysis Transparency',
-      'transparentSummary': 'Decision summary',
-      'transparentResult': 'Result',
-      'transparentIngredientsChecked': 'Ingredients checked',
-      'transparentRulesChecked': 'Rules checked',
-      'transparentRulesAvailable': '{count} rules available (nothing to check)',
-      'transparentFlagged': 'Flagged',
-      'transparentSuspicious': 'Needs verification',
-      'transparentNoMatches': 'No rule matches found',
-      'transparentNoIngredients': 'No ingredient text was available to check',
-      'transparentExplanation': 'Explanation',
-      'contributeIngredients': 'Add Ingredients',
-      'contributeIngredientsHint':
-          'No ingredient data found. Help the community by adding the ingredients from the packaging.',
-      'ingredientTextLabel': 'Ingredient text',
-      'ingredientTextHint':
-          'Type or paste the ingredient list from the packaging',
-      'ingredientSubmitted':
-          'Thank you! Ingredients submitted — the product will be re-analysed.',
-      'ingredientSubmitFailed':
-          'Could not submit ingredients. Please try again.',
-      'improveOnOpenFoodFacts': 'Edit on OpenFoodFacts',
-      'improveOnOpenFoodFactsHint':
-          'Help improve this product for everyone by adding data directly on OpenFoodFacts.',
-      'extractingIngredients': 'Reading ingredients from image…',
-      'ocrFailed':
-          'Could not read ingredients from the image. You can type them manually below.',
-      'ocrSuccess': 'Ingredients extracted — please review before submitting.',
-      'productImages': 'Product images',
-      'extractFromExistingImage': 'Pick from gallery',
-      'takePhotoOfIngredients': 'Take photo of ingredients',
-      'cameraError': 'Could not open camera. Please check camera permissions.',
-      'noIngredientsImageHint':
-          'No ingredients image available for this product. Please take a photo of the ingredient list on the packaging.',
-      'ocrNoIngredientsFound':
-          'No ingredient list found in the available images. Please take a photo of the ingredient label instead.',
-      'viewAllCheckedKeywords': 'View all checked keywords',
-      'haramKeywordsChecked': 'Haram Ingredients We Check',
-      'suspiciousKeywordsChecked': 'Suspicious Ingredients We Check',
-      'transparencyNote':
-          'Something missing from our list? Let us know via feedback!',
-      'recheck': 'Recheck',
-      'foundNotFlagged':
-          'Found in ingredients, but not flagged by the analysis (e.g. fatty alcohol, trace amount, or context-safe use).',
-      'fattyAlcoholNote':
-          'This is a fatty alcohol (e.g. cetyl or stearyl alcohol) — a plant-derived emulsifier. It has no relation to drinking alcohol and is halal.',
-      'keywords': 'Keywords',
-      'haramTab': 'Haram',
-      'suspiciousTab': 'Suspicious',
-      'suggestKeyword': 'Suggest a Keyword',
-      'suggestKeywordHint':
-          'Think we\'re missing something? Suggest a keyword and we\'ll review it.',
-      'keywordLabel': 'Keyword',
-      'keywordHint': 'e.g. lard, ethanol, cochineal',
-      'keywordRequired': 'Please enter a keyword.',
-      'categoryLabel': 'Category',
-      'haramCategory': 'Haram (definitively not permissible)',
-      'suspiciousCategory': 'Suspicious (may be animal-derived)',
-      'reasonLabel': 'Reason',
-      'reasonHint': 'Why should this keyword be added?',
-      'reasonRequired': 'Please provide a reason.',
-      'suggestionSubmitted':
-          'Thank you! Your suggestion has been submitted for review.',
-      'suggestionError': 'Could not submit suggestion. Please try again.',
-      'customBadge': 'custom',
-      'nutritionLabel': 'Nutrition',
-      'producerReplyWarningTitle': 'Unverified Action',
-      'producerReplyWarning':
-          'Anyone can post using this button — replies are not verified as coming from the actual manufacturer. Proceed only if you are the producer.',
-      'proceedAnyway': 'Proceed Anyway',
-      'deletedFromHistory': 'Removed from history',
-      'undo': 'Undo',
-      'explanationClean':
-          'No ingredients matched known animal-derived or alcohol-related keywords. This is an automated assessment based on ingredient text.',
-      'explanationSuspiciousOnly':
-          'No definitely haram ingredients found, but {ingredients} may be animal-derived. This is an automated assessment based on ingredient text.',
-      'explanationHaram':
-          'This product contains one or more ingredients that may be animal-derived or alcohol-related. Review the flagged ingredients below for details.',
-      'unknown': '? UNKNOWN',
-      'noCert': '⚠️ NO CERT',
-      'explanationUnknown':
-          'No ingredient data was found for this product. Halal status cannot be determined — check the packaging directly.',
-      'explanationNoCert':
-          'This is an animal-derived food product without a verified halal certification. Halal slaughter cannot be confirmed — check the packaging for a halal label.',
-      'nonFood': 'ℹ️ NOT FOOD',
-      'explanationNonFood':
-          'This is a non-food product. Islamic dietary rules do not apply.',
-      'about': 'About',
-      'version': 'Version',
-      'releaseNotes': 'Release Notes',
-      'checkForUpdates': 'Check for Updates',
-      'upToDate': "You're up to date!",
-      'installed': 'Installed',
-      'store': 'Store',
-      'privacyPolicy': 'Privacy Policy',
-      'latest': 'Latest',
-      'updateAvailable': 'Update Available',
-      'updateNow': 'Update Now',
-      'reportWrongResult': 'Report Wrong Result',
-      'reportWrongResultTitle': 'Is this result wrong?',
-      'reportWrongResultSubtitle':
-          'Tell us what it should be. '
-          "We'll create a bug report and fix it.",
-      'currentResultLabel': 'Current result',
-      'expectedResultLabel': 'What should it be?',
-      'optionalNote': 'Optional note (e.g. why you think so)',
-      'reportSubmitted': 'Bug report submitted — thank you!',
-      'reportFailed': 'Could not submit report. Try again later.',
-      'reportResultHalal': 'Halal',
-      'reportResultHaram': 'Not Halal',
-      'reportResultNonFood': 'Non-Food',
-      'reportResultUnknown': 'Unknown',
-      'myNote': 'My Note',
-      'noteHint': 'e.g. ask producer about E471, check later...',
-      'noteSaved': 'Note saved',
-      'checkLater': 'Check later',
-      'flaggedOnly': 'Flagged only',
-      'allScans': 'All scans',
-      'deepAnalysis': 'Deep Analysis',
-      'analyse': 'Analyse',
-      'perIngredientAiAnalysis':
-          'Per-ingredient AI analysis with Islamic basis',
-      'communityDiscussion': 'Community Discussion',
-      'noDiscussionsYet': 'No discussions yet — start one',
-      'analysisQueued':
-          'Analysis queued — results will appear after admin review.',
-      'analysisFailed': 'Analysis failed — please try again.',
-      'signInToDiscuss': 'Sign in to start a discussion.',
-      'signInToChallenge': 'Sign in to submit a challenge.',
-      'discussions': 'Discussions',
-      'challenges': 'Challenges',
-      'newDiscussion': 'New Discussion',
-      'halalDirectory': 'Halal Directory',
-      'signInFailed': 'Sign-in failed. Please try again.',
-      'newVersionAvailable': 'A new version is available',
-      'signIn': 'Sign in',
-      'signOut': 'Sign out',
-      'signedIn': 'Signed in',
-      'adminPanel': 'Admin panel',
-      'noDiscussionsHint': 'Be the first to start one!',
-      'analysisTab': 'Analysis',
-      'rulesEngineTab': 'Rules Engine',
-      'photosTab': 'Photos',
-      'ingredientsTab': 'Ingredients',
-      'customRulesTab': 'Custom',
-      'builtInRulesTab': 'Built-in',
-      'suggestionsTab': 'Suggestions',
-      'searchRules': 'Search rules...',
-      'noCustomRules': 'No custom rules yet',
-      'noMatchingRules': 'No matching rules found',
-      'noSuggestions': 'No pending suggestions',
-      'addRule': 'Add Rule',
-      'editRule': 'Edit Rule',
-      'delete': 'Delete',
-      'deleteRuleTitle': 'Delete Rule',
-      'deleteRuleConfirm': 'Remove "{keyword}" from the rules?',
-      'ruleCreated': 'Rule created successfully',
-      'ruleCreateFailed': 'Could not create rule. Please try again.',
-      'ruleUpdated': 'Rule updated successfully',
-      'ruleUpdateFailed': 'Could not update rule. Please try again.',
-      'ruleDeleted': 'Rule deleted',
-      'ruleDeleteFailed': 'Could not delete rule. Please try again.',
-      'createRule': 'Create Rule',
-      'updateRule': 'Update Rule',
-      'variantsLabel': 'Variants',
-      'variantsHint': 'e.g. schmalz, domuz yağı, saindoux',
-      'variantsHelperText':
-          'Comma-separated multilingual variants for matching',
-      'suggestVariantsLabel': 'Other languages (optional)',
-      'suggestVariantsHint': 'e.g. schwein, domuz, porc',
-      'suggestVariantsHelperText':
-          'Comma-separated spellings in other languages for the same ingredient',
-      'translationsLabel': 'Translations by locale',
-      'translationsHint': 'de: schwein\ntr: domuz',
-      'translationsHelperText':
-          'One per line: locale code and term (de, tr, fr, es, it, nl, sr, hu, cs). Used for matching and UI labels.',
-      'mergeKeywordTitle': 'Merge with existing rule?',
-      'mergeKeywordMessage':
-          '"{alias}" matches the existing rule "{canonical}". Merge aliases into that rule instead of creating a duplicate?',
-      'mergeKeywordConfirm': 'Merge',
-      'approveAsNewRule': 'Create new rule',
-      'suggestionMerged': 'Suggestion merged into existing rule',
-      'builtInBadge': 'built-in',
-      'approve': 'Approve',
-      'reject': 'Reject',
-      'suggestionApproved': 'Suggestion approved and added as a rule',
-      'suggestionApproveFailed': 'Could not approve suggestion.',
-      'suggestionRejected': 'Suggestion rejected',
-      'suggestionRejectFailed': 'Could not reject suggestion.',
-      'photoIngredientsButton': 'Check Ingredients Photo',
-      'photoAnalysisProductName': 'Photo Analysis',
-      'managedProduct': 'Verified by admin',
-      'managedProductNoRefresh':
-          'This product is managed by an admin and cannot be refreshed from external sources.',
-      'deleteAccount': 'Delete Account',
-      'deleteAccountTitle': 'Delete Account?',
-      'deleteAccountConfirm':
-          'This will permanently delete your account and all associated data. This action cannot be undone.',
-      'deleteAccountSuccess': 'Your account has been deleted.',
-      'deleteAccountFailed': 'Could not delete account. Please try again.',
-      'reportWrongIngredient': 'Report Wrong Ingredient',
-      'reportWrongIngredientTitle': 'Report wrong ingredient',
-      'reportWrongIngredientSubtitle':
-          'Select the ingredients you believe are incorrectly listed.',
-      'reportWrongIngredientExplanation': 'Explanation (optional)',
-      'reportWrongIngredientExplanationHint':
-          'e.g. this ingredient is plant-based...',
-      'reportWrongIngredientNoSelection':
-          'Please select at least one ingredient.',
-      'reportWrongIngredientSubmitted':
-          'Thank you! Your report has been submitted.',
-      'reportWrongIngredientFailed':
-          'Could not submit report. Please try again.',
-      'reportsTab': 'Reports',
-      'reportedIngredient': 'Reported as wrong',
-      'noReports': 'No pending reports',
-      'openProduct': 'Open product',
-      'resolveReport': 'Resolve',
-      'dismissReport': 'Dismiss',
-    },
-    'tr': {
-      'appTitle': 'HalalScan',
-      'startTitle': 'HalalScan',
-      'tagline': 'Şeffaf helal, topluluk gücüyle.',
-      'taglineSubtitle':
-          'Her içerik kontrol edilir ve açıklanır — geri bildirimlerinizle gelişir.',
-      'newScan': 'Yeni Tara',
-      'lastResults': 'Son Sonuçlar',
-      'noRecentResults': 'Henüz kaydedilmiş tarama yok.',
-      'noRecentResultsHint':
-          'Başlamak için yukarıdaki tarama düğmesine dokunun.',
-      'scanButton': 'Taramayı Başlat',
-      'scanAnotherProduct': 'Başka ürün tara',
-      'manualEntry': 'Barkodu elle gir',
-      'enterBarcodeManually': 'Barkodu elle gir',
-      'cancel': 'İptal',
-      'submit': 'Gönder',
-      'scanAgain': 'Tekrar Tara',
-      'readyToScan': 'Tarama için hazır',
-      'analyzingBarcode': 'Barkod analiz ediliyor...',
-      'pointCameraAtBarcode': 'Kamerayı ürün ambalajındaki barkoda doğrultun',
-      'barcodeNotSupported':
-          'Barkod algılandı ama format desteklenmiyor. Lütfen manuel girin.',
-      'pleaseEnterValidBarcode': 'Lütfen geçerli bir barkod girin.',
-      'productNotFound': 'Ürün bulunamadı',
-      'noProductImageAvailable': 'Ürün resmi yok',
-      'uploadProductPhoto': 'Fotoğraf Yükle',
-      'uploadPhotoHint':
-          'Bu ürünün fotoğrafını ekleyerek diğerlerine yardım edin',
-      'photoUploaded': 'Fotoğraf gönderildi — teşekkürler!',
-      'photoUploadFailed': 'Fotoğraf yüklenemedi. Lütfen tekrar deneyin.',
-      'additionalImages': 'Ek Görseller',
-      'ingredients': 'İçindekiler',
-      'flaggedIngredients': 'İşaretli İçindekiler',
-      'mayBeAnimalDerived': 'Hayvansal Kaynaklı Olabilir',
-      'communityFeedback': 'Topluluk Geri Bildirimi',
-      'noFeedbackYet': 'Henüz geri bildirim yok. İlk siz olun!',
-      'provideFeedback': 'Geri Bildirim Ver',
-      'replyAsProducer': 'Üretici olarak yanıtla',
-      'producerReply': 'Üretici Yanıtı',
-      'userFeedback': 'Kullanıcı Geri Bildirimi',
-      'imageNotAvailable': 'Resim mevcut değil',
-      'fairTrade': 'Adil Ticaret',
-      'organic': 'Organik',
-      'glutenFree': 'Glutensiz',
-      'vegetarian': 'Vejetaryen',
-      'vegan': 'Vegan',
-      'halal': 'HELAL',
-      'notHalal': 'HARAM',
-      'lastScanned': 'Son tarama',
-      'today': 'Bugün',
-      'yesterday': 'Dün',
-      'daysAgo': '{count} gün önce',
-      'errorFetchingProduct': 'Ürün alınırken hata: {error}',
-      'productCouldNotBeRefreshed': 'Ürün verisi yenilenemedi',
-      'thankYouFeedback': 'Geri bildiriminiz için teşekkürler!',
-      'errorSubmittingFeedback': 'Geri bildirim gönderilirken hata: {error}',
-      'replySubmitted': 'Yanıt başarıyla gönderildi!',
-      'noResultsSaved': 'Henüz kayıtlı tarama geçmişi yok.',
-      'language': 'Dil',
-      'english': 'English',
-      'turkish': 'Türkçe',
-      'german': 'Deutsch',
-      'scanHistoryTitle': 'Son taramalar',
-      'filterScan': 'Ürünü tara veya barkodu gir',
-      'openResult': 'Sonucu aç',
-      'resultTitle': 'Sonuç',
-      'noIngredientData': 'İçerik bilgisi mevcut değil.',
-      'foundInIngredients': 'Ürün içeriklerinde bulundu.',
-      'mayBeAnimalDerivedNote': 'Hayvansal kaynaklı olabilir.',
-      'couldNotLoadFeedback': 'Geri bildirim yüklenemedi.',
-      'couldNotSubmitFeedback': 'Geri bildirim gönderilemedi.',
-      'couldNotSubmitReply': 'Yanıt gönderilemedi.',
-      'couldNotRefreshProduct': 'Ürün verisi güncellenemedi.',
-      'attachFiles': 'Dosya Ekle',
-      'feedbackInputHint': 'Geri bildiriminiz...',
-      'replyInputHint': 'Yanıtınız...',
-      'submitReply': 'Yanıtı Gönder',
-      'refreshTooltip': 'Ürün verisini yenile',
-      'feedbackDialogHint':
-          'Geri bildiriminizle helal değerlendirmemizi geliştirin.',
-      'replyDialogHint': 'Bu geri bildirime resmi bir yanıt verin.',
-      'aiAnalysis': 'Yapay Zeka Analizi',
-      'keywordAnalysis': 'Anahtar Kelime Analizi',
-      'analysisTransparency': 'Analiz Şeffaflığı',
-      'transparentRulesAvailable':
-          '{count} kural mevcut (kontrol edilecek veri yok)',
-      'contributeIngredients': 'İçerik Ekle',
-      'contributeIngredientsHint':
-          'İçerik bilgisi bulunamadı. Ambalajdaki içerikleri ekleyerek topluluğa yardım edin.',
-      'ingredientTextLabel': 'İçerik metni',
-      'ingredientTextHint':
-          'Ambalajdaki içerik listesini yazın veya yapıştırın',
-      'ingredientSubmitted':
-          'Teşekkürler! İçerikler gönderildi — ürün yeniden analiz edilecek.',
-      'ingredientSubmitFailed':
-          'İçerikler gönderilemedi. Lütfen tekrar deneyin.',
-      'improveOnOpenFoodFacts': 'OpenFoodFacts\'ta Düzenle',
-      'improveOnOpenFoodFactsHint':
-          'OpenFoodFacts\'ta veri ekleyerek bu ürünü herkes için geliştirin.',
-      'extractingIngredients': 'İçerikler görüntüden okunuyor…',
-      'ocrFailed': 'Görüntüden içerik okunamadı. Aşağıya elle yazabilirsiniz.',
-      'ocrSuccess': 'İçerikler çıkarıldı — göndermeden önce gözden geçirin.',
-      'productImages': 'Ürün görselleri',
-      'extractFromExistingImage': 'Galeriden seç',
-      'takePhotoOfIngredients': 'İçerik fotoğrafı çek',
-      'cameraError': 'Kamera açılamadı. Lütfen kamera izinlerini kontrol edin.',
-      'noIngredientsImageHint':
-          'Bu ürün için içerik görseli mevcut değil. Lütfen ambalajdaki içerik listesinin fotoğrafını çekin.',
-      'ocrNoIngredientsFound':
-          'Mevcut görsellerde içerik listesi bulunamadı. Lütfen içerik etiketinin fotoğrafını çekin.',
-      'haramKeywordsChecked': 'Kontrol Ettiğimiz Haram İçerikler',
-      'suspiciousKeywordsChecked': 'Kontrol Ettiğimiz Şüpheli İçerikler',
-      'transparencyNote': 'Listemizde eksik mi? Geri bildirim gönderin!',
-      'recheck': 'Yeniden Kontrol Et',
-      'foundNotFlagged':
-          'İçeriklerde bulundu, ancak analiz tarafından işaretlenmedi (örn. yağ alkolü, iz miktarı veya bağlama güvenli kullanım).',
-      'fattyAlcoholNote':
-          'Bu bir yağ alkolüdür (örn. setil veya stearil alkol) — bitkisel kaynaklı bir emülgatördür. İçki alkolüyle hiçbir ilgisi yoktur ve helaldir.',
-      'keywords': 'Anahtar Kelimeler',
-      'haramTab': 'Haram',
-      'suspiciousTab': 'Şüpheli',
-      'suggestKeyword': 'Anahtar Kelime Öner',
-      'suggestKeywordHint':
-          'Bir şeyi atladığımızı mı düşünüyorsunuz? Önerin incelememize gönderin.',
-      'keywordLabel': 'Anahtar Kelime',
-      'keywordHint': 'örn. domuz yağı, etanol, karmin',
-      'keywordRequired': 'Lütfen bir anahtar kelime girin.',
-      'categoryLabel': 'Kategori',
-      'haramCategory': 'Haram (kesinlikle yasak)',
-      'suspiciousCategory': 'Şüpheli (hayvansal kaynaklı olabilir)',
-      'reasonLabel': 'Sebep',
-      'reasonHint': 'Bu anahtar kelime neden eklenmeli?',
-      'reasonRequired': 'Lütfen bir sebep belirtin.',
-      'suggestionSubmitted':
-          'Teşekkürler! Öneriniz incelenmek üzere gönderildi.',
-      'suggestionError': 'Öneri gönderilemedi. Lütfen tekrar deneyin.',
-      'customBadge': 'özel',
-      'nutritionLabel': 'Beslenme Değerleri',
-      'producerReplyWarningTitle': 'Doğrulanmamış İşlem',
-      'producerReplyWarning':
-          'Bu düğmeyi herkes kullanabilir — yanıtların gerçek üreticiden geldiği doğrulanmaz. Yalnızca üreticiyseniz devam edin.',
-      'proceedAnyway': 'Yine de Devam Et',
-      'deletedFromHistory': 'Geçmişten silindi',
-      'undo': 'Geri Al',
-      'explanationClean':
-          'Bilinen hayvansal kaynaklı veya alkol içerikli anahtar kelimelerle eşleşen içerik bulunamadı. Bu, içerik metnine dayalı otomatik bir değerlendirmedir.',
-      'explanationSuspiciousOnly':
-          'Kesinlikle haram içerik bulunamadı, ancak {ingredients} hayvansal kaynaklı olabilir. Bu, içerik metnine dayalı otomatik bir değerlendirmedir.',
-      'explanationHaram':
-          'Bu ürün, hayvansal kaynaklı veya alkol içerikli olabilecek bir veya daha fazla içerik barındırmaktadır. Ayrıntılar için işaretlenen içerikleri inceleyin.',
-      'unknown': '? BİLİNMİYOR',
-      'noCert': '⚠️ SERTİFİKA YOK',
-      'explanationUnknown':
-          'Bu ürün için içerik bilgisi bulunamadı. Helal durumu belirlenemiyor — lütfen ambalajı doğrudan kontrol edin.',
-      'explanationNoCert':
-          'Bu ürün hayvansal kaynaklı bir gıdadır ancak doğrulanmış bir helal sertifikası bulunmamaktadır. Helal kesim teyit edilemez — ambalajda helal etiketi olup olmadığını kontrol edin.',
-      'nonFood': 'ℹ️ GIDA DEĞİL',
-      'explanationNonFood':
-          'Bu bir gıda ürünü değildir. İslami beslenme kuralları bu ürün için geçerli değildir.',
-      'about': 'Hakkında',
-      'version': 'Versiyon',
-      'releaseNotes': 'Sürüm Notları',
-      'checkForUpdates': 'Güncellemeleri Kontrol Et',
-      'upToDate': 'Güncel durumdasınız!',
-      'installed': 'Kurulu',
-      'store': 'Mağaza',
-      'privacyPolicy': 'Gizlilik Politikası',
-      'latest': 'En Son',
-      'updateAvailable': 'Güncelleme Mevcut',
-      'updateNow': 'Şimdi Güncelle',
-      'reportWrongResult': 'Yanlış Sonucu Bildir',
-      'reportWrongResultTitle': 'Bu sonuç yanlış mı?',
-      'reportWrongResultSubtitle':
-          'Ne olması gerektiğini söyleyin. '
-          'Bir hata raporu oluşturup düzelteceğiz.',
-      'currentResultLabel': 'Mevcut sonuç',
-      'expectedResultLabel': 'Ne olmalı?',
-      'optionalNote': 'İsteğe bağlı not (örn. neden öyle düşündüğünüz)',
-      'reportSubmitted': 'Hata raporu gönderildi — teşekkürler!',
-      'reportFailed': 'Rapor gönderilemedi. Daha sonra tekrar deneyin.',
-      'reportResultHalal': 'Helal',
-      'reportResultHaram': 'Haram',
-      'reportResultNonFood': 'Gıda Değil',
-      'reportResultUnknown': 'Bilinmiyor',
-      'myNote': 'Notum',
-      'noteHint': 'örn. üreticiye E471 sor, sonra kontrol et...',
-      'noteSaved': 'Not kaydedildi',
-      'checkLater': 'Sonra kontrol et',
-      'flaggedOnly': 'Yalnızca işaretliler',
-      'allScans': 'Tüm taramalar',
-      'deepAnalysis': 'Detaylı Analiz',
-      'analyse': 'Analiz Et',
-      'perIngredientAiAnalysis':
-          'İslami temelli içerik bazlı yapay zeka analizi',
-      'communityDiscussion': 'Topluluk Tartışması',
-      'noDiscussionsYet': 'Henüz tartışma yok — ilk siz başlatın',
-      'analysisQueued':
-          'Analiz sıraya alındı — sonuçlar yönetici incelemesinden sonra görünecektir.',
-      'analysisFailed': 'Analiz başarısız oldu — lütfen tekrar deneyin.',
-      'signInToDiscuss': 'Tartışma başlatmak için giriş yapın.',
-      'signInToChallenge': 'İtiraz göndermek için giriş yapın.',
-      'discussions': 'Tartışmalar',
-      'challenges': 'İtirazlar',
-      'newDiscussion': 'Yeni Tartışma',
-      'halalDirectory': 'Helal Rehberi',
-      'signInFailed': 'Giriş başarısız oldu. Lütfen tekrar deneyin.',
-      'newVersionAvailable': 'Yeni bir sürüm mevcut',
-      'signIn': 'Giriş Yap',
-      'signOut': 'Çıkış Yap',
-      'signedIn': 'Giriş yapıldı',
-      'adminPanel': 'Yönetici paneli',
-      'noDiscussionsHint': 'İlk tartışmayı siz başlatın!',
-      'analysisTab': 'Analiz',
-      'rulesEngineTab': 'Kural Motoru',
-      'photosTab': 'Fotoğraflar',
-      'ingredientsTab': 'Malzemeler',
-      'customRulesTab': 'Özel',
-      'builtInRulesTab': 'Yerleşik',
-      'suggestionsTab': 'Öneriler',
-      'searchRules': 'Kural ara...',
-      'noCustomRules': 'Henüz özel kural yok',
-      'noMatchingRules': 'Eşleşen kural bulunamadı',
-      'noSuggestions': 'Bekleyen öneri yok',
-      'addRule': 'Kural Ekle',
-      'editRule': 'Kuralı Düzenle',
-      'delete': 'Sil',
-      'deleteRuleTitle': 'Kuralı Sil',
-      'deleteRuleConfirm': '"{keyword}" kuralını silmek istiyor musunuz?',
-      'ruleCreated': 'Kural başarıyla oluşturuldu',
-      'ruleCreateFailed': 'Kural oluşturulamadı. Lütfen tekrar deneyin.',
-      'ruleUpdated': 'Kural başarıyla güncellendi',
-      'ruleUpdateFailed': 'Kural güncellenemedi. Lütfen tekrar deneyin.',
-      'ruleDeleted': 'Kural silindi',
-      'ruleDeleteFailed': 'Kural silinemedi. Lütfen tekrar deneyin.',
-      'createRule': 'Kural Oluştur',
-      'updateRule': 'Kuralı Güncelle',
-      'variantsLabel': 'Varyantlar',
-      'variantsHint': 'örn. schmalz, domuz yağı, saindoux',
-      'variantsHelperText':
-          'Eşleştirme için virgülle ayrılmış çok dilli varyantlar',
-      'suggestVariantsLabel': 'Diğer diller (isteğe bağlı)',
-      'suggestVariantsHint': 'örn. schwein, domuz, porc',
-      'suggestVariantsHelperText':
-          'Aynı bileşen için diğer dillerdeki yazılışlar, virgülle ayrılmış',
-      'translationsLabel': 'Dile göre çeviriler',
-      'translationsHint': 'de: schwein\ntr: domuz',
-      'translationsHelperText':
-          'Satır başına bir tane: dil kodu ve terim (de, tr, fr, es, it, nl, sr, hu, cs). Eşleştirme ve arayüz için.',
-      'mergeKeywordTitle': 'Mevcut kurala birleştirilsin mi?',
-      'mergeKeywordMessage':
-          '"{alias}", mevcut "{canonical}" kuralıyla eşleşiyor. Yinelenen kural yerine bu kurala birleştirilsin mi?',
-      'mergeKeywordConfirm': 'Birleştir',
-      'approveAsNewRule': 'Yeni kural oluştur',
-      'suggestionMerged': 'Öneri mevcut kurala birleştirildi',
-      'builtInBadge': 'yerleşik',
-      'approve': 'Onayla',
-      'reject': 'Reddet',
-      'suggestionApproved': 'Öneri onaylandı ve kural olarak eklendi',
-      'suggestionApproveFailed': 'Öneri onaylanamadı.',
-      'suggestionRejected': 'Öneri reddedildi',
-      'suggestionRejectFailed': 'Öneri reddedilemedi.',
-      'photoIngredientsButton': 'Malzeme Fotoğrafını Kontrol Et',
-      'photoAnalysisProductName': 'Fotoğraf Analizi',
-      'managedProduct': 'Yönetici tarafından doğrulandı',
-      'managedProductNoRefresh':
-          'Bu ürün bir yönetici tarafından yönetiliyor ve dış kaynaklardan yenilenemez.',
-      'deleteAccount': 'Hesabı Sil',
-      'deleteAccountTitle': 'Hesap Silinsin mi?',
-      'deleteAccountConfirm':
-          'Bu işlem hesabınızı ve tüm ilişkili verileri kalıcı olarak silecektir. Bu işlem geri alınamaz.',
-      'deleteAccountSuccess': 'Hesabınız silindi.',
-      'deleteAccountFailed': 'Hesap silinemedi. Lütfen tekrar deneyin.',
-      'reportWrongIngredient': 'Yanlış İçerik Bildir',
-      'reportWrongIngredientTitle': 'Yanlış içerik bildir',
-      'reportWrongIngredientSubtitle':
-          'Yanlış listelendiğini düşündüğünüz içerikleri seçin.',
-      'reportWrongIngredientExplanation': 'Açıklama (isteğe bağlı)',
-      'reportWrongIngredientExplanationHint':
-          'örn. bu içerik bitkisel kaynaklıdır...',
-      'reportWrongIngredientNoSelection': 'Lütfen en az bir içerik seçin.',
-      'reportWrongIngredientSubmitted': 'Teşekkürler! Raporunuz gönderildi.',
-      'reportWrongIngredientFailed':
-          'Rapor gönderilemedi. Lütfen tekrar deneyin.',
-      'reportsTab': 'Raporlar',
-      'reportedIngredient': 'Yanlış olarak bildirildi',
-      'noReports': 'Bekleyen rapor yok',
-      'openProduct': 'Ürünü aç',
-      'resolveReport': 'Çözüldü',
-      'dismissReport': 'Reddet',
-    },
-    'de': {
-      'appTitle': 'HalalScan',
-      'startTitle': 'HalalScan',
-      'tagline': 'Transparentes Halal, von der Community.',
-      'taglineSubtitle':
-          'Jede Zutat geprüft und erklärt — verbessert durch Ihr Feedback.',
-      'newScan': 'Neu scannen',
-      'lastResults': 'Letzte Ergebnisse',
-      'noRecentResults': 'Noch keine letzten Scans gespeichert.',
-      'noRecentResultsHint':
-          'Tippen Sie auf die Schaltfläche oben, um loszulegen.',
-      'scanButton': 'Scan starten',
-      'scanAnotherProduct': 'Anderes Produkt scannen',
-      'manualEntry': 'Barcode manuell eingeben',
-      'enterBarcodeManually': 'Barcode manuell eingeben',
-      'cancel': 'Abbrechen',
-      'submit': 'Absenden',
-      'scanAgain': 'Erneut scannen',
-      'readyToScan': 'Bereit zum Scannen',
-      'analyzingBarcode': 'Barkod wird analysiert...',
-      'pointCameraAtBarcode':
-          'Richten Sie die Kamera auf den Barcode auf der Verpackung',
-      'barcodeNotSupported':
-          'Barcode erkannt, Format wird aber nicht unterstützt. Versuchen Sie die manuelle Eingabe.',
-      'pleaseEnterValidBarcode': 'Bitte geben Sie einen gültigen Barcode ein.',
-      'productNotFound': 'Produkt nicht gefunden',
-      'noProductImageAvailable': 'Kein Produktbild verfügbar',
-      'uploadProductPhoto': 'Foto hochladen',
-      'uploadPhotoHint':
-          'Helfen Sie anderen, indem Sie ein Foto dieses Produkts beitragen',
-      'photoUploaded': 'Foto eingereicht — vielen Dank!',
-      'photoUploadFailed':
-          'Foto konnte nicht hochgeladen werden. Bitte erneut versuchen.',
-      'additionalImages': 'Zusätzliche Bilder',
-      'ingredients': 'Zutaten',
-      'flaggedIngredients': 'Markierte Zutaten',
-      'mayBeAnimalDerived': 'Kann tierischen Ursprungs sein',
-      'communityFeedback': 'Community-Feedback',
-      'noFeedbackYet': 'Noch kein Feedback. Sei der Erste!',
-      'provideFeedback': 'Feedback geben',
-      'replyAsProducer': 'Als Hersteller antworten',
-      'producerReply': 'Hersteller-Antwort',
-      'userFeedback': 'Nutzer-Feedback',
-      'imageNotAvailable': 'Bild nicht verfügbar',
-      'fairTrade': 'Fair Trade',
-      'organic': 'Bio',
-      'glutenFree': 'Glutenfrei',
-      'vegetarian': 'Vegetarisch',
-      'vegan': 'Vegan',
-      'halal': 'HALAL',
-      'notHalal': 'HARAM',
-      'lastScanned': 'Zuletzt gescannt',
-      'today': 'Heute',
-      'yesterday': 'Gestern',
-      'daysAgo': 'vor {count} Tagen',
-      'errorFetchingProduct': 'Fehler beim Laden des Produkts: {error}',
-      'productCouldNotBeRefreshed':
-          'Produktdaten konnten nicht aktualisiert werden',
-      'thankYouFeedback': 'Danke für Ihr Feedback!',
-      'errorSubmittingFeedback': 'Fehler beim Absenden des Feedbacks: {error}',
-      'replySubmitted': 'Antwort erfolgreich gesendet!',
-      'noResultsSaved': 'Noch keine Scan-History gespeichert.',
-      'language': 'Sprache',
-      'english': 'English',
-      'turkish': 'Türkçe',
-      'german': 'Deutsch',
-      'scanHistoryTitle': 'Zuletzt gescannt',
-      'filterScan': 'Produkt scannen oder Barcode eingeben',
-      'openResult': 'Ergebnis öffnen',
-      'resultTitle': 'Ergebnis',
-      'noIngredientData': 'Keine Zutatendaten verfügbar.',
-      'foundInIngredients': 'In Produktzutaten gefunden.',
-      'mayBeAnimalDerivedNote': 'Kann tierischen Ursprungs sein.',
-      'couldNotLoadFeedback': 'Feedback konnte nicht geladen werden.',
-      'couldNotSubmitFeedback': 'Feedback konnte nicht gesendet werden.',
-      'couldNotSubmitReply': 'Antwort konnte nicht gesendet werden.',
-      'couldNotRefreshProduct':
-          'Produktdaten konnten nicht aktualisiert werden.',
-      'attachFiles': 'Dateien anhängen',
-      'feedbackInputHint': 'Ihr Feedback...',
-      'replyInputHint': 'Ihre Antwort...',
-      'submitReply': 'Antwort senden',
-      'refreshTooltip': 'Produktdaten aktualisieren',
-      'feedbackDialogHint':
-          'Helfen Sie uns, unsere Halal-Bewertung zu verbessern.',
-      'replyDialogHint':
-          'Geben Sie eine offizielle Antwort auf dieses Feedback.',
-      'aiAnalysis': 'KI-Analyse',
-      'keywordAnalysis': 'Schlüsselwortanalyse',
-      'analysisTransparency': 'Analysetransparenz',
-      'transparentRulesAvailable':
-          '{count} Regeln verfügbar (keine Daten zu prüfen)',
-      'contributeIngredients': 'Zutaten hinzufügen',
-      'contributeIngredientsHint':
-          'Keine Zutatendaten gefunden. Helfen Sie der Community, indem Sie die Zutaten von der Verpackung eingeben.',
-      'ingredientTextLabel': 'Zutatentext',
-      'ingredientTextHint':
-          'Geben Sie die Zutatenliste von der Verpackung ein oder fügen Sie sie ein',
-      'ingredientSubmitted':
-          'Danke! Zutaten eingereicht — das Produkt wird erneut analysiert.',
-      'ingredientSubmitFailed':
-          'Zutaten konnten nicht eingereicht werden. Bitte erneut versuchen.',
-      'improveOnOpenFoodFacts': 'Auf OpenFoodFacts bearbeiten',
-      'improveOnOpenFoodFactsHint':
-          'Verbessern Sie dieses Produkt für alle, indem Sie Daten direkt auf OpenFoodFacts hinzufügen.',
-      'extractingIngredients': 'Zutaten werden aus dem Bild gelesen…',
-      'ocrFailed':
-          'Zutaten konnten nicht aus dem Bild gelesen werden. Sie können sie unten manuell eingeben.',
-      'ocrSuccess': 'Zutaten extrahiert — bitte vor dem Absenden überprüfen.',
-      'productImages': 'Produktbilder',
-      'extractFromExistingImage': 'Aus Galerie auswählen',
-      'takePhotoOfIngredients': 'Foto der Zutaten aufnehmen',
-      'cameraError':
-          'Kamera konnte nicht geöffnet werden. Bitte Kameraberechtigungen prüfen.',
-      'noIngredientsImageHint':
-          'Kein Zutatenbild für dieses Produkt verfügbar. Bitte fotografieren Sie die Zutatenliste auf der Verpackung.',
-      'ocrNoIngredientsFound':
-          'In den verfügbaren Bildern wurde keine Zutatenliste gefunden. Bitte fotografieren Sie das Zutatenetikett.',
-      'haramKeywordsChecked': 'Haram-Zutaten, die wir prüfen',
-      'suspiciousKeywordsChecked': 'Verdächtige Zutaten, die wir prüfen',
-      'transparencyNote': 'Fehlt etwas? Teilen Sie es uns mit!',
-      'recheck': 'Erneut prüfen',
-      'foundNotFlagged':
-          'In Zutaten gefunden, aber nicht von der Analyse markiert (z. B. Fettalkohole, Spurenmengen oder kontextsichere Verwendung).',
-      'fattyAlcoholNote':
-          'Dies ist ein Fettalkohol (z. B. Cetyl- oder Stearylalkohol) – ein pflanzlicher Emulgator. Er hat keinen Bezug zu Trinkalkohol und ist halal.',
-      'keywords': 'Schlüsselwörter',
-      'haramTab': 'Haram',
-      'suspiciousTab': 'Verdächtig',
-      'suggestKeyword': 'Schlüsselwort vorschlagen',
-      'suggestKeywordHint':
-          'Fehlt etwas? Schlagen Sie ein Schlüsselwort vor – wir prüfen es.',
-      'keywordLabel': 'Schlüsselwort',
-      'keywordHint': 'z. B. Schmalz, Ethanol, Karmin',
-      'keywordRequired': 'Bitte ein Schlüsselwort eingeben.',
-      'categoryLabel': 'Kategorie',
-      'haramCategory': 'Haram (eindeutig verboten)',
-      'suspiciousCategory': 'Verdächtig (möglicherweise tierisch)',
-      'reasonLabel': 'Begründung',
-      'reasonHint': 'Warum sollte dieses Schlüsselwort aufgenommen werden?',
-      'reasonRequired': 'Bitte eine Begründung angeben.',
-      'suggestionSubmitted':
-          'Danke! Ihr Vorschlag wurde zur Prüfung eingereicht.',
-      'suggestionError':
-          'Vorschlag konnte nicht gesendet werden. Bitte erneut versuchen.',
-      'customBadge': 'benutzerdefiniert',
-      'nutritionLabel': 'Nährwerte',
-      'producerReplyWarningTitle': 'Nicht verifiziert',
-      'producerReplyWarning':
-          'Jeder kann diese Schaltfläche verwenden — Antworten werden nicht als vom tatsächlichen Hersteller stammend verifiziert. Fahren Sie nur fort, wenn Sie der Hersteller sind.',
-      'proceedAnyway': 'Trotzdem fortfahren',
-      'deletedFromHistory': 'Aus Verlauf entfernt',
-      'undo': 'Rückgängig',
-      'explanationClean':
-          'Keine Zutaten stimmten mit bekannten tierischen oder alkoholbezogenen Begriffen überein. Dies ist eine automatische Bewertung anhand des Zutatentexts.',
-      'explanationSuspiciousOnly':
-          'Keine eindeutig verbotenen Zutaten gefunden, aber {ingredients} könnten tierischen Ursprungs sein. Dies ist eine automatische Bewertung anhand des Zutatentexts.',
-      'explanationHaram':
-          'Dieses Produkt enthält eine oder mehrere Zutaten, die tierischen Ursprungs oder alkoholbezogen sein könnten. Prüfen Sie die markierten Zutaten.',
-      'unknown': '? UNBEKANNT',
-      'noCert': '⚠️ KEIN ZERTIFIKAT',
-      'explanationUnknown':
-          'Für dieses Produkt wurden keine Zutatendaten gefunden. Der Halal-Status kann nicht bestimmt werden — bitte prüfen Sie die Verpackung direkt.',
-      'explanationNoCert':
-          'Dies ist ein tierisches Lebensmittelprodukt ohne geprüfte Halal-Zertifizierung. Eine islamkonforme Schlachtung kann nicht bestätigt werden — prüfen Sie die Verpackung auf ein Halal-Siegel.',
-      'nonFood': 'ℹ️ KEIN LEBENSMITTEL',
-      'explanationNonFood':
-          'Dies ist kein Lebensmittelprodukt. Islamische Ernährungsregeln gelten nicht für dieses Produkt.',
-      'about': 'Über',
-      'version': 'Version',
-      'releaseNotes': 'Versionshinweise',
-      'checkForUpdates': 'Nach Updates suchen',
-      'upToDate': 'Sie sind auf dem neuesten Stand!',
-      'installed': 'Installiert',
-      'store': 'Store',
-      'privacyPolicy': 'Datenschutzrichtlinie',
-      'latest': 'Neueste',
-      'updateAvailable': 'Update verfügbar',
-      'updateNow': 'Jetzt aktualisieren',
-      'reportWrongResult': 'Falsches Ergebnis melden',
-      'reportWrongResultTitle': 'Ist dieses Ergebnis falsch?',
-      'reportWrongResultSubtitle':
-          'Sagen Sie uns, was es sein sollte. '
-          'Wir erstellen einen Fehlerbericht und beheben ihn.',
-      'currentResultLabel': 'Aktuelles Ergebnis',
-      'expectedResultLabel': 'Was sollte es sein?',
-      'optionalNote': 'Optionale Notiz (z. B. warum Sie das denken)',
-      'reportSubmitted': 'Fehlerbericht eingereicht — danke!',
-      'reportFailed':
-          'Bericht konnte nicht gesendet werden. Später erneut versuchen.',
-      'reportResultHalal': 'Halal',
-      'reportResultHaram': 'Nicht Halal',
-      'reportResultNonFood': 'Kein Lebensmittel',
-      'reportResultUnknown': 'Unbekannt',
-      'myNote': 'Meine Notiz',
-      'noteHint': 'z. B. Hersteller nach E471 fragen, später prüfen...',
-      'noteSaved': 'Notiz gespeichert',
-      'checkLater': 'Später prüfen',
-      'flaggedOnly': 'Nur markierte',
-      'allScans': 'Alle Scans',
-      'deepAnalysis': 'Detailanalyse',
-      'analyse': 'Analysieren',
-      'perIngredientAiAnalysis':
-          'KI-Analyse pro Zutat auf islamischer Grundlage',
-      'communityDiscussion': 'Community-Diskussion',
-      'noDiscussionsYet': 'Noch keine Diskussionen — starten Sie eine',
-      'analysisQueued':
-          'Analyse in Warteschlange — Ergebnisse erscheinen nach Admin-Prüfung.',
-      'analysisFailed': 'Analyse fehlgeschlagen — bitte erneut versuchen.',
-      'signInToDiscuss': 'Anmelden, um eine Diskussion zu starten.',
-      'signInToChallenge': 'Anmelden, um eine Anfechtung einzureichen.',
-      'discussions': 'Diskussionen',
-      'challenges': 'Anfechtungen',
-      'newDiscussion': 'Neue Diskussion',
-      'halalDirectory': 'Halal-Verzeichnis',
-      'signInFailed': 'Anmeldung fehlgeschlagen. Bitte erneut versuchen.',
-      'newVersionAvailable': 'Eine neue Version ist verfügbar',
-      'signIn': 'Anmelden',
-      'signOut': 'Abmelden',
-      'signedIn': 'Angemeldet',
-      'adminPanel': 'Admin-Panel',
-      'noDiscussionsHint': 'Seien Sie der Erste!',
-      'analysisTab': 'Analyse',
-      'rulesEngineTab': 'Regelwerk',
-      'photosTab': 'Fotos',
-      'ingredientsTab': 'Zutaten',
-      'customRulesTab': 'Benutzerdefiniert',
-      'builtInRulesTab': 'Eingebaut',
-      'suggestionsTab': 'Vorschläge',
-      'searchRules': 'Regeln suchen...',
-      'noCustomRules': 'Noch keine benutzerdefinierten Regeln',
-      'noMatchingRules': 'Keine passenden Regeln gefunden',
-      'noSuggestions': 'Keine ausstehenden Vorschläge',
-      'addRule': 'Regel hinzufügen',
-      'editRule': 'Regel bearbeiten',
-      'delete': 'Löschen',
-      'deleteRuleTitle': 'Regel löschen',
-      'deleteRuleConfirm': '"{keyword}" aus den Regeln entfernen?',
-      'ruleCreated': 'Regel erfolgreich erstellt',
-      'ruleCreateFailed':
-          'Regel konnte nicht erstellt werden. Bitte erneut versuchen.',
-      'ruleUpdated': 'Regel erfolgreich aktualisiert',
-      'ruleUpdateFailed':
-          'Regel konnte nicht aktualisiert werden. Bitte erneut versuchen.',
-      'ruleDeleted': 'Regel gelöscht',
-      'ruleDeleteFailed':
-          'Regel konnte nicht gelöscht werden. Bitte erneut versuchen.',
-      'createRule': 'Regel erstellen',
-      'updateRule': 'Regel aktualisieren',
-      'variantsLabel': 'Varianten',
-      'variantsHint': 'z. B. Schmalz, domuz yağı, saindoux',
-      'variantsHelperText':
-          'Kommagetrennte mehrsprachige Varianten für den Abgleich',
-      'suggestVariantsLabel': 'Weitere Sprachen (optional)',
-      'suggestVariantsHint': 'z. B. schwein, domuz, porc',
-      'suggestVariantsHelperText':
-          'Kommagetrennte Schreibweisen derselben Zutat in anderen Sprachen',
-      'translationsLabel': 'Übersetzungen nach Sprache',
-      'translationsHint': 'de: schwein\ntr: domuz',
-      'translationsHelperText':
-          'Eine Zeile pro Eintrag: Sprachcode und Begriff (de, tr, fr, es, it, nl, sr, hu, cs). Für Abgleich und Anzeige.',
-      'mergeKeywordTitle': 'Mit bestehender Regel zusammenführen?',
-      'mergeKeywordMessage':
-          '"{alias}" passt zur bestehenden Regel "{canonical}". Aliase dort zusammenführen statt eine Duplikat-Regel anzulegen?',
-      'mergeKeywordConfirm': 'Zusammenführen',
-      'approveAsNewRule': 'Neue Regel anlegen',
-      'suggestionMerged': 'Vorschlag in bestehende Regel übernommen',
-      'builtInBadge': 'eingebaut',
-      'approve': 'Genehmigen',
-      'reject': 'Ablehnen',
-      'suggestionApproved': 'Vorschlag genehmigt und als Regel hinzugefügt',
-      'suggestionApproveFailed': 'Vorschlag konnte nicht genehmigt werden.',
-      'suggestionRejected': 'Vorschlag abgelehnt',
-      'suggestionRejectFailed': 'Vorschlag konnte nicht abgelehnt werden.',
-      'photoIngredientsButton': 'Zutatenfoto prüfen',
-      'photoAnalysisProductName': 'Fotoanalyse',
-      'managedProduct': 'Vom Admin verifiziert',
-      'managedProductNoRefresh':
-          'Dieses Produkt wird von einem Admin verwaltet und kann nicht aus externen Quellen aktualisiert werden.',
-      'deleteAccount': 'Konto löschen',
-      'deleteAccountTitle': 'Konto löschen?',
-      'deleteAccountConfirm':
-          'Ihr Konto und alle zugehörigen Daten werden dauerhaft gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.',
-      'deleteAccountSuccess': 'Ihr Konto wurde gelöscht.',
-      'deleteAccountFailed':
-          'Konto konnte nicht gelöscht werden. Bitte erneut versuchen.',
-      'reportWrongIngredient': 'Falschen Inhaltsstoff melden',
-      'reportWrongIngredientTitle': 'Falschen Inhaltsstoff melden',
-      'reportWrongIngredientSubtitle':
-          'Wählen Sie die Inhaltsstoffe aus, die Ihrer Meinung nach falsch aufgeführt sind.',
-      'reportWrongIngredientExplanation': 'Erklärung (optional)',
-      'reportWrongIngredientExplanationHint':
-          'z. B. dieser Inhaltsstoff ist pflanzlichen Ursprungs...',
-      'reportWrongIngredientNoSelection':
-          'Bitte wählen Sie mindestens einen Inhaltsstoff aus.',
-      'reportWrongIngredientSubmitted':
-          'Danke! Ihre Meldung wurde eingereicht.',
-      'reportWrongIngredientFailed':
-          'Meldung konnte nicht gesendet werden. Bitte erneut versuchen.',
-      'reportsTab': 'Meldungen',
-      'reportedIngredient': 'Als falsch gemeldet',
-      'noReports': 'Keine ausstehenden Meldungen',
-      'openProduct': 'Produkt öffnen',
-      'resolveReport': 'Lösen',
-      'dismissReport': 'Ablehnen',
-    },
-  };
+/// Callers can lookup localized strings with an instance of AppLocalizations
+/// returned by `AppLocalizations.of(context)`.
+///
+/// Applications need to include `AppLocalizations.delegate()` in their app's
+/// `localizationDelegates` list, and the locales they support in the app's
+/// `supportedLocales` list. For example:
+///
+/// ```dart
+/// import 'localization/app_localizations.dart';
+///
+/// return MaterialApp(
+///   localizationsDelegates: AppLocalizations.localizationsDelegates,
+///   supportedLocales: AppLocalizations.supportedLocales,
+///   home: MyApplicationHome(),
+/// );
+/// ```
+///
+/// ## Update pubspec.yaml
+///
+/// Please make sure to update your pubspec.yaml to include the following
+/// packages:
+///
+/// ```yaml
+/// dependencies:
+///   # Internationalization support.
+///   flutter_localizations:
+///     sdk: flutter
+///   intl: any # Use the pinned version from flutter_localizations
+///
+///   # Rest of dependencies
+/// ```
+///
+/// ## iOS Applications
+///
+/// iOS applications define key application metadata, including supported
+/// locales, in an Info.plist file that is built into the application bundle.
+/// To configure the locales supported by your app, you’ll need to edit this
+/// file.
+///
+/// First, open your project’s ios/Runner.xcworkspace Xcode workspace file.
+/// Then, in the Project Navigator, open the Info.plist file under the Runner
+/// project’s Runner folder.
+///
+/// Next, select the Information Property List item, select Add Item from the
+/// Editor menu, then select Localizations from the pop-up menu.
+///
+/// Select and expand the newly-created Localizations item then, for each
+/// locale your application supports, add a new item and select the locale
+/// you wish to add from the pop-up menu in the Value field. This list should
+/// be consistent with the languages listed in the AppLocalizations.supportedLocales
+/// property.
+abstract class AppLocalizations {
+  AppLocalizations(String locale)
+    : localeName = intl.Intl.canonicalizedLocale(locale.toString());
 
-  String _translate(String key) {
-    return _localizedValues[locale.languageCode]?[key] ??
-        _localizedValues['en']![key] ??
-        key;
-  }
-
-  String get appTitle => _translate('appTitle');
-  String get startTitle => _translate('startTitle');
-  String get tagline => _translate('tagline');
-  String get taglineSubtitle => _translate('taglineSubtitle');
-  String get newScan => _translate('newScan');
-  String get lastResults => _translate('lastResults');
-  String get noRecentResults => _translate('noRecentResults');
-  String get noRecentResultsHint => _translate('noRecentResultsHint');
-  String get scanButton => _translate('scanButton');
-  String get scanAnotherProduct => _translate('scanAnotherProduct');
-  String get manualEntry => _translate('manualEntry');
-  String get enterBarcodeManually => _translate('enterBarcodeManually');
-  String get cancel => _translate('cancel');
-  String get submit => _translate('submit');
-  String get scanAgain => _translate('scanAgain');
-  String get readyToScan => _translate('readyToScan');
-  String get analyzingBarcode => _translate('analyzingBarcode');
-  String get pointCameraAtBarcode => _translate('pointCameraAtBarcode');
-  String get barcodeNotSupported => _translate('barcodeNotSupported');
-  String get pleaseEnterValidBarcode => _translate('pleaseEnterValidBarcode');
-  String get productNotFound => _translate('productNotFound');
-  String get noProductImageAvailable => _translate('noProductImageAvailable');
-  String get uploadProductPhoto => _translate('uploadProductPhoto');
-  String get uploadPhotoHint => _translate('uploadPhotoHint');
-  String get photoUploaded => _translate('photoUploaded');
-  String get photoUploadFailed => _translate('photoUploadFailed');
-  String get additionalImages => _translate('additionalImages');
-  String get ingredients => _translate('ingredients');
-  String get flaggedIngredients => _translate('flaggedIngredients');
-  String get mayBeAnimalDerived => _translate('mayBeAnimalDerived');
-  String get communityFeedback => _translate('communityFeedback');
-  String get noFeedbackYet => _translate('noFeedbackYet');
-  String get provideFeedback => _translate('provideFeedback');
-  String get replyAsProducer => _translate('replyAsProducer');
-  String get producerReply => _translate('producerReply');
-  String get userFeedback => _translate('userFeedback');
-  String get imageNotAvailable => _translate('imageNotAvailable');
-  String get fairTrade => _translate('fairTrade');
-  String get organic => _translate('organic');
-  String get glutenFree => _translate('glutenFree');
-  String get vegetarian => _translate('vegetarian');
-  String get vegan => _translate('vegan');
-  String get halal => _translate('halal');
-  String get notHalal => _translate('notHalal');
-  String get lastScanned => _translate('lastScanned');
-  String get today => _translate('today');
-  String get yesterday => _translate('yesterday');
-  String daysAgo(int count) =>
-      _translate('daysAgo').replaceAll('{count}', count.toString());
-  String errorFetchingProduct(String error) =>
-      _translate('errorFetchingProduct').replaceAll('{error}', error);
-  String get productCouldNotBeRefreshed =>
-      _translate('productCouldNotBeRefreshed');
-  String get thankYouFeedback => _translate('thankYouFeedback');
-  String errorSubmittingFeedback(String error) =>
-      _translate('errorSubmittingFeedback').replaceAll('{error}', error);
-  String get replySubmitted => _translate('replySubmitted');
-  String get noResultsSaved => _translate('noResultsSaved');
-  String get language => _translate('language');
-  String get english => _translate('english');
-  String get turkish => _translate('turkish');
-  String get german => _translate('german');
-  String get openResult => _translate('openResult');
-  String get resultTitle => _translate('resultTitle');
-  String get noIngredientData => _translate('noIngredientData');
-  String get foundInIngredients => _translate('foundInIngredients');
-  String get mayBeAnimalDerivedNote => _translate('mayBeAnimalDerivedNote');
-  String get couldNotLoadFeedback => _translate('couldNotLoadFeedback');
-  String get couldNotSubmitFeedback => _translate('couldNotSubmitFeedback');
-  String get couldNotSubmitReply => _translate('couldNotSubmitReply');
-  String get couldNotRefreshProduct => _translate('couldNotRefreshProduct');
-  String get attachFiles => _translate('attachFiles');
-  String get feedbackInputHint => _translate('feedbackInputHint');
-  String get replyInputHint => _translate('replyInputHint');
-  String get submitReply => _translate('submitReply');
-  String get refreshTooltip => _translate('refreshTooltip');
-  String get feedbackDialogHint => _translate('feedbackDialogHint');
-  String get replyDialogHint => _translate('replyDialogHint');
-  String get aiAnalysis => _translate('aiAnalysis');
-  String get keywordAnalysis => _translate('keywordAnalysis');
-  String get analysisTransparency => _translate('analysisTransparency');
-  String get transparentSummary => _translate('transparentSummary');
-  String get transparentResult => _translate('transparentResult');
-  String get transparentIngredientsChecked =>
-      _translate('transparentIngredientsChecked');
-  String get transparentRulesChecked => _translate('transparentRulesChecked');
-  String transparentRulesAvailable(int count) => _translate(
-    'transparentRulesAvailable',
-  ).replaceAll('{count}', count.toString());
-  String get transparentFlagged => _translate('transparentFlagged');
-  String get transparentSuspicious => _translate('transparentSuspicious');
-  String get transparentNoMatches => _translate('transparentNoMatches');
-  String get transparentNoIngredients => _translate('transparentNoIngredients');
-  String get transparentExplanation => _translate('transparentExplanation');
-  String get viewAllCheckedKeywords => _translate('viewAllCheckedKeywords');
-  String get haramKeywordsChecked => _translate('haramKeywordsChecked');
-  String get suspiciousKeywordsChecked =>
-      _translate('suspiciousKeywordsChecked');
-  String get transparencyNote => _translate('transparencyNote');
-  String get recheck => _translate('recheck');
-  String get foundNotFlagged => _translate('foundNotFlagged');
-  String get fattyAlcoholNote => _translate('fattyAlcoholNote');
-  String get keywords => _translate('keywords');
-  String get haramTab => _translate('haramTab');
-  String get suspiciousTab => _translate('suspiciousTab');
-  String get suggestKeyword => _translate('suggestKeyword');
-  String get suggestKeywordHint => _translate('suggestKeywordHint');
-  String get keywordLabel => _translate('keywordLabel');
-  String get keywordHint => _translate('keywordHint');
-  String get keywordRequired => _translate('keywordRequired');
-  String get categoryLabel => _translate('categoryLabel');
-  String get haramCategory => _translate('haramCategory');
-  String get suspiciousCategory => _translate('suspiciousCategory');
-  String get reasonLabel => _translate('reasonLabel');
-  String get reasonHint => _translate('reasonHint');
-  String get reasonRequired => _translate('reasonRequired');
-  String get suggestionSubmitted => _translate('suggestionSubmitted');
-  String get suggestionError => _translate('suggestionError');
-  String get customBadge => _translate('customBadge');
-  String get nutritionLabel => _translate('nutritionLabel');
-  String get producerReplyWarningTitle =>
-      _translate('producerReplyWarningTitle');
-  String get producerReplyWarning => _translate('producerReplyWarning');
-  String get proceedAnyway => _translate('proceedAnyway');
-  String get deletedFromHistory => _translate('deletedFromHistory');
-  String get undo => _translate('undo');
-  String get explanationClean => _translate('explanationClean');
-  String explanationSuspiciousOnlyWith(List<String> ingredients) => _translate(
-    'explanationSuspiciousOnly',
-  ).replaceAll('{ingredients}', ingredients.join(', '));
-  String get explanationHaram => _translate('explanationHaram');
-  String get unknown => _translate('unknown');
-  String get noCert => _translate('noCert');
-  String get explanationUnknown => _translate('explanationUnknown');
-  String get explanationNoCert => _translate('explanationNoCert');
-  String get nonFood => _translate('nonFood');
-  String get explanationNonFood => _translate('explanationNonFood');
-  String get about => _translate('about');
-  String get version => _translate('version');
-  String get releaseNotes => _translate('releaseNotes');
-  String get checkForUpdates => _translate('checkForUpdates');
-  String get upToDate => _translate('upToDate');
-  String get installed => _translate('installed');
-  String get store => _translate('store');
-  String get privacyPolicy => _translate('privacyPolicy');
-  String get latest => _translate('latest');
-  String get updateAvailable => _translate('updateAvailable');
-  String get updateNow => _translate('updateNow');
-  String get reportWrongResult => _translate('reportWrongResult');
-  String get reportWrongResultTitle => _translate('reportWrongResultTitle');
-  String get reportWrongResultSubtitle =>
-      _translate('reportWrongResultSubtitle');
-  String get currentResultLabel => _translate('currentResultLabel');
-  String get expectedResultLabel => _translate('expectedResultLabel');
-  String get optionalNote => _translate('optionalNote');
-  String get reportSubmitted => _translate('reportSubmitted');
-  String get reportFailed => _translate('reportFailed');
-  String get reportResultHalal => _translate('reportResultHalal');
-  String get reportResultHaram => _translate('reportResultHaram');
-  String get reportResultNonFood => _translate('reportResultNonFood');
-  String get reportResultUnknown => _translate('reportResultUnknown');
-  String get myNote => _translate('myNote');
-  String get noteHint => _translate('noteHint');
-  String get noteSaved => _translate('noteSaved');
-  String get checkLater => _translate('checkLater');
-  String get deepAnalysis => _translate('deepAnalysis');
-  String get analyse => _translate('analyse');
-  String get perIngredientAiAnalysis => _translate('perIngredientAiAnalysis');
-  String get communityDiscussion => _translate('communityDiscussion');
-  String get noDiscussionsYet => _translate('noDiscussionsYet');
-  String get analysisQueued => _translate('analysisQueued');
-  String get analysisFailed => _translate('analysisFailed');
-  String get signInToDiscuss => _translate('signInToDiscuss');
-  String get signInToChallenge => _translate('signInToChallenge');
-  String get discussions => _translate('discussions');
-  String get challenges => _translate('challenges');
-  String get newDiscussion => _translate('newDiscussion');
-  String get halalDirectory => _translate('halalDirectory');
-  String get signInFailed => _translate('signInFailed');
-  String get newVersionAvailable => _translate('newVersionAvailable');
-  String get signIn => _translate('signIn');
-  String get signOut => _translate('signOut');
-  String get signedIn => _translate('signedIn');
-  String get adminPanel => _translate('adminPanel');
-  String get noDiscussionsHint => _translate('noDiscussionsHint');
-  String get contributeIngredients => _translate('contributeIngredients');
-  String get contributeIngredientsHint =>
-      _translate('contributeIngredientsHint');
-  String get ingredientTextLabel => _translate('ingredientTextLabel');
-  String get ingredientTextHint => _translate('ingredientTextHint');
-  String get ingredientSubmitted => _translate('ingredientSubmitted');
-  String get ingredientSubmitFailed => _translate('ingredientSubmitFailed');
-  String get improveOnOpenFoodFacts => _translate('improveOnOpenFoodFacts');
-  String get improveOnOpenFoodFactsHint =>
-      _translate('improveOnOpenFoodFactsHint');
-  String get extractingIngredients => _translate('extractingIngredients');
-  String get ocrFailed => _translate('ocrFailed');
-  String get ocrSuccess => _translate('ocrSuccess');
-  String get productImages => _translate('productImages');
-  String get extractFromExistingImage => _translate('extractFromExistingImage');
-  String get takePhotoOfIngredients => _translate('takePhotoOfIngredients');
-  String get cameraError => _translate('cameraError');
-  String get noIngredientsImageHint => _translate('noIngredientsImageHint');
-  String get ocrNoIngredientsFound => _translate('ocrNoIngredientsFound');
-  String get flaggedOnly => _translate('flaggedOnly');
-  String get allScans => _translate('allScans');
-  String get analysisTab => _translate('analysisTab');
-  String get rulesEngineTab => _translate('rulesEngineTab');
-  String get photosTab => _translate('photosTab');
-  String get ingredientsTab => _translate('ingredientsTab');
-  String get customRulesTab => _translate('customRulesTab');
-  String get builtInRulesTab => _translate('builtInRulesTab');
-  String get suggestionsTab => _translate('suggestionsTab');
-  String get searchRules => _translate('searchRules');
-  String get noCustomRules => _translate('noCustomRules');
-  String get noMatchingRules => _translate('noMatchingRules');
-  String get noSuggestions => _translate('noSuggestions');
-  String get addRule => _translate('addRule');
-  String get editRule => _translate('editRule');
-  String get delete => _translate('delete');
-  String get deleteRuleTitle => _translate('deleteRuleTitle');
-  String deleteRuleConfirm(String keyword) =>
-      _translate('deleteRuleConfirm').replaceAll('{keyword}', keyword);
-  String get ruleCreated => _translate('ruleCreated');
-  String get ruleCreateFailed => _translate('ruleCreateFailed');
-  String get ruleUpdated => _translate('ruleUpdated');
-  String get ruleUpdateFailed => _translate('ruleUpdateFailed');
-  String get ruleDeleted => _translate('ruleDeleted');
-  String get ruleDeleteFailed => _translate('ruleDeleteFailed');
-  String get createRule => _translate('createRule');
-  String get updateRule => _translate('updateRule');
-  String get variantsLabel => _translate('variantsLabel');
-  String get variantsHint => _translate('variantsHint');
-  String get variantsHelperText => _translate('variantsHelperText');
-  String get suggestVariantsLabel => _translate('suggestVariantsLabel');
-  String get suggestVariantsHint => _translate('suggestVariantsHint');
-  String get suggestVariantsHelperText =>
-      _translate('suggestVariantsHelperText');
-  String get translationsLabel => _translate('translationsLabel');
-  String get translationsHint => _translate('translationsHint');
-  String get translationsHelperText => _translate('translationsHelperText');
-  String get mergeKeywordTitle => _translate('mergeKeywordTitle');
-  String mergeKeywordMessage(String alias, String canonical) => _translate(
-    'mergeKeywordMessage',
-  ).replaceAll('{alias}', alias).replaceAll('{canonical}', canonical);
-  String get mergeKeywordConfirm => _translate('mergeKeywordConfirm');
-  String get approveAsNewRule => _translate('approveAsNewRule');
-  String get suggestionMerged => _translate('suggestionMerged');
-  String get builtInBadge => _translate('builtInBadge');
-  String get approve => _translate('approve');
-  String get reject => _translate('reject');
-  String get suggestionApproved => _translate('suggestionApproved');
-  String get suggestionApproveFailed => _translate('suggestionApproveFailed');
-  String get suggestionRejected => _translate('suggestionRejected');
-  String get suggestionRejectFailed => _translate('suggestionRejectFailed');
-  String get photoIngredientsButton => _translate('photoIngredientsButton');
-  String get photoAnalysisProductName => _translate('photoAnalysisProductName');
-  String get managedProduct => _translate('managedProduct');
-  String get managedProductNoRefresh => _translate('managedProductNoRefresh');
-  String get deleteAccount => _translate('deleteAccount');
-  String get deleteAccountTitle => _translate('deleteAccountTitle');
-  String get deleteAccountConfirm => _translate('deleteAccountConfirm');
-  String get deleteAccountSuccess => _translate('deleteAccountSuccess');
-  String get deleteAccountFailed => _translate('deleteAccountFailed');
-  String get reportWrongIngredient => _translate('reportWrongIngredient');
-  String get reportWrongIngredientTitle =>
-      _translate('reportWrongIngredientTitle');
-  String get reportWrongIngredientSubtitle =>
-      _translate('reportWrongIngredientSubtitle');
-  String get reportWrongIngredientExplanation =>
-      _translate('reportWrongIngredientExplanation');
-  String get reportWrongIngredientExplanationHint =>
-      _translate('reportWrongIngredientExplanationHint');
-  String get reportWrongIngredientNoSelection =>
-      _translate('reportWrongIngredientNoSelection');
-  String get reportWrongIngredientSubmitted =>
-      _translate('reportWrongIngredientSubmitted');
-  String get reportWrongIngredientFailed =>
-      _translate('reportWrongIngredientFailed');
-  String get reportsTab => _translate('reportsTab');
-  String get reportedIngredient => _translate('reportedIngredient');
-  String get noReports => _translate('noReports');
-  String get openProduct => _translate('openProduct');
-  String get resolveReport => _translate('resolveReport');
-  String get dismissReport => _translate('dismissReport');
+  final String localeName;
 
   static AppLocalizations of(BuildContext context) {
-    final localizations = Localizations.of<AppLocalizations>(
-      context,
-      AppLocalizations,
-    );
-    assert(localizations != null, 'No AppLocalizations found in context');
-    return localizations!;
+    return Localizations.of<AppLocalizations>(context, AppLocalizations)!;
   }
+
+  static const LocalizationsDelegate<AppLocalizations> delegate =
+      _AppLocalizationsDelegate();
+
+  /// A list of this localizations delegate along with the default localizations
+  /// delegates.
+  ///
+  /// Returns a list of localizations delegates containing this delegate along with
+  /// GlobalMaterialLocalizations.delegate, GlobalCupertinoLocalizations.delegate,
+  /// and GlobalWidgetsLocalizations.delegate.
+  ///
+  /// Additional delegates can be added by appending to this list in
+  /// MaterialApp. This list does not have to be used at all if a custom list
+  /// of delegates is preferred or required.
+  static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
+      <LocalizationsDelegate<dynamic>>[
+        delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ];
+
+  /// A list of this localizations delegate's supported locales.
+  static const List<Locale> supportedLocales = <Locale>[
+    Locale('de'),
+    Locale('en'),
+    Locale('tr'),
+  ];
+
+  /// No description provided for @appTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'HalalScan'**
+  String get appTitle;
+
+  /// No description provided for @startTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'HalalScan'**
+  String get startTitle;
+
+  /// No description provided for @tagline.
+  ///
+  /// In en, this message translates to:
+  /// **'Transparent halal, powered by community.'**
+  String get tagline;
+
+  /// No description provided for @taglineSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Every ingredient checked and explained — shaped by your feedback.'**
+  String get taglineSubtitle;
+
+  /// No description provided for @newScan.
+  ///
+  /// In en, this message translates to:
+  /// **'New Scan'**
+  String get newScan;
+
+  /// No description provided for @lastResults.
+  ///
+  /// In en, this message translates to:
+  /// **'Last Results'**
+  String get lastResults;
+
+  /// No description provided for @noRecentResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No recent scans saved yet.'**
+  String get noRecentResults;
+
+  /// No description provided for @noRecentResultsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the scan button above to get started.'**
+  String get noRecentResultsHint;
+
+  /// No description provided for @scanButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Start Scan'**
+  String get scanButton;
+
+  /// No description provided for @scanAnotherProduct.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan Another Product'**
+  String get scanAnotherProduct;
+
+  /// No description provided for @manualEntry.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter barcode manually'**
+  String get manualEntry;
+
+  /// No description provided for @enterBarcodeManually.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter barcode manually'**
+  String get enterBarcodeManually;
+
+  /// No description provided for @cancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get cancel;
+
+  /// No description provided for @submit.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit'**
+  String get submit;
+
+  /// No description provided for @scanAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan Again'**
+  String get scanAgain;
+
+  /// No description provided for @readyToScan.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready to scan'**
+  String get readyToScan;
+
+  /// No description provided for @analyzingBarcode.
+  ///
+  /// In en, this message translates to:
+  /// **'Analyzing barcode...'**
+  String get analyzingBarcode;
+
+  /// No description provided for @pointCameraAtBarcode.
+  ///
+  /// In en, this message translates to:
+  /// **'Point camera at barcode on product packaging'**
+  String get pointCameraAtBarcode;
+
+  /// No description provided for @barcodeNotSupported.
+  ///
+  /// In en, this message translates to:
+  /// **'Barcode detected but format not supported. Try manual entry.'**
+  String get barcodeNotSupported;
+
+  /// No description provided for @pleaseEnterValidBarcode.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a valid barcode.'**
+  String get pleaseEnterValidBarcode;
+
+  /// No description provided for @productNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Product not found'**
+  String get productNotFound;
+
+  /// No description provided for @noProductImageAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'No product image available'**
+  String get noProductImageAvailable;
+
+  /// No description provided for @uploadProductPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload Photo'**
+  String get uploadProductPhoto;
+
+  /// No description provided for @uploadPhotoHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Help others by contributing a photo of this product'**
+  String get uploadPhotoHint;
+
+  /// No description provided for @photoUploaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo submitted — thank you!'**
+  String get photoUploaded;
+
+  /// No description provided for @photoUploadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not upload photo. Please try again.'**
+  String get photoUploadFailed;
+
+  /// No description provided for @additionalImages.
+  ///
+  /// In en, this message translates to:
+  /// **'Additional Images'**
+  String get additionalImages;
+
+  /// No description provided for @ingredients.
+  ///
+  /// In en, this message translates to:
+  /// **'Ingredients'**
+  String get ingredients;
+
+  /// No description provided for @flaggedIngredients.
+  ///
+  /// In en, this message translates to:
+  /// **'Flagged Ingredients'**
+  String get flaggedIngredients;
+
+  /// No description provided for @mayBeAnimalDerived.
+  ///
+  /// In en, this message translates to:
+  /// **'May Be Animal-Derived'**
+  String get mayBeAnimalDerived;
+
+  /// No description provided for @communityFeedback.
+  ///
+  /// In en, this message translates to:
+  /// **'Community Feedback'**
+  String get communityFeedback;
+
+  /// No description provided for @noFeedbackYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No feedback yet. Be the first to share your thoughts!'**
+  String get noFeedbackYet;
+
+  /// No description provided for @provideFeedback.
+  ///
+  /// In en, this message translates to:
+  /// **'Provide Feedback'**
+  String get provideFeedback;
+
+  /// No description provided for @replyAsProducer.
+  ///
+  /// In en, this message translates to:
+  /// **'Reply as Producer'**
+  String get replyAsProducer;
+
+  /// No description provided for @producerReply.
+  ///
+  /// In en, this message translates to:
+  /// **'Producer Reply'**
+  String get producerReply;
+
+  /// No description provided for @userFeedback.
+  ///
+  /// In en, this message translates to:
+  /// **'User Feedback'**
+  String get userFeedback;
+
+  /// No description provided for @imageNotAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Image not available'**
+  String get imageNotAvailable;
+
+  /// No description provided for @fairTrade.
+  ///
+  /// In en, this message translates to:
+  /// **'Fair Trade'**
+  String get fairTrade;
+
+  /// No description provided for @organic.
+  ///
+  /// In en, this message translates to:
+  /// **'Organic'**
+  String get organic;
+
+  /// No description provided for @glutenFree.
+  ///
+  /// In en, this message translates to:
+  /// **'Gluten Free'**
+  String get glutenFree;
+
+  /// No description provided for @vegetarian.
+  ///
+  /// In en, this message translates to:
+  /// **'Vegetarian'**
+  String get vegetarian;
+
+  /// No description provided for @vegan.
+  ///
+  /// In en, this message translates to:
+  /// **'Vegan'**
+  String get vegan;
+
+  /// No description provided for @halal.
+  ///
+  /// In en, this message translates to:
+  /// **'HALAL'**
+  String get halal;
+
+  /// No description provided for @notHalal.
+  ///
+  /// In en, this message translates to:
+  /// **'HARAM'**
+  String get notHalal;
+
+  /// No description provided for @lastScanned.
+  ///
+  /// In en, this message translates to:
+  /// **'Last scanned'**
+  String get lastScanned;
+
+  /// No description provided for @today.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get today;
+
+  /// No description provided for @yesterday.
+  ///
+  /// In en, this message translates to:
+  /// **'Yesterday'**
+  String get yesterday;
+
+  /// No description provided for @daysAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} days ago'**
+  String daysAgo(int count);
+
+  /// No description provided for @errorFetchingProduct.
+  ///
+  /// In en, this message translates to:
+  /// **'Error fetching product: {error}'**
+  String errorFetchingProduct(String error);
+
+  /// No description provided for @productCouldNotBeRefreshed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not refresh product data'**
+  String get productCouldNotBeRefreshed;
+
+  /// No description provided for @thankYouFeedback.
+  ///
+  /// In en, this message translates to:
+  /// **'Thank you for your feedback!'**
+  String get thankYouFeedback;
+
+  /// No description provided for @errorSubmittingFeedback.
+  ///
+  /// In en, this message translates to:
+  /// **'Error submitting feedback: {error}'**
+  String errorSubmittingFeedback(String error);
+
+  /// No description provided for @replySubmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Reply submitted successfully!'**
+  String get replySubmitted;
+
+  /// No description provided for @noResultsSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'No saved scan history yet.'**
+  String get noResultsSaved;
+
+  /// No description provided for @language.
+  ///
+  /// In en, this message translates to:
+  /// **'Language'**
+  String get language;
+
+  /// No description provided for @english.
+  ///
+  /// In en, this message translates to:
+  /// **'English'**
+  String get english;
+
+  /// No description provided for @turkish.
+  ///
+  /// In en, this message translates to:
+  /// **'Türkçe'**
+  String get turkish;
+
+  /// No description provided for @german.
+  ///
+  /// In en, this message translates to:
+  /// **'Deutsch'**
+  String get german;
+
+  /// No description provided for @scanHistoryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent scans'**
+  String get scanHistoryTitle;
+
+  /// No description provided for @filterScan.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan product or enter barcode'**
+  String get filterScan;
+
+  /// No description provided for @openResult.
+  ///
+  /// In en, this message translates to:
+  /// **'Open result'**
+  String get openResult;
+
+  /// No description provided for @resultTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Result'**
+  String get resultTitle;
+
+  /// No description provided for @noIngredientData.
+  ///
+  /// In en, this message translates to:
+  /// **'No ingredient data available.'**
+  String get noIngredientData;
+
+  /// No description provided for @foundInIngredients.
+  ///
+  /// In en, this message translates to:
+  /// **'Found in product ingredients.'**
+  String get foundInIngredients;
+
+  /// No description provided for @mayBeAnimalDerivedNote.
+  ///
+  /// In en, this message translates to:
+  /// **'May be animal-derived.'**
+  String get mayBeAnimalDerivedNote;
+
+  /// No description provided for @couldNotLoadFeedback.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load feedback.'**
+  String get couldNotLoadFeedback;
+
+  /// No description provided for @couldNotSubmitFeedback.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not submit feedback.'**
+  String get couldNotSubmitFeedback;
+
+  /// No description provided for @couldNotSubmitReply.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not submit reply.'**
+  String get couldNotSubmitReply;
+
+  /// No description provided for @couldNotRefreshProduct.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not refresh product data.'**
+  String get couldNotRefreshProduct;
+
+  /// No description provided for @attachFiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Attach Files'**
+  String get attachFiles;
+
+  /// No description provided for @feedbackInputHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Your feedback...'**
+  String get feedbackInputHint;
+
+  /// No description provided for @replyInputHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Your reply...'**
+  String get replyInputHint;
+
+  /// No description provided for @submitReply.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit Reply'**
+  String get submitReply;
+
+  /// No description provided for @refreshTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh product data'**
+  String get refreshTooltip;
+
+  /// No description provided for @feedbackDialogHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Help improve our halal assessment by providing feedback about this product.'**
+  String get feedbackDialogHint;
+
+  /// No description provided for @replyDialogHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Provide an official response to this feedback.'**
+  String get replyDialogHint;
+
+  /// No description provided for @aiAnalysis.
+  ///
+  /// In en, this message translates to:
+  /// **'AI Analysis'**
+  String get aiAnalysis;
+
+  /// No description provided for @keywordAnalysis.
+  ///
+  /// In en, this message translates to:
+  /// **'Keyword Analysis'**
+  String get keywordAnalysis;
+
+  /// No description provided for @analysisTransparency.
+  ///
+  /// In en, this message translates to:
+  /// **'Analysis Transparency'**
+  String get analysisTransparency;
+
+  /// No description provided for @transparentSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Decision summary'**
+  String get transparentSummary;
+
+  /// No description provided for @transparentResult.
+  ///
+  /// In en, this message translates to:
+  /// **'Result'**
+  String get transparentResult;
+
+  /// No description provided for @transparentIngredientsChecked.
+  ///
+  /// In en, this message translates to:
+  /// **'Ingredients checked'**
+  String get transparentIngredientsChecked;
+
+  /// No description provided for @transparentRulesChecked.
+  ///
+  /// In en, this message translates to:
+  /// **'Rules checked'**
+  String get transparentRulesChecked;
+
+  /// No description provided for @transparentRulesAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} rules available (nothing to check)'**
+  String transparentRulesAvailable(int count);
+
+  /// No description provided for @transparentFlagged.
+  ///
+  /// In en, this message translates to:
+  /// **'Flagged'**
+  String get transparentFlagged;
+
+  /// No description provided for @transparentSuspicious.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs verification'**
+  String get transparentSuspicious;
+
+  /// No description provided for @transparentNoMatches.
+  ///
+  /// In en, this message translates to:
+  /// **'No rule matches found'**
+  String get transparentNoMatches;
+
+  /// No description provided for @transparentNoIngredients.
+  ///
+  /// In en, this message translates to:
+  /// **'No ingredient text was available to check'**
+  String get transparentNoIngredients;
+
+  /// No description provided for @transparentExplanation.
+  ///
+  /// In en, this message translates to:
+  /// **'Explanation'**
+  String get transparentExplanation;
+
+  /// No description provided for @contributeIngredients.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Ingredients'**
+  String get contributeIngredients;
+
+  /// No description provided for @contributeIngredientsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'No ingredient data found. Help the community by adding the ingredients from the packaging.'**
+  String get contributeIngredientsHint;
+
+  /// No description provided for @ingredientTextLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Ingredient text'**
+  String get ingredientTextLabel;
+
+  /// No description provided for @ingredientTextHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Type or paste the ingredient list from the packaging'**
+  String get ingredientTextHint;
+
+  /// No description provided for @ingredientSubmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Thank you! Ingredients submitted — the product will be re-analysed.'**
+  String get ingredientSubmitted;
+
+  /// No description provided for @ingredientSubmitFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not submit ingredients. Please try again.'**
+  String get ingredientSubmitFailed;
+
+  /// No description provided for @improveOnOpenFoodFacts.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit on OpenFoodFacts'**
+  String get improveOnOpenFoodFacts;
+
+  /// No description provided for @improveOnOpenFoodFactsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Help improve this product for everyone by adding data directly on OpenFoodFacts.'**
+  String get improveOnOpenFoodFactsHint;
+
+  /// No description provided for @extractingIngredients.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading ingredients from image…'**
+  String get extractingIngredients;
+
+  /// No description provided for @ocrFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not read ingredients from the image. You can type them manually below.'**
+  String get ocrFailed;
+
+  /// No description provided for @ocrSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Ingredients extracted — please review before submitting.'**
+  String get ocrSuccess;
+
+  /// No description provided for @productImages.
+  ///
+  /// In en, this message translates to:
+  /// **'Product images'**
+  String get productImages;
+
+  /// No description provided for @extractFromExistingImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick from gallery'**
+  String get extractFromExistingImage;
+
+  /// No description provided for @takePhotoOfIngredients.
+  ///
+  /// In en, this message translates to:
+  /// **'Take photo of ingredients'**
+  String get takePhotoOfIngredients;
+
+  /// No description provided for @cameraError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open camera. Please check camera permissions.'**
+  String get cameraError;
+
+  /// No description provided for @noIngredientsImageHint.
+  ///
+  /// In en, this message translates to:
+  /// **'No ingredients image available for this product. Please take a photo of the ingredient list on the packaging.'**
+  String get noIngredientsImageHint;
+
+  /// No description provided for @ocrNoIngredientsFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No ingredient list found in the available images. Please take a photo of the ingredient label instead.'**
+  String get ocrNoIngredientsFound;
+
+  /// No description provided for @viewAllCheckedKeywords.
+  ///
+  /// In en, this message translates to:
+  /// **'View all checked keywords'**
+  String get viewAllCheckedKeywords;
+
+  /// No description provided for @haramKeywordsChecked.
+  ///
+  /// In en, this message translates to:
+  /// **'Haram Ingredients We Check'**
+  String get haramKeywordsChecked;
+
+  /// No description provided for @suspiciousKeywordsChecked.
+  ///
+  /// In en, this message translates to:
+  /// **'Suspicious Ingredients We Check'**
+  String get suspiciousKeywordsChecked;
+
+  /// No description provided for @transparencyNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Something missing from our list? Let us know via feedback!'**
+  String get transparencyNote;
+
+  /// No description provided for @recheck.
+  ///
+  /// In en, this message translates to:
+  /// **'Recheck'**
+  String get recheck;
+
+  /// No description provided for @foundNotFlagged.
+  ///
+  /// In en, this message translates to:
+  /// **'Found in ingredients, but not flagged by the analysis (e.g. fatty alcohol, trace amount, or context-safe use).'**
+  String get foundNotFlagged;
+
+  /// No description provided for @fattyAlcoholNote.
+  ///
+  /// In en, this message translates to:
+  /// **'This is a fatty alcohol (e.g. cetyl or stearyl alcohol) — a plant-derived emulsifier. It has no relation to drinking alcohol and is halal.'**
+  String get fattyAlcoholNote;
+
+  /// No description provided for @keywords.
+  ///
+  /// In en, this message translates to:
+  /// **'Keywords'**
+  String get keywords;
+
+  /// No description provided for @haramTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Haram'**
+  String get haramTab;
+
+  /// No description provided for @suspiciousTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Suspicious'**
+  String get suspiciousTab;
+
+  /// No description provided for @suggestKeyword.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggest a Keyword'**
+  String get suggestKeyword;
+
+  /// No description provided for @suggestKeywordHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Think we\'re missing something? Suggest a keyword and we\'ll review it.'**
+  String get suggestKeywordHint;
+
+  /// No description provided for @keywordLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Keyword'**
+  String get keywordLabel;
+
+  /// No description provided for @keywordHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. lard, ethanol, cochineal'**
+  String get keywordHint;
+
+  /// No description provided for @keywordRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a keyword.'**
+  String get keywordRequired;
+
+  /// No description provided for @categoryLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Category'**
+  String get categoryLabel;
+
+  /// No description provided for @haramCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Haram (definitively not permissible)'**
+  String get haramCategory;
+
+  /// No description provided for @suspiciousCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Suspicious (may be animal-derived)'**
+  String get suspiciousCategory;
+
+  /// No description provided for @reasonLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Reason'**
+  String get reasonLabel;
+
+  /// No description provided for @reasonHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Why should this keyword be added?'**
+  String get reasonHint;
+
+  /// No description provided for @reasonRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please provide a reason.'**
+  String get reasonRequired;
+
+  /// No description provided for @suggestionSubmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Thank you! Your suggestion has been submitted for review.'**
+  String get suggestionSubmitted;
+
+  /// No description provided for @suggestionError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not submit suggestion. Please try again.'**
+  String get suggestionError;
+
+  /// No description provided for @customBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'custom'**
+  String get customBadge;
+
+  /// No description provided for @nutritionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Nutrition'**
+  String get nutritionLabel;
+
+  /// No description provided for @producerReplyWarningTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Unverified Action'**
+  String get producerReplyWarningTitle;
+
+  /// No description provided for @producerReplyWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Anyone can post using this button — replies are not verified as coming from the actual manufacturer. Proceed only if you are the producer.'**
+  String get producerReplyWarning;
+
+  /// No description provided for @proceedAnyway.
+  ///
+  /// In en, this message translates to:
+  /// **'Proceed Anyway'**
+  String get proceedAnyway;
+
+  /// No description provided for @deletedFromHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Removed from history'**
+  String get deletedFromHistory;
+
+  /// No description provided for @undo.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo'**
+  String get undo;
+
+  /// No description provided for @explanationClean.
+  ///
+  /// In en, this message translates to:
+  /// **'No ingredients matched known animal-derived or alcohol-related keywords. This is an automated assessment based on ingredient text.'**
+  String get explanationClean;
+
+  /// No description provided for @explanationSuspiciousOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'No definitely haram ingredients found, but {ingredients} may be animal-derived. This is an automated assessment based on ingredient text.'**
+  String explanationSuspiciousOnly(String ingredients);
+
+  /// No description provided for @explanationHaram.
+  ///
+  /// In en, this message translates to:
+  /// **'This product contains one or more ingredients that may be animal-derived or alcohol-related. Review the flagged ingredients below for details.'**
+  String get explanationHaram;
+
+  /// No description provided for @unknown.
+  ///
+  /// In en, this message translates to:
+  /// **'? UNKNOWN'**
+  String get unknown;
+
+  /// No description provided for @noCert.
+  ///
+  /// In en, this message translates to:
+  /// **'⚠️ NO CERT'**
+  String get noCert;
+
+  /// No description provided for @explanationUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'No ingredient data was found for this product. Halal status cannot be determined — check the packaging directly.'**
+  String get explanationUnknown;
+
+  /// No description provided for @explanationNoCert.
+  ///
+  /// In en, this message translates to:
+  /// **'This is an animal-derived food product without a verified halal certification. Halal slaughter cannot be confirmed — check the packaging for a halal label.'**
+  String get explanationNoCert;
+
+  /// No description provided for @nonFood.
+  ///
+  /// In en, this message translates to:
+  /// **'ℹ️ NOT FOOD'**
+  String get nonFood;
+
+  /// No description provided for @explanationNonFood.
+  ///
+  /// In en, this message translates to:
+  /// **'This is a non-food product. Islamic dietary rules do not apply.'**
+  String get explanationNonFood;
+
+  /// No description provided for @about.
+  ///
+  /// In en, this message translates to:
+  /// **'About'**
+  String get about;
+
+  /// No description provided for @version.
+  ///
+  /// In en, this message translates to:
+  /// **'Version'**
+  String get version;
+
+  /// No description provided for @releaseNotes.
+  ///
+  /// In en, this message translates to:
+  /// **'Release Notes'**
+  String get releaseNotes;
+
+  /// No description provided for @checkForUpdates.
+  ///
+  /// In en, this message translates to:
+  /// **'Check for Updates'**
+  String get checkForUpdates;
+
+  /// No description provided for @upToDate.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re up to date!'**
+  String get upToDate;
+
+  /// No description provided for @installed.
+  ///
+  /// In en, this message translates to:
+  /// **'Installed'**
+  String get installed;
+
+  /// No description provided for @store.
+  ///
+  /// In en, this message translates to:
+  /// **'Store'**
+  String get store;
+
+  /// No description provided for @privacyPolicy.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy Policy'**
+  String get privacyPolicy;
+
+  /// No description provided for @latest.
+  ///
+  /// In en, this message translates to:
+  /// **'Latest'**
+  String get latest;
+
+  /// No description provided for @updateAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Update Available'**
+  String get updateAvailable;
+
+  /// No description provided for @updateNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Update Now'**
+  String get updateNow;
+
+  /// No description provided for @reportWrongResult.
+  ///
+  /// In en, this message translates to:
+  /// **'Report Wrong Result'**
+  String get reportWrongResult;
+
+  /// No description provided for @reportWrongResultTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Is this result wrong?'**
+  String get reportWrongResultTitle;
+
+  /// No description provided for @reportWrongResultSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Tell us what it should be. We\'ll create a bug report and fix it.'**
+  String get reportWrongResultSubtitle;
+
+  /// No description provided for @currentResultLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Current result'**
+  String get currentResultLabel;
+
+  /// No description provided for @expectedResultLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'What should it be?'**
+  String get expectedResultLabel;
+
+  /// No description provided for @optionalNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional note (e.g. why you think so)'**
+  String get optionalNote;
+
+  /// No description provided for @reportSubmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Bug report submitted — thank you!'**
+  String get reportSubmitted;
+
+  /// No description provided for @reportFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not submit report. Try again later.'**
+  String get reportFailed;
+
+  /// No description provided for @reportResultHalal.
+  ///
+  /// In en, this message translates to:
+  /// **'Halal'**
+  String get reportResultHalal;
+
+  /// No description provided for @reportResultHaram.
+  ///
+  /// In en, this message translates to:
+  /// **'Not Halal'**
+  String get reportResultHaram;
+
+  /// No description provided for @reportResultNonFood.
+  ///
+  /// In en, this message translates to:
+  /// **'Non-Food'**
+  String get reportResultNonFood;
+
+  /// No description provided for @reportResultUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown'**
+  String get reportResultUnknown;
+
+  /// No description provided for @myNote.
+  ///
+  /// In en, this message translates to:
+  /// **'My Note'**
+  String get myNote;
+
+  /// No description provided for @noteHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. ask producer about E471, check later...'**
+  String get noteHint;
+
+  /// No description provided for @noteSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Note saved'**
+  String get noteSaved;
+
+  /// No description provided for @checkLater.
+  ///
+  /// In en, this message translates to:
+  /// **'Check later'**
+  String get checkLater;
+
+  /// No description provided for @flaggedOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Flagged only'**
+  String get flaggedOnly;
+
+  /// No description provided for @allScans.
+  ///
+  /// In en, this message translates to:
+  /// **'All scans'**
+  String get allScans;
+
+  /// No description provided for @deepAnalysis.
+  ///
+  /// In en, this message translates to:
+  /// **'Deep Analysis'**
+  String get deepAnalysis;
+
+  /// No description provided for @analyse.
+  ///
+  /// In en, this message translates to:
+  /// **'Analyse'**
+  String get analyse;
+
+  /// No description provided for @perIngredientAiAnalysis.
+  ///
+  /// In en, this message translates to:
+  /// **'Per-ingredient AI analysis with Islamic basis'**
+  String get perIngredientAiAnalysis;
+
+  /// No description provided for @communityDiscussion.
+  ///
+  /// In en, this message translates to:
+  /// **'Community Discussion'**
+  String get communityDiscussion;
+
+  /// No description provided for @noDiscussionsYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No discussions yet — start one'**
+  String get noDiscussionsYet;
+
+  /// No description provided for @analysisQueued.
+  ///
+  /// In en, this message translates to:
+  /// **'Analysis queued — results will appear after admin review.'**
+  String get analysisQueued;
+
+  /// No description provided for @analysisFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Analysis failed — please try again.'**
+  String get analysisFailed;
+
+  /// No description provided for @signInToDiscuss.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to start a discussion.'**
+  String get signInToDiscuss;
+
+  /// No description provided for @signInToChallenge.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to submit a challenge.'**
+  String get signInToChallenge;
+
+  /// No description provided for @discussions.
+  ///
+  /// In en, this message translates to:
+  /// **'Discussions'**
+  String get discussions;
+
+  /// No description provided for @challenges.
+  ///
+  /// In en, this message translates to:
+  /// **'Challenges'**
+  String get challenges;
+
+  /// No description provided for @newDiscussion.
+  ///
+  /// In en, this message translates to:
+  /// **'New Discussion'**
+  String get newDiscussion;
+
+  /// No description provided for @halalDirectory.
+  ///
+  /// In en, this message translates to:
+  /// **'Halal Directory'**
+  String get halalDirectory;
+
+  /// No description provided for @signInFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-in failed. Please try again.'**
+  String get signInFailed;
+
+  /// No description provided for @newVersionAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'A new version is available'**
+  String get newVersionAvailable;
+
+  /// No description provided for @signIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in'**
+  String get signIn;
+
+  /// No description provided for @signOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out'**
+  String get signOut;
+
+  /// No description provided for @signedIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Signed in'**
+  String get signedIn;
+
+  /// No description provided for @adminPanel.
+  ///
+  /// In en, this message translates to:
+  /// **'Admin panel'**
+  String get adminPanel;
+
+  /// No description provided for @noDiscussionsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Be the first to start one!'**
+  String get noDiscussionsHint;
+
+  /// No description provided for @analysisTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Analysis'**
+  String get analysisTab;
+
+  /// No description provided for @rulesEngineTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Rules Engine'**
+  String get rulesEngineTab;
+
+  /// No description provided for @photosTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Photos'**
+  String get photosTab;
+
+  /// No description provided for @ingredientsTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Ingredients'**
+  String get ingredientsTab;
+
+  /// No description provided for @customRulesTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom'**
+  String get customRulesTab;
+
+  /// No description provided for @builtInRulesTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Built-in'**
+  String get builtInRulesTab;
+
+  /// No description provided for @suggestionsTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggestions'**
+  String get suggestionsTab;
+
+  /// No description provided for @searchRules.
+  ///
+  /// In en, this message translates to:
+  /// **'Search rules...'**
+  String get searchRules;
+
+  /// No description provided for @noCustomRules.
+  ///
+  /// In en, this message translates to:
+  /// **'No custom rules yet'**
+  String get noCustomRules;
+
+  /// No description provided for @noMatchingRules.
+  ///
+  /// In en, this message translates to:
+  /// **'No matching rules found'**
+  String get noMatchingRules;
+
+  /// No description provided for @noSuggestions.
+  ///
+  /// In en, this message translates to:
+  /// **'No pending suggestions'**
+  String get noSuggestions;
+
+  /// No description provided for @addRule.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Rule'**
+  String get addRule;
+
+  /// No description provided for @editRule.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Rule'**
+  String get editRule;
+
+  /// No description provided for @delete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get delete;
+
+  /// No description provided for @deleteRuleTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Rule'**
+  String get deleteRuleTitle;
+
+  /// No description provided for @deleteRuleConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove \"{keyword}\" from the rules?'**
+  String deleteRuleConfirm(String keyword);
+
+  /// No description provided for @ruleCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Rule created successfully'**
+  String get ruleCreated;
+
+  /// No description provided for @ruleCreateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not create rule. Please try again.'**
+  String get ruleCreateFailed;
+
+  /// No description provided for @ruleUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Rule updated successfully'**
+  String get ruleUpdated;
+
+  /// No description provided for @ruleUpdateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not update rule. Please try again.'**
+  String get ruleUpdateFailed;
+
+  /// No description provided for @ruleDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Rule deleted'**
+  String get ruleDeleted;
+
+  /// No description provided for @ruleDeleteFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not delete rule. Please try again.'**
+  String get ruleDeleteFailed;
+
+  /// No description provided for @createRule.
+  ///
+  /// In en, this message translates to:
+  /// **'Create Rule'**
+  String get createRule;
+
+  /// No description provided for @updateRule.
+  ///
+  /// In en, this message translates to:
+  /// **'Update Rule'**
+  String get updateRule;
+
+  /// No description provided for @variantsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Variants'**
+  String get variantsLabel;
+
+  /// No description provided for @variantsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. schmalz, domuz yağı, saindoux'**
+  String get variantsHint;
+
+  /// No description provided for @variantsHelperText.
+  ///
+  /// In en, this message translates to:
+  /// **'Comma-separated multilingual variants for matching'**
+  String get variantsHelperText;
+
+  /// No description provided for @suggestVariantsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Other languages (optional)'**
+  String get suggestVariantsLabel;
+
+  /// No description provided for @suggestVariantsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. schwein, domuz, porc'**
+  String get suggestVariantsHint;
+
+  /// No description provided for @suggestVariantsHelperText.
+  ///
+  /// In en, this message translates to:
+  /// **'Comma-separated spellings in other languages for the same ingredient'**
+  String get suggestVariantsHelperText;
+
+  /// No description provided for @translationsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Translations by locale'**
+  String get translationsLabel;
+
+  /// No description provided for @translationsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'de: schwein\ntr: domuz'**
+  String get translationsHint;
+
+  /// No description provided for @translationsHelperText.
+  ///
+  /// In en, this message translates to:
+  /// **'One per line: locale code and term (de, tr, fr, es, it, nl, sr, hu, cs). Used for matching and UI labels.'**
+  String get translationsHelperText;
+
+  /// No description provided for @mergeKeywordTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Merge with existing rule?'**
+  String get mergeKeywordTitle;
+
+  /// No description provided for @mergeKeywordMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'\"{alias}\" matches the existing rule \"{canonical}\". Merge aliases into that rule instead of creating a duplicate?'**
+  String mergeKeywordMessage(String alias, String canonical);
+
+  /// No description provided for @mergeKeywordConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Merge'**
+  String get mergeKeywordConfirm;
+
+  /// No description provided for @approveAsNewRule.
+  ///
+  /// In en, this message translates to:
+  /// **'Create new rule'**
+  String get approveAsNewRule;
+
+  /// No description provided for @suggestionMerged.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggestion merged into existing rule'**
+  String get suggestionMerged;
+
+  /// No description provided for @builtInBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'built-in'**
+  String get builtInBadge;
+
+  /// No description provided for @approve.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve'**
+  String get approve;
+
+  /// No description provided for @reject.
+  ///
+  /// In en, this message translates to:
+  /// **'Reject'**
+  String get reject;
+
+  /// No description provided for @suggestionApproved.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggestion approved and added as a rule'**
+  String get suggestionApproved;
+
+  /// No description provided for @suggestionApproveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not approve suggestion.'**
+  String get suggestionApproveFailed;
+
+  /// No description provided for @suggestionRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggestion rejected'**
+  String get suggestionRejected;
+
+  /// No description provided for @suggestionRejectFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not reject suggestion.'**
+  String get suggestionRejectFailed;
+
+  /// No description provided for @photoIngredientsButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Check Ingredients Photo'**
+  String get photoIngredientsButton;
+
+  /// No description provided for @photoAnalysisProductName.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo Analysis'**
+  String get photoAnalysisProductName;
+
+  /// No description provided for @managedProduct.
+  ///
+  /// In en, this message translates to:
+  /// **'Verified by admin'**
+  String get managedProduct;
+
+  /// No description provided for @managedProductNoRefresh.
+  ///
+  /// In en, this message translates to:
+  /// **'This product is managed by an admin and cannot be refreshed from external sources.'**
+  String get managedProductNoRefresh;
+
+  /// No description provided for @deleteAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Account'**
+  String get deleteAccount;
+
+  /// No description provided for @deleteAccountTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Account?'**
+  String get deleteAccountTitle;
+
+  /// No description provided for @deleteAccountConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'This will permanently delete your account and all associated data. This action cannot be undone.'**
+  String get deleteAccountConfirm;
+
+  /// No description provided for @deleteAccountSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account has been deleted.'**
+  String get deleteAccountSuccess;
+
+  /// No description provided for @deleteAccountFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not delete account. Please try again.'**
+  String get deleteAccountFailed;
+
+  /// No description provided for @reportWrongIngredient.
+  ///
+  /// In en, this message translates to:
+  /// **'Report Wrong Ingredient'**
+  String get reportWrongIngredient;
+
+  /// No description provided for @reportWrongIngredientTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Report wrong ingredient'**
+  String get reportWrongIngredientTitle;
+
+  /// No description provided for @reportWrongIngredientSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Select the ingredients you believe are incorrectly listed.'**
+  String get reportWrongIngredientSubtitle;
+
+  /// No description provided for @reportWrongIngredientExplanation.
+  ///
+  /// In en, this message translates to:
+  /// **'Explanation (optional)'**
+  String get reportWrongIngredientExplanation;
+
+  /// No description provided for @reportWrongIngredientExplanationHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. this ingredient is plant-based...'**
+  String get reportWrongIngredientExplanationHint;
+
+  /// No description provided for @reportWrongIngredientNoSelection.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select at least one ingredient.'**
+  String get reportWrongIngredientNoSelection;
+
+  /// No description provided for @reportWrongIngredientSubmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Thank you! Your report has been submitted.'**
+  String get reportWrongIngredientSubmitted;
+
+  /// No description provided for @reportWrongIngredientFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not submit report. Please try again.'**
+  String get reportWrongIngredientFailed;
+
+  /// No description provided for @reportsTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Reports'**
+  String get reportsTab;
+
+  /// No description provided for @reportedIngredient.
+  ///
+  /// In en, this message translates to:
+  /// **'Reported as wrong'**
+  String get reportedIngredient;
+
+  /// No description provided for @noReports.
+  ///
+  /// In en, this message translates to:
+  /// **'No pending reports'**
+  String get noReports;
+
+  /// No description provided for @openProduct.
+  ///
+  /// In en, this message translates to:
+  /// **'Open product'**
+  String get openProduct;
+
+  /// No description provided for @resolveReport.
+  ///
+  /// In en, this message translates to:
+  /// **'Resolve'**
+  String get resolveReport;
+
+  /// No description provided for @dismissReport.
+  ///
+  /// In en, this message translates to:
+  /// **'Dismiss'**
+  String get dismissReport;
 }
 
-class AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
-  const AppLocalizationsDelegate();
+class _AppLocalizationsDelegate
+    extends LocalizationsDelegate<AppLocalizations> {
+  const _AppLocalizationsDelegate();
+
+  @override
+  Future<AppLocalizations> load(Locale locale) {
+    return SynchronousFuture<AppLocalizations>(lookupAppLocalizations(locale));
+  }
 
   @override
   bool isSupported(Locale locale) =>
-      ['en', 'tr', 'de'].contains(locale.languageCode);
+      <String>['de', 'en', 'tr'].contains(locale.languageCode);
 
   @override
-  Future<AppLocalizations> load(Locale locale) =>
-      Future.value(AppLocalizations(locale));
+  bool shouldReload(_AppLocalizationsDelegate old) => false;
+}
 
-  @override
-  bool shouldReload(covariant LocalizationsDelegate<AppLocalizations> old) =>
-      false;
+AppLocalizations lookupAppLocalizations(Locale locale) {
+  // Lookup logic when only language code is specified.
+  switch (locale.languageCode) {
+    case 'de':
+      return AppLocalizationsDe();
+    case 'en':
+      return AppLocalizationsEn();
+    case 'tr':
+      return AppLocalizationsTr();
+  }
+
+  throw FlutterError(
+    'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
+    'an issue with the localizations generation tool. Please file an issue '
+    'on GitHub with a reproducible sample app and the gen-l10n configuration '
+    'that was used.',
+  );
 }

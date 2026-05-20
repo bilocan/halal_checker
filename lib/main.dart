@@ -90,7 +90,7 @@ class HalalCheckerAppState extends State<HalalCheckerApp> {
       debugShowCheckedModeBanner: false,
       locale: _locale,
       localizationsDelegates: const [
-        AppLocalizationsDelegate(),
+        AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,

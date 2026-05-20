@@ -50,6 +50,10 @@ Tests cover the keyword matching engine and halal verdict logic. All PRs must pa
 - Follow Flutter lint rules: `flutter analyze`
 - CI enforces both — PRs with formatting or lint failures will not be merged
 
+### Translation contributions
+
+To fix a translation or add a new language, see **[docs/TRANSLATING.md](docs/TRANSLATING.md)** for a step-by-step guide. No Dart knowledge required — translations are plain JSON files in `lib/l10n/`.
+
 ### Keyword contributions
 
 To add or correct halal/haram keywords, open an issue with:

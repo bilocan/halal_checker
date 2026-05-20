@@ -1,8 +1,10 @@
-import 'dart:ui';
-
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:halal_checker/localization/app_localizations.dart';
+import 'package:halal_checker/localization/app_localizations_de.dart';
+import 'package:halal_checker/localization/app_localizations_en.dart';
+import 'package:halal_checker/localization/app_localizations_tr.dart';
 
 void main() {
   // ── English locale ───────────────────────────────────────────────────────
@@ -10,7 +12,7 @@ void main() {
   group('AppLocalizations — English', () {
     late AppLocalizations l10n;
 
-    setUp(() => l10n = AppLocalizations(const Locale('en')));
+    setUp(() => l10n = AppLocalizationsEn());
 
     test('appTitle returns HalalScan', () {
       expect(l10n.appTitle, 'HalalScan');
@@ -143,7 +145,7 @@ void main() {
   group('AppLocalizations — Turkish', () {
     late AppLocalizations l10n;
 
-    setUp(() => l10n = AppLocalizations(const Locale('tr')));
+    setUp(() => l10n = AppLocalizationsTr());
 
     test('appTitle returns HalalScan', () {
       expect(l10n.appTitle, 'HalalScan');
@@ -171,7 +173,7 @@ void main() {
   group('AppLocalizations — German', () {
     late AppLocalizations l10n;
 
-    setUp(() => l10n = AppLocalizations(const Locale('de')));
+    setUp(() => l10n = AppLocalizationsDe());
 
     test('appTitle returns HalalScan', () {
       expect(l10n.appTitle, 'HalalScan');
@@ -194,26 +196,10 @@ void main() {
     });
   });
 
-  // ── Fallback for unsupported locale ─────────────────────────────────────
+  // ── AppLocalizations.delegate ───────────────────────────────────────────
 
-  group('AppLocalizations — unsupported locale falls back to English', () {
-    late AppLocalizations l10n;
-
-    setUp(() => l10n = AppLocalizations(const Locale('fr')));
-
-    test('appTitle falls back to English', () {
-      expect(l10n.appTitle, 'HalalScan');
-    });
-
-    test('halal falls back to HALAL', () {
-      expect(l10n.halal, 'HALAL');
-    });
-  });
-
-  // ── AppLocalizationsDelegate ────────────────────────────────────────────
-
-  group('AppLocalizationsDelegate', () {
-    const delegate = AppLocalizationsDelegate();
+  group('AppLocalizations.delegate', () {
+    final delegate = AppLocalizations.delegate;
 
     test('supports English', () {
       expect(delegate.isSupported(const Locale('en')), isTrue);
