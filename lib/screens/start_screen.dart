@@ -22,6 +22,7 @@ import 'home_screen.dart';
 import 'about_screen.dart';
 import 'keywords_screen.dart';
 import 'admin_panel_screen.dart';
+import 'batch_scan_screen.dart';
 import 'directory_screen.dart';
 
 class StartScreen extends StatefulWidget {
@@ -38,6 +39,7 @@ class _StartScreenState extends State<StartScreen> {
   bool _isLoadingProduct = false;
   bool _showFlaggedOnly = false;
   bool _isAdmin = false;
+  bool _canBatchImport = false;
   int _selectedIndex = 0;
 
   @override
@@ -52,10 +54,15 @@ class _StartScreenState extends State<StartScreen> {
   }
 
   Future<void> _checkAdmin() async {
-    final admin = await AnalysisService().isAdmin();
+    final service = AnalysisService();
+    final results = await Future.wait([
+      service.isAdmin(),
+      service.hasOperation('admin.batch_import'),
+    ]);
     if (mounted) {
       setState(() {
-        _isAdmin = admin;
+        _isAdmin = results[0];
+        _canBatchImport = results[1];
         _selectedIndex = 0;
       });
     }
@@ -103,6 +110,14 @@ class _StartScreenState extends State<StartScreen> {
     await Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => const HomeScreen()),
+    );
+    await _loadRecentScans();
+  }
+
+  Future<void> _openBatchScan() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const BatchScanScreen()),
     );
     await _loadRecentScans();
   }
@@ -648,7 +663,25 @@ class _StartScreenState extends State<StartScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 24),
+                if (_canBatchImport) ...[
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: _openBatchScan,
+                      icon: const Icon(Icons.upload_file_outlined),
+                      label: const Text('Batch Import'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: kGreen,
+                        side: const BorderSide(color: kGreenLight),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 16),
                 // Recent scans section
                 Text(
                   localizations.lastResults,
