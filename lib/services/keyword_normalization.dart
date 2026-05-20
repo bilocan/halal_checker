@@ -82,10 +82,7 @@ class KeywordNormalization {
   }
 
   /// Returns true if [alias] matches canonical, any variant, or translation value.
-  static bool ruleContainsAlias(
-    Map<String, dynamic> rule,
-    String alias,
-  ) {
+  static bool ruleContainsAlias(Map<String, dynamic> rule, String alias) {
     final a = alias.trim().toLowerCase();
     if (a.isEmpty) return false;
     if ((rule['canonical'] as String? ?? '').toLowerCase() == a) return true;

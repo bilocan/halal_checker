@@ -1149,7 +1149,8 @@ class AppLocalizations {
   String get variantsHelperText => _translate('variantsHelperText');
   String get suggestVariantsLabel => _translate('suggestVariantsLabel');
   String get suggestVariantsHint => _translate('suggestVariantsHint');
-  String get suggestVariantsHelperText => _translate('suggestVariantsHelperText');
+  String get suggestVariantsHelperText =>
+      _translate('suggestVariantsHelperText');
   String get translationsLabel => _translate('translationsLabel');
   String get translationsHint => _translate('translationsHint');
   String get translationsHelperText => _translate('translationsHelperText');

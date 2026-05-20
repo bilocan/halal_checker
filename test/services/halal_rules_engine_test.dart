@@ -336,8 +336,14 @@ void main() {
           'mono und diglyceride von speisefettsäuren',
         ]);
         expect(result.verdict, HalalRuleVerdict.halal);
-        expect(result.suspicious, contains('mono und diglyceride von speisefettsäuren'));
-        expect(result.canonicals['mono und diglyceride von speisefettsäuren'], 'e471');
+        expect(
+          result.suspicious,
+          contains('mono und diglyceride von speisefettsäuren'),
+        );
+        expect(
+          result.canonicals['mono und diglyceride von speisefettsäuren'],
+          'e471',
+        );
       },
     );
   });

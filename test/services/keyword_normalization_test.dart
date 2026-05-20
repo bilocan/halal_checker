@@ -15,10 +15,9 @@ void main() {
     });
 
     test('returns sorted list with only canonical when extras empty', () {
-      expect(
-        KeywordNormalization.mergeVariants(canonical: 'gelatin'),
-        ['gelatin'],
-      );
+      expect(KeywordNormalization.mergeVariants(canonical: 'gelatin'), [
+        'gelatin',
+      ]);
     });
   });
 
@@ -33,7 +32,9 @@ fr: porc
     });
 
     test('ignores unsupported locale codes', () {
-      final map = KeywordNormalization.parseTranslationsText('xx: foo\nde: bar');
+      final map = KeywordNormalization.parseTranslationsText(
+        'xx: foo\nde: bar',
+      );
       expect(map, {'de': 'bar'});
     });
   });
