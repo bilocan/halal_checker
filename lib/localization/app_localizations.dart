@@ -112,6 +112,12 @@ abstract class AppLocalizations {
   /// **'HalalScan'**
   String get startTitle;
 
+  /// No description provided for @home.
+  ///
+  /// In en, this message translates to:
+  /// **'Home'**
+  String get home;
+
   /// No description provided for @tagline.
   ///
   /// In en, this message translates to:

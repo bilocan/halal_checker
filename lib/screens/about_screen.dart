@@ -93,34 +93,48 @@ class _AboutScreenState extends State<AboutScreen> {
         padding: const EdgeInsets.all(20),
         children: [
           const SizedBox(height: 12),
-          Center(
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 20),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [kGreenDark, kGreen],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(16),
+            ),
             child: Column(
               children: [
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [kGreenDark, kGreen],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const HalalScanLogo(size: 56, color: Colors.white),
-                ),
-                const SizedBox(height: 16),
+                const HalalScanLogo(size: 72, color: Colors.white),
+                const SizedBox(height: 8),
                 Text(
-                  'HalalScan',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: kGreenDark,
+                  loc.tagline,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.4,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 4),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Text(
+                    loc.taglineSubtitle,
+                    style: TextStyle(
+                      color: Colors.white.withAlpha(190),
+                      fontSize: 12,
+                      height: 1.4,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
                 ),
-                const SizedBox(height: 12),
-                _buildVersionTable(loc, updateAvailable),
               ],
             ),
           ),
+          const SizedBox(height: 16),
+          Center(child: _buildVersionTable(loc, updateAvailable)),
           const SizedBox(height: 28),
           if (isSupported)
             ElevatedButton.icon(

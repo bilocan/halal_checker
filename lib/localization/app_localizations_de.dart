@@ -15,6 +15,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get startTitle => 'HalalScan';
 
   @override
+  String get home => 'Startseite';
+
+  @override
   String get tagline => 'Transparentes Halal, von der Community.';
 
   @override

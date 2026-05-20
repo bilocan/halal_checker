@@ -2,13 +2,12 @@ import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show AuthState;
 import '../app_colors.dart';
 import '../config.dart';
 import '../main.dart';
-import '../models/product.dart';
 import '../services/analysis_service.dart';
 import '../services/auth_service.dart';
 import '../services/database_service.dart';
@@ -17,7 +16,7 @@ import '../services/ocr_service.dart';
 import '../services/product_service.dart';
 import '../services/version_service.dart';
 import '../localization/app_localizations.dart';
-import '../widgets/halal_scan_logo.dart';
+import '../models/product.dart';
 import 'result_screen.dart';
 import 'home_screen.dart';
 import 'about_screen.dart';
@@ -39,6 +38,7 @@ class _StartScreenState extends State<StartScreen> {
   bool _isLoadingProduct = false;
   bool _showFlaggedOnly = false;
   bool _isAdmin = false;
+  int _selectedIndex = 0;
 
   @override
   void initState() {
@@ -53,8 +53,18 @@ class _StartScreenState extends State<StartScreen> {
 
   Future<void> _checkAdmin() async {
     final admin = await AnalysisService().isAdmin();
-    if (mounted) setState(() => _isAdmin = admin);
+    if (mounted) {
+      setState(() {
+        _isAdmin = admin;
+        _selectedIndex = 0;
+      });
+    }
   }
+
+  // Stack has 5 fixed slots: 0=Home 1=Keywords 2=Directory 3=Admin 4=About.
+  // Non-admins skip slot 3, so their nav indices are 0-3 mapping to stack 0,1,2,4.
+  int _stackToNav(int stack) => (_isAdmin || stack < 3) ? stack : stack - 1;
+  int _navToStack(int nav) => (_isAdmin || nav < 3) ? nav : nav + 1;
 
   Future<void> _checkForUpdate() async {
     if (!Platform.isAndroid && !Platform.isIOS) return;
@@ -447,50 +457,101 @@ class _StartScreenState extends State<StartScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final localizations = AppLocalizations.of(context);
+    final loc = AppLocalizations.of(context);
+    return Scaffold(
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: [
+          _buildHomeTab(context),
+          const KeywordsScreen(),
+          const DirectoryScreen(),
+          const AdminPanelScreen(),
+          const AboutScreen(),
+        ],
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _stackToNav(_selectedIndex),
+        onTap: (i) => setState(() => _selectedIndex = _navToStack(i)),
+        selectedItemColor: kGreen,
+        unselectedItemColor: Colors.grey,
+        type: BottomNavigationBarType.fixed,
+        items: [
+          BottomNavigationBarItem(
+            icon: const Icon(Icons.home_outlined),
+            activeIcon: const Icon(Icons.home),
+            label: loc.home,
+          ),
+          BottomNavigationBarItem(
+            icon: const Icon(Icons.list_alt),
+            label: loc.keywords,
+          ),
+          BottomNavigationBarItem(
+            icon: const Icon(Icons.store_outlined),
+            activeIcon: const Icon(Icons.store),
+            label: loc.halalDirectory,
+          ),
+          if (_isAdmin)
+            BottomNavigationBarItem(
+              icon: const Icon(Icons.admin_panel_settings_outlined),
+              activeIcon: const Icon(Icons.admin_panel_settings),
+              label: loc.adminPanel,
+            ),
+          BottomNavigationBarItem(
+            icon: const Icon(Icons.info_outline),
+            activeIcon: const Icon(Icons.info),
+            label: loc.about,
+          ),
+        ],
+      ),
+    );
+  }
 
+  Widget _buildHomeTab(BuildContext context) {
+    final localizations = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
         title: Text(localizations.startTitle),
         backgroundColor: kGreen,
         foregroundColor: Colors.white,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.info_outline),
-            tooltip: localizations.about,
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const AboutScreen()),
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.list_alt),
-            tooltip: localizations.keywords,
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const KeywordsScreen()),
-            ),
-          ),
           PopupMenuButton<String>(
             onSelected: (value) {
               HalalCheckerApp.of(context)?.setLocale(Locale(value));
             },
             itemBuilder: (context) => [
-              PopupMenuItem(value: 'en', child: Text(localizations.english)),
-              PopupMenuItem(value: 'tr', child: Text(localizations.turkish)),
-              PopupMenuItem(value: 'de', child: Text(localizations.german)),
+              PopupMenuItem(
+                value: 'en',
+                child: Row(
+                  children: [
+                    const Text('🇬🇧', style: TextStyle(fontSize: 18)),
+                    const SizedBox(width: 10),
+                    Text(localizations.english),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'tr',
+                child: Row(
+                  children: [
+                    const Text('🇹🇷', style: TextStyle(fontSize: 18)),
+                    const SizedBox(width: 10),
+                    Text(localizations.turkish),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'de',
+                child: Row(
+                  children: [
+                    const Text('🇩🇪', style: TextStyle(fontSize: 18)),
+                    const SizedBox(width: 10),
+                    Text(localizations.german),
+                  ],
+                ),
+              ),
             ],
             icon: const Icon(Icons.language),
           ),
-          if (_isAdmin)
-            IconButton(
-              icon: const Icon(Icons.admin_panel_settings_outlined),
-              tooltip: localizations.adminPanel,
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const AdminPanelScreen()),
-              ),
-            ),
           if (AppConfig.hasSupabase) _buildAuthButton(context),
         ],
       ),
@@ -501,135 +562,91 @@ class _StartScreenState extends State<StartScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const SizedBox(height: 12),
-                // Logo + tagline header
-                Container(
-                  padding: const EdgeInsets.symmetric(vertical: 20),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [kGreenDark, kGreen],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Column(
-                    children: [
-                      const HalalScanLogo(size: 72, color: Colors.white),
-                      const SizedBox(height: 8),
-                      Text(
-                        localizations.tagline,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.4,
+                Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        height: 100,
+                        decoration: BoxDecoration(
+                          color: kGreen,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: kGreen.withAlpha(80),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
                         ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 4),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: Text(
-                          localizations.taglineSubtitle,
-                          style: TextStyle(
-                            color: Colors.white.withAlpha(190),
-                            fontSize: 12,
-                            height: 1.4,
+                        child: ElevatedButton(
+                          onPressed: _openScan,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.transparent,
+                            shadowColor: Colors.transparent,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
                           ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 20),
-                // Main scan button
-                Container(
-                  height: 100,
-                  decoration: BoxDecoration(
-                    color: kGreen,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: kGreen.withAlpha(80),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: ElevatedButton(
-                    onPressed: _openScan,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.transparent,
-                      shadowColor: Colors.transparent,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(
-                          Icons.qr_code_scanner,
-                          color: Colors.white,
-                          size: 40,
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          localizations.scanButton,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 17,
-                            fontWeight: FontWeight.bold,
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(
+                                Icons.qr_code_scanner,
+                                color: Colors.white,
+                                size: 36,
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                localizations.scanButton,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ],
+                      ),
                     ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                OutlinedButton.icon(
-                  onPressed: _analyzeIngredientsPhoto,
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: kGreen,
-                    side: const BorderSide(color: kGreenLight),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Container(
+                        height: 100,
+                        decoration: BoxDecoration(
+                          border: Border.all(color: kGreenLight),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: ElevatedButton(
+                          onPressed: _analyzeIngredientsPhoto,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.transparent,
+                            shadowColor: Colors.transparent,
+                            foregroundColor: kGreen,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.camera_alt_outlined, size: 36),
+                              const SizedBox(height: 6),
+                              Text(
+                                localizations.photoIngredientsButton,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                  ),
-                  icon: const Icon(Icons.camera_alt_outlined),
-                  label: Text(
-                    localizations.photoIngredientsButton,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                OutlinedButton.icon(
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const DirectoryScreen()),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: kGreen,
-                    side: const BorderSide(color: kGreenLight),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                  ),
-                  icon: const Icon(Icons.store),
-                  label: Text(
-                    localizations.halalDirectory,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+                  ],
                 ),
                 const SizedBox(height: 24),
                 // Recent scans section

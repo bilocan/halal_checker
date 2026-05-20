@@ -15,6 +15,9 @@ class AppLocalizationsTr extends AppLocalizations {
   String get startTitle => 'HalalScan';
 
   @override
+  String get home => 'Ana Sayfa';
+
+  @override
   String get tagline => 'Şeffaf helal, topluluk gücüyle.';
 
   @override
