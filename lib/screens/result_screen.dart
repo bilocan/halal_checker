@@ -714,6 +714,31 @@ class _ResultScreenState extends State<ResultScreen> {
     );
   }
 
+  BottomNavigationBar _buildBottomNav(AppLocalizations loc) {
+    return BottomNavigationBar(
+      currentIndex: 0,
+      onTap: (_) => Navigator.pop(context),
+      selectedItemColor: kGreen,
+      unselectedItemColor: Colors.grey,
+      type: BottomNavigationBarType.fixed,
+      items: [
+        BottomNavigationBarItem(icon: const Icon(Icons.home), label: loc.home),
+        BottomNavigationBarItem(
+          icon: const Icon(Icons.list_alt),
+          label: loc.keywords,
+        ),
+        BottomNavigationBarItem(
+          icon: const Icon(Icons.store_outlined),
+          label: loc.halalDirectory,
+        ),
+        BottomNavigationBarItem(
+          icon: const Icon(Icons.info_outline),
+          label: loc.about,
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context);
@@ -757,6 +782,7 @@ class _ResultScreenState extends State<ResultScreen> {
             ],
           ),
         ),
+        bottomNavigationBar: _buildBottomNav(loc),
       );
     }
 
@@ -1555,6 +1581,7 @@ class _ResultScreenState extends State<ResultScreen> {
           ),
         ),
       ),
+      bottomNavigationBar: _buildBottomNav(loc),
     );
   }
 
