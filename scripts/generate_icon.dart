@@ -8,7 +8,7 @@ import 'package:image/image.dart' as img;
 void main() {
   _generateIcon('assets/icon/icon.png', size: 1024, withBackground: true);
   _generateIcon('assets/icon/icon_fg.png', size: 1024, withBackground: false);
-  print('Icons written to assets/icon/');
+  stdout.writeln('Icons written to assets/icon/');
 }
 
 void _generateIcon(String path, {required int size, required bool withBackground}) {

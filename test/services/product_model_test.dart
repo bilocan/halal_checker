@@ -21,7 +21,7 @@ Map<String, dynamic> _baseJson({
   'labels': <String>[],
   'explanation': '',
   'analyzedByAI': analyzedByAI,
-  if (analysisMethod != null) 'analysisMethod': analysisMethod,
+  'analysisMethod': ?analysisMethod,
 };
 
 void main() {

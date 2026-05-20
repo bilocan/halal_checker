@@ -35,8 +35,9 @@ class VersionService {
     }
     try {
       final config = await _loadConfig();
-      if (config == null)
+      if (config == null) {
         return const StoreVersionInfo(UpdateStatus.checkFailed);
+      }
       return _evaluate(config);
     } catch (_) {
       return const StoreVersionInfo(UpdateStatus.checkFailed);
@@ -102,9 +103,7 @@ class VersionService {
 
   static Future<void> performUpdate({String? storeUrl}) async {
     var url = storeUrl;
-    if (url == null) {
-      url = await _fetchStoreUrlFromConfig();
-    }
+    url ??= await _fetchStoreUrlFromConfig();
     if (url == null && Platform.isIOS) {
       url = await _lookupIosStoreUrl();
     }

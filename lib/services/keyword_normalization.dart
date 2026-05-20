@@ -32,7 +32,7 @@ class KeywordNormalization {
     for (final v in variants ?? const []) {
       add(v);
     }
-    for (final v in translations?.values ?? const []) {
+    for (final v in translations?.values ?? const <String>[]) {
       add(v);
     }
     final list = set.toList()..sort();
