@@ -124,13 +124,22 @@ class HalalRulesEngine {
     return _negationWord.hasMatch(chunkLower.substring(0, idx));
   }
 
+  /// Ignores hyphens so label spellings like "mono- und" and "mono und" match.
+  static String _stripHyphens(String s) => s.toLowerCase().replaceAll('-', '');
+
+  static bool _containsPhrase(String haystack, String needle) =>
+      _stripHyphens(haystack).contains(_stripHyphens(needle));
+
   static bool _matchesVariant(String value, String variant) {
     if (variant.contains(' ')) {
-      return value.toLowerCase().contains(variant.toLowerCase());
+      return _containsPhrase(value, variant);
     }
     final escaped = RegExp.escape(variant);
     if (IngredientKeywords.alcoholFamily.contains(variant.toLowerCase())) {
       if (IngredientKeywords.fattyAlcoholPrefix.hasMatch(value)) return false;
+      if (IngredientKeywords.isZeroPercentAlcoholDeclaration(value, variant)) {
+        return false;
+      }
       return RegExp(
         '${IngredientKeywords.wPre}$escaped${IngredientKeywords.wPost}(?![-\\s]*free)',
         caseSensitive: false,

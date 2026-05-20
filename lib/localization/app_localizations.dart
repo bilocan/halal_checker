@@ -256,6 +256,20 @@ class AppLocalizations {
       'variantsHint': 'e.g. schmalz, domuz yağı, saindoux',
       'variantsHelperText':
           'Comma-separated multilingual variants for matching',
+      'suggestVariantsLabel': 'Other languages (optional)',
+      'suggestVariantsHint': 'e.g. schwein, domuz, porc',
+      'suggestVariantsHelperText':
+          'Comma-separated spellings in other languages for the same ingredient',
+      'translationsLabel': 'Translations by locale',
+      'translationsHint': 'de: schwein\ntr: domuz',
+      'translationsHelperText':
+          'One per line: locale code and term (de, tr, fr, es, it, nl, sr, hu, cs). Used for matching and UI labels.',
+      'mergeKeywordTitle': 'Merge with existing rule?',
+      'mergeKeywordMessage':
+          '"{alias}" matches the existing rule "{canonical}". Merge aliases into that rule instead of creating a duplicate?',
+      'mergeKeywordConfirm': 'Merge',
+      'approveAsNewRule': 'Create new rule',
+      'suggestionMerged': 'Suggestion merged into existing rule',
       'builtInBadge': 'built-in',
       'approve': 'Approve',
       'reject': 'Reject',
@@ -274,6 +288,25 @@ class AppLocalizations {
           'This will permanently delete your account and all associated data. This action cannot be undone.',
       'deleteAccountSuccess': 'Your account has been deleted.',
       'deleteAccountFailed': 'Could not delete account. Please try again.',
+      'reportWrongIngredient': 'Report Wrong Ingredient',
+      'reportWrongIngredientTitle': 'Report wrong ingredient',
+      'reportWrongIngredientSubtitle':
+          'Select the ingredients you believe are incorrectly listed.',
+      'reportWrongIngredientExplanation': 'Explanation (optional)',
+      'reportWrongIngredientExplanationHint':
+          'e.g. this ingredient is plant-based...',
+      'reportWrongIngredientNoSelection':
+          'Please select at least one ingredient.',
+      'reportWrongIngredientSubmitted':
+          'Thank you! Your report has been submitted.',
+      'reportWrongIngredientFailed':
+          'Could not submit report. Please try again.',
+      'reportsTab': 'Reports',
+      'reportedIngredient': 'Reported as wrong',
+      'noReports': 'No pending reports',
+      'openProduct': 'Open product',
+      'resolveReport': 'Resolve',
+      'dismissReport': 'Dismiss',
     },
     'tr': {
       'appTitle': 'HalalScan',
@@ -516,6 +549,20 @@ class AppLocalizations {
       'variantsHint': 'örn. schmalz, domuz yağı, saindoux',
       'variantsHelperText':
           'Eşleştirme için virgülle ayrılmış çok dilli varyantlar',
+      'suggestVariantsLabel': 'Diğer diller (isteğe bağlı)',
+      'suggestVariantsHint': 'örn. schwein, domuz, porc',
+      'suggestVariantsHelperText':
+          'Aynı bileşen için diğer dillerdeki yazılışlar, virgülle ayrılmış',
+      'translationsLabel': 'Dile göre çeviriler',
+      'translationsHint': 'de: schwein\ntr: domuz',
+      'translationsHelperText':
+          'Satır başına bir tane: dil kodu ve terim (de, tr, fr, es, it, nl, sr, hu, cs). Eşleştirme ve arayüz için.',
+      'mergeKeywordTitle': 'Mevcut kurala birleştirilsin mi?',
+      'mergeKeywordMessage':
+          '"{alias}", mevcut "{canonical}" kuralıyla eşleşiyor. Yinelenen kural yerine bu kurala birleştirilsin mi?',
+      'mergeKeywordConfirm': 'Birleştir',
+      'approveAsNewRule': 'Yeni kural oluştur',
+      'suggestionMerged': 'Öneri mevcut kurala birleştirildi',
       'builtInBadge': 'yerleşik',
       'approve': 'Onayla',
       'reject': 'Reddet',
@@ -534,6 +581,23 @@ class AppLocalizations {
           'Bu işlem hesabınızı ve tüm ilişkili verileri kalıcı olarak silecektir. Bu işlem geri alınamaz.',
       'deleteAccountSuccess': 'Hesabınız silindi.',
       'deleteAccountFailed': 'Hesap silinemedi. Lütfen tekrar deneyin.',
+      'reportWrongIngredient': 'Yanlış İçerik Bildir',
+      'reportWrongIngredientTitle': 'Yanlış içerik bildir',
+      'reportWrongIngredientSubtitle':
+          'Yanlış listelendiğini düşündüğünüz içerikleri seçin.',
+      'reportWrongIngredientExplanation': 'Açıklama (isteğe bağlı)',
+      'reportWrongIngredientExplanationHint':
+          'örn. bu içerik bitkisel kaynaklıdır...',
+      'reportWrongIngredientNoSelection': 'Lütfen en az bir içerik seçin.',
+      'reportWrongIngredientSubmitted': 'Teşekkürler! Raporunuz gönderildi.',
+      'reportWrongIngredientFailed':
+          'Rapor gönderilemedi. Lütfen tekrar deneyin.',
+      'reportsTab': 'Raporlar',
+      'reportedIngredient': 'Yanlış olarak bildirildi',
+      'noReports': 'Bekleyen rapor yok',
+      'openProduct': 'Ürünü aç',
+      'resolveReport': 'Çözüldü',
+      'dismissReport': 'Reddet',
     },
     'de': {
       'appTitle': 'HalalScan',
@@ -788,6 +852,20 @@ class AppLocalizations {
       'variantsHint': 'z. B. Schmalz, domuz yağı, saindoux',
       'variantsHelperText':
           'Kommagetrennte mehrsprachige Varianten für den Abgleich',
+      'suggestVariantsLabel': 'Weitere Sprachen (optional)',
+      'suggestVariantsHint': 'z. B. schwein, domuz, porc',
+      'suggestVariantsHelperText':
+          'Kommagetrennte Schreibweisen derselben Zutat in anderen Sprachen',
+      'translationsLabel': 'Übersetzungen nach Sprache',
+      'translationsHint': 'de: schwein\ntr: domuz',
+      'translationsHelperText':
+          'Eine Zeile pro Eintrag: Sprachcode und Begriff (de, tr, fr, es, it, nl, sr, hu, cs). Für Abgleich und Anzeige.',
+      'mergeKeywordTitle': 'Mit bestehender Regel zusammenführen?',
+      'mergeKeywordMessage':
+          '"{alias}" passt zur bestehenden Regel "{canonical}". Aliase dort zusammenführen statt eine Duplikat-Regel anzulegen?',
+      'mergeKeywordConfirm': 'Zusammenführen',
+      'approveAsNewRule': 'Neue Regel anlegen',
+      'suggestionMerged': 'Vorschlag in bestehende Regel übernommen',
       'builtInBadge': 'eingebaut',
       'approve': 'Genehmigen',
       'reject': 'Ablehnen',
@@ -807,6 +885,25 @@ class AppLocalizations {
       'deleteAccountSuccess': 'Ihr Konto wurde gelöscht.',
       'deleteAccountFailed':
           'Konto konnte nicht gelöscht werden. Bitte erneut versuchen.',
+      'reportWrongIngredient': 'Falschen Inhaltsstoff melden',
+      'reportWrongIngredientTitle': 'Falschen Inhaltsstoff melden',
+      'reportWrongIngredientSubtitle':
+          'Wählen Sie die Inhaltsstoffe aus, die Ihrer Meinung nach falsch aufgeführt sind.',
+      'reportWrongIngredientExplanation': 'Erklärung (optional)',
+      'reportWrongIngredientExplanationHint':
+          'z. B. dieser Inhaltsstoff ist pflanzlichen Ursprungs...',
+      'reportWrongIngredientNoSelection':
+          'Bitte wählen Sie mindestens einen Inhaltsstoff aus.',
+      'reportWrongIngredientSubmitted':
+          'Danke! Ihre Meldung wurde eingereicht.',
+      'reportWrongIngredientFailed':
+          'Meldung konnte nicht gesendet werden. Bitte erneut versuchen.',
+      'reportsTab': 'Meldungen',
+      'reportedIngredient': 'Als falsch gemeldet',
+      'noReports': 'Keine ausstehenden Meldungen',
+      'openProduct': 'Produkt öffnen',
+      'resolveReport': 'Lösen',
+      'dismissReport': 'Ablehnen',
     },
   };
 
@@ -1050,6 +1147,20 @@ class AppLocalizations {
   String get variantsLabel => _translate('variantsLabel');
   String get variantsHint => _translate('variantsHint');
   String get variantsHelperText => _translate('variantsHelperText');
+  String get suggestVariantsLabel => _translate('suggestVariantsLabel');
+  String get suggestVariantsHint => _translate('suggestVariantsHint');
+  String get suggestVariantsHelperText =>
+      _translate('suggestVariantsHelperText');
+  String get translationsLabel => _translate('translationsLabel');
+  String get translationsHint => _translate('translationsHint');
+  String get translationsHelperText => _translate('translationsHelperText');
+  String get mergeKeywordTitle => _translate('mergeKeywordTitle');
+  String mergeKeywordMessage(String alias, String canonical) => _translate(
+    'mergeKeywordMessage',
+  ).replaceAll('{alias}', alias).replaceAll('{canonical}', canonical);
+  String get mergeKeywordConfirm => _translate('mergeKeywordConfirm');
+  String get approveAsNewRule => _translate('approveAsNewRule');
+  String get suggestionMerged => _translate('suggestionMerged');
   String get builtInBadge => _translate('builtInBadge');
   String get approve => _translate('approve');
   String get reject => _translate('reject');
@@ -1066,6 +1177,27 @@ class AppLocalizations {
   String get deleteAccountConfirm => _translate('deleteAccountConfirm');
   String get deleteAccountSuccess => _translate('deleteAccountSuccess');
   String get deleteAccountFailed => _translate('deleteAccountFailed');
+  String get reportWrongIngredient => _translate('reportWrongIngredient');
+  String get reportWrongIngredientTitle =>
+      _translate('reportWrongIngredientTitle');
+  String get reportWrongIngredientSubtitle =>
+      _translate('reportWrongIngredientSubtitle');
+  String get reportWrongIngredientExplanation =>
+      _translate('reportWrongIngredientExplanation');
+  String get reportWrongIngredientExplanationHint =>
+      _translate('reportWrongIngredientExplanationHint');
+  String get reportWrongIngredientNoSelection =>
+      _translate('reportWrongIngredientNoSelection');
+  String get reportWrongIngredientSubmitted =>
+      _translate('reportWrongIngredientSubmitted');
+  String get reportWrongIngredientFailed =>
+      _translate('reportWrongIngredientFailed');
+  String get reportsTab => _translate('reportsTab');
+  String get reportedIngredient => _translate('reportedIngredient');
+  String get noReports => _translate('noReports');
+  String get openProduct => _translate('openProduct');
+  String get resolveReport => _translate('resolveReport');
+  String get dismissReport => _translate('dismissReport');
 
   static AppLocalizations of(BuildContext context) {
     final localizations = Localizations.of<AppLocalizations>(

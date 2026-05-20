@@ -39,6 +39,14 @@ void main() {
       expect(result.verdict, HalalRuleVerdict.halal);
     });
 
+    test('0% alcohol declaration with halal ingredients is halal', () {
+      final result = engine.analyzeIngredients(['sugar', '0% alcohol']);
+
+      expect(result.verdict, HalalRuleVerdict.halal);
+      expect(result.isHalal, isTrue);
+      expect(result.haram, isEmpty);
+    });
+
     group('negation suppression', () {
       // Regression: barcode 8690766143732 — ingredient text contains allergen-free
       // declarations ("enthält keine Zutaten vom Schwein", "ne contient pas … porc")
@@ -209,6 +217,53 @@ void main() {
   });
 
   group('HalalRulesEngine.matchesKeyword', () {
+    test(
+      'German mono- und diglyceride matches when hyphen before und is omitted',
+      () {
+        expect(
+          engine.matchesKeyword(
+            'mono und diglyceride von speisefettsäuren',
+            'e471',
+          ),
+          isTrue,
+        );
+        expect(
+          engine.matchesKeyword(
+            'mono- und diglyceride von speisefettsäuren',
+            'e471',
+          ),
+          isTrue,
+        );
+      },
+    );
+
+    test(
+      'hyphen-optional matching works for custom multi-word suspicious keywords',
+      () {
+        final customEngine = engine.merge(
+          const HalalKeywordRuleSet(
+            suspicious: {
+              'mono- und diglyceride von speisefettsäuren':
+                  'Mono/diglycerides may be animal-derived',
+            },
+            suspiciousVariants: {
+              'mono- und diglyceride von speisefettsäuren': [
+                'mono- und diglyceride von speisefettsäuren',
+              ],
+            },
+          ),
+        );
+
+        expect(
+          customEngine.matchesKeyword(
+            'mono und diglyceride von speisefettsäuren',
+            'mono- und diglyceride von speisefettsäuren',
+          ),
+          isTrue,
+        );
+      },
+    );
+
     test('returns true when ingredient contains a known keyword variant', () {
       expect(engine.matchesKeyword('pork rinds', 'pork'), isTrue);
       expect(engine.matchesKeyword('alkohol', 'alcohol'), isTrue);
@@ -226,6 +281,11 @@ void main() {
 
     test('respects alcohol-free exclusion', () {
       expect(engine.matchesKeyword('malt alcohol-free', 'alcohol'), isFalse);
+    });
+
+    test('respects 0% alcohol declaration exclusion', () {
+      expect(engine.matchesKeyword('0% alcohol', 'alcohol'), isFalse);
+      expect(engine.matchesKeyword('sugar, 0% alcohol', 'alcohol'), isFalse);
     });
   });
 
@@ -268,6 +328,24 @@ void main() {
       final result = engine.analyzeIngredients(['schweinefleisch']);
       expect(result.verdict, HalalRuleVerdict.haram);
     });
+
+    test(
+      'German mono und diglyceride von speisefettsäuren is suspicious (e471)',
+      () {
+        final result = engine.analyzeIngredients([
+          'mono und diglyceride von speisefettsäuren',
+        ]);
+        expect(result.verdict, HalalRuleVerdict.halal);
+        expect(
+          result.suspicious,
+          contains('mono und diglyceride von speisefettsäuren'),
+        );
+        expect(
+          result.canonicals['mono und diglyceride von speisefettsäuren'],
+          'e471',
+        );
+      },
+    );
   });
 
   group('verdict priority', () {

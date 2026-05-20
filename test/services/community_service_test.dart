@@ -507,6 +507,18 @@ void main() {
           throw Exception('DB error');
       expect(await CommunityService.getComments('disc-1'), isEmpty);
     });
+
+    test('returns comments when vote fetch fails', () async {
+      CommunityService.fakeFetchComments = (_) async => [
+        _commentRow(id: 'cmt-1', body: 'Still here'),
+      ];
+      CommunityService.fakeFetchVotes = (_) async =>
+          throw Exception('votes denied');
+      final result = await CommunityService.getComments('disc-1');
+      expect(result, hasLength(1));
+      expect(result.first.body, 'Still here');
+      expect(result.first.voteScore, 0);
+    });
   });
 
   // ── postComment ───────────────────────────────────────────────────────────

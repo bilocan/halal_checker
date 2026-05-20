@@ -36,6 +36,13 @@ class AuthService {
 
   /// Call once from main() — initializes Supabase only if the user previously
   /// signed in and has a stored session. Skipped entirely for new installs.
+  /// Initializes Supabase when config is present. Does not require a signed-in
+  /// user (e.g. anonymous ingredient reports).
+  static Future<bool> ensureInitialized() async {
+    if (!_supabaseAvailable) return false;
+    return _initialize();
+  }
+
   static Future<void> initializeIfSessionExists() async {
     if (!_supabaseAvailable) return;
     try {
@@ -84,7 +91,10 @@ class AuthService {
       await Supabase.instance.client.auth.signInWithOAuth(
         OAuthProvider.google,
         redirectTo: 'app.halalscan://callback/',
-        authScreenLaunchMode: LaunchMode.inAppBrowserView,
+        // Android uses external browser so Huawei devices (no GMS) can complete the OAuth flow.
+        authScreenLaunchMode: defaultTargetPlatform == TargetPlatform.android
+            ? LaunchMode.externalApplication
+            : LaunchMode.inAppBrowserView,
       );
       return true;
     } catch (e) {

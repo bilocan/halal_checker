@@ -1,0 +1,122 @@
+[
+  {
+    "description": "detects gelatin",
+    "ingredients": ["sugar", "water", "gelatin"],
+    "verdict": "haram",
+    "matched_canonicals": ["gelatin"]
+  },
+  {
+    "description": "detects gelatine (alternate spelling)",
+    "ingredients": ["gelatine", "water"],
+    "verdict": "haram",
+    "matched_canonicals": ["gelatin"]
+  },
+  {
+    "description": "detects pork in German (Schweinefleisch)",
+    "ingredients": ["Schweinefleisch", "Salz", "Wasser"],
+    "verdict": "haram",
+    "matched_canonicals": ["pork"]
+  },
+  {
+    "description": "detects ham",
+    "ingredients": ["water", "ham", "salt"],
+    "verdict": "haram",
+    "matched_canonicals": ["ham"]
+  },
+  {
+    "description": "detects alcohol",
+    "ingredients": ["water", "alcohol", "flavour"],
+    "verdict": "haram",
+    "matched_canonicals": ["alcohol"]
+  },
+  {
+    "description": "detects wine in Turkish (şarap)",
+    "ingredients": ["şarap", "su"],
+    "verdict": "haram",
+    "matched_canonicals": ["wine"]
+  },
+  {
+    "description": "detects beer in Hungarian (sör)",
+    "ingredients": ["sör", "víz"],
+    "verdict": "haram",
+    "matched_canonicals": ["beer"]
+  },
+  {
+    "description": "detects carmine (E120)",
+    "ingredients": ["water", "e120", "citric acid"],
+    "verdict": "haram",
+    "matched_canonicals": ["e120"]
+  },
+  {
+    "description": "detects E471 as suspicious",
+    "ingredients": ["flour", "salt", "E471"],
+    "verdict": "suspicious",
+    "matched_canonicals": ["e471"]
+  },
+  {
+    "description": "detects natural flavour as suspicious",
+    "ingredients": ["sugar", "natural flavour"],
+    "verdict": "suspicious",
+    "matched_canonicals": ["natural flavour"]
+  },
+  {
+    "description": "detects whey as suspicious",
+    "ingredients": ["milk powder", "whey", "emulsifier"],
+    "verdict": "suspicious",
+    "matched_canonicals": ["whey"]
+  },
+  {
+    "description": "detects rennet in German (Lab)",
+    "ingredients": ["Milch", "Lab", "Salz"],
+    "verdict": "suspicious",
+    "matched_canonicals": ["rennet"]
+  },
+  {
+    "description": "haram beats suspicious when both present",
+    "ingredients": ["gelatin", "E471"],
+    "verdict": "haram",
+    "matched_canonicals": ["gelatin", "e471"]
+  },
+  {
+    "description": "negation: ohne Schweinefleisch is clean",
+    "ingredients": ["ohne Schweinefleisch"],
+    "verdict": "halal",
+    "matched_canonicals": []
+  },
+  {
+    "description": "negation: free from gelatin is clean",
+    "ingredients": ["free from gelatin"],
+    "verdict": "halal",
+    "matched_canonicals": []
+  },
+  {
+    "description": "alcohol-free excluded",
+    "ingredients": ["aqua", "alcohol-free toner base"],
+    "verdict": "halal",
+    "matched_canonicals": []
+  },
+  {
+    "description": "0% alcohol declaration with sugar is halal",
+    "ingredients": ["sugar", "0% alcohol"],
+    "verdict": "halal",
+    "matched_canonicals": []
+  },
+  {
+    "description": "cetyl alcohol not flagged as haram",
+    "ingredients": ["cetyl alcohol"],
+    "verdict": "halal",
+    "matched_canonicals": []
+  },
+  {
+    "description": "clean ingredient list",
+    "ingredients": ["water", "sugar", "flour", "salt", "citric acid"],
+    "verdict": "halal",
+    "matched_canonicals": []
+  },
+  {
+    "description": "empty ingredient list",
+    "ingredients": [],
+    "verdict": "halal",
+    "matched_canonicals": []
+  }
+]

@@ -436,10 +436,10 @@ void main() {
         reason: 'r',
         variants: ['schmalz', 'saindoux'],
       );
-      expect(body!['variants'], ['schmalz', 'saindoux']);
+      expect(body!['variants'], ['lard', 'saindoux', 'schmalz']);
     });
 
-    test('omits variants key when variants is null', () async {
+    test('always includes merged variants and translations', () async {
       Map<String, dynamic>? body;
       final client = MockClient((req) async {
         body = jsonDecode(req.body) as Map<String, dynamic>;
@@ -448,10 +448,11 @@ void main() {
       await _svc(
         client,
       ).createRule(canonical: 'lard', category: 'haram', reason: 'r');
-      expect(body!.containsKey('variants'), isFalse);
+      expect(body!['variants'], ['lard']);
+      expect(body!['translations'], isEmpty);
     });
 
-    test('omits variants key when variants is empty list', () async {
+    test('merges canonical when variants list is empty', () async {
       Map<String, dynamic>? body;
       final client = MockClient((req) async {
         body = jsonDecode(req.body) as Map<String, dynamic>;
@@ -463,7 +464,7 @@ void main() {
         reason: 'r',
         variants: [],
       );
-      expect(body!.containsKey('variants'), isFalse);
+      expect(body!['variants'], ['lard']);
     });
 
     test('POSTs to /rest/v1/keywords', () async {
@@ -539,7 +540,7 @@ void main() {
       expect(body!['canonical'], 'gelatin');
     });
 
-    test('includes variants when provided (even empty list)', () async {
+    test('includes merged variants when provided as empty list', () async {
       Map<String, dynamic>? body;
       final client = MockClient((req) async {
         body = jsonDecode(req.body) as Map<String, dynamic>;
@@ -552,11 +553,10 @@ void main() {
         reason: 'r',
         variants: [],
       );
-      expect(body!.containsKey('variants'), isTrue);
-      expect(body!['variants'], isEmpty);
+      expect(body!['variants'], ['lard']);
     });
 
-    test('omits variants key when variants is null', () async {
+    test('always sends variants and translations on update', () async {
       Map<String, dynamic>? body;
       final client = MockClient((req) async {
         body = jsonDecode(req.body) as Map<String, dynamic>;
@@ -565,7 +565,8 @@ void main() {
       await _svc(
         client,
       ).updateRule(id: 'r', canonical: 'lard', category: 'haram', reason: 'r');
-      expect(body!.containsKey('variants'), isFalse);
+      expect(body!['variants'], ['lard']);
+      expect(body!['translations'], isEmpty);
     });
 
     test('PATCHes to URL with id filter', () async {

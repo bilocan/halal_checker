@@ -140,7 +140,7 @@ class IngredientKeywords {
   static const Map<String, List<String>> suspiciousVariants = {
     'e920': ['e920', 'e-920'],
     'e322': ['e322', 'e-322'],
-    'e471': ['e471', 'e-471'],
+    'e471': ['e471', 'e-471', 'mono- und diglyceride von speisefettsäuren'],
     'e472': ['e472', 'e-472'],
     'e473': ['e473', 'e-473'],
     'e927': ['e927', 'e-927'],
@@ -187,6 +187,306 @@ class IngredientKeywords {
     ],
   };
 
+  // Per-language display labels, keyed by canonical → BCP-47 lang → list of display terms.
+  // Used by the web rule tester for per-language highlighting; not used for matching.
+  static const Map<String, Map<String, List<String>>> haramByLang = {
+    'alcohol': {
+      'en': ['alcohol'],
+      'de': ['alkohol'],
+      'fr': ['alcool'],
+      'it': ['alcol'],
+      'tr': ['alkol'],
+    },
+    'ethanol': {
+      'en': ['ethanol'],
+      'de': ['äthanol'],
+      'fr': ['éthanol'],
+      'it': ['etanolo'],
+      'tr': ['etanol'],
+      'es': ['etanol'],
+    },
+    'wine': {
+      'en': ['wine'],
+      'de': ['wein'],
+      'fr': ['vin'],
+      'it': ['vino'],
+      'tr': ['şarap'],
+      'es': ['vino'],
+      'nl': ['wijn'],
+      'hu': ['bor'],
+      'cs': ['víno'],
+    },
+    'beer': {
+      'en': ['beer'],
+      'de': ['bier'],
+      'fr': ['bière'],
+      'it': ['birra'],
+      'tr': ['bira'],
+      'es': ['cerveza'],
+      'sr': ['pivo'],
+      'hu': ['sör'],
+      'cs': ['pivo'],
+    },
+    'cognac': {
+      'en': ['cognac'],
+      'de': ['kognak'],
+      'tr': ['konyak'],
+      'sr': ['konjak'],
+      'hu': ['konyak'],
+      'cs': ['koňak'],
+    },
+    'brandy': {
+      'en': ['brandy'],
+      'de': ['branntwein'],
+      'nl': ['brandewijn'],
+    },
+    'whisky': {
+      'en': ['whisky', 'whiskey'],
+      'de': ['whisky'],
+      'tr': ['viski'],
+    },
+    'vodka': {
+      'en': ['vodka'],
+      'de': ['wodka'],
+      'tr': ['votka'],
+      'sr': ['votka'],
+    },
+    'rum': {
+      'en': ['rum'],
+      'fr': ['rhum'],
+      'es': ['ron'],
+    },
+    'gin': {
+      'en': ['gin'],
+      'sr': ['džin'],
+    },
+    'liqueur': {
+      'en': ['liqueur'],
+      'de': ['likör'],
+      'fr': ['liqueur'],
+      'it': ['liquore'],
+      'es': ['licor'],
+      'nl': ['likeur'],
+      'sr': ['liker'],
+      'hu': ['likőr'],
+      'cs': ['likér'],
+    },
+    'schnapps': {
+      'en': ['schnapps'],
+      'de': ['schnaps'],
+      'sr': ['šnaps'],
+    },
+    'champagne': {
+      'en': ['champagne'],
+      'de': ['sekt'],
+      'it': ['spumante'],
+      'es': ['cava'],
+      'sr': ['šampanjac'],
+      'hu': ['pezsgő'],
+      'cs': ['šampaňské'],
+    },
+    'prosecco': {
+      'en': ['prosecco'],
+    },
+    'bourbon': {
+      'en': ['bourbon'],
+    },
+    'sake': {
+      'en': ['sake', 'saké'],
+    },
+    'pork': {
+      'en': ['pork'],
+      'de': ['schwein', 'schweinefleisch'],
+      'fr': ['porc'],
+      'it': ['maiale'],
+      'tr': ['domuz'],
+      'es': ['cerdo'],
+      'nl': ['varkens', 'varkensvlees'],
+      'sr': ['svinjetina', 'svinjsko'],
+      'hu': ['sertéshús', 'sertés'],
+      'cs': ['vepřové', 'vepřová'],
+    },
+    'lard': {
+      'en': ['lard'],
+      'de': ['schmalz', 'schweineschmalz'],
+      'fr': ['saindoux'],
+      'it': ['strutto'],
+      'tr': ['domuz yağı'],
+      'es': ['manteca'],
+      'sr': ['svinjska mast'],
+      'hu': ['sertészsír'],
+      'cs': ['sádlo'],
+    },
+    'gelatin': {
+      'en': ['gelatin', 'gelatine'],
+      'de': ['gelatine'],
+      'fr': ['gélatine'],
+      'it': ['gelatina'],
+      'tr': ['jelatin'],
+      'es': ['gelatina'],
+      'sr': ['želatina'],
+      'hu': ['zselatin'],
+      'cs': ['želatina'],
+    },
+    'bacon': {
+      'en': ['bacon'],
+      'de': ['speck'],
+      'fr': ['lardons'],
+      'it': ['pancetta'],
+      'tr': ['domuz pastırması'],
+      'sr': ['slanina'],
+      'hu': ['szalonna'],
+      'cs': ['slanina'],
+    },
+    'ham': {
+      'en': ['ham'],
+      'de': ['schinken'],
+      'fr': ['jambon'],
+      'it': ['prosciutto'],
+      'tr': ['jambon'],
+      'es': ['jamón'],
+      'sr': ['šunka'],
+      'hu': ['sonka'],
+      'cs': ['šunka'],
+    },
+    'pepperoni': {
+      'en': ['pepperoni'],
+    },
+    'salami': {
+      'en': ['salami'],
+      'it': ['salame'],
+      'hu': ['szalámi'],
+      'cs': ['salám'],
+    },
+    'chorizo': {
+      'en': ['chorizo'],
+    },
+    'prosciutto': {
+      'en': ['prosciutto'],
+    },
+    'carmine': {
+      'en': ['carmine'],
+      'de': ['karmin'],
+      'fr': ['carmin'],
+      'es': ['carmín'],
+      'cs': ['karmín'],
+    },
+    'cochineal': {
+      'en': ['cochineal'],
+      'de': ['cochenille'],
+      'fr': ['cochenille'],
+      'it': ['cocciniglia'],
+      'es': ['cochinilla'],
+      'tr': ['koşnil'],
+      'sr': ['košenil'],
+      'cs': ['košenila'],
+    },
+    'e120': {
+      'en': ['e120', 'e-120'],
+    },
+    'e441': {
+      'en': ['e441', 'e-441'],
+    },
+    'e542': {
+      'en': ['e542', 'e-542'],
+    },
+    'e904': {
+      'en': ['e904', 'e-904'],
+    },
+  };
+
+  static const Map<String, Map<String, List<String>>> suspiciousByLang = {
+    'e920': {
+      'en': ['e920', 'e-920'],
+    },
+    'e322': {
+      'en': ['e322', 'e-322'],
+    },
+    'e471': {
+      'en': ['e471', 'e-471'],
+      'de': ['mono- und diglyceride von speisefettsäuren'],
+    },
+    'e472': {
+      'en': ['e472', 'e-472'],
+    },
+    'e473': {
+      'en': ['e473', 'e-473'],
+    },
+    'e927': {
+      'en': ['e927', 'e-927'],
+    },
+    'rennet': {
+      'en': ['rennet'],
+      'de': ['lab', 'labferment'],
+      'fr': ['présure'],
+      'it': ['caglio'],
+      'tr': ['peynir mayası'],
+      'es': ['cuajo'],
+      'nl': ['stremsel'],
+      'sr': ['sirilo'],
+      'hu': ['oltóanyag'],
+      'cs': ['syřidlo'],
+    },
+    'whey': {
+      'en': ['whey'],
+      'de': ['molke'],
+      'fr': ['lactosérum'],
+      'it': ['siero di latte'],
+      'tr': ['peynir suyu'],
+      'es': ['suero de leche'],
+      'nl': ['wei'],
+      'sr': ['surutka'],
+      'hu': ['tejsavó'],
+      'cs': ['syrovátka'],
+    },
+    'l-cysteine': {
+      'en': ['l-cysteine'],
+      'de': ['l-cystein'],
+      'fr': ['l-cystéine'],
+      'it': ['l-cisteina'],
+      'tr': ['l-sistein'],
+      'sr': ['l-cistein'],
+      'hu': ['l-cisztein'],
+    },
+    'natural flavour': {
+      'en': ['natural flavour', 'natural flavor'],
+      'de': ['natürliches aroma', 'natürliche aromen'],
+      'fr': ['arôme naturel'],
+      'it': ['aroma naturale'],
+      'tr': ['doğal aroma'],
+      'es': ['aroma natural'],
+      'nl': ['natuurlijk aroma'],
+      'sr': ['prirodna aroma'],
+      'hu': ['természetes aroma'],
+      'cs': ['přírodní aroma'],
+    },
+    'flavouring': {
+      'en': ['flavouring', 'flavoring'],
+      'de': ['natürliches aroma'],
+      'fr': ['arôme'],
+      'it': ['aroma naturale'],
+      'tr': ['doğal aroma'],
+      'nl': ["aroma's", 'smaakstof'],
+      'hu': ['ízesítő'],
+    },
+    'enzymes': {
+      'en': ['enzymes', 'enzyme'],
+      'it': ['enzimi'],
+      'es': ['enzimas'],
+      'tr': ['enzim'],
+      'nl': ['enzymen'],
+      'cs': ['enzymy'],
+    },
+    'glycerol': {
+      'en': ['glycerol', 'glycerin', 'glycerine'],
+      'fr': ['glycérol'],
+      'it': ['glicerina'],
+      'tr': ['gliserin'],
+      'es': ['glicerina'],
+      'sr': ['glicerol'],
+    },
+  };
+
   // All alcohol-family terms — these get the "alcohol-free" exclusion applied.
   static const Set<String> alcoholFamily = {
     'alcohol',
@@ -208,6 +508,20 @@ class IngredientKeywords {
     r'lanolin|isostearyl|octyldodecyl|decyl)\s+',
     caseSensitive: false,
   );
+
+  /// True when [text] declares zero alcohol for [variant] (e.g. "0% alcohol").
+  static bool isZeroPercentAlcoholDeclaration(String text, String variant) {
+    final v = RegExp.escape(variant);
+    return RegExp(
+      r'\b0(?:[.,]0+)?\s*%\s*' +
+          v +
+          r'(?:\b|(?![a-zA-Z\dÀ-ɏß]))' +
+          r'|\b' +
+          v +
+          r'(?:\b|(?![a-zA-Z\dÀ-ɏß]))\s*(?:\(?\s*)?0(?:[.,]0+)?\s*%',
+      caseSensitive: false,
+    ).hasMatch(text);
+  }
 
   // Unicode-aware word boundaries: covers Latin + extended Latin (U+00C0–U+024F)
   // so words like "šunka", "vepřové", "şarap", "pezsgő" match correctly.

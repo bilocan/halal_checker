@@ -1,0 +1,22 @@
+﻿# Flutter/Dart build artifacts (also in .gitignore; explicit for Cursor index)
+build/
+.dart_tool/
+coverage/
+
+# Platform build output (often present locally, low value for halal logic)
+android/build/
+android/.gradle/
+ios/Pods/
+ios/.symlinks/
+
+# Generated plugin registrants
+**/generated_plugin_registrant.*
+**/GeneratedPluginRegistrant.*
+
+# Local secrets — never index
+dart_defines.json
+dart_defines.local.json
+android/key.properties
+
+# Supabase CLI temp
+supabase/.temp/

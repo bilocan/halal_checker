@@ -29,6 +29,20 @@ jobs:
       - name: Run tests
         run: flutter test test/services/ test/constants/ test/models/ test/config_test.dart --coverage --reporter=github
 
+      - name: Export built-in rules to JSON
+        run: dart run tool/export_rules.dart keyword-rules.json
+
+      - name: Upload rules to Supabase Storage
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev'
+        run: |
+          curl --fail-with-body -X POST \
+            "${{ secrets.SUPABASE_URL }}/storage/v1/object/rules/keyword-rules.json" \
+            -H "apikey: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+            -H "Content-Type: application/json" \
+            -H "x-upsert: true" \
+            --data-binary @keyword-rules.json
+
       - name: Install lcov
         run: sudo apt-get install -y lcov
 

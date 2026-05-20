@@ -71,7 +71,9 @@ After AI analysis completes, keyword matching always runs a second time as a saf
 
 ### Custom keywords
 
-Approved community keyword suggestions (stored in Supabase) are applied on top of the built-in lists, following the same matching logic.
+Approved community keyword suggestions (stored in Supabase) are applied on top of the built-in lists, following the same matching logic. Each approved rule has a **canonical** id (e.g. `pork`), a **variants** array for multilingual matching, and optional **translations** (`de`, `tr`, …) for result-screen labels. Users can submit extra spellings when suggesting a keyword; admins merge duplicates into one rule instead of creating parallel entries.
+
+**Admin moderation:** see [docs/ADMIN_KEYWORDS.md](docs/ADMIN_KEYWORDS.md) for the full workflow (approve, merge, variants, translations, SQL).
 
 ---
 
@@ -92,6 +94,7 @@ The rules engine is deliberately simple and auditable. Most changes should be ma
 | User-visible keyword catalog and suggestion flow | `lib/screens/keywords_screen.dart` |
 | Approved remote rules | Supabase `keywords` table |
 | Pending user suggestions | Supabase `keyword_suggestions` table |
+| Admin guide (community keywords & translations) | [docs/ADMIN_KEYWORDS.md](docs/ADMIN_KEYWORDS.md) |
 
 ### Built-in rule vs custom keyword
 
@@ -135,22 +138,26 @@ The table shape is:
 canonical text not null unique,
 category text not null check (category in ('haram', 'suspicious')),
 reason text not null,
-variants text[] not null default '{}'
+variants text[] not null default '{}',
+translations jsonb not null default '{}'  -- e.g. {"de":"schwein","tr":"domuz"}
 ```
 
 Example:
 
 ```sql
-insert into keywords (canonical, category, reason, variants)
+insert into keywords (canonical, category, reason, variants, translations)
 values (
-  'example additive',
-  'suspicious',
-  'Source may be animal-derived and requires verification',
-  array['example additive', 'e-999', 'e999']
+  'pork',
+  'haram',
+  'Contains pork or pork-derived ingredient',
+  array['pork', 'schwein', 'domuz', 'porc'],
+  '{"de":"schwein","tr":"domuz","fr":"porc"}'::jsonb
 );
 ```
 
-User suggestions flow into `keyword_suggestions`. When a suggestion is approved, the migration trigger copies it into `keywords`. The app’s keyword screen lets users submit suggestions, but approval should stay a moderated/admin action.
+**Translations vs variants:** `variants` is a flat list of every spelling that should match ingredient text. `translations` maps locale codes to terms for UI labels; those terms are also merged into the effective variant list at runtime. Prefer one canonical row per concept and merge aliases (see [docs/ADMIN_KEYWORDS.md](docs/ADMIN_KEYWORDS.md)).
+
+User suggestions flow into `keyword_suggestions` (with optional `variants`). Admins approve from **Admin panel → Rules → Suggestions**; the app can merge into an existing rule when an alias already exists. The keyword screen lets signed-in users submit suggestions; approval stays a moderated action.
 
 ### Fixing false positives
 

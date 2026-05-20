@@ -442,8 +442,11 @@ class _CommentsScreenState extends State<_CommentsScreen> {
 
   Future<void> _postComment() async {
     final body = _bodyController.text.trim();
-    if (body.isEmpty) return;
-    if (AuthService.currentUser == null) {
+    if (body.isEmpty || _posting) return;
+
+    if (!await AuthService.ensureInitialized() ||
+        AuthService.currentUser == null) {
+      if (!mounted) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Sign in to comment.')));
@@ -451,21 +454,49 @@ class _CommentsScreenState extends State<_CommentsScreen> {
     }
 
     setState(() => _posting = true);
-    final comment = await CommunityService.postComment(
+    final countBefore = _comments.length;
+    final result = await CommunityService.postCommentResult(
       discussionId: widget.discussion.id,
       body: body,
       parentId: _replyToId,
     );
     if (!mounted) return;
+
+    if (result.comment != null) {
+      setState(() {
+        _posting = false;
+        _comments.add(result.comment!);
+        _clearCommentInput();
+      });
+      return;
+    }
+
+    // Insert may have succeeded even when the returned row could not be parsed.
+    await _loadComments();
+    if (!mounted) return;
+
+    final posted = _comments.length > countBefore;
     setState(() {
       _posting = false;
-      if (comment != null) {
-        _comments.add(comment);
-        _bodyController.clear();
-        _replyToId = null;
-        _replyToUsername = null;
-      }
+      if (posted) _clearCommentInput();
     });
+
+    if (!mounted) return;
+    if (!posted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            result.error ?? "Couldn't post your comment. Please try again.",
+          ),
+        ),
+      );
+    }
+  }
+
+  void _clearCommentInput() {
+    _bodyController.clear();
+    _replyToId = null;
+    _replyToUsername = null;
   }
 
   Future<void> _vote(Comment comment, int value) async {
@@ -511,16 +542,20 @@ class _CommentsScreenState extends State<_CommentsScreen> {
                       style: TextStyle(color: Colors.grey.shade500),
                     ),
                   )
-                : ListView.builder(
-                    padding: const EdgeInsets.all(12),
-                    itemCount: _comments.length,
-                    itemBuilder: (_, i) => _CommentTile(
-                      comment: _comments[i],
-                      onReply: (id, username) => setState(() {
-                        _replyToId = id;
-                        _replyToUsername = username;
-                      }),
-                      onVote: (value) => _vote(_comments[i], value),
+                : RefreshIndicator(
+                    onRefresh: _loadComments,
+                    child: ListView.builder(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.all(12),
+                      itemCount: _comments.length,
+                      itemBuilder: (_, i) => _CommentTile(
+                        comment: _comments[i],
+                        onReply: (id, username) => setState(() {
+                          _replyToId = id;
+                          _replyToUsername = username;
+                        }),
+                        onVote: (value) => _vote(_comments[i], value),
+                      ),
                     ),
                   ),
           ),
@@ -584,6 +619,7 @@ class _CommentsScreenState extends State<_CommentsScreen> {
                   controller: _bodyController,
                   maxLines: 4,
                   minLines: 1,
+                  textInputAction: TextInputAction.send,
                   decoration: const InputDecoration(
                     hintText: 'Write a comment…',
                     border: OutlineInputBorder(),
@@ -592,28 +628,37 @@ class _CommentsScreenState extends State<_CommentsScreen> {
                       vertical: 10,
                     ),
                   ),
-                  onChanged: (_) => setState(() {}),
+                  onSubmitted: (_) {
+                    if (!_posting && _bodyController.text.trim().isNotEmpty) {
+                      _postComment();
+                    }
+                  },
                 ),
               ),
               const SizedBox(width: 8),
-              IconButton.filled(
-                style: IconButton.styleFrom(
-                  backgroundColor: Colors.blue.shade700,
-                  foregroundColor: Colors.white,
-                ),
-                onPressed: _posting || _bodyController.text.trim().isEmpty
-                    ? null
-                    : _postComment,
-                icon: _posting
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Icon(Icons.send),
+              ListenableBuilder(
+                listenable: _bodyController,
+                builder: (context, _) {
+                  final canSend =
+                      !_posting && _bodyController.text.trim().isNotEmpty;
+                  return IconButton.filled(
+                    style: IconButton.styleFrom(
+                      backgroundColor: Colors.blue.shade700,
+                      foregroundColor: Colors.white,
+                    ),
+                    onPressed: canSend ? _postComment : null,
+                    icon: _posting
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Icon(Icons.send),
+                  );
+                },
               ),
             ],
           ),

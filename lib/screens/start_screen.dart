@@ -343,13 +343,15 @@ class _StartScreenState extends State<StartScreen> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 20),
-              SignInWithAppleButton(
-                onPressed: () {
-                  Navigator.pop(ctx);
-                  _signInWithApple();
-                },
-              ),
-              const SizedBox(height: 12),
+              if (Platform.isIOS) ...[
+                SignInWithAppleButton(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    _signInWithApple();
+                  },
+                ),
+                const SizedBox(height: 12),
+              ],
               OutlinedButton.icon(
                 onPressed: () {
                   Navigator.pop(ctx);

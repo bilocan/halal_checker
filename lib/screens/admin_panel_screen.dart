@@ -9,8 +9,10 @@ import '../models/product_analysis.dart';
 import '../services/analysis_service.dart';
 import '../services/cache_service.dart';
 import '../services/ingredient_contribution_service.dart';
+import '../services/ingredient_report_service.dart';
 import '../services/product_image_service.dart';
 import '../services/product_service.dart';
+import 'result_screen.dart';
 import 'rules_management_screen.dart';
 
 class AdminPanelScreen extends StatefulWidget {
@@ -41,12 +43,18 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
   bool _contributionsLoading = false;
   final Set<int> _processingContributionIds = {};
 
+  // ── reports tab ───────────────────────────────────────────────────────────
+  List<Map<String, dynamic>> _reports = [];
+  bool _reportsLoading = false;
+  final Set<int> _processingReportIds = {};
+
   @override
   void initState() {
     super.initState();
     _load();
     _loadPhotos();
     _loadContributions();
+    _loadReports();
   }
 
   Future<void> _load() async {
@@ -151,6 +159,32 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
       );
     }
     setState(() => _processingContributionIds.remove(id));
+  }
+
+  Future<void> _loadReports() async {
+    setState(() => _reportsLoading = true);
+    final list = await IngredientReportService.getReports();
+    if (!mounted) return;
+    setState(() {
+      _reports = list;
+      _reportsLoading = false;
+    });
+  }
+
+  Future<void> _reviewReport(int id, String status) async {
+    setState(() => _processingReportIds.add(id));
+    final ok = await IngredientReportService.updateStatus(id, status);
+    if (!mounted) return;
+    if (ok) {
+      setState(
+        () => _reports.removeWhere((r) => (r['id'] as num).toInt() == id),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to update — check Supabase logs')),
+      );
+    }
+    setState(() => _processingReportIds.remove(id));
   }
 
   Future<void> _run({List<String>? ids}) async {
@@ -263,6 +297,11 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
               icon: const Icon(Icons.refresh),
               onPressed: _contributionsLoading ? null : _loadContributions,
             ),
+          if (_tabIndex == 4)
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              onPressed: _reportsLoading ? null : _loadReports,
+            ),
         ],
       ),
       body: Column(
@@ -273,7 +312,8 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
               0 => _buildAnalysisBody(),
               1 => const RulesManagementScreen(),
               2 => _buildPhotosBody(loc),
-              _ => _buildIngredientsBody(loc),
+              3 => _buildIngredientsBody(loc),
+              _ => _buildReportsBody(loc),
             },
           ),
         ],
@@ -316,6 +356,14 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
               badge: _contributions.isNotEmpty ? _contributions.length : null,
             ),
           ),
+          Expanded(
+            child: _tabButton(
+              label: loc.reportsTab,
+              icon: Icons.flag_outlined,
+              index: 4,
+              badge: _reports.isNotEmpty ? _reports.length : null,
+            ),
+          ),
         ],
       ),
     );
@@ -332,6 +380,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
       onTap: () {
         setState(() => _tabIndex = index);
         if (index == 3) _loadContributions();
+        if (index == 4) _loadReports();
       },
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
@@ -573,6 +622,61 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
             isProcessing: _processingPhotoIds.contains(id),
             onApprove: () => _reviewPhoto(id, 'approved'),
             onReject: () => _reviewPhoto(id, 'rejected'),
+          );
+        },
+      ),
+    );
+  }
+
+  // ── reports tab ───────────────────────────────────────────────────────────
+
+  Widget _buildReportsBody(AppLocalizations loc) {
+    if (_reportsLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_reports.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.check_circle_outline,
+              size: 56,
+              color: Colors.grey.shade400,
+            ),
+            const SizedBox(height: 12),
+            Text(loc.noReports, style: TextStyle(color: Colors.grey.shade500)),
+          ],
+        ),
+      );
+    }
+    return RefreshIndicator(
+      onRefresh: _loadReports,
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: _reports.length,
+        itemBuilder: (_, i) {
+          final row = _reports[i];
+          final id = (row['id'] as num).toInt();
+          return _IngredientReportCard(
+            row: row,
+            isProcessing: _processingReportIds.contains(id),
+            onResolve: () => _reviewReport(id, 'resolved'),
+            onDismiss: () => _reviewReport(id, 'dismissed'),
+            onOpenProduct: () => Navigator.push(
+              context,
+              MaterialPageRoute<void>(
+                builder: (_) => ResultScreen(
+                  product: null,
+                  barcode: row['barcode'] as String,
+                  adminReportedIngredients: List<String>.from(
+                    row['reported_ingredients'] as List,
+                  ),
+                  adminReportExplanation: row['explanation'] as String?,
+                ),
+              ),
+            ),
+            loc: loc,
           );
         },
       ),
@@ -1180,6 +1284,160 @@ class _ContributionCard extends StatelessWidget {
                       onPressed: onApprove,
                       icon: const Icon(Icons.check, size: 16),
                       label: const Text('Approve'),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: kGreen,
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _formatAge(DateTime d) {
+    final diff = DateTime.now().difference(d);
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+    if (diff.inHours < 24) return '${diff.inHours}h ago';
+    return '${diff.inDays}d ago';
+  }
+}
+
+// ── ingredient report card ────────────────────────────────────────────────────
+
+class _IngredientReportCard extends StatelessWidget {
+  final Map<String, dynamic> row;
+  final bool isProcessing;
+  final VoidCallback onResolve;
+  final VoidCallback onDismiss;
+  final VoidCallback onOpenProduct;
+  final AppLocalizations loc;
+
+  const _IngredientReportCard({
+    required this.row,
+    required this.isProcessing,
+    required this.onResolve,
+    required this.onDismiss,
+    required this.onOpenProduct,
+    required this.loc,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final barcode = row['barcode'] as String? ?? '';
+    final productName = row['product_name'] as String? ?? barcode;
+    final reported = List<String>.from(
+      row['reported_ingredients'] as List? ?? [],
+    );
+    final explanation = row['explanation'] as String?;
+    final createdAt = DateTime.tryParse(row['created_at'] as String? ?? '');
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    productName,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                if (createdAt != null)
+                  Text(
+                    _formatAge(createdAt),
+                    style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 2),
+            Text(
+              barcode,
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey.shade600,
+                fontFamily: 'monospace',
+              ),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 6,
+              runSpacing: 4,
+              children: reported
+                  .map(
+                    (ing) => Chip(
+                      label: Text(ing, style: const TextStyle(fontSize: 11)),
+                      backgroundColor: Colors.orange.shade50,
+                      side: BorderSide(color: Colors.orange.shade300),
+                      padding: EdgeInsets.zero,
+                      labelPadding: const EdgeInsets.symmetric(horizontal: 6),
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  )
+                  .toList(),
+            ),
+            if (explanation != null && explanation.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              Text(
+                explanation,
+                style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+              ),
+            ],
+            const SizedBox(height: 10),
+            if (isProcessing)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 4),
+                  child: CircularProgressIndicator(),
+                ),
+              )
+            else
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: onDismiss,
+                      icon: const Icon(Icons.close, size: 16),
+                      label: Text(loc.dismissReport),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.red.shade700,
+                        side: BorderSide(color: Colors.red.shade300),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: onOpenProduct,
+                      icon: const Icon(Icons.open_in_new, size: 16),
+                      label: Text(loc.openProduct),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: kGreen,
+                        side: const BorderSide(color: kGreen),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: FilledButton.icon(
+                      onPressed: onResolve,
+                      icon: const Icon(Icons.check, size: 16),
+                      label: Text(loc.resolveReport),
                       style: FilledButton.styleFrom(
                         backgroundColor: kGreen,
                         visualDensity: VisualDensity.compact,

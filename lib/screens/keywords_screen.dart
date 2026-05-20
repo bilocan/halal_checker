@@ -245,6 +245,7 @@ class _SuggestKeywordSheet extends StatefulWidget {
 class _SuggestKeywordSheetState extends State<_SuggestKeywordSheet> {
   final _formKey = GlobalKey<FormState>();
   final _keywordCtrl = TextEditingController();
+  final _variantsCtrl = TextEditingController();
   final _reasonCtrl = TextEditingController();
   String _category = 'haram';
   bool _submitting = false;
@@ -252,17 +253,30 @@ class _SuggestKeywordSheetState extends State<_SuggestKeywordSheet> {
   @override
   void dispose() {
     _keywordCtrl.dispose();
+    _variantsCtrl.dispose();
     _reasonCtrl.dispose();
     super.dispose();
+  }
+
+  List<String> _parseVariants() {
+    final raw = _variantsCtrl.text.trim();
+    if (raw.isEmpty) return [];
+    return raw
+        .split(RegExp(r'[,\n]'))
+        .map((e) => e.trim())
+        .where((e) => e.isNotEmpty)
+        .toList();
   }
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _submitting = true);
+    final variants = _parseVariants();
     final ok = await KeywordService().suggestKeyword(
       keyword: _keywordCtrl.text,
       category: _category,
       reason: _reasonCtrl.text,
+      variants: variants.isNotEmpty ? variants : null,
     );
     if (!mounted) return;
     setState(() => _submitting = false);
@@ -322,6 +336,18 @@ class _SuggestKeywordSheetState extends State<_SuggestKeywordSheet> {
               textCapitalization: TextCapitalization.none,
               validator: (v) =>
                   (v == null || v.trim().isEmpty) ? loc.keywordRequired : null,
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _variantsCtrl,
+              decoration: InputDecoration(
+                labelText: loc.suggestVariantsLabel,
+                hintText: loc.suggestVariantsHint,
+                border: const OutlineInputBorder(),
+                helperText: loc.suggestVariantsHelperText,
+                helperMaxLines: 2,
+              ),
+              maxLines: 2,
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(

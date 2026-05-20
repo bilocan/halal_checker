@@ -30,10 +30,19 @@ function escape(s: string) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') }
 const wPre = '(?<![a-zA-Z\\dÀ-ɏß])'
 const wPost = '(?![a-zA-Z\\dÀ-ɏß])'
 
+function isZeroPercentAlcoholDeclaration(text: string, variant: string): boolean {
+  const v = escape(variant)
+  return new RegExp(
+    `\\b0(?:[.,]0+)?\\s*%\\s*${v}(?:\\b|(?![a-zA-Z\\dÀ-ɏß]))|\\b${v}(?:\\b|(?![a-zA-Z\\dÀ-ɏß]))\\s*(?:\\(?\\s*)?0(?:[.,]0+)?\\s*%`,
+    'i',
+  ).test(text)
+}
+
 function matchesVariant(ingredient: string, variant: string): boolean {
   if (variant.includes(' ')) return ingredient.includes(variant)
   if (ALCOHOL_FAMILY.has(variant)) {
     if (FATTY_ALCOHOL_PREFIX.test(ingredient)) return false
+    if (isZeroPercentAlcoholDeclaration(ingredient, variant)) return false
     return new RegExp(`${wPre}${escape(variant)}${wPost}(?![-\\s]*free)`, 'i').test(ingredient)
   }
   return new RegExp(`${wPre}${escape(variant)}${wPost}`, 'i').test(ingredient)
@@ -211,6 +220,12 @@ Deno.test('keywordAnalysis — cetyl alcohol not flagged as haram', () => {
 Deno.test('keywordAnalysis — alcohol-free not flagged as haram', () => {
   const r = keywordAnalysis(['malt (alcohol-free)'])
   assertEquals(r.haram.length, 0)
+})
+
+Deno.test('keywordAnalysis — 0% alcohol declaration not flagged as haram', () => {
+  const r = keywordAnalysis(['sugar', '0% alcohol'])
+  assertEquals(r.haram.length, 0)
+  assertEquals(r.isHalal, true)
 })
 
 // ── negation detection ────────────────────────────────────────────────────────

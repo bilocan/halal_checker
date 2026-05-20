@@ -8,6 +8,7 @@ import '../constants/ingredient_keywords.dart';
 import '../models/product.dart';
 import 'cache_service.dart';
 import 'halal_rules_engine.dart';
+import 'keyword_normalization.dart';
 import 'keyword_service.dart';
 import 'test_product_repository.dart';
 
@@ -44,6 +45,7 @@ class ProductService {
     _customSuspiciousKeywords.clear();
     _customHaramVariants.clear();
     _customSuspiciousVariants.clear();
+    _customDisplayNames.clear();
   }
 
   static const String _offBaseUrl =
@@ -60,6 +62,7 @@ class ProductService {
   final Map<String, String> _customSuspiciousKeywords = {};
   final Map<String, List<String>> _customHaramVariants = {};
   final Map<String, List<String>> _customSuspiciousVariants = {};
+  static final Map<String, Map<String, String>> _customDisplayNames = {};
   Future<void>? _customKeywordsFuture;
 
   // Public aliases kept for callers that reference ProductService directly.
@@ -82,10 +85,18 @@ class ProductService {
       final canonical = e['canonical'] as String;
       final reason = e['reason'] as String;
       final category = e['category'] as String;
+      final translations = KeywordNormalization.parseTranslations(
+        e['translations'],
+      );
+      if (translations.isNotEmpty) {
+        _customDisplayNames[canonical] = translations;
+      }
       final rawVariants = e['variants'];
-      final variants = rawVariants is List && rawVariants.isNotEmpty
-          ? List<String>.from(rawVariants)
-          : [canonical];
+      final variants = KeywordNormalization.mergeVariants(
+        canonical: canonical,
+        variants: rawVariants is List ? List<String>.from(rawVariants) : null,
+        translations: translations,
+      );
       if (category == 'haram') {
         _customHaramKeywords[canonical] = reason;
         _customHaramVariants[canonical] = variants;
@@ -104,8 +115,11 @@ class ProductService {
     );
   }
 
-  static String canonicalDisplay(String canonical, String locale) =>
-      HalalRulesEngine.canonicalDisplay(canonical, locale);
+  static String canonicalDisplay(String canonical, String locale) {
+    final custom = _customDisplayNames[canonical]?[locale];
+    if (custom != null) return custom;
+    return HalalRulesEngine.canonicalDisplay(canonical, locale);
+  }
 
   static bool isFattyAlcohol(String ingredient) =>
       HalalRulesEngine.isFattyAlcohol(ingredient);
