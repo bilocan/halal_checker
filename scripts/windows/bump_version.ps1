@@ -90,7 +90,7 @@ if ($DryRun) {
 }
 
 # ── Check for uncommitted changes ──────────────────────────────────────
-$diff = git diff --quiet HEAD 2>$null
+git diff --quiet HEAD 2>$null
 if ($LASTEXITCODE -ne 0) {
     Write-Error "You have uncommitted changes. Commit or stash them first."
     exit 1
@@ -141,6 +141,11 @@ if ($ghAvailable) {
         --body "Bumps ``pubspec.yaml`` to ``$newFull`` and tags ``$tag``." `
         --base main `
         --head $branch
+    if ($LASTEXITCODE -ne 0) {
+        $remote = (git remote get-url origin) -replace '.*github\.com[:/]' -replace '\.git$'
+        Write-Warning "PR creation failed (GitHub API error). Create it manually:"
+        Write-Host "  -> https://github.com/$remote/compare/$($branch)?expand=1"
+    }
 } else {
     $remote = (git remote get-url origin) -replace '.*github\.com[:/]' -replace '\.git$'
     Write-Host "Install the gh CLI to auto-create releases and PRs."
