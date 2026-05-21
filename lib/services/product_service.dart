@@ -715,6 +715,9 @@ class ProductService {
       imageIngredientsUrl:
           approved.imageIngredientsUrl ?? base.imageIngredientsUrl,
       imageNutritionUrl: approved.imageNutritionUrl ?? base.imageNutritionUrl,
+      // Shared DB is authoritative for where ingredients came from; cache
+      // entries written before ingredient_source existed may omit it.
+      ingredientSource: approved.ingredientSource ?? base.ingredientSource,
     );
   }
 
@@ -952,6 +955,7 @@ class ProductService {
           explanation:
               'This is a non-food product. Islamic dietary rules do not apply.',
           analyzedByAI: false,
+          ingredientSource: 'off',
         );
       }
 
@@ -1064,6 +1068,7 @@ class ProductService {
         imageNutritionUrl: imageNutritionUrl,
         explanation: explanation,
         analyzedByAI: false,
+        ingredientSource: 'off',
         requiresHalalCert: requiresHalalCert,
       );
     } catch (_) {

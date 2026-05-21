@@ -30,7 +30,6 @@ BEGIN
       ) sub
     );
     NEW.ingredient_source := 'community';
-    NEW.analyzed_by_ai := false;
   END IF;
 
   RETURN NEW;

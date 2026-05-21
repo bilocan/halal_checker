@@ -7,6 +7,7 @@ import {
 } from './categories.ts'
 import { fetchFromFoodApi, extractIngredientsText, resolveImg, OFF_BASE, OBF_BASE, OPF_BASE } from './fetch.ts'
 import { toProduct, isStale } from './db.ts'
+import { getApprovedContribution, withCommunitySource } from './community.ts'
 import {
   geminiIngredientLookup, analyzeWithGemini, analyzeWithClaude, analyzeWithClaudeVision,
 } from './ai.ts'
@@ -79,7 +80,12 @@ Deno.serve(async (req) => {
         }
       }
 
-      const storedIngredients: string[] = Array.isArray(cached.ingredients) ? cached.ingredients : []
+      const communityIngredients = await getApprovedContribution(supabase, barcode)
+      const storedIngredients: string[] = communityIngredients
+        ?? (Array.isArray(cached.ingredients) ? cached.ingredients : [])
+      const resolvedSource = communityIngredients
+        ? 'community'
+        : (cached.ingredient_source ?? 'off')
       const kw = keywordAnalysis(storedIngredients, reHaramEntries, reSuspiciousEntries)
 
       let reHalal       = kw.isHalal
@@ -101,7 +107,7 @@ Deno.serve(async (req) => {
       const reRow = {
         barcode:               cached.barcode,
         name:                  cached.name,
-        ingredients:           cached.ingredients,
+        ingredients:           storedIngredients,
         is_halal:              reHalal,
         is_unknown:            reUnknown,
         is_non_food:           cached.is_non_food,
@@ -119,13 +125,13 @@ Deno.serve(async (req) => {
         is_managed:            cached.is_managed,
         last_analysed_at:      new Date().toISOString(),
         fetched_at:            cached.fetched_at,
-        ingredient_source:     cached.ingredient_source ?? 'off',
+        ingredient_source:     resolvedSource,
       }
 
       await supabase.from('products').upsert({
         barcode:               cached.barcode,
         name:                  cached.name,
-        ingredients:           cached.ingredients,
+        ingredients:           storedIngredients,
         is_non_food:           cached.is_non_food,
         labels:                cached.labels,
         image_url:             cached.image_url,
@@ -136,7 +142,7 @@ Deno.serve(async (req) => {
         is_managed:            cached.is_managed,
         last_analysed_at:      new Date().toISOString(),
         fetched_at:            cached.fetched_at,
-        ingredient_source:     cached.ingredient_source ?? 'off',
+        ingredient_source:     resolvedSource,
       })
 
       await supabase.from('product_analysis').upsert({
@@ -159,8 +165,11 @@ Deno.serve(async (req) => {
     }
 
     if (!fetchAiIngredients && cached && !force) {
+      const communityIngredients = await getApprovedContribution(supabase, barcode)
       return new Response(
-        JSON.stringify({ product: toProduct(cached) }),
+        JSON.stringify({
+          product: toProduct(withCommunitySource(cached, communityIngredients)),
+        }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       )
     }
@@ -230,6 +239,12 @@ Deno.serve(async (req) => {
         const found = await geminiIngredientLookup(name, barcode, geminiKey)
         if (found.length > 0) { ingredients = found; ingredientSource = 'ai' }
       }
+    }
+
+    const communityIngredients = await getApprovedContribution(supabase, barcode)
+    if (communityIngredients) {
+      ingredients = communityIngredients
+      ingredientSource = 'community'
     }
 
     const labelSet = new Set<string>()
@@ -429,8 +444,14 @@ Deno.serve(async (req) => {
       analyzed_at:            new Date().toISOString(),
     })
 
+    const { data: saved } = await supabase
+      .from('products_full')
+      .select('*')
+      .eq('barcode', barcode)
+      .maybeSingle()
+
     return new Response(
-      JSON.stringify({ product: toProduct(row) }),
+      JSON.stringify({ product: toProduct(saved ?? row) }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     )
   } catch (err) {

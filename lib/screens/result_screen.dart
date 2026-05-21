@@ -1230,11 +1230,9 @@ class _ResultScreenState extends State<ResultScreen> {
                 _buildMissingIngredientActions(product, loc),
               ] else
                 ...ingredients.map((ingredient) {
-                  final sourceColor = switch (product.ingredientSource) {
-                    'ai' => const Color(0xFF7C3AED),
-                    'community' => const Color(0xFF0D9488),
-                    _ => const Color(0xFF6B7280),
-                  };
+                  final sourceStyle = IngredientSourceStyle.of(
+                    product.ingredientSource,
+                  );
                   final warning = product.ingredientWarnings[ingredient];
                   final isHaramIngredient = product.haramIngredients.contains(
                     ingredient,
@@ -1253,25 +1251,26 @@ class _ResultScreenState extends State<ResultScreen> {
                   final isReported =
                       widget.adminReportedIngredients?.contains(ingredient) ??
                       false;
-                  return Card(
+                  return Container(
                     margin: const EdgeInsets.symmetric(vertical: 4),
-                    color: isReported
-                        ? Colors.orange.shade50
-                        : sourceColor.withAlpha(15),
-                    shape: isReported
-                        ? RoundedRectangleBorder(
-                            side: BorderSide(
-                              color: Colors.orange.shade400,
-                              width: 1.5,
-                            ),
-                            borderRadius: BorderRadius.circular(12),
-                          )
-                        : null,
+                    decoration: BoxDecoration(
+                      color: isReported
+                          ? Colors.orange.shade50
+                          : sourceStyle.fillColor,
+                      border: Border.all(
+                        color: isReported
+                            ? Colors.orange.shade400
+                            : sourceStyle.borderColor,
+                        width: isReported ? 1.5 : 1,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         ListTile(
+                          tileColor: Colors.transparent,
                           leading: Icon(
                             warning != null
                                 ? (isHaramIngredient
@@ -3795,30 +3794,48 @@ class _IngredientReportSheetState extends State<_IngredientReportSheet> {
   }
 }
 
+/// Shared palette for the ingredient-source badge and ingredient list cards.
+class IngredientSourceStyle {
+  const IngredientSourceStyle._(this.label, this.color);
+
+  final String label;
+  final Color color;
+
+  Color get fillColor => color.withAlpha(25);
+  Color get borderColor => color.withAlpha(100);
+
+  static IngredientSourceStyle of(String? source) {
+    return switch (source) {
+      'ai' => const IngredientSourceStyle._('AI', Color(0xFF7C3AED)),
+      'community' => const IngredientSourceStyle._(
+        'Community',
+        Color(0xFF0D9488),
+      ),
+      _ => const IngredientSourceStyle._('OFF', Color(0xFF6B7280)),
+    };
+  }
+}
+
 class _IngredientSourceBadge extends StatelessWidget {
   const _IngredientSourceBadge({required this.source});
   final String source;
 
   @override
   Widget build(BuildContext context) {
-    final (label, color) = switch (source) {
-      'ai' => ('AI', const Color(0xFF7C3AED)),
-      'community' => ('Community', const Color(0xFF0D9488)),
-      _ => ('OFF', const Color(0xFF6B7280)),
-    };
+    final style = IngredientSourceStyle.of(source);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
       decoration: BoxDecoration(
-        color: color.withAlpha(25),
-        border: Border.all(color: color.withAlpha(100)),
+        color: style.fillColor,
+        border: Border.all(color: style.borderColor),
         borderRadius: BorderRadius.circular(6),
       ),
       child: Text(
-        label,
+        style.label,
         style: TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.w600,
-          color: color,
+          color: style.color,
           letterSpacing: 0.3,
         ),
       ),

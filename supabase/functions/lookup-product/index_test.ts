@@ -6,6 +6,7 @@
 //   2. Server-side error logging when AI calls fail
 
 import { assertEquals, assertMatch } from 'https://deno.land/std@0.224.0/assert/mod.ts'
+import { withCommunitySource } from './community.ts'
 
 // ── inline copies of the pure functions under test ───────────────────────────
 // We copy them here rather than importing from index.ts to keep the test file
@@ -287,4 +288,22 @@ Deno.test('unicode boundary — lactosérum does not false-positive on "rum"', (
 Deno.test('unicode boundary — standalone rum is still haram', () => {
   const r = keywordAnalysis(['rum', 'sugar'])
   assertEquals(r.isHalal, false)
+})
+
+// ── community ingredient source ───────────────────────────────────────────────
+
+Deno.test('withCommunitySource — overrides OFF source when approved list exists', () => {
+  const row = {
+    barcode: '8690766143732',
+    ingredient_source: 'off',
+    ingredients: ['off ingredient a', 'off ingredient b'],
+  }
+  const enriched = withCommunitySource(row, ['community sugar', 'community cocoa'])
+  assertEquals(enriched.ingredient_source, 'community')
+  assertEquals(enriched.ingredients, ['community sugar', 'community cocoa'])
+})
+
+Deno.test('withCommunitySource — leaves row unchanged when no approved list', () => {
+  const row = { barcode: '123', ingredient_source: 'off', ingredients: ['water'] }
+  assertEquals(withCommunitySource(row, null), row)
 })
