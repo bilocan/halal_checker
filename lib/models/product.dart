@@ -27,6 +27,11 @@ class Product {
   /// that predate this field.
   final String? analysisMethod;
 
+  /// Where the ingredient list came from: 'off' (OpenFoodFacts), 'ai' (Gemini
+  /// lookup when OFF had no data), or 'community' (approved contribution).
+  /// Null for legacy records that predate this field.
+  final String? ingredientSource;
+
   /// True when the product was identified as an animal-derived food but has
   /// no halal certification label. The UI uses this flag to show a localized
   /// "requires halal cert" explanation instead of a hardcoded English string.
@@ -68,6 +73,7 @@ class Product {
     this.explanation = '',
     this.analyzedByAI = false,
     this.analysisMethod,
+    this.ingredientSource,
     this.requiresHalalCert = false,
     this.isManaged = false,
     this.updatedAt,
@@ -94,6 +100,7 @@ class Product {
     String? explanation,
     bool? analyzedByAI,
     String? analysisMethod,
+    String? ingredientSource,
     bool? requiresHalalCert,
     bool? isManaged,
     DateTime? updatedAt,
@@ -119,6 +126,7 @@ class Product {
     explanation: explanation ?? this.explanation,
     analyzedByAI: analyzedByAI ?? this.analyzedByAI,
     analysisMethod: analysisMethod ?? this.analysisMethod,
+    ingredientSource: ingredientSource ?? this.ingredientSource,
     requiresHalalCert: requiresHalalCert ?? this.requiresHalalCert,
     isManaged: isManaged ?? this.isManaged,
     updatedAt: updatedAt ?? this.updatedAt,
@@ -146,6 +154,7 @@ class Product {
     'explanation': explanation,
     'analyzedByAI': analyzedByAI,
     if (analysisMethod != null) 'analysisMethod': analysisMethod,
+    if (ingredientSource != null) 'ingredientSource': ingredientSource,
     if (requiresHalalCert) 'requiresHalalCert': requiresHalalCert,
     if (isManaged) 'isManaged': isManaged,
     if (updatedAt != null) 'updatedAt': updatedAt!.toIso8601String(),
@@ -181,6 +190,7 @@ class Product {
     explanation: json['explanation'] as String? ?? '',
     analyzedByAI: json['analyzedByAI'] as bool? ?? false,
     analysisMethod: json['analysisMethod'] as String?,
+    ingredientSource: json['ingredientSource'] as String?,
     requiresHalalCert: json['requiresHalalCert'] as bool? ?? false,
     isManaged: json['isManaged'] as bool? ?? false,
     updatedAt: json['updatedAt'] != null

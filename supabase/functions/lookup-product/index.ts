@@ -11,7 +11,7 @@ const OPF_BASE = 'https://world.openproductsfacts.org/api/v0/product'
 const CLAUDE_URL = 'https://api.anthropic.com/v1/messages'
 const CLAUDE_MODEL = 'claude-haiku-4-5'
 const GEMINI_URL_BASE = 'https://generativelanguage.googleapis.com/v1beta/models'
-const GEMINI_MODEL = 'gemini-2.0-flash'
+const GEMINI_MODEL = 'gemini-2.5-flash'
 
 const CLAUDE_SYSTEM = `You are an expert in Islamic dietary laws (halal). Analyze ingredient lists and determine if a product is halal.
 
@@ -286,6 +286,7 @@ function toProduct(row: Record<string, any>) {
     explanation:           row.explanation,
     analyzedByAI:          row.analyzed_by_ai,
     analysisMethod:        row.analyzed_by_ai ? 'ai' : 'keyword',
+    ingredientSource:      row.ingredient_source ?? 'off',
     requiresHalalCert:     row.requires_halal_cert ?? false,
     isManaged:             row.is_managed ?? false,
     updatedAt:             row.updated_at ?? null,
@@ -309,7 +310,7 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json()
-    const { barcode, force = false } = body
+    const { barcode, force = false, fetchAiIngredients = false } = body
     if (!barcode || typeof barcode !== 'string') {
       return new Response(
         JSON.stringify({ error: 'barcode is required' }),
@@ -344,7 +345,8 @@ Deno.serve(async (req) => {
     //   • caller requested a force refresh on an already-known product.
     // OFf is only ever fetched on the very first scan (cached === null below).
     // Unknown products with force=true fall through so OFf can be retried.
-    if (cached && (isStale(cached) || (force && !cached.is_unknown))) {
+    // fetchAiIngredients bypasses this path entirely so Gemini lookup can run.
+    if (!fetchAiIngredients && cached && (isStale(cached) || (force && !cached.is_unknown))) {
       const reason = isStale(cached) ? 'stale (updated_at > last_analysed_at)' : 'force-refresh'
       console.log(`[${barcode}] ${reason} — re-running rules engine on stored data`)
 
@@ -404,6 +406,7 @@ Deno.serve(async (req) => {
         is_managed:            cached.is_managed,
         last_analysed_at:      new Date().toISOString(),
         fetched_at:            cached.fetched_at,
+        ingredient_source:     cached.ingredient_source ?? 'off',
       }
 
       await supabase.from('products').upsert({
@@ -420,6 +423,7 @@ Deno.serve(async (req) => {
         is_managed:            cached.is_managed,
         last_analysed_at:      new Date().toISOString(),
         fetched_at:            cached.fetched_at,
+        ingredient_source:     cached.ingredient_source ?? 'off',
       })
 
       await supabase.from('product_analysis').upsert({
@@ -441,7 +445,7 @@ Deno.serve(async (req) => {
       )
     }
 
-    if (cached && !force) {
+    if (!fetchAiIngredients && cached && !force) {
       return new Response(
         JSON.stringify({ product: toProduct(cached) }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
@@ -493,10 +497,51 @@ Deno.serve(async (req) => {
 
     const name: string = (pd.product_name?.trim() || pd.product_name_en?.trim() || pd.abbreviated_product_name?.trim() || 'Unknown Product')
     const ingredientsText = extractIngredientsText(pd)
-    const ingredients: string[] = ingredientsText
+    let ingredients: string[] = ingredientsText
       .split(/[,;]/)
       .map((s: string) => s.trim())
       .filter((s: string) => s.length > 0)
+
+    let ingredientSource: 'off' | 'ai' | 'community' = ingredients.length > 0 ? 'off' : 'off'
+
+    // Gemini knowledge lookup — when OFF has no ingredient text, ask Gemini to recall
+    // the ingredient list from its training data. No web search, no halal verdict — just ingredients.
+    if (ingredients.length === 0 && name !== 'Unknown Product') {
+      const _geminiEnabled = Deno.env.get('GEMINI_ENABLED') !== 'false'
+      const _geminiKey = Deno.env.get('GEMINI_API_KEY')
+      if (_geminiEnabled && _geminiKey) {
+        console.log(`[${barcode}] Gemini ingredient lookup: asking for ingredients of "${name}"...`)
+        try {
+          const lookupRes = await fetch(
+            `${GEMINI_URL_BASE}/${GEMINI_MODEL}:generateContent?key=${_geminiKey}`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                contents: [{ parts: [{ text: `What are the ingredients of the food product "${name}" (barcode: ${barcode})? If you know the ingredient list, respond with ONLY a comma-separated list of ingredients in English, nothing else. If you do not know, respond with exactly: UNKNOWN` }] }],
+                generationConfig: { maxOutputTokens: 512, temperature: 0 },
+              }),
+            },
+          )
+          if (lookupRes.ok) {
+            const ld = await lookupRes.json()
+            const text: string = (ld.candidates?.[0]?.content?.parts?.[0]?.text ?? '').trim()
+            const usage = ld.usageMetadata
+            console.log(`[${barcode}] Gemini ingredient lookup: response="${text.slice(0, 120)}" prompt=${usage?.promptTokenCount ?? '?'} total=${usage?.totalTokenCount ?? '?'} tokens`)
+            if (text && text.toUpperCase() !== 'UNKNOWN') {
+              ingredients = text.split(',').map((s: string) => s.trim()).filter((s: string) => s.length > 0)
+              ingredientSource = 'ai'
+              console.log(`[${barcode}] Gemini ingredient lookup: found ${ingredients.length} ingredients`)
+            }
+          } else {
+            const errBody = await lookupRes.text()
+            console.error(`[${barcode}] Gemini ingredient lookup: HTTP ${lookupRes.status} — ${errBody}`)
+          }
+        } catch (e) {
+          console.error(`[${barcode}] Gemini ingredient lookup: exception:`, e)
+        }
+      }
+    }
 
     const labelSet = new Set<string>()
     const addLabels = (v: unknown) => {
@@ -827,6 +872,7 @@ Deno.serve(async (req) => {
       barcode,
       name,
       ingredients,
+      ingredient_source:      ingredientSource,
       is_halal:               isHalal,
       is_unknown:             isUnknown,
       is_non_food:            isNonFood,
@@ -849,6 +895,7 @@ Deno.serve(async (req) => {
       barcode,
       name,
       ingredients,
+      ingredient_source:      ingredientSource,
       is_non_food:            isNonFood,
       labels,
       // Preserve community-approved image URLs — never overwrite them with OFF URLs.

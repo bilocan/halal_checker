@@ -7,7 +7,7 @@ const CLAUDE_URL = 'https://api.anthropic.com/v1/messages'
 const CLAUDE_MODEL = 'claude-haiku-4-5'
 
 const GEMINI_URL_BASE = 'https://generativelanguage.googleapis.com/v1beta/models'
-const GEMINI_MODEL = 'gemini-2.0-flash'
+const GEMINI_MODEL = 'gemini-2.5-flash'
 
 const OCR_SYSTEM = `You are an OCR assistant specialized in reading food product ingredient labels.
 Given an image of a food product label, extract ONLY the ingredient list text.

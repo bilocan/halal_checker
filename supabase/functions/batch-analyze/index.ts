@@ -13,7 +13,7 @@ const corsHeaders = {
 }
 
 const GEMINI_URL_BASE     = 'https://generativelanguage.googleapis.com/v1beta/models'
-const GEMINI_MODEL        = 'gemini-2.0-flash'
+const GEMINI_MODEL        = 'gemini-2.5-flash'
 const CLAUDE_URL          = 'https://api.anthropic.com/v1/messages'
 const CLAUDE_MODEL        = 'claude-sonnet-4-6'
 const DEFAULT_BATCH_LIMIT = 10

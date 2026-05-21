@@ -412,6 +412,7 @@ class ProductService {
         'analysisMethod': (row['analyzed_by_ai'] as bool? ?? false)
             ? 'ai'
             : 'keyword',
+        'ingredientSource': row['ingredient_source'],
         'requiresHalalCert': row['requires_halal_cert'] ?? false,
         'isManaged': row['is_managed'] ?? false,
         'updatedAt': row['updated_at'],
@@ -427,16 +428,32 @@ class ProductService {
   Future<Product?> _fetchFromBackend(
     String barcode, {
     bool force = false,
+    bool fetchAiIngredients = false,
   }) async {
-    final result = await _fetchFromBackendOnce(barcode, force: force);
+    final result = await _fetchFromBackendOnce(
+      barcode,
+      force: force,
+      fetchAiIngredients: fetchAiIngredients,
+    );
     if (result != null) return result;
     debugPrint('[Backend $barcode] retrying once...');
-    return _fetchFromBackendOnce(barcode, force: force);
+    return _fetchFromBackendOnce(
+      barcode,
+      force: force,
+      fetchAiIngredients: fetchAiIngredients,
+    );
+  }
+
+  Future<Product?> fetchIngredientsByAI(String barcode) async {
+    final product = await _fetchFromBackend(barcode, fetchAiIngredients: true);
+    if (product != null) await _cache.saveProduct(barcode, product);
+    return product;
   }
 
   Future<Product?> _fetchFromBackendOnce(
     String barcode, {
     bool force = false,
+    bool fetchAiIngredients = false,
   }) async {
     if (!_hasSupabase) return null;
     try {
@@ -447,7 +464,11 @@ class ProductService {
               'Authorization': 'Bearer $_supabaseKey',
               'Content-Type': 'application/json',
             },
-            body: jsonEncode({'barcode': barcode, if (force) 'force': true}),
+            body: jsonEncode({
+              'barcode': barcode,
+              if (force) 'force': true,
+              if (fetchAiIngredients) 'fetchAiIngredients': true,
+            }),
           )
           .timeout(const Duration(seconds: 30));
       debugPrint('[Backend $barcode] HTTP ${response.statusCode}');
@@ -588,9 +609,11 @@ class ProductService {
       final safe = _applyKeywordSafety(
         _mergeApprovedImages(backendProduct, dbProduct),
       );
-      // Fall through to Step 4 only when the backend returned unknown —
-      // OBF/OPF cross-check may confirm the product is non-food.
-      if (!safe.isUnknown) {
+      // Fall through to Step 4 only when the backend returned unknown AND has
+      // no ingredients — OBF/OPF cross-check may confirm the product is non-food.
+      // If the backend already found ingredients (e.g. via Gemini lookup), keep
+      // that result even if the verdict is still unknown.
+      if (!safe.isUnknown || safe.ingredients.isNotEmpty) {
         await _cache.saveProduct(barcode, safe);
         if (kDebugMode && hadStaleTestFixture) {
           await TestProductRepository.instance.upsert(safe);
@@ -598,7 +621,7 @@ class ProductService {
         return safe;
       }
       debugPrint(
-        '[Lookup $barcode] Step 3 returned unknown — falling to Step 4',
+        '[Lookup $barcode] Step 3 returned unknown with no ingredients — falling to Step 4',
       );
     }
 

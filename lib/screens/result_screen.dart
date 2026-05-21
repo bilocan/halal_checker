@@ -57,6 +57,7 @@ class _ResultScreenState extends State<ResultScreen> {
   List<FeedbackItem> _feedbacks = [];
   bool _isLoadingFeedback = false;
   bool _isRefreshing = false;
+  bool _isFetchingAiIngredients = false;
   ProductImageType? _uploadingImageType;
   bool _showTranslated = false;
   String _note = '';
@@ -491,6 +492,40 @@ class _ResultScreenState extends State<ResultScreen> {
       if (mounted) {
         setState(() => _isLoadingFeedback = false);
       }
+    }
+  }
+
+  Future<void> _fetchIngredientsByAI() async {
+    if (_isFetchingAiIngredients) return;
+    setState(() => _isFetchingAiIngredients = true);
+    try {
+      final product = await _productService.fetchIngredientsByAI(
+        widget.barcode,
+      );
+      if (!mounted) return;
+      if (product != null) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) =>
+                ResultScreen(product: product, barcode: widget.barcode),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('AI could not find ingredients for this product.'),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('AI ingredient lookup failed.')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isFetchingAiIngredients = false);
     }
   }
 
@@ -1146,6 +1181,9 @@ class _ResultScreenState extends State<ResultScreen> {
                       color: Colors.grey.shade900,
                     ),
                   ),
+                  const SizedBox(width: 8),
+                  if (product.ingredientSource != null)
+                    _IngredientSourceBadge(source: product.ingredientSource!),
                   const Spacer(),
                   if (product.ingredientTranslations.isNotEmpty)
                     TextButton.icon(
@@ -1192,6 +1230,11 @@ class _ResultScreenState extends State<ResultScreen> {
                 _buildMissingIngredientActions(product, loc),
               ] else
                 ...ingredients.map((ingredient) {
+                  final sourceColor = switch (product.ingredientSource) {
+                    'ai' => const Color(0xFF7C3AED),
+                    'community' => const Color(0xFF0D9488),
+                    _ => const Color(0xFF6B7280),
+                  };
                   final warning = product.ingredientWarnings[ingredient];
                   final isHaramIngredient = product.haramIngredients.contains(
                     ingredient,
@@ -1212,7 +1255,9 @@ class _ResultScreenState extends State<ResultScreen> {
                       false;
                   return Card(
                     margin: const EdgeInsets.symmetric(vertical: 4),
-                    color: isReported ? Colors.orange.shade50 : null,
+                    color: isReported
+                        ? Colors.orange.shade50
+                        : sourceColor.withAlpha(15),
                     shape: isReported
                         ? RoundedRectangleBorder(
                             side: BorderSide(
@@ -2277,6 +2322,64 @@ class _ResultScreenState extends State<ResultScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        // AI ingredient lookup card
+        Card(
+          color: const Color(0xFFF5F3FF),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.auto_awesome, color: Color(0xFF7C3AED)),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text(
+                        'Find ingredients via AI',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF5B21B6),
+                          fontSize: 15,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Ask AI to recall the ingredient list from its training data.',
+                  style: TextStyle(color: Color(0xFF6D28D9), fontSize: 13),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    icon: _isFetchingAiIngredients
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Icon(Icons.auto_awesome, size: 18),
+                    label: const Text('Find via AI'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF7C3AED),
+                      foregroundColor: Colors.white,
+                    ),
+                    onPressed: _isFetchingAiIngredients
+                        ? null
+                        : _fetchIngredientsByAI,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
         // Contribute ingredients card
         Card(
           color: Colors.orange.shade50,
@@ -3687,6 +3790,37 @@ class _IngredientReportSheetState extends State<_IngredientReportSheet> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _IngredientSourceBadge extends StatelessWidget {
+  const _IngredientSourceBadge({required this.source});
+  final String source;
+
+  @override
+  Widget build(BuildContext context) {
+    final (label, color) = switch (source) {
+      'ai' => ('AI', const Color(0xFF7C3AED)),
+      'community' => ('Community', const Color(0xFF0D9488)),
+      _ => ('OFF', const Color(0xFF6B7280)),
+    };
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withAlpha(25),
+        border: Border.all(color: color.withAlpha(100)),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          color: color,
+          letterSpacing: 0.3,
+        ),
       ),
     );
   }
