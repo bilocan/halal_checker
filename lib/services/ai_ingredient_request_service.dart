@@ -57,6 +57,16 @@ class AiIngredientRequestService {
     return List<Map<String, dynamic>>.from(res as List);
   }
 
+  /// Returns all approved AI ingredient requests.
+  static Future<List<Map<String, dynamic>>> getApprovedRequests() async {
+    final res = await _client
+        .from('ai_ingredient_requests')
+        .select()
+        .eq('status', 'approved')
+        .order('created_at', ascending: false);
+    return List<Map<String, dynamic>>.from(res as List);
+  }
+
   /// Updates the status of a request (admin action).
   static Future<bool> updateStatus(int id, String status) async {
     final userId = _client.auth.currentUser?.id;

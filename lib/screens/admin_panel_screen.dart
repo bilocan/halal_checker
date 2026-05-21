@@ -53,6 +53,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
   List<Map<String, dynamic>> _aiRequests = [];
   bool _aiRequestsLoading = false;
   final Set<int> _processingAiRequestIds = {};
+  String _aiRequestFilter = 'pending';
 
   @override
   void initState() {
@@ -180,7 +181,9 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
 
   Future<void> _loadAiRequests() async {
     setState(() => _aiRequestsLoading = true);
-    final list = await AiIngredientRequestService.getPendingRequests();
+    final list = _aiRequestFilter == 'approved'
+        ? await AiIngredientRequestService.getApprovedRequests()
+        : await AiIngredientRequestService.getPendingRequests();
     if (!mounted) return;
     setState(() {
       _aiRequests = list;
@@ -225,6 +228,41 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
         const SnackBar(content: Text('Failed to update — check Supabase logs')),
       );
     }
+    setState(() => _processingAiRequestIds.remove(id));
+  }
+
+  Future<void> _reApproveAiRequest(int id) async {
+    setState(() => _processingAiRequestIds.add(id));
+
+    final request = _aiRequests.firstWhere(
+      (r) => (r['id'] as num).toInt() == id,
+      orElse: () => <String, dynamic>{},
+    );
+    final barcode = request['barcode'] as String?;
+
+    if (barcode == null || barcode.isEmpty) {
+      setState(() => _processingAiRequestIds.remove(id));
+      return;
+    }
+
+    unawaited(CacheService().removeProduct(barcode));
+    unawaited(
+      ProductService().fetchIngredientsByAI(barcode).then((product) {
+        if (product != null) {
+          debugPrint(
+            '[AdminPanel] Re-approved AI fetch for $barcode: '
+            '${product.ingredients.length} ingredients',
+          );
+        } else {
+          debugPrint('[AdminPanel] Re-approved AI fetch failed for $barcode');
+        }
+      }),
+    );
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Re-fetching AI ingredients for $barcode…')),
+    );
     setState(() => _processingAiRequestIds.remove(id));
   }
 
@@ -758,44 +796,85 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
   // ── AI requests tab ───────────────────────────────────────────────────────
 
   Widget _buildAiRequestsBody() {
-    if (_aiRequestsLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-    if (_aiRequests.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.check_circle_outline,
-              size: 56,
-              color: Colors.grey.shade400,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'No pending AI ingredient requests',
-              style: TextStyle(color: Colors.grey.shade500),
-            ),
-          ],
+    final isPending = _aiRequestFilter == 'pending';
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
+          child: Row(
+            children: [
+              _aiFilterChip('Pending', 'pending'),
+              const SizedBox(width: 8),
+              _aiFilterChip('Approved', 'approved'),
+            ],
+          ),
         ),
-      );
-    }
-    return RefreshIndicator(
-      onRefresh: _loadAiRequests,
-      child: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: _aiRequests.length,
-        itemBuilder: (_, i) {
-          final row = _aiRequests[i];
-          final id = (row['id'] as num).toInt();
-          return _AiRequestCard(
-            row: row,
-            isProcessing: _processingAiRequestIds.contains(id),
-            onApprove: () => _reviewAiRequest(id, 'approved'),
-            onReject: () => _reviewAiRequest(id, 'rejected'),
-          );
-        },
+        Expanded(
+          child: _aiRequestsLoading
+              ? const Center(child: CircularProgressIndicator())
+              : _aiRequests.isEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.check_circle_outline,
+                        size: 56,
+                        color: Colors.grey.shade400,
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        isPending
+                            ? 'No pending AI ingredient requests'
+                            : 'No approved AI ingredient requests',
+                        style: TextStyle(color: Colors.grey.shade500),
+                      ),
+                    ],
+                  ),
+                )
+              : RefreshIndicator(
+                  onRefresh: _loadAiRequests,
+                  child: ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: _aiRequests.length,
+                    itemBuilder: (_, i) {
+                      final row = _aiRequests[i];
+                      final id = (row['id'] as num).toInt();
+                      return _AiRequestCard(
+                        row: row,
+                        isApproved: !isPending,
+                        isProcessing: _processingAiRequestIds.contains(id),
+                        onApprove: () => _reviewAiRequest(id, 'approved'),
+                        onReject: () => _reviewAiRequest(id, 'rejected'),
+                        onReApprove: () => _reApproveAiRequest(id),
+                      );
+                    },
+                  ),
+                ),
+        ),
+      ],
+    );
+  }
+
+  Widget _aiFilterChip(String label, String value) {
+    final selected = _aiRequestFilter == value;
+    return FilterChip(
+      label: Text(label),
+      selected: selected,
+      onSelected: (_) {
+        setState(() {
+          _aiRequestFilter = value;
+          _aiRequests = [];
+        });
+        _loadAiRequests();
+      },
+      selectedColor: kGreen,
+      labelStyle: TextStyle(
+        color: selected ? Colors.white : null,
+        fontWeight: selected ? FontWeight.w600 : null,
       ),
+      checkmarkColor: Colors.white,
+      visualDensity: VisualDensity.compact,
     );
   }
 
@@ -1580,15 +1659,19 @@ class _IngredientReportCard extends StatelessWidget {
 
 class _AiRequestCard extends StatelessWidget {
   final Map<String, dynamic> row;
+  final bool isApproved;
   final bool isProcessing;
   final VoidCallback onApprove;
   final VoidCallback onReject;
+  final VoidCallback onReApprove;
 
   const _AiRequestCard({
     required this.row,
+    required this.isApproved,
     required this.isProcessing,
     required this.onApprove,
     required this.onReject,
+    required this.onReApprove,
   });
 
   @override
@@ -1659,6 +1742,19 @@ class _AiRequestCard extends StatelessWidget {
                 child: Padding(
                   padding: EdgeInsets.symmetric(vertical: 4),
                   child: CircularProgressIndicator(),
+                ),
+              )
+            else if (isApproved)
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: onReApprove,
+                  icon: const Icon(Icons.refresh, size: 16),
+                  label: const Text('Re-fetch AI Ingredients'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFF7C3AED),
+                    visualDensity: VisualDensity.compact,
+                  ),
                 ),
               )
             else
