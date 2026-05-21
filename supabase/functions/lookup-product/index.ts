@@ -223,18 +223,19 @@ Deno.serve(async (req) => {
     }
 
     const name: string = (pd.product_name?.trim() || pd.product_name_en?.trim() || pd.abbreviated_product_name?.trim() || 'Unknown Product')
+    const brand: string = (pd.brands?.trim() || pd.brand_owner?.trim() || '')
+      .split(',')[0]?.trim() ?? ''
     const ingredientsText = extractIngredientsText(pd)
     let ingredients: string[] = ingredientsText
       .split(/[,;]/)
       .map((s: string) => s.trim())
       .filter((s: string) => s.length > 0)
 
-    console.log(`[${barcode}] OFF: name="${name}" ingredients=${ingredients.length}`)
+    console.log(`[${barcode}] OFF: name="${name}" brand="${brand}" ingredients=${ingredients.length}`)
 
     let ingredientSource: 'off' | 'ai' | 'community' = 'off'
 
-    // 4. Gemini knowledge lookup — when OFF has no ingredient text, ask Gemini to recall
-    // the ingredient list from its training data. No web search, no halal verdict — just ingredients.
+    // 4. Gemini + Google Search — when OFF has no ingredient text, search the web for the list.
     if (ingredients.length === 0 && name !== 'Unknown Product') {
       const geminiEnabled = Deno.env.get('GEMINI_ENABLED') !== 'false'
       const geminiKey = Deno.env.get('GEMINI_API_KEY')
@@ -243,7 +244,7 @@ Deno.serve(async (req) => {
       } else if (!geminiKey) {
         console.log(`[${barcode}] Gemini ingredient lookup: skipped — GEMINI_API_KEY not set`)
       } else {
-        const found = await geminiIngredientLookup(name, barcode, geminiKey)
+        const found = await geminiIngredientLookup(name, barcode, geminiKey, brand)
         if (found.length > 0) { ingredients = found; ingredientSource = 'ai' }
       }
     }

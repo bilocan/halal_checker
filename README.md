@@ -337,7 +337,12 @@ Backend (Supabase)
 
 ```bash
 supabase secrets set CLAUDE_API_KEY=sk-ant-...
+supabase secrets set GEMINI_API_KEY=your_google_ai_studio_key
+# Optional — omit or set to false to disable Gemini (ingredient lookup + halal tier-1)
+supabase secrets set GEMINI_ENABLED=true
 ```
+
+Gemini ingredient lookup uses **Grounding with Google Search** (billable on the Gemini API). Use the same Google AI Studio project/key you test with in chat, with billing enabled if searches return no `groundingMetadata` in Edge Function logs.
 
 ### Database migrations
 

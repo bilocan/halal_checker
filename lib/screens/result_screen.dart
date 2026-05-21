@@ -2382,7 +2382,7 @@ class _ResultScreenState extends State<ResultScreen> {
                       ? 'AI lookup requested — an admin will review and approve it shortly.'
                       : _aiRequestStatus == 'rejected'
                       ? 'The AI request was rejected by an admin.'
-                      : 'Ask AI to recall the ingredient list from its training data.',
+                      : 'Ask AI to search the web for this product\'s ingredient list.',
                   style: TextStyle(
                     color: _aiRequestStatus == 'rejected'
                         ? Colors.red.shade700
