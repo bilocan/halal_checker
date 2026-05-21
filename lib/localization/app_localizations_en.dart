@@ -1,0 +1,857 @@
+// ignore: unused_import
+import 'package:intl/intl.dart' as intl;
+import 'app_localizations.dart';
+
+// ignore_for_file: type=lint
+
+/// The translations for English (`en`).
+class AppLocalizationsEn extends AppLocalizations {
+  AppLocalizationsEn([String locale = 'en']) : super(locale);
+
+  @override
+  String get appTitle => 'HalalScan';
+
+  @override
+  String get startTitle => 'HalalScan';
+
+  @override
+  String get home => 'Home';
+
+  @override
+  String get tagline => 'Transparent halal, powered by community.';
+
+  @override
+  String get taglineSubtitle =>
+      'Every ingredient checked and explained — shaped by your feedback.';
+
+  @override
+  String get newScan => 'New Scan';
+
+  @override
+  String get lastResults => 'Last Results';
+
+  @override
+  String get noRecentResults => 'No recent scans saved yet.';
+
+  @override
+  String get noRecentResultsHint => 'Tap the scan button above to get started.';
+
+  @override
+  String get scanButton => 'Start Scan';
+
+  @override
+  String get scanAnotherProduct => 'Scan Another Product';
+
+  @override
+  String get manualEntry => 'Enter barcode manually';
+
+  @override
+  String get enterBarcodeManually => 'Enter barcode manually';
+
+  @override
+  String get cancel => 'Cancel';
+
+  @override
+  String get submit => 'Submit';
+
+  @override
+  String get scanAgain => 'Scan Again';
+
+  @override
+  String get readyToScan => 'Ready to scan';
+
+  @override
+  String get analyzingBarcode => 'Analyzing barcode...';
+
+  @override
+  String get pointCameraAtBarcode =>
+      'Point camera at barcode on product packaging';
+
+  @override
+  String get barcodeNotSupported =>
+      'Barcode detected but format not supported. Try manual entry.';
+
+  @override
+  String get pleaseEnterValidBarcode => 'Please enter a valid barcode.';
+
+  @override
+  String get productNotFound => 'Product not found';
+
+  @override
+  String get noProductImageAvailable => 'No product image available';
+
+  @override
+  String get uploadProductPhoto => 'Upload Photo';
+
+  @override
+  String get uploadPhotoHint =>
+      'Help others by contributing a photo of this product';
+
+  @override
+  String get photoUploaded => 'Photo submitted — thank you!';
+
+  @override
+  String get photoUploadFailed => 'Could not upload photo. Please try again.';
+
+  @override
+  String get additionalImages => 'Additional Images';
+
+  @override
+  String get ingredients => 'Ingredients';
+
+  @override
+  String get flaggedIngredients => 'Flagged Ingredients';
+
+  @override
+  String get mayBeAnimalDerived => 'May Be Animal-Derived';
+
+  @override
+  String get communityFeedback => 'Community Feedback';
+
+  @override
+  String get noFeedbackYet =>
+      'No feedback yet. Be the first to share your thoughts!';
+
+  @override
+  String get provideFeedback => 'Provide Feedback';
+
+  @override
+  String get replyAsProducer => 'Reply as Producer';
+
+  @override
+  String get producerReply => 'Producer Reply';
+
+  @override
+  String get userFeedback => 'User Feedback';
+
+  @override
+  String get imageNotAvailable => 'Image not available';
+
+  @override
+  String get fairTrade => 'Fair Trade';
+
+  @override
+  String get organic => 'Organic';
+
+  @override
+  String get glutenFree => 'Gluten Free';
+
+  @override
+  String get vegetarian => 'Vegetarian';
+
+  @override
+  String get vegan => 'Vegan';
+
+  @override
+  String get halal => 'HALAL';
+
+  @override
+  String get notHalal => 'HARAM';
+
+  @override
+  String get lastScanned => 'Last scanned';
+
+  @override
+  String get today => 'Today';
+
+  @override
+  String get yesterday => 'Yesterday';
+
+  @override
+  String daysAgo(int count) {
+    return '$count days ago';
+  }
+
+  @override
+  String errorFetchingProduct(String error) {
+    return 'Error fetching product: $error';
+  }
+
+  @override
+  String get productCouldNotBeRefreshed => 'Could not refresh product data';
+
+  @override
+  String get thankYouFeedback => 'Thank you for your feedback!';
+
+  @override
+  String errorSubmittingFeedback(String error) {
+    return 'Error submitting feedback: $error';
+  }
+
+  @override
+  String get replySubmitted => 'Reply submitted successfully!';
+
+  @override
+  String get noResultsSaved => 'No saved scan history yet.';
+
+  @override
+  String get language => 'Language';
+
+  @override
+  String get english => 'English';
+
+  @override
+  String get turkish => 'Türkçe';
+
+  @override
+  String get german => 'Deutsch';
+
+  @override
+  String get scanHistoryTitle => 'Recent scans';
+
+  @override
+  String get filterScan => 'Scan product or enter barcode';
+
+  @override
+  String get openResult => 'Open result';
+
+  @override
+  String get resultTitle => 'Result';
+
+  @override
+  String get noIngredientData => 'No ingredient data available.';
+
+  @override
+  String get foundInIngredients => 'Found in product ingredients.';
+
+  @override
+  String get mayBeAnimalDerivedNote => 'May be animal-derived.';
+
+  @override
+  String get couldNotLoadFeedback => 'Could not load feedback.';
+
+  @override
+  String get couldNotSubmitFeedback => 'Could not submit feedback.';
+
+  @override
+  String get couldNotSubmitReply => 'Could not submit reply.';
+
+  @override
+  String get couldNotRefreshProduct => 'Could not refresh product data.';
+
+  @override
+  String get attachFiles => 'Attach Files';
+
+  @override
+  String get feedbackInputHint => 'Your feedback...';
+
+  @override
+  String get replyInputHint => 'Your reply...';
+
+  @override
+  String get submitReply => 'Submit Reply';
+
+  @override
+  String get refreshTooltip => 'Refresh product data';
+
+  @override
+  String get feedbackDialogHint =>
+      'Help improve our halal assessment by providing feedback about this product.';
+
+  @override
+  String get replyDialogHint =>
+      'Provide an official response to this feedback.';
+
+  @override
+  String get aiAnalysis => 'AI Analysis';
+
+  @override
+  String get keywordAnalysis => 'Keyword Analysis';
+
+  @override
+  String get analysisTransparency => 'Analysis Transparency';
+
+  @override
+  String get transparentSummary => 'Decision summary';
+
+  @override
+  String get transparentResult => 'Result';
+
+  @override
+  String get transparentIngredientsChecked => 'Ingredients checked';
+
+  @override
+  String get transparentRulesChecked => 'Rules checked';
+
+  @override
+  String transparentRulesAvailable(int count) {
+    return '$count rules available (nothing to check)';
+  }
+
+  @override
+  String get transparentFlagged => 'Flagged';
+
+  @override
+  String get transparentSuspicious => 'Needs verification';
+
+  @override
+  String get transparentNoMatches => 'No rule matches found';
+
+  @override
+  String get transparentNoIngredients =>
+      'No ingredient text was available to check';
+
+  @override
+  String get transparentExplanation => 'Explanation';
+
+  @override
+  String get contributeIngredients => 'Add Ingredients';
+
+  @override
+  String get contributeIngredientsHint =>
+      'No ingredient data found. Help the community by adding the ingredients from the packaging.';
+
+  @override
+  String get ingredientTextLabel => 'Ingredient text';
+
+  @override
+  String get ingredientTextHint =>
+      'Type or paste the ingredient list from the packaging';
+
+  @override
+  String get ingredientSubmitted =>
+      'Thank you! Ingredients submitted — the product will be re-analysed.';
+
+  @override
+  String get ingredientSubmitFailed =>
+      'Could not submit ingredients. Please try again.';
+
+  @override
+  String get improveOnOpenFoodFacts => 'Edit on OpenFoodFacts';
+
+  @override
+  String get improveOnOpenFoodFactsHint =>
+      'Help improve this product for everyone by adding data directly on OpenFoodFacts.';
+
+  @override
+  String get extractingIngredients => 'Reading ingredients from image…';
+
+  @override
+  String get ocrFailed =>
+      'Could not read ingredients from the image. You can type them manually below.';
+
+  @override
+  String get ocrSuccess =>
+      'Ingredients extracted — please review before submitting.';
+
+  @override
+  String get productImages => 'Product images';
+
+  @override
+  String get extractFromExistingImage => 'Pick from gallery';
+
+  @override
+  String get takePhotoOfIngredients => 'Take photo of ingredients';
+
+  @override
+  String get cameraError =>
+      'Could not open camera. Please check camera permissions.';
+
+  @override
+  String get noIngredientsImageHint =>
+      'No ingredients image available for this product. Please take a photo of the ingredient list on the packaging.';
+
+  @override
+  String get ocrNoIngredientsFound =>
+      'No ingredient list found in the available images. Please take a photo of the ingredient label instead.';
+
+  @override
+  String get viewAllCheckedKeywords => 'View all checked keywords';
+
+  @override
+  String get haramKeywordsChecked => 'Haram Ingredients We Check';
+
+  @override
+  String get suspiciousKeywordsChecked => 'Suspicious Ingredients We Check';
+
+  @override
+  String get transparencyNote =>
+      'Something missing from our list? Let us know via feedback!';
+
+  @override
+  String get recheck => 'Recheck';
+
+  @override
+  String get foundNotFlagged =>
+      'Found in ingredients, but not flagged by the analysis (e.g. fatty alcohol, trace amount, or context-safe use).';
+
+  @override
+  String get fattyAlcoholNote =>
+      'This is a fatty alcohol (e.g. cetyl or stearyl alcohol) — a plant-derived emulsifier. It has no relation to drinking alcohol and is halal.';
+
+  @override
+  String get keywords => 'Keywords';
+
+  @override
+  String get haramTab => 'Haram';
+
+  @override
+  String get suspiciousTab => 'Suspicious';
+
+  @override
+  String get suggestKeyword => 'Suggest a Keyword';
+
+  @override
+  String get suggestKeywordHint =>
+      'Think we\'re missing something? Suggest a keyword and we\'ll review it.';
+
+  @override
+  String get keywordLabel => 'Keyword';
+
+  @override
+  String get keywordHint => 'e.g. lard, ethanol, cochineal';
+
+  @override
+  String get keywordRequired => 'Please enter a keyword.';
+
+  @override
+  String get categoryLabel => 'Category';
+
+  @override
+  String get haramCategory => 'Haram (definitively not permissible)';
+
+  @override
+  String get suspiciousCategory => 'Suspicious (may be animal-derived)';
+
+  @override
+  String get reasonLabel => 'Reason';
+
+  @override
+  String get reasonHint => 'Why should this keyword be added?';
+
+  @override
+  String get reasonRequired => 'Please provide a reason.';
+
+  @override
+  String get suggestionSubmitted =>
+      'Thank you! Your suggestion has been submitted for review.';
+
+  @override
+  String get suggestionError =>
+      'Could not submit suggestion. Please try again.';
+
+  @override
+  String get customBadge => 'custom';
+
+  @override
+  String get nutritionLabel => 'Nutrition';
+
+  @override
+  String get producerReplyWarningTitle => 'Unverified Action';
+
+  @override
+  String get producerReplyWarning =>
+      'Anyone can post using this button — replies are not verified as coming from the actual manufacturer. Proceed only if you are the producer.';
+
+  @override
+  String get proceedAnyway => 'Proceed Anyway';
+
+  @override
+  String get deletedFromHistory => 'Removed from history';
+
+  @override
+  String get undo => 'Undo';
+
+  @override
+  String get explanationClean =>
+      'No ingredients matched known animal-derived or alcohol-related keywords. This is an automated assessment based on ingredient text.';
+
+  @override
+  String explanationSuspiciousOnly(String ingredients) {
+    return 'No definitely haram ingredients found, but $ingredients may be animal-derived. This is an automated assessment based on ingredient text.';
+  }
+
+  @override
+  String get explanationHaram =>
+      'This product contains one or more ingredients that may be animal-derived or alcohol-related. Review the flagged ingredients below for details.';
+
+  @override
+  String get unknown => '? UNKNOWN';
+
+  @override
+  String get noCert => '⚠️ NO CERT';
+
+  @override
+  String get explanationUnknown =>
+      'No ingredient data was found for this product. Halal status cannot be determined — check the packaging directly.';
+
+  @override
+  String get explanationNoCert =>
+      'This is an animal-derived food product without a verified halal certification. Halal slaughter cannot be confirmed — check the packaging for a halal label.';
+
+  @override
+  String get nonFood => 'ℹ️ NOT FOOD';
+
+  @override
+  String get explanationNonFood =>
+      'This is a non-food product. Islamic dietary rules do not apply.';
+
+  @override
+  String get about => 'About';
+
+  @override
+  String get version => 'Version';
+
+  @override
+  String get releaseNotes => 'Release Notes';
+
+  @override
+  String get checkForUpdates => 'Check for Updates';
+
+  @override
+  String get upToDate => 'You\'re up to date!';
+
+  @override
+  String get installed => 'Installed';
+
+  @override
+  String get store => 'Store';
+
+  @override
+  String get privacyPolicy => 'Privacy Policy';
+
+  @override
+  String get latest => 'Latest';
+
+  @override
+  String get updateAvailable => 'Update Available';
+
+  @override
+  String get updateNow => 'Update Now';
+
+  @override
+  String get reportWrongResult => 'Report Wrong Result';
+
+  @override
+  String get reportWrongResultTitle => 'Is this result wrong?';
+
+  @override
+  String get reportWrongResultSubtitle =>
+      'Tell us what it should be. We\'ll create a bug report and fix it.';
+
+  @override
+  String get currentResultLabel => 'Current result';
+
+  @override
+  String get expectedResultLabel => 'What should it be?';
+
+  @override
+  String get optionalNote => 'Optional note (e.g. why you think so)';
+
+  @override
+  String get reportSubmitted => 'Bug report submitted — thank you!';
+
+  @override
+  String get reportFailed => 'Could not submit report. Try again later.';
+
+  @override
+  String get reportResultHalal => 'Halal';
+
+  @override
+  String get reportResultHaram => 'Not Halal';
+
+  @override
+  String get reportResultNonFood => 'Non-Food';
+
+  @override
+  String get reportResultUnknown => 'Unknown';
+
+  @override
+  String get myNote => 'My Note';
+
+  @override
+  String get noteHint => 'e.g. ask producer about E471, check later...';
+
+  @override
+  String get noteSaved => 'Note saved';
+
+  @override
+  String get checkLater => 'Check later';
+
+  @override
+  String get flaggedOnly => 'Flagged only';
+
+  @override
+  String get allScans => 'All scans';
+
+  @override
+  String get deepAnalysis => 'Deep Analysis';
+
+  @override
+  String get analyse => 'Analyse';
+
+  @override
+  String get perIngredientAiAnalysis =>
+      'Per-ingredient AI analysis with Islamic basis';
+
+  @override
+  String get communityDiscussion => 'Community Discussion';
+
+  @override
+  String get noDiscussionsYet => 'No discussions yet — start one';
+
+  @override
+  String get analysisQueued =>
+      'Analysis queued — results will appear after admin review.';
+
+  @override
+  String get analysisFailed => 'Analysis failed — please try again.';
+
+  @override
+  String get signInToDiscuss => 'Sign in to start a discussion.';
+
+  @override
+  String get signInToChallenge => 'Sign in to submit a challenge.';
+
+  @override
+  String get discussions => 'Discussions';
+
+  @override
+  String get challenges => 'Challenges';
+
+  @override
+  String get newDiscussion => 'New Discussion';
+
+  @override
+  String get halalDirectory => 'Halal Directory';
+
+  @override
+  String get signInFailed => 'Sign-in failed. Please try again.';
+
+  @override
+  String get newVersionAvailable => 'A new version is available';
+
+  @override
+  String get signIn => 'Sign in';
+
+  @override
+  String get signOut => 'Sign out';
+
+  @override
+  String get signedIn => 'Signed in';
+
+  @override
+  String get adminPanel => 'Admin panel';
+
+  @override
+  String get noDiscussionsHint => 'Be the first to start one!';
+
+  @override
+  String get analysisTab => 'Analysis';
+
+  @override
+  String get rulesEngineTab => 'Rules Engine';
+
+  @override
+  String get photosTab => 'Photos';
+
+  @override
+  String get ingredientsTab => 'Ingredients';
+
+  @override
+  String get customRulesTab => 'Custom';
+
+  @override
+  String get builtInRulesTab => 'Built-in';
+
+  @override
+  String get suggestionsTab => 'Suggestions';
+
+  @override
+  String get searchRules => 'Search rules...';
+
+  @override
+  String get noCustomRules => 'No custom rules yet';
+
+  @override
+  String get noMatchingRules => 'No matching rules found';
+
+  @override
+  String get noSuggestions => 'No pending suggestions';
+
+  @override
+  String get addRule => 'Add Rule';
+
+  @override
+  String get editRule => 'Edit Rule';
+
+  @override
+  String get delete => 'Delete';
+
+  @override
+  String get deleteRuleTitle => 'Delete Rule';
+
+  @override
+  String deleteRuleConfirm(String keyword) {
+    return 'Remove \"$keyword\" from the rules?';
+  }
+
+  @override
+  String get ruleCreated => 'Rule created successfully';
+
+  @override
+  String get ruleCreateFailed => 'Could not create rule. Please try again.';
+
+  @override
+  String get ruleUpdated => 'Rule updated successfully';
+
+  @override
+  String get ruleUpdateFailed => 'Could not update rule. Please try again.';
+
+  @override
+  String get ruleDeleted => 'Rule deleted';
+
+  @override
+  String get ruleDeleteFailed => 'Could not delete rule. Please try again.';
+
+  @override
+  String get createRule => 'Create Rule';
+
+  @override
+  String get updateRule => 'Update Rule';
+
+  @override
+  String get variantsLabel => 'Variants';
+
+  @override
+  String get variantsHint => 'e.g. schmalz, domuz yağı, saindoux';
+
+  @override
+  String get variantsHelperText =>
+      'Comma-separated multilingual variants for matching';
+
+  @override
+  String get suggestVariantsLabel => 'Other languages (optional)';
+
+  @override
+  String get suggestVariantsHint => 'e.g. schwein, domuz, porc';
+
+  @override
+  String get suggestVariantsHelperText =>
+      'Comma-separated spellings in other languages for the same ingredient';
+
+  @override
+  String get translationsLabel => 'Translations by locale';
+
+  @override
+  String get translationsHint => 'de: schwein\ntr: domuz';
+
+  @override
+  String get translationsHelperText =>
+      'One per line: locale code and term (de, tr, fr, es, it, nl, sr, hu, cs). Used for matching and UI labels.';
+
+  @override
+  String get mergeKeywordTitle => 'Merge with existing rule?';
+
+  @override
+  String mergeKeywordMessage(String alias, String canonical) {
+    return '\"$alias\" matches the existing rule \"$canonical\". Merge aliases into that rule instead of creating a duplicate?';
+  }
+
+  @override
+  String get mergeKeywordConfirm => 'Merge';
+
+  @override
+  String get approveAsNewRule => 'Create new rule';
+
+  @override
+  String get suggestionMerged => 'Suggestion merged into existing rule';
+
+  @override
+  String get builtInBadge => 'built-in';
+
+  @override
+  String get approve => 'Approve';
+
+  @override
+  String get reject => 'Reject';
+
+  @override
+  String get suggestionApproved => 'Suggestion approved and added as a rule';
+
+  @override
+  String get suggestionApproveFailed => 'Could not approve suggestion.';
+
+  @override
+  String get suggestionRejected => 'Suggestion rejected';
+
+  @override
+  String get suggestionRejectFailed => 'Could not reject suggestion.';
+
+  @override
+  String get photoIngredientsButton => 'Check Ingredients Photo';
+
+  @override
+  String get photoAnalysisProductName => 'Photo Analysis';
+
+  @override
+  String get managedProduct => 'Verified by admin';
+
+  @override
+  String get managedProductNoRefresh =>
+      'This product is managed by an admin and cannot be refreshed from external sources.';
+
+  @override
+  String get deleteAccount => 'Delete Account';
+
+  @override
+  String get deleteAccountTitle => 'Delete Account?';
+
+  @override
+  String get deleteAccountConfirm =>
+      'This will permanently delete your account and all associated data. This action cannot be undone.';
+
+  @override
+  String get deleteAccountSuccess => 'Your account has been deleted.';
+
+  @override
+  String get deleteAccountFailed =>
+      'Could not delete account. Please try again.';
+
+  @override
+  String get reportWrongIngredient => 'Report Wrong Ingredient';
+
+  @override
+  String get reportWrongIngredientTitle => 'Report wrong ingredient';
+
+  @override
+  String get reportWrongIngredientSubtitle =>
+      'Select the ingredients you believe are incorrectly listed.';
+
+  @override
+  String get reportWrongIngredientExplanation => 'Explanation (optional)';
+
+  @override
+  String get reportWrongIngredientExplanationHint =>
+      'e.g. this ingredient is plant-based...';
+
+  @override
+  String get reportWrongIngredientNoSelection =>
+      'Please select at least one ingredient.';
+
+  @override
+  String get reportWrongIngredientSubmitted =>
+      'Thank you! Your report has been submitted.';
+
+  @override
+  String get reportWrongIngredientFailed =>
+      'Could not submit report. Please try again.';
+
+  @override
+  String get reportsTab => 'Reports';
+
+  @override
+  String get reportedIngredient => 'Reported as wrong';
+
+  @override
+  String get noReports => 'No pending reports';
+
+  @override
+  String get openProduct => 'Open product';
+
+  @override
+  String get resolveReport => 'Resolve';
+
+  @override
+  String get dismissReport => 'Dismiss';
+}

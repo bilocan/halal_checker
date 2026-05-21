@@ -76,17 +76,49 @@ class AnalysisService {
 
   // ── admin helpers ──────────────────────────────────────────────────────────
 
+  Future<String?> _fetchRole() async {
+    final uid = AuthService.currentUser?.id;
+    if (uid == null) return null;
+    final row = await Supabase.instance.client
+        .from('profiles')
+        .select('role')
+        .eq('id', uid)
+        .maybeSingle();
+    return row?['role'] as String?;
+  }
+
   Future<bool> isAdmin() async {
     if (!_hasSupabase) return false;
     try {
-      final uid = AuthService.currentUser?.id;
-      if (uid == null) return false;
-      final row = await Supabase.instance.client
-          .from('profiles')
-          .select('role')
-          .eq('id', uid)
+      final role = await _fetchRole();
+      return role == 'admin' || role == 'superadmin';
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> isSuperAdmin() async {
+    if (!_hasSupabase) return false;
+    try {
+      return await _fetchRole() == 'superadmin';
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Returns true when the current user's role has [operationId] in role_operations.
+  Future<bool> hasOperation(String operationId) async {
+    if (!_hasSupabase) return false;
+    try {
+      final role = await _fetchRole();
+      if (role == null) return false;
+      final match = await Supabase.instance.client
+          .from('role_operations')
+          .select('operation_id')
+          .eq('role', role)
+          .eq('operation_id', operationId)
           .maybeSingle();
-      return row?['role'] == 'admin';
+      return match != null;
     } catch (_) {
       return false;
     }

@@ -33,7 +33,7 @@ class _ScreenshotApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       locale: locale,
       localizationsDelegates: const [
-        AppLocalizationsDelegate(),
+        AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,

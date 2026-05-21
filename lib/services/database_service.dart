@@ -5,6 +5,9 @@ class DatabaseService {
   static final DatabaseService instance = DatabaseService._();
   DatabaseService._();
 
+  // Set to ':memory:' in tests to avoid parallel-isolate file contention.
+  static String? testDatabasePath;
+
   Database? _db;
 
   Future<Database> get database async {
@@ -14,7 +17,7 @@ class DatabaseService {
 
   Future<Database> _open() async {
     final dir = await getDatabasesPath();
-    final path = join(dir, 'halal_scan.db');
+    final path = testDatabasePath ?? join(dir, 'halal_scan.db');
     return openDatabase(
       path,
       version: 2,

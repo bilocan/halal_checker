@@ -79,6 +79,7 @@ class _DiscussionScreenState extends State<DiscussionScreen> {
           ),
         ),
         floatingActionButton: FloatingActionButton.extended(
+          heroTag: 'fab_discussion',
           onPressed: _startDiscussion,
           backgroundColor: Colors.blue.shade700,
           foregroundColor: Colors.white,

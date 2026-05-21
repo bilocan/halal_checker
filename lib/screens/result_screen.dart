@@ -20,6 +20,7 @@ import '../services/auth_service.dart';
 import '../services/community_service.dart';
 import '../services/feedback_service.dart';
 import '../services/database_service.dart';
+import '../services/ai_ingredient_request_service.dart';
 import '../services/ingredient_contribution_service.dart';
 import '../services/ingredient_report_service.dart';
 import '../services/ingredient_sanitizer.dart';
@@ -57,6 +58,8 @@ class _ResultScreenState extends State<ResultScreen> {
   List<FeedbackItem> _feedbacks = [];
   bool _isLoadingFeedback = false;
   bool _isRefreshing = false;
+  bool _isFetchingAiIngredients = false;
+  String? _aiRequestStatus; // 'pending' | 'approved' | 'rejected' | null
   ProductImageType? _uploadingImageType;
   bool _showTranslated = false;
   String _note = '';
@@ -80,7 +83,18 @@ class _ResultScreenState extends State<ResultScreen> {
       _loadNote(),
       _loadAnalysis(),
       _loadDiscussions(),
+      _loadAiRequestStatus(),
     ]);
+  }
+
+  Future<void> _loadAiRequestStatus() async {
+    if (AuthService.currentUser == null) return;
+    final req = await AiIngredientRequestService.getRequestForBarcode(
+      widget.barcode,
+    );
+    if (req != null && mounted) {
+      setState(() => _aiRequestStatus = req['status'] as String?);
+    }
   }
 
   @override
@@ -199,6 +213,7 @@ class _ResultScreenState extends State<ResultScreen> {
     );
   }
 
+  // ignore: unused_element
   Widget _buildAnalysisCard() {
     final analysis = _analysis;
     final statusColor = switch (analysis?.status) {
@@ -494,6 +509,48 @@ class _ResultScreenState extends State<ResultScreen> {
     }
   }
 
+  Future<void> _requestAiIngredients() async {
+    if (_isFetchingAiIngredients) return;
+    if (AuthService.currentUser == null) {
+      _showSignInRequired(context);
+      return;
+    }
+    setState(() => _isFetchingAiIngredients = true);
+    try {
+      final submitted = await AiIngredientRequestService.submitRequest(
+        widget.barcode,
+        productName: widget.product?.name,
+      );
+      if (!mounted) return;
+      if (submitted) {
+        setState(() => _aiRequestStatus = 'pending');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('AI request submitted — pending admin review.'),
+            duration: Duration(seconds: 3),
+          ),
+        );
+      } else {
+        // Already a pending request for this barcode.
+        setState(() => _aiRequestStatus = 'pending');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('An AI request for this product is already pending.'),
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to submit AI request.')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isFetchingAiIngredients = false);
+    }
+  }
+
   Future<void> _refreshProductData() async {
     if (_isRefreshing) return;
 
@@ -714,6 +771,31 @@ class _ResultScreenState extends State<ResultScreen> {
     );
   }
 
+  BottomNavigationBar _buildBottomNav(AppLocalizations loc) {
+    return BottomNavigationBar(
+      currentIndex: 0,
+      onTap: (_) => Navigator.pop(context),
+      selectedItemColor: kGreen,
+      unselectedItemColor: Colors.grey,
+      type: BottomNavigationBarType.fixed,
+      items: [
+        BottomNavigationBarItem(icon: const Icon(Icons.home), label: loc.home),
+        BottomNavigationBarItem(
+          icon: const Icon(Icons.list_alt),
+          label: loc.keywords,
+        ),
+        BottomNavigationBarItem(
+          icon: const Icon(Icons.store_outlined),
+          label: loc.halalDirectory,
+        ),
+        BottomNavigationBarItem(
+          icon: const Icon(Icons.info_outline),
+          label: loc.about,
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context);
@@ -757,6 +839,7 @@ class _ResultScreenState extends State<ResultScreen> {
             ],
           ),
         ),
+        bottomNavigationBar: _buildBottomNav(loc),
       );
     }
 
@@ -1120,6 +1203,9 @@ class _ResultScreenState extends State<ResultScreen> {
                       color: Colors.grey.shade900,
                     ),
                   ),
+                  const SizedBox(width: 8),
+                  if (product.ingredientSource != null)
+                    _IngredientSourceBadge(source: product.ingredientSource!),
                   const Spacer(),
                   if (product.ingredientTranslations.isNotEmpty)
                     TextButton.icon(
@@ -1166,6 +1252,9 @@ class _ResultScreenState extends State<ResultScreen> {
                 _buildMissingIngredientActions(product, loc),
               ] else
                 ...ingredients.map((ingredient) {
+                  final sourceStyle = IngredientSourceStyle.of(
+                    product.ingredientSource,
+                  );
                   final warning = product.ingredientWarnings[ingredient];
                   final isHaramIngredient = product.haramIngredients.contains(
                     ingredient,
@@ -1184,23 +1273,26 @@ class _ResultScreenState extends State<ResultScreen> {
                   final isReported =
                       widget.adminReportedIngredients?.contains(ingredient) ??
                       false;
-                  return Card(
+                  return Container(
                     margin: const EdgeInsets.symmetric(vertical: 4),
-                    color: isReported ? Colors.orange.shade50 : null,
-                    shape: isReported
-                        ? RoundedRectangleBorder(
-                            side: BorderSide(
-                              color: Colors.orange.shade400,
-                              width: 1.5,
-                            ),
-                            borderRadius: BorderRadius.circular(12),
-                          )
-                        : null,
+                    decoration: BoxDecoration(
+                      color: isReported
+                          ? Colors.orange.shade50
+                          : sourceStyle.fillColor,
+                      border: Border.all(
+                        color: isReported
+                            ? Colors.orange.shade400
+                            : sourceStyle.borderColor,
+                        width: isReported ? 1.5 : 1,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         ListTile(
+                          tileColor: Colors.transparent,
                           leading: Icon(
                             warning != null
                                 ? (isHaramIngredient
@@ -1364,8 +1456,8 @@ class _ResultScreenState extends State<ResultScreen> {
               const SizedBox(height: 16),
               _buildNoteSection(loc),
               const SizedBox(height: 16),
-              _buildAnalysisCard(),
-              const SizedBox(height: 8),
+              // _buildAnalysisCard(),
+              // const SizedBox(height: 8),
               _buildCommunityCard(),
               const SizedBox(height: 16),
               Align(
@@ -1555,6 +1647,7 @@ class _ResultScreenState extends State<ResultScreen> {
           ),
         ),
       ),
+      bottomNavigationBar: _buildBottomNav(loc),
     );
   }
 
@@ -2250,6 +2343,89 @@ class _ResultScreenState extends State<ResultScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        // AI ingredient lookup card
+        Card(
+          color: const Color(0xFFF5F3FF),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      _aiRequestStatus == 'pending'
+                          ? Icons.hourglass_top
+                          : _aiRequestStatus == 'rejected'
+                          ? Icons.block
+                          : Icons.auto_awesome,
+                      color: _aiRequestStatus == 'rejected'
+                          ? Colors.red.shade400
+                          : const Color(0xFF7C3AED),
+                    ),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text(
+                        'Find ingredients via AI',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF5B21B6),
+                          fontSize: 15,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  _aiRequestStatus == 'pending'
+                      ? 'AI lookup requested — an admin will review and approve it shortly.'
+                      : _aiRequestStatus == 'rejected'
+                      ? 'The AI request was rejected by an admin.'
+                      : 'Ask AI to recall the ingredient list from its training data.',
+                  style: TextStyle(
+                    color: _aiRequestStatus == 'rejected'
+                        ? Colors.red.shade700
+                        : const Color(0xFF6D28D9),
+                    fontSize: 13,
+                  ),
+                ),
+                if (_aiRequestStatus == null ||
+                    _aiRequestStatus == 'rejected') ...[
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      icon: _isFetchingAiIngredients
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Icon(Icons.auto_awesome, size: 18),
+                      label: Text(
+                        _aiRequestStatus == 'rejected'
+                            ? 'Request again'
+                            : 'Request via AI',
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF7C3AED),
+                        foregroundColor: Colors.white,
+                      ),
+                      onPressed: _isFetchingAiIngredients
+                          ? null
+                          : _requestAiIngredients,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
         // Contribute ingredients card
         Card(
           color: Colors.orange.shade50,
@@ -2952,7 +3128,7 @@ class _ResultScreenState extends State<ResultScreen> {
     if (isHalal) {
       return suspiciousIngredients.isEmpty
           ? loc.explanationClean
-          : loc.explanationSuspiciousOnlyWith(suspiciousIngredients);
+          : loc.explanationSuspiciousOnly(suspiciousIngredients.join(', '));
     }
     return loc.explanationHaram;
   }
@@ -3660,6 +3836,55 @@ class _IngredientReportSheetState extends State<_IngredientReportSheet> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Shared palette for the ingredient-source badge and ingredient list cards.
+class IngredientSourceStyle {
+  const IngredientSourceStyle._(this.label, this.color);
+
+  final String label;
+  final Color color;
+
+  Color get fillColor => color.withAlpha(25);
+  Color get borderColor => color.withAlpha(100);
+
+  static IngredientSourceStyle of(String? source) {
+    return switch (source) {
+      'ai' => const IngredientSourceStyle._('AI', Color(0xFF7C3AED)),
+      'community' => const IngredientSourceStyle._(
+        'Community',
+        Color(0xFF0D9488),
+      ),
+      _ => const IngredientSourceStyle._('OFF', Color(0xFF6B7280)),
+    };
+  }
+}
+
+class _IngredientSourceBadge extends StatelessWidget {
+  const _IngredientSourceBadge({required this.source});
+  final String source;
+
+  @override
+  Widget build(BuildContext context) {
+    final style = IngredientSourceStyle.of(source);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+      decoration: BoxDecoration(
+        color: style.fillColor,
+        border: Border.all(color: style.borderColor),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        style.label,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          color: style.color,
+          letterSpacing: 0.3,
+        ),
       ),
     );
   }

@@ -15,7 +15,7 @@ Point the camera at any food product barcode (or enter it manually). The app fet
 - Community feedback on each product
 - A scan history so you can revisit previous lookups
 
-Supported languages: **English**, **Turkish**, **German**
+Supported languages: **English**, **Turkish**, **German** — [help improve a translation](docs/TRANSLATING.md)
 
 ---
 

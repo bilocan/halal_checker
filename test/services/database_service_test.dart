@@ -7,6 +7,7 @@ void main() {
   setUpAll(() {
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
+    DatabaseService.testDatabasePath = ':memory:';
   });
 
   setUp(() async {
