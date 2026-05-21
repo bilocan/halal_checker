@@ -9,9 +9,15 @@ ALTER TABLE discussions
   ADD CONSTRAINT discussions_status_check
   CHECK (status IN ('open', 'in_progress', 'closed'));
 
-UPDATE discussions
-SET status = 'closed'
-WHERE is_locked = true AND status = 'open';
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'discussions' AND column_name = 'is_locked'
+  ) THEN
+    UPDATE discussions SET status = 'closed' WHERE is_locked = true AND status = 'open';
+  END IF;
+END $$;
 
 CREATE POLICY "Authors and admins can update discussions"
   ON discussions FOR UPDATE

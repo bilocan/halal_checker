@@ -68,8 +68,8 @@ export async function geminiIngredientLookup(
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: `${barcode} ${name} ingredients. List all ingredients as a comma-separated list in English only. No explanations, no halal analysis. If you do not know, respond with exactly: UNKNOWN` }] }],
-          generationConfig: { maxOutputTokens: 1024, temperature: 0 },
+          contents: [{ parts: [{ text: `Ingredients of "${name}" (barcode ${barcode}), comma-separated English list. Unknown if not found: UNKNOWN` }] }],
+          generationConfig: { maxOutputTokens: 300, temperature: 0, thinkingConfig: { thinkingBudget: 0 } },
         }),
       },
     )
@@ -81,7 +81,7 @@ export async function geminiIngredientLookup(
     const ld = await res.json()
     const text: string = (ld.candidates?.[0]?.content?.parts?.[0]?.text ?? '').trim()
     const usage = ld.usageMetadata
-    console.log(`[${barcode}] Gemini ingredient lookup: response="${text.slice(0, 120)}" prompt=${usage?.promptTokenCount ?? '?'} total=${usage?.totalTokenCount ?? '?'} tokens`)
+    console.log(`[${barcode}] Gemini ingredient lookup: response="${text.slice(0, 120)}" prompt=${usage?.promptTokenCount ?? '?'} output=${usage?.candidatesTokenCount ?? '?'} thoughts=${usage?.thoughtsTokenCount ?? 0} total=${usage?.totalTokenCount ?? '?'} tokens`)
     if (text && text.toUpperCase() !== 'UNKNOWN') {
       const ingredients = text.split(',').map((s: string) => s.trim()).filter((s: string) => s.length > 0)
       console.log(`[${barcode}] Gemini ingredient lookup: found ${ingredients.length} ingredients`)
@@ -108,7 +108,7 @@ export async function analyzeWithGemini(
         body: JSON.stringify({
           contents: [{ parts: [{ text: `Analyze these ingredients:\n${ingredients.join(', ')}` }] }],
           systemInstruction: { parts: [{ text: CLAUDE_SYSTEM }] },
-          generationConfig: { maxOutputTokens: 1024, temperature: 0 },
+          generationConfig: { maxOutputTokens: 512, temperature: 0, thinkingConfig: { thinkingBudget: 0 } },
         }),
       },
     )
@@ -119,9 +119,10 @@ export async function analyzeWithGemini(
     }
     const gd = await res.json()
     const text: string = gd.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
+    const usage = gd.usageMetadata
     const p = parseAiJson(text)
     if (!p) { console.error(`[${barcode}] Gemini: JSON parse failed`); return null }
-    console.log(`[${barcode}] Gemini: success — isHalal=${p.isHalal} isUnknown=${p.isUnknown} haram=[${(p.haramIngredients ?? []).join(', ')}] suspicious=[${(p.suspiciousIngredients ?? []).join(', ')}] warnings=${JSON.stringify(p.ingredientWarnings ?? {})}`)
+    console.log(`[${barcode}] Gemini: success — isHalal=${p.isHalal} isUnknown=${p.isUnknown} haram=[${(p.haramIngredients ?? []).join(', ')}] suspicious=[${(p.suspiciousIngredients ?? []).join(', ')}] warnings=${JSON.stringify(p.ingredientWarnings ?? {})} prompt=${usage?.promptTokenCount ?? '?'} output=${usage?.candidatesTokenCount ?? '?'} thoughts=${usage?.thoughtsTokenCount ?? 0} total=${usage?.totalTokenCount ?? '?'} tokens`)
     return toVerdict(p, ingredients.length)
   } catch (e) {
     console.error(`[${barcode}] Gemini: exception:`, e)
