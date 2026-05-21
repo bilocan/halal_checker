@@ -29,6 +29,7 @@ import '../services/ocr_service.dart';
 import '../services/product_image_service.dart';
 import '../constants/ingredient_keywords.dart';
 import '../services/product_service.dart';
+import 'admin_panel_screen.dart';
 import 'deep_analysis_screen.dart';
 import 'discussion_screen.dart';
 import 'keywords_screen.dart';
@@ -70,6 +71,7 @@ class _ResultScreenState extends State<ResultScreen> {
   ProductAnalysis? _analysis;
   bool _isRequestingAnalysis = false;
   List<Discussion> _discussions = [];
+  bool _isAdmin = false;
 
   @override
   void initState() {
@@ -84,7 +86,13 @@ class _ResultScreenState extends State<ResultScreen> {
       _loadAnalysis(),
       _loadDiscussions(),
       _loadAiRequestStatus(),
+      _loadAdminStatus(),
     ]);
+  }
+
+  Future<void> _loadAdminStatus() async {
+    final admin = await _analysisService.isAdmin();
+    if (mounted) setState(() => _isAdmin = admin);
   }
 
   Future<void> _loadAiRequestStatus() async {
@@ -772,9 +780,19 @@ class _ResultScreenState extends State<ResultScreen> {
   }
 
   BottomNavigationBar _buildBottomNav(AppLocalizations loc) {
+    final adminIndex = _isAdmin ? 3 : -1;
     return BottomNavigationBar(
       currentIndex: 0,
-      onTap: (_) => Navigator.pop(context),
+      onTap: (index) {
+        if (index == 0) {
+          Navigator.pop(context);
+        } else if (index == adminIndex) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const AdminPanelScreen()),
+          );
+        }
+      },
       selectedItemColor: kGreen,
       unselectedItemColor: Colors.grey,
       type: BottomNavigationBarType.fixed,
@@ -788,6 +806,12 @@ class _ResultScreenState extends State<ResultScreen> {
           icon: const Icon(Icons.store_outlined),
           label: loc.halalDirectory,
         ),
+        if (_isAdmin)
+          BottomNavigationBarItem(
+            icon: const Icon(Icons.admin_panel_settings_outlined),
+            activeIcon: const Icon(Icons.admin_panel_settings),
+            label: loc.adminPanel,
+          ),
         BottomNavigationBarItem(
           icon: const Icon(Icons.info_outline),
           label: loc.about,

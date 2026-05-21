@@ -577,111 +577,6 @@ class _StartScreenState extends State<StartScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Container(
-                        height: 100,
-                        decoration: BoxDecoration(
-                          color: kGreen,
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: kGreen.withAlpha(80),
-                              blurRadius: 12,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: ElevatedButton(
-                          onPressed: _openScan,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.transparent,
-                            shadowColor: Colors.transparent,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                          ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(
-                                Icons.qr_code_scanner,
-                                color: Colors.white,
-                                size: 36,
-                              ),
-                              const SizedBox(height: 6),
-                              Text(
-                                localizations.scanButton,
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Container(
-                        height: 100,
-                        decoration: BoxDecoration(
-                          border: Border.all(color: kGreenLight),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: ElevatedButton(
-                          onPressed: _analyzeIngredientsPhoto,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.transparent,
-                            shadowColor: Colors.transparent,
-                            foregroundColor: kGreen,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                          ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(Icons.camera_alt_outlined, size: 36),
-                              const SizedBox(height: 6),
-                              Text(
-                                localizations.photoIngredientsButton,
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                if (_canBatchImport) ...[
-                  const SizedBox(height: 8),
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton.icon(
-                      onPressed: _openBatchScan,
-                      icon: const Icon(Icons.upload_file_outlined),
-                      label: const Text('Batch Import'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: kGreen,
-                        side: const BorderSide(color: kGreenLight),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-                const SizedBox(height: 16),
                 // Recent scans section
                 Text(
                   localizations.lastResults,
@@ -892,6 +787,111 @@ class _StartScreenState extends State<StartScreen> {
                           },
                         ),
                 ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        height: 100,
+                        decoration: BoxDecoration(
+                          color: kGreen,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: kGreen.withAlpha(80),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: ElevatedButton(
+                          onPressed: _openScan,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.transparent,
+                            shadowColor: Colors.transparent,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(
+                                Icons.qr_code_scanner,
+                                color: Colors.white,
+                                size: 36,
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                localizations.scanButton,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Container(
+                        height: 100,
+                        decoration: BoxDecoration(
+                          border: Border.all(color: kGreenLight),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: ElevatedButton(
+                          onPressed: _analyzeIngredientsPhoto,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.transparent,
+                            shadowColor: Colors.transparent,
+                            foregroundColor: kGreen,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.camera_alt_outlined, size: 36),
+                              const SizedBox(height: 6),
+                              Text(
+                                localizations.photoIngredientsButton,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                if (_canBatchImport) ...[
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: _openBatchScan,
+                      icon: const Icon(Icons.upload_file_outlined),
+                      label: const Text('Batch Import'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: kGreen,
+                        side: const BorderSide(color: kGreenLight),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
