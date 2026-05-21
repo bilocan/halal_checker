@@ -8,6 +8,7 @@ import '../localization/app_localizations.dart';
 import '../models/product_analysis.dart';
 import '../services/analysis_service.dart';
 import '../services/cache_service.dart';
+import '../services/ai_ingredient_request_service.dart';
 import '../services/ingredient_contribution_service.dart';
 import '../services/ingredient_report_service.dart';
 import '../services/product_image_service.dart';
@@ -48,6 +49,11 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
   bool _reportsLoading = false;
   final Set<int> _processingReportIds = {};
 
+  // ── AI requests tab ───────────────────────────────────────────────────────
+  List<Map<String, dynamic>> _aiRequests = [];
+  bool _aiRequestsLoading = false;
+  final Set<int> _processingAiRequestIds = {};
+
   @override
   void initState() {
     super.initState();
@@ -55,6 +61,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
     _loadPhotos();
     _loadContributions();
     _loadReports();
+    _loadAiRequests();
   }
 
   Future<void> _load() async {
@@ -169,6 +176,56 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
       _reports = list;
       _reportsLoading = false;
     });
+  }
+
+  Future<void> _loadAiRequests() async {
+    setState(() => _aiRequestsLoading = true);
+    final list = await AiIngredientRequestService.getPendingRequests();
+    if (!mounted) return;
+    setState(() {
+      _aiRequests = list;
+      _aiRequestsLoading = false;
+    });
+  }
+
+  Future<void> _reviewAiRequest(int id, String status) async {
+    setState(() => _processingAiRequestIds.add(id));
+
+    final request = _aiRequests.firstWhere(
+      (r) => (r['id'] as num).toInt() == id,
+      orElse: () => <String, dynamic>{},
+    );
+    final barcode = request['barcode'] as String?;
+
+    final ok = await AiIngredientRequestService.updateStatus(id, status);
+    if (!mounted) return;
+    if (ok) {
+      setState(
+        () => _aiRequests.removeWhere((r) => (r['id'] as num).toInt() == id),
+      );
+      if (status == 'approved' && barcode != null && barcode.isNotEmpty) {
+        unawaited(CacheService().removeProduct(barcode));
+        unawaited(
+          ProductService().fetchIngredientsByAI(barcode).then((product) {
+            if (product != null) {
+              debugPrint(
+                '[AdminPanel] AI ingredients fetched for $barcode: '
+                '${product.ingredients.length} ingredients',
+              );
+            } else {
+              debugPrint(
+                '[AdminPanel] AI ingredient fetch failed for $barcode',
+              );
+            }
+          }),
+        );
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to update — check Supabase logs')),
+      );
+    }
+    setState(() => _processingAiRequestIds.remove(id));
   }
 
   Future<void> _reviewReport(int id, String status) async {
@@ -302,6 +359,11 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
               icon: const Icon(Icons.refresh),
               onPressed: _reportsLoading ? null : _loadReports,
             ),
+          if (_tabIndex == 5)
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              onPressed: _aiRequestsLoading ? null : _loadAiRequests,
+            ),
         ],
       ),
       body: Column(
@@ -313,7 +375,8 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
               1 => const RulesManagementScreen(),
               2 => _buildPhotosBody(loc),
               3 => _buildIngredientsBody(loc),
-              _ => _buildReportsBody(loc),
+              4 => _buildReportsBody(loc),
+              _ => _buildAiRequestsBody(),
             },
           ),
         ],
@@ -364,6 +427,14 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
               badge: _reports.isNotEmpty ? _reports.length : null,
             ),
           ),
+          Expanded(
+            child: _tabButton(
+              label: 'AI Req.',
+              icon: Icons.auto_awesome_outlined,
+              index: 5,
+              badge: _aiRequests.isNotEmpty ? _aiRequests.length : null,
+            ),
+          ),
         ],
       ),
     );
@@ -381,6 +452,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
         setState(() => _tabIndex = index);
         if (index == 3) _loadContributions();
         if (index == 4) _loadReports();
+        if (index == 5) _loadAiRequests();
       },
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
@@ -677,6 +749,50 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
               ),
             ),
             loc: loc,
+          );
+        },
+      ),
+    );
+  }
+
+  // ── AI requests tab ───────────────────────────────────────────────────────
+
+  Widget _buildAiRequestsBody() {
+    if (_aiRequestsLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_aiRequests.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.check_circle_outline,
+              size: 56,
+              color: Colors.grey.shade400,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'No pending AI ingredient requests',
+              style: TextStyle(color: Colors.grey.shade500),
+            ),
+          ],
+        ),
+      );
+    }
+    return RefreshIndicator(
+      onRefresh: _loadAiRequests,
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: _aiRequests.length,
+        itemBuilder: (_, i) {
+          final row = _aiRequests[i];
+          final id = (row['id'] as num).toInt();
+          return _AiRequestCard(
+            row: row,
+            isProcessing: _processingAiRequestIds.contains(id),
+            onApprove: () => _reviewAiRequest(id, 'approved'),
+            onReject: () => _reviewAiRequest(id, 'rejected'),
           );
         },
       ),
@@ -1440,6 +1556,134 @@ class _IngredientReportCard extends StatelessWidget {
                       label: Text(loc.resolveReport),
                       style: FilledButton.styleFrom(
                         backgroundColor: kGreen,
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _formatAge(DateTime d) {
+    final diff = DateTime.now().difference(d);
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+    if (diff.inHours < 24) return '${diff.inHours}h ago';
+    return '${diff.inDays}d ago';
+  }
+}
+
+// ── AI request card ───────────────────────────────────────────────────────────
+
+class _AiRequestCard extends StatelessWidget {
+  final Map<String, dynamic> row;
+  final bool isProcessing;
+  final VoidCallback onApprove;
+  final VoidCallback onReject;
+
+  const _AiRequestCard({
+    required this.row,
+    required this.isProcessing,
+    required this.onApprove,
+    required this.onReject,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final barcode = row['barcode'] as String? ?? '';
+    final productName = row['product_name'] as String? ?? barcode;
+    final createdAt = DateTime.tryParse(row['created_at'] as String? ?? '');
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(
+                  Icons.auto_awesome,
+                  size: 16,
+                  color: Color(0xFF7C3AED),
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    productName,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                if (createdAt != null)
+                  Text(
+                    _formatAge(createdAt),
+                    style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 2),
+            Text(
+              barcode,
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey.shade600,
+                fontFamily: 'monospace',
+              ),
+            ),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF5F3FF),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFDDD6FE)),
+              ),
+              child: const Text(
+                'Approve to trigger AI ingredient lookup via Gemini/Claude. '
+                'The product will be updated automatically.',
+                style: TextStyle(fontSize: 12, color: Color(0xFF5B21B6)),
+              ),
+            ),
+            const SizedBox(height: 10),
+            if (isProcessing)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 4),
+                  child: CircularProgressIndicator(),
+                ),
+              )
+            else
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: onReject,
+                      icon: const Icon(Icons.close, size: 16),
+                      label: const Text('Reject'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.red.shade700,
+                        side: BorderSide(color: Colors.red.shade300),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: FilledButton.icon(
+                      onPressed: onApprove,
+                      icon: const Icon(Icons.auto_awesome, size: 16),
+                      label: const Text('Approve & Fetch'),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: const Color(0xFF7C3AED),
                         visualDensity: VisualDensity.compact,
                       ),
                     ),

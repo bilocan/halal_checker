@@ -20,6 +20,7 @@ import '../services/auth_service.dart';
 import '../services/community_service.dart';
 import '../services/feedback_service.dart';
 import '../services/database_service.dart';
+import '../services/ai_ingredient_request_service.dart';
 import '../services/ingredient_contribution_service.dart';
 import '../services/ingredient_report_service.dart';
 import '../services/ingredient_sanitizer.dart';
@@ -58,6 +59,7 @@ class _ResultScreenState extends State<ResultScreen> {
   bool _isLoadingFeedback = false;
   bool _isRefreshing = false;
   bool _isFetchingAiIngredients = false;
+  String? _aiRequestStatus; // 'pending' | 'approved' | 'rejected' | null
   ProductImageType? _uploadingImageType;
   bool _showTranslated = false;
   String _note = '';
@@ -81,7 +83,18 @@ class _ResultScreenState extends State<ResultScreen> {
       _loadNote(),
       _loadAnalysis(),
       _loadDiscussions(),
+      _loadAiRequestStatus(),
     ]);
+  }
+
+  Future<void> _loadAiRequestStatus() async {
+    if (AuthService.currentUser == null) return;
+    final req = await AiIngredientRequestService.getRequestForBarcode(
+      widget.barcode,
+    );
+    if (req != null && mounted) {
+      setState(() => _aiRequestStatus = req['status'] as String?);
+    }
   }
 
   @override
@@ -496,33 +509,41 @@ class _ResultScreenState extends State<ResultScreen> {
     }
   }
 
-  Future<void> _fetchIngredientsByAI() async {
+  Future<void> _requestAiIngredients() async {
     if (_isFetchingAiIngredients) return;
+    if (AuthService.currentUser == null) {
+      _showSignInRequired(context);
+      return;
+    }
     setState(() => _isFetchingAiIngredients = true);
     try {
-      final product = await _productService.fetchIngredientsByAI(
+      final submitted = await AiIngredientRequestService.submitRequest(
         widget.barcode,
+        productName: widget.product?.name,
       );
       if (!mounted) return;
-      if (product != null) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) =>
-                ResultScreen(product: product, barcode: widget.barcode),
+      if (submitted) {
+        setState(() => _aiRequestStatus = 'pending');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('AI request submitted — pending admin review.'),
+            duration: Duration(seconds: 3),
           ),
         );
       } else {
+        // Already a pending request for this barcode.
+        setState(() => _aiRequestStatus = 'pending');
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('AI could not find ingredients for this product.'),
+            content: Text('An AI request for this product is already pending.'),
+            duration: Duration(seconds: 3),
           ),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('AI ingredient lookup failed.')),
+          const SnackBar(content: Text('Failed to submit AI request.')),
         );
       }
     } finally {
@@ -2332,7 +2353,16 @@ class _ResultScreenState extends State<ResultScreen> {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.auto_awesome, color: Color(0xFF7C3AED)),
+                    Icon(
+                      _aiRequestStatus == 'pending'
+                          ? Icons.hourglass_top
+                          : _aiRequestStatus == 'rejected'
+                          ? Icons.block
+                          : Icons.auto_awesome,
+                      color: _aiRequestStatus == 'rejected'
+                          ? Colors.red.shade400
+                          : const Color(0xFF7C3AED),
+                    ),
                     const SizedBox(width: 8),
                     const Expanded(
                       child: Text(
@@ -2347,34 +2377,50 @@ class _ResultScreenState extends State<ResultScreen> {
                   ],
                 ),
                 const SizedBox(height: 8),
-                const Text(
-                  'Ask AI to recall the ingredient list from its training data.',
-                  style: TextStyle(color: Color(0xFF6D28D9), fontSize: 13),
-                ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    icon: _isFetchingAiIngredients
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : const Icon(Icons.auto_awesome, size: 18),
-                    label: const Text('Find via AI'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF7C3AED),
-                      foregroundColor: Colors.white,
-                    ),
-                    onPressed: _isFetchingAiIngredients
-                        ? null
-                        : _fetchIngredientsByAI,
+                Text(
+                  _aiRequestStatus == 'pending'
+                      ? 'AI lookup requested — an admin will review and approve it shortly.'
+                      : _aiRequestStatus == 'rejected'
+                      ? 'The AI request was rejected by an admin.'
+                      : 'Ask AI to recall the ingredient list from its training data.',
+                  style: TextStyle(
+                    color: _aiRequestStatus == 'rejected'
+                        ? Colors.red.shade700
+                        : const Color(0xFF6D28D9),
+                    fontSize: 13,
                   ),
                 ),
+                if (_aiRequestStatus == null ||
+                    _aiRequestStatus == 'rejected') ...[
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      icon: _isFetchingAiIngredients
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Icon(Icons.auto_awesome, size: 18),
+                      label: Text(
+                        _aiRequestStatus == 'rejected'
+                            ? 'Request again'
+                            : 'Request via AI',
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF7C3AED),
+                        foregroundColor: Colors.white,
+                      ),
+                      onPressed: _isFetchingAiIngredients
+                          ? null
+                          : _requestAiIngredients,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
