@@ -200,6 +200,7 @@ class _ResultScreenState extends State<ResultScreen> {
     );
   }
 
+  // ignore: unused_element
   Widget _buildAnalysisCard() {
     final analysis = _analysis;
     final statusColor = switch (analysis?.status) {
@@ -1434,8 +1435,8 @@ class _ResultScreenState extends State<ResultScreen> {
               const SizedBox(height: 16),
               _buildNoteSection(loc),
               const SizedBox(height: 16),
-              _buildAnalysisCard(),
-              const SizedBox(height: 8),
+              // _buildAnalysisCard(),
+              // const SizedBox(height: 8),
               _buildCommunityCard(),
               const SizedBox(height: 16),
               Align(
