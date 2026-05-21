@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AiIngredientRequestService {
@@ -44,8 +45,9 @@ class AiIngredientRequestService {
     return true;
   }
 
-  /// Returns all pending AI ingredient requests. Admin-only in practice
-  /// (RLS only allows admins to write; reads are open to authenticated users).
+  /// Returns all pending AI ingredient requests. Admin/superadmin-only in
+  /// practice (RLS only allows those roles to write; reads are open to all
+  /// authenticated users).
   static Future<List<Map<String, dynamic>>> getPendingRequests() async {
     final res = await _client
         .from('ai_ingredient_requests')
@@ -58,14 +60,26 @@ class AiIngredientRequestService {
   /// Updates the status of a request (admin action).
   static Future<bool> updateStatus(int id, String status) async {
     final userId = _client.auth.currentUser?.id;
-    await _client
-        .from('ai_ingredient_requests')
-        .update({
-          'status': status,
-          'reviewed_at': DateTime.now().toUtc().toIso8601String(),
-          'reviewed_by': userId,
-        })
-        .eq('id', id);
-    return true;
+    try {
+      final result = await _client
+          .from('ai_ingredient_requests')
+          .update({
+            'status': status,
+            'reviewed_at': DateTime.now().toUtc().toIso8601String(),
+            'reviewed_by': userId,
+          })
+          .eq('id', id)
+          .select();
+      if (result.isEmpty) {
+        debugPrint(
+          '[AiIngredientRequestService] updateStatus: no rows updated for id=$id — RLS may be blocking the write',
+        );
+        return false;
+      }
+      return true;
+    } catch (e) {
+      debugPrint('[AiIngredientRequestService] updateStatus error: $e');
+      return false;
+    }
   }
 }
