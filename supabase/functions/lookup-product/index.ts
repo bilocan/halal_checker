@@ -37,12 +37,16 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
     )
 
+    console.log(`[${barcode}] request: force=${force} fetchAiIngredients=${fetchAiIngredients}`)
+
     // 1. Cache hit?
     const { data: cached } = await supabase
       .from('products_full')
       .select('*')
       .eq('barcode', barcode)
       .maybeSingle()
+
+    console.log(`[${barcode}] cache: ${cached ? `hit (is_managed=${cached.is_managed} is_unknown=${cached.is_unknown} ingredient_source=${cached.ingredient_source} ingredients=${Array.isArray(cached.ingredients) ? cached.ingredients.length : 0})` : 'miss'}`)
 
     // Managed products are never overwritten by OFF data.
     // Return the DB row as-is regardless of the force flag.
@@ -87,6 +91,7 @@ Deno.serve(async (req) => {
         ? 'community'
         : (cached.ingredient_source ?? 'off')
       const kw = keywordAnalysis(storedIngredients, reHaramEntries, reSuspiciousEntries)
+      console.log(`[${barcode}] re-analysis result: isHalal=${kw.isHalal} isUnknown=${kw.isUnknown} haram=[${kw.haram.join(', ')}] suspicious=[${kw.suspicious.join(', ')}] ingredients=${storedIngredients.length}`)
 
       let reHalal       = kw.isHalal
       let reUnknown     = kw.isUnknown
@@ -224,6 +229,8 @@ Deno.serve(async (req) => {
       .map((s: string) => s.trim())
       .filter((s: string) => s.length > 0)
 
+    console.log(`[${barcode}] OFF: name="${name}" ingredients=${ingredients.length}`)
+
     let ingredientSource: 'off' | 'ai' | 'community' = 'off'
 
     // 4. Gemini knowledge lookup — when OFF has no ingredient text, ask Gemini to recall
@@ -245,6 +252,7 @@ Deno.serve(async (req) => {
     if (communityIngredients) {
       ingredients = communityIngredients
       ingredientSource = 'community'
+      console.log(`[${barcode}] community override: ${ingredients.length} ingredients`)
     }
 
     const labelSet = new Set<string>()
@@ -263,9 +271,12 @@ Deno.serve(async (req) => {
     const haramCategory = isNonFood ? null : (rawCategories.find(c => HARAM_CATEGORIES.has(c.toLowerCase())) ?? null)
     const isHalalByCategory = !isNonFood && !haramCategory && rawCategories.some(c => HALAL_CATEGORIES.has(c.toLowerCase()))
 
+    console.log(`[${barcode}] ingredients: source=${ingredientSource} count=${ingredients.length} list=[${ingredients.slice(0, 10).join(' | ')}${ingredients.length > 10 ? '…' : ''}]`)
+
     // 5. Tiered AI analysis — keyword-first to minimize cost.
     // Run keywords upfront; skip AI entirely when the result is already determined.
     const kwFirst = keywordAnalysis(ingredients, customHaramEntries, customSuspiciousEntries)
+    console.log(`[${barcode}] keywords: isHalal=${kwFirst.isHalal} isUnknown=${kwFirst.isUnknown} haram=[${kwFirst.haram.join(', ')}] suspicious=[${kwFirst.suspicious.join(', ')}]`)
     let isHalal               = isNonFood ? false : (isHalalByCategory && ingredients.length === 0 ? true : kwFirst.isHalal)
     let isUnknown             = isNonFood ? false : (isHalalByCategory && ingredients.length === 0 ? false : kwFirst.isUnknown)
     let haramIngredients      = kwFirst.haram
@@ -282,8 +293,9 @@ Deno.serve(async (req) => {
     const claudeEnabled = Deno.env.get('CLAUDE_ENABLED') !== 'false'
 
     // Skip AI when keywords already found haram, product is in a haram category,
-    // is non-food, halal-by-category, or there are no ingredients.
-    const skipAI = isNonFood || isHalalByCategory || kwFirst.haram.length > 0 || haramCategory !== null || ingredients.length === 0
+    // is non-food, halal-by-category, there are no ingredients, or ingredients
+    // were sourced from Gemini knowledge lookup (avoid analyzing AI-invented data with AI).
+    const skipAI = isNonFood || isHalalByCategory || kwFirst.haram.length > 0 || haramCategory !== null || ingredients.length === 0 || ingredientSource === 'ai'
     if (skipAI) {
       const skipReason = isNonFood ? 'non-food'
         : isHalalByCategory ? 'halal-by-category'
@@ -385,6 +397,8 @@ Deno.serve(async (req) => {
       isHalal   = false
       isUnknown = false
     }
+
+    console.log(`[${barcode}] verdict: isHalal=${isHalal} isUnknown=${isUnknown} analyzedByAI=${analyzedByAI} requiresHalalCert=${requiresHalalCert} haram=[${haramIngredients.join(', ')}] suspicious=[${suspiciousIngredients.join(', ')}]`)
 
     // 6. Upsert to DB — products owns source data, product_analysis owns the verdict.
     const row = {

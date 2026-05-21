@@ -160,6 +160,7 @@ class _DirectoryScreenState extends State<DirectoryScreen>
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'fab_directory',
         onPressed: () async {
           final bool? added;
           if (_tabController.index == 0) {
@@ -554,28 +555,31 @@ class _DirectoryScreenState extends State<DirectoryScreen>
     String selected,
     ValueChanged<String> onSelect,
   ) {
-    return ListView.separated(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      itemCount: categories.length,
-      separatorBuilder: (context, index) => const SizedBox(width: 8),
-      itemBuilder: (_, i) {
-        final cat = categories[i];
-        final isSelected = cat == selected;
-        return FilterChip(
-          label: Text(_categoryLabel(cat)),
-          selected: isSelected,
-          onSelected: (_) => onSelect(cat),
-          selectedColor: kGreen,
-          labelStyle: TextStyle(
-            color: isSelected ? Colors.white : Colors.black87,
-            fontSize: 12,
-          ),
-          checkmarkColor: Colors.white,
-          visualDensity: VisualDensity.compact,
-          padding: const EdgeInsets.symmetric(horizontal: 4),
-        );
-      },
+    return SizedBox(
+      height: 40,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        itemCount: categories.length,
+        separatorBuilder: (context, index) => const SizedBox(width: 8),
+        itemBuilder: (_, i) {
+          final cat = categories[i];
+          final isSelected = cat == selected;
+          return FilterChip(
+            label: Text(_categoryLabel(cat)),
+            selected: isSelected,
+            onSelected: (_) => onSelect(cat),
+            selectedColor: kGreen,
+            labelStyle: TextStyle(
+              color: isSelected ? Colors.white : Colors.black87,
+              fontSize: 12,
+            ),
+            checkmarkColor: Colors.white,
+            visualDensity: VisualDensity.compact,
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+          );
+        },
+      ),
     );
   }
 

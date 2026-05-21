@@ -84,6 +84,7 @@ class _KeywordsScreenState extends State<KeywordsScreen> {
                 ],
               ),
         floatingActionButton: FloatingActionButton.extended(
+          heroTag: 'fab_keywords',
           backgroundColor: kGreen,
           foregroundColor: Colors.white,
           icon: const Icon(Icons.add),

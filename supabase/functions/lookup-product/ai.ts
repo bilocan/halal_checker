@@ -68,8 +68,8 @@ export async function geminiIngredientLookup(
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: `What are the ingredients of the food product "${name}" (barcode: ${barcode})? If you know the ingredient list, respond with ONLY a comma-separated list of ingredients in English, nothing else. If you do not know, respond with exactly: UNKNOWN` }] }],
-          generationConfig: { maxOutputTokens: 512, temperature: 0 },
+          contents: [{ parts: [{ text: `${barcode} ${name} ingredients. List all ingredients as a comma-separated list in English only. No explanations, no halal analysis. If you do not know, respond with exactly: UNKNOWN` }] }],
+          generationConfig: { maxOutputTokens: 1024, temperature: 0 },
         }),
       },
     )
@@ -121,7 +121,7 @@ export async function analyzeWithGemini(
     const text: string = gd.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
     const p = parseAiJson(text)
     if (!p) { console.error(`[${barcode}] Gemini: JSON parse failed`); return null }
-    console.log(`[${barcode}] Gemini: success`)
+    console.log(`[${barcode}] Gemini: success — isHalal=${p.isHalal} isUnknown=${p.isUnknown} haram=[${(p.haramIngredients ?? []).join(', ')}] suspicious=[${(p.suspiciousIngredients ?? []).join(', ')}] warnings=${JSON.stringify(p.ingredientWarnings ?? {})}`)
     return toVerdict(p, ingredients.length)
   } catch (e) {
     console.error(`[${barcode}] Gemini: exception:`, e)
