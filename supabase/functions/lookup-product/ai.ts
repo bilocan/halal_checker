@@ -345,8 +345,8 @@ export async function analyzeWithClaudeVision(
   imgUrl: string,
   barcode: string,
   key: string,
-): Promise<AiVerdict | null> {
-  console.log(`[${barcode}] Claude vision: calling...`);
+): Promise<string[] | null> {
+  console.log(`[${barcode}] Claude vision: extracting ingredients...`);
   try {
     const res = await fetch(CLAUDE_URL, {
       method: "POST",
@@ -357,8 +357,7 @@ export async function analyzeWithClaudeVision(
       },
       body: JSON.stringify({
         model: CLAUDE_MODEL,
-        max_tokens: 1024,
-        system: CLAUDE_SYSTEM,
+        max_tokens: 512,
         messages: [{
           role: "user",
           content: [
@@ -366,7 +365,7 @@ export async function analyzeWithClaudeVision(
             {
               type: "text",
               text:
-                "This image shows the ingredients label of a food product. The text may be in Arabic, Turkish, or another language. The ingredient list is NOT empty — it is visible in the image. Read ALL the ingredient names from the image, translate them to English, and determine if the product is halal. Set isUnknown to false if you can read any ingredients. Respond with the JSON format specified.",
+                "This image shows the ingredients label of a food product. The text may be in any language. Extract ALL ingredient names exactly as written in the image. Respond with ONLY a comma-separated list of ingredients — no explanations, no translations, no extra text. If you cannot read any ingredients, respond with exactly: UNKNOWN",
             },
           ],
         }],
@@ -381,15 +380,19 @@ export async function analyzeWithClaudeVision(
     const text: string = cd.content?.find((c: { type: string }) =>
       c.type === "text"
     )?.text ?? "";
-    const p = parseAiJson(text);
-    if (!p) {
-      console.error(`[${barcode}] Claude vision: JSON parse failed`);
+    if (!text || text.trim().toUpperCase() === "UNKNOWN") {
+      console.log(`[${barcode}] Claude vision: no ingredients found`);
       return null;
     }
-    console.log(`[${barcode}] Claude vision: success`);
-    return toVerdict(p, 0, true);
+    const extracted = parseIngredientList(text);
+    if (extracted.length === 0) {
+      console.log(`[${barcode}] Claude vision: could not parse ingredient list`);
+      return null;
+    }
+    console.log(`[${barcode}] Claude vision: extracted ${extracted.length} ingredients`);
+    return extracted;
   } catch (e) {
-    console.error("[lookup-product] Vision Claude request failed:", e);
+    console.error(`[${barcode}] Claude vision: exception:`, e);
     return null;
   }
 }

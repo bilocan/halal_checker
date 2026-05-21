@@ -336,8 +336,8 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Tier 3: Vision analysis — when no text ingredients but an ingredients image exists.
-    // Claude reads the label photo (handles Arabic, Turkish, etc.) and returns a full verdict.
+    // Tier 3: Vision extraction — when no text ingredients but an ingredients image exists.
+    // Claude reads the label photo and returns the raw ingredient list; rule engine verdicts.
     if (!analyzedByAI && ingredients.length === 0 && !isNonFood && !isHalalByCategory && haramCategory === null) {
       const imgUrl = resolveImg(pd, 'image_ingredients_url', 'ingredients')
       const claudeKey = Deno.env.get('CLAUDE_API_KEY')
@@ -348,10 +348,34 @@ Deno.serve(async (req) => {
       } else if (!claudeKey) {
         console.log(`[${barcode}] Claude vision: skipped — CLAUDE_API_KEY not set`)
       } else {
-        const verdict = await analyzeWithClaudeVision(imgUrl, barcode, claudeKey)
-        if (verdict) {
-          ;({ isHalal, isUnknown, haramIngredients, suspiciousIngredients, ingredientWarnings, explanation } = verdict)
-          analyzedByAI = true
+        const visionIngredients = await analyzeWithClaudeVision(imgUrl, barcode, claudeKey)
+        if (visionIngredients && visionIngredients.length > 0) {
+          ingredients = visionIngredients
+          const kwVision = keywordAnalysis(ingredients, customHaramEntries, customSuspiciousEntries)
+          isHalal             = kwVision.isHalal
+          isUnknown           = kwVision.isUnknown
+          haramIngredients    = kwVision.haram
+          suspiciousIngredients = kwVision.suspicious
+          ingredientWarnings  = kwVision.warnings
+          explanation         = kwVision.explanation
+          // Run AI text analysis on vision-extracted ingredients (skip if keywords already found haram)
+          if (kwVision.haram.length === 0) {
+            const geminiKey = Deno.env.get('GEMINI_API_KEY')
+            if (geminiEnabled && geminiKey) {
+              const verdict = await analyzeWithGemini(ingredients, barcode, geminiKey)
+              if (verdict) {
+                ;({ isHalal, isUnknown, haramIngredients, suspiciousIngredients, ingredientWarnings, explanation } = verdict)
+                analyzedByAI = true
+              }
+            }
+            if (!analyzedByAI && claudeEnabled && claudeKey) {
+              const verdict = await analyzeWithClaude(ingredients, barcode, claudeKey)
+              if (verdict) {
+                ;({ isHalal, isUnknown, haramIngredients, suspiciousIngredients, ingredientWarnings, explanation } = verdict)
+                analyzedByAI = true
+              }
+            }
+          }
         }
       }
     }
