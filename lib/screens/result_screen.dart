@@ -4,7 +4,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../app_colors.dart';
@@ -14,6 +13,7 @@ import '../models/community.dart';
 import '../models/product.dart';
 import '../models/feedback.dart';
 import '../models/product_analysis.dart';
+import '../models/review_status.dart';
 import '../services/analysis_service.dart';
 import '../services/cache_service.dart';
 import '../services/auth_service.dart';
@@ -21,12 +21,11 @@ import '../services/community_service.dart';
 import '../services/feedback_service.dart';
 import '../services/database_service.dart';
 import '../services/ai_ingredient_request_service.dart';
-import '../services/ingredient_contribution_service.dart';
-import '../services/ingredient_sanitizer.dart';
 import '../widgets/ingredient_source_badge.dart';
 import '../widgets/product_label_chips.dart';
+import '../widgets/contribute_ingredients_sheet.dart';
+import '../widgets/feedback_dialog.dart';
 import '../widgets/report_sheets.dart';
-import '../services/ocr_service.dart';
 import '../services/product_image_service.dart';
 import '../constants/ingredient_keywords.dart';
 import '../services/product_service.dart';
@@ -61,7 +60,7 @@ class _ResultScreenState extends State<ResultScreen> {
   bool _isLoadingFeedback = false;
   bool _isRefreshing = false;
   bool _isFetchingAiIngredients = false;
-  String? _aiRequestStatus; // 'pending' | 'approved' | 'rejected' | null
+  ReviewStatus? _aiRequestStatus;
   ProductImageType? _uploadingImageType;
   bool _showTranslated = false;
   String _note = '';
@@ -102,7 +101,11 @@ class _ResultScreenState extends State<ResultScreen> {
       widget.barcode,
     );
     if (req != null && mounted) {
-      setState(() => _aiRequestStatus = req['status'] as String?);
+      setState(
+        () => _aiRequestStatus = ReviewStatus.fromString(
+          req['status'] as String?,
+        ),
+      );
     }
   }
 
@@ -532,7 +535,7 @@ class _ResultScreenState extends State<ResultScreen> {
       );
       if (!mounted) return;
       if (submitted) {
-        setState(() => _aiRequestStatus = 'pending');
+        setState(() => _aiRequestStatus = ReviewStatus.pending);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('AI request submitted — pending admin review.'),
@@ -541,7 +544,7 @@ class _ResultScreenState extends State<ResultScreen> {
         );
       } else {
         // Already a pending request for this barcode.
-        setState(() => _aiRequestStatus = 'pending');
+        setState(() => _aiRequestStatus = ReviewStatus.pending);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('An AI request for this product is already pending.'),
@@ -2195,12 +2198,12 @@ class _ResultScreenState extends State<ResultScreen> {
                 Row(
                   children: [
                     Icon(
-                      _aiRequestStatus == 'pending'
+                      _aiRequestStatus == ReviewStatus.pending
                           ? Icons.hourglass_top
-                          : _aiRequestStatus == 'rejected'
+                          : _aiRequestStatus == ReviewStatus.rejected
                           ? Icons.block
                           : Icons.auto_awesome,
-                      color: _aiRequestStatus == 'rejected'
+                      color: _aiRequestStatus == ReviewStatus.rejected
                           ? Colors.red.shade400
                           : const Color(0xFF7C3AED),
                     ),
@@ -2219,20 +2222,20 @@ class _ResultScreenState extends State<ResultScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  _aiRequestStatus == 'pending'
+                  _aiRequestStatus == ReviewStatus.pending
                       ? 'AI lookup requested — an admin will review and approve it shortly.'
-                      : _aiRequestStatus == 'rejected'
+                      : _aiRequestStatus == ReviewStatus.rejected
                       ? 'The AI request was rejected by an admin.'
                       : 'Ask AI to search the web for this product\'s ingredient list.',
                   style: TextStyle(
-                    color: _aiRequestStatus == 'rejected'
+                    color: _aiRequestStatus == ReviewStatus.rejected
                         ? Colors.red.shade700
                         : const Color(0xFF6D28D9),
                     fontSize: 13,
                   ),
                 ),
                 if (_aiRequestStatus == null ||
-                    _aiRequestStatus == 'rejected') ...[
+                    _aiRequestStatus == ReviewStatus.rejected) ...[
                   const SizedBox(height: 12),
                   SizedBox(
                     width: double.infinity,
@@ -2248,7 +2251,7 @@ class _ResultScreenState extends State<ResultScreen> {
                             )
                           : const Icon(Icons.auto_awesome, size: 18),
                       label: Text(
-                        _aiRequestStatus == 'rejected'
+                        _aiRequestStatus == ReviewStatus.rejected
                             ? 'Request again'
                             : 'Request via AI',
                       ),
@@ -2306,8 +2309,12 @@ class _ResultScreenState extends State<ResultScreen> {
                       backgroundColor: Colors.orange.shade700,
                       foregroundColor: Colors.white,
                     ),
-                    onPressed: () =>
-                        _showContributeIngredientsDialog(context, product, loc),
+                    onPressed: () => showContributeIngredientsSheet(
+                      context,
+                      product,
+                      loc,
+                      onContributed: _refreshProductData,
+                    ),
                   ),
                 ),
               ],
@@ -2371,594 +2378,6 @@ class _ResultScreenState extends State<ResultScreen> {
     );
   }
 
-  // Picks an image outside the bottom sheet (avoids Android ActivityResult issues),
-  // runs OCR, then reopens the contribution dialog with the result.
-  Future<void> _pickImageAndContribute(
-    BuildContext context,
-    Product product,
-    AppLocalizations loc,
-    ImageSource source,
-  ) async {
-    XFile? photo;
-    try {
-      photo = await ImagePicker().pickImage(source: source, imageQuality: 85);
-    } catch (e) {
-      debugPrint('ImagePicker error ($source): $e');
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            source == ImageSource.camera ? loc.cameraError : loc.ocrFailed,
-          ),
-          duration: const Duration(seconds: 3),
-        ),
-      );
-      return;
-    }
-
-    if (photo == null || !context.mounted) return;
-
-    final file = File(photo.path);
-
-    // Show loading overlay while OCR runs.
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => const PopScope(
-        canPop: false,
-        child: Center(child: CircularProgressIndicator()),
-      ),
-    );
-
-    final text = await OcrService.extractIngredientsFromFile(file);
-    debugPrint(
-      'OCR result: ${text == null ? "null" : "${text.length} chars: ${text.substring(0, text.length.clamp(0, 120))}"}',
-    );
-
-    if (!context.mounted) return;
-    Navigator.pop(context); // close loading overlay
-
-    // Show snackbar before reopening the sheet so it surfaces above it.
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          text != null && text.isNotEmpty ? loc.ocrSuccess : loc.ocrFailed,
-        ),
-        duration: Duration(seconds: text != null && text.isNotEmpty ? 3 : 5),
-      ),
-    );
-
-    if (!context.mounted) return;
-
-    // Reopen the dialog pre-filled with the picked photo and OCR result.
-    _showContributeIngredientsDialog(
-      context,
-      product,
-      loc,
-      initialPreviewFile: file,
-      initialOcrText: text,
-    );
-  }
-
-  void _showContributeIngredientsDialog(
-    BuildContext context,
-    Product product,
-    AppLocalizations loc, {
-    File? initialPreviewFile,
-    String? initialOcrText,
-  }) {
-    final initSections = initialOcrText != null
-        ? IngredientSanitizer.sanitizeByLanguage(initialOcrText)
-        : <String, List<String>>{};
-    var rawOcrSections = initSections;
-    var selectedLangs = initSections.keys.toSet();
-
-    List<String> chipsFromSections() => [
-      for (final l in rawOcrSections.keys)
-        if (selectedLangs.contains(l)) ...rawOcrSections[l]!,
-    ];
-
-    var chips = selectedLangs.isEmpty ? <String>[] : chipsFromSections();
-    final addController = TextEditingController();
-    var isLoading = false;
-    var isExtracting = false;
-    File? previewFile = initialPreviewFile;
-    String? previewUrl;
-
-    Future<void> runOcrOnUrl(
-      String url,
-      StateSetter setSheetState,
-      BuildContext ctx,
-    ) async {
-      if (ctx.mounted) setSheetState(() => isExtracting = true);
-      final text = await OcrService.extractIngredientsFromImage(url);
-      if (!context.mounted) return;
-      if (ctx.mounted) {
-        setSheetState(() => isExtracting = false);
-        if (text != null && text.isNotEmpty) {
-          final sections = IngredientSanitizer.sanitizeByLanguage(text);
-          setSheetState(() {
-            rawOcrSections = sections;
-            selectedLangs = sections.keys.toSet();
-            chips = chipsFromSections();
-            addController.clear();
-          });
-        }
-      }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            text != null && text.isNotEmpty
-                ? loc.ocrSuccess
-                : loc.ocrNoIngredientsFound,
-          ),
-          duration: Duration(seconds: text != null && text.isNotEmpty ? 3 : 5),
-        ),
-      );
-    }
-
-    final offImages = _candidateImageUrls(product);
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      enableDrag: false,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setSheetState) => SingleChildScrollView(
-          padding: EdgeInsets.fromLTRB(
-            24,
-            24,
-            24,
-            24 + MediaQuery.of(ctx).viewInsets.bottom,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                children: [
-                  Icon(Icons.edit_note, color: Colors.orange.shade700),
-                  const SizedBox(width: 8),
-                  Text(
-                    loc.contributeIngredients,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Text(
-                loc.contributeIngredientsHint,
-                style: const TextStyle(color: Colors.grey, fontSize: 13),
-              ),
-              const SizedBox(height: 16),
-              // OpenFoodFacts product images — tappable thumbnails
-              if (offImages.isNotEmpty) ...[
-                Text(
-                  loc.productImages,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: offImages.map((url) {
-                      final selected = previewUrl == url && previewFile == null;
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: GestureDetector(
-                          onTap: isExtracting || isLoading
-                              ? null
-                              : () async {
-                                  setSheetState(() {
-                                    previewUrl = url;
-                                    previewFile = null;
-                                  });
-                                  await runOcrOnUrl(url, setSheetState, ctx);
-                                },
-                          child: Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: selected
-                                    ? Colors.orange.shade700
-                                    : Colors.grey.shade300,
-                                width: 2,
-                              ),
-                            ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(6),
-                              child: CachedNetworkImage(
-                                imageUrl: url,
-                                height: 80,
-                                width: 80,
-                                fit: BoxFit.cover,
-                                placeholder: (context, url) => Container(
-                                  height: 80,
-                                  width: 80,
-                                  color: Colors.grey.shade200,
-                                ),
-                                errorWidget: (context, url, e) => Container(
-                                  height: 80,
-                                  width: 80,
-                                  color: Colors.grey.shade200,
-                                  child: const Icon(
-                                    Icons.broken_image,
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ),
-                const SizedBox(height: 12),
-              ],
-              // Preview — shown after any selection (OFF image, gallery, or camera)
-              if (previewFile != null || previewUrl != null) ...[
-                GestureDetector(
-                  onTap: () => showDialog(
-                    context: context,
-                    builder: (_) => Dialog(
-                      backgroundColor: Colors.black,
-                      insetPadding: EdgeInsets.zero,
-                      child: InteractiveViewer(
-                        minScale: 0.5,
-                        maxScale: 6,
-                        child: previewFile != null
-                            ? Image.file(previewFile!, fit: BoxFit.contain)
-                            : CachedNetworkImage(
-                                imageUrl: previewUrl!,
-                                fit: BoxFit.contain,
-                              ),
-                      ),
-                    ),
-                  ),
-                  child: Stack(
-                    alignment: Alignment.bottomRight,
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: previewFile != null
-                            ? Image.file(
-                                previewFile!,
-                                height: 180,
-                                width: double.infinity,
-                                fit: BoxFit.contain,
-                              )
-                            : CachedNetworkImage(
-                                imageUrl: previewUrl!,
-                                height: 180,
-                                width: double.infinity,
-                                fit: BoxFit.contain,
-                              ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.all(6),
-                        child: Icon(
-                          Icons.zoom_in,
-                          color: Colors.white.withValues(alpha: 0.8),
-                          shadows: const [
-                            Shadow(blurRadius: 4, color: Colors.black54),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 12),
-              ],
-              // Gallery picker — lets user pick an existing photo from device
-              OutlinedButton.icon(
-                icon: isExtracting
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.photo_library, size: 18),
-                label: Text(
-                  isExtracting
-                      ? loc.extractingIngredients
-                      : loc.extractFromExistingImage,
-                ),
-                onPressed: isExtracting || isLoading
-                    ? null
-                    : () {
-                        Navigator.pop(ctx);
-                        _pickImageAndContribute(
-                          context,
-                          product,
-                          loc,
-                          ImageSource.gallery,
-                        );
-                      },
-              ),
-              const SizedBox(height: 8),
-              // Camera capture — take photo of ingredients label
-              OutlinedButton.icon(
-                icon: isExtracting
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.camera_alt, size: 18),
-                label: Text(
-                  isExtracting
-                      ? loc.extractingIngredients
-                      : loc.takePhotoOfIngredients,
-                ),
-                onPressed: isExtracting || isLoading
-                    ? null
-                    : () {
-                        Navigator.pop(ctx);
-                        _pickImageAndContribute(
-                          context,
-                          product,
-                          loc,
-                          ImageSource.camera,
-                        );
-                      },
-              ),
-              const SizedBox(height: 12),
-              // ── Language selector (shown after OCR with multiple sections) ──
-              if (rawOcrSections.length > 1) ...[
-                const SizedBox(height: 4),
-                Text(
-                  'Language',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey.shade600,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Wrap(
-                  spacing: 6,
-                  runSpacing: 4,
-                  children: rawOcrSections.keys.map((lang) {
-                    return FilterChip(
-                      label: Text(IngredientSanitizer.langDisplayName(lang)),
-                      selected: selectedLangs.contains(lang),
-                      selectedColor: Colors.orange.shade100,
-                      onSelected: (val) {
-                        setSheetState(() {
-                          if (val) {
-                            selectedLangs.add(lang);
-                          } else {
-                            selectedLangs.remove(lang);
-                          }
-                          chips = chipsFromSections();
-                          addController.clear();
-                        });
-                      },
-                    );
-                  }).toList(),
-                ),
-              ],
-              const SizedBox(height: 12),
-              // ── Ingredient chips ──────────────────────────────────────
-              if (chips.isEmpty)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: Text(
-                    'No ingredients added yet.',
-                    style: TextStyle(color: Colors.grey.shade400, fontSize: 13),
-                  ),
-                )
-              else
-                Wrap(
-                  spacing: 6,
-                  runSpacing: 4,
-                  children: chips.asMap().entries.map((entry) {
-                    return InputChip(
-                      label: Text(
-                        entry.value,
-                        style: const TextStyle(fontSize: 13),
-                      ),
-                      deleteIcon: const Icon(Icons.close, size: 16),
-                      onDeleted: () =>
-                          setSheetState(() => chips.removeAt(entry.key)),
-                      // Tap opens a dialog — no scroll needed, no data lost.
-                      onPressed: () {
-                        final editCtrl = TextEditingController(
-                          text: chips[entry.key],
-                        );
-                        showDialog<void>(
-                          context: context,
-                          builder: (dialogCtx) => AlertDialog(
-                            title: const Text('Edit ingredient'),
-                            content: TextField(
-                              controller: editCtrl,
-                              autofocus: true,
-                              decoration: const InputDecoration(
-                                border: OutlineInputBorder(),
-                              ),
-                              onSubmitted: (_) {
-                                final v = editCtrl.text.trim();
-                                setSheetState(() {
-                                  if (v.isEmpty) {
-                                    chips.removeAt(entry.key);
-                                  } else {
-                                    chips[entry.key] = v;
-                                  }
-                                });
-                                Navigator.pop(dialogCtx);
-                              },
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(dialogCtx),
-                                child: const Text('Cancel'),
-                              ),
-                              TextButton(
-                                onPressed: () {
-                                  final v = editCtrl.text.trim();
-                                  setSheetState(() {
-                                    if (v.isEmpty) {
-                                      chips.removeAt(entry.key);
-                                    } else {
-                                      chips[entry.key] = v;
-                                    }
-                                  });
-                                  Navigator.pop(dialogCtx);
-                                },
-                                child: const Text('OK'),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      visualDensity: VisualDensity.compact,
-                    );
-                  }).toList(),
-                ),
-              const SizedBox(height: 8),
-              // ── Add ingredient row ────────────────────────────────────
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: addController,
-                      decoration: InputDecoration(
-                        hintText: loc.ingredientTextHint,
-                        border: const OutlineInputBorder(),
-                        isDense: true,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 10,
-                        ),
-                      ),
-                      textInputAction: TextInputAction.done,
-                      onSubmitted: (v) {
-                        final parts = v
-                            .split(',')
-                            .map((s) => s.trim())
-                            .where((s) => s.isNotEmpty)
-                            .toList();
-                        if (parts.isEmpty) return;
-                        setSheetState(() {
-                          chips.addAll(parts);
-                          addController.clear();
-                        });
-                      },
-                      onChanged: (v) {
-                        if (!v.contains(',')) return;
-                        final parts = v
-                            .split(',')
-                            .map((s) => s.trim())
-                            .where((s) => s.isNotEmpty)
-                            .toList();
-                        if (parts.isEmpty) return;
-                        setSheetState(() {
-                          chips.addAll(parts);
-                          addController.clear();
-                        });
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  IconButton.filled(
-                    icon: const Icon(Icons.add),
-                    style: IconButton.styleFrom(
-                      backgroundColor: Colors.orange.shade700,
-                      foregroundColor: Colors.white,
-                    ),
-                    onPressed: isExtracting || isLoading
-                        ? null
-                        : () {
-                            final parts = addController.text
-                                .split(',')
-                                .map((s) => s.trim())
-                                .where((s) => s.isNotEmpty)
-                                .toList();
-                            if (parts.isEmpty) return;
-                            setSheetState(() {
-                              chips.addAll(parts);
-                              addController.clear();
-                            });
-                          },
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton.icon(
-                icon: isLoading
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Icon(Icons.send, size: 18),
-                label: Text(loc.submit),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: kGreen,
-                  foregroundColor: Colors.white,
-                ),
-                onPressed: isLoading || isExtracting
-                    ? null
-                    : () async {
-                        if (chips.isEmpty) return;
-                        final text = chips.join(', ');
-                        setSheetState(() => isLoading = true);
-                        final ok =
-                            await IngredientContributionService.submitIngredients(
-                              barcode: product.barcode,
-                              ingredientText: text,
-                            );
-                        if (!ctx.mounted) return;
-                        Navigator.pop(ctx);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              ok
-                                  ? loc.ingredientSubmitted
-                                  : loc.ingredientSubmitFailed,
-                            ),
-                          ),
-                        );
-                        if (ok) _refreshProductData();
-                      },
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  List<String> _candidateImageUrls(Product product) {
-    final urls = <String>[];
-    if (product.imageIngredientsUrl != null) {
-      urls.add(product.imageIngredientsUrl!);
-    }
-    if (product.imageFrontUrl != null &&
-        !urls.contains(product.imageFrontUrl)) {
-      urls.add(product.imageFrontUrl!);
-    }
-    if (product.imageUrl != null && !urls.contains(product.imageUrl)) {
-      urls.add(product.imageUrl!);
-    }
-    return urls;
-  }
-
   String _halalReasonText(
     bool isHalal,
     bool isUnknown,
@@ -2994,7 +2413,12 @@ class _ResultScreenState extends State<ResultScreen> {
       _showSignInRequired(context);
       return;
     }
-    _showFeedbackDialog(context);
+    showFeedbackDialog(
+      context: context,
+      barcode: widget.barcode,
+      feedbackService: _feedbackService,
+      onSubmitted: _loadFeedbacks,
+    );
   }
 
   void _showSignInRequired(BuildContext context) {
@@ -3055,119 +2479,6 @@ class _ResultScreenState extends State<ResultScreen> {
         ),
       ),
     );
-  }
-
-  Future<void> _showFeedbackDialog(BuildContext context) async {
-    final loc = AppLocalizations.of(context);
-    final TextEditingController feedbackController = TextEditingController();
-    final List<String> selectedFiles = [];
-
-    await showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
-          title: Text(loc.provideFeedback),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  loc.feedbackDialogHint,
-                  style: const TextStyle(fontSize: 14),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: feedbackController,
-                  maxLines: 3,
-                  maxLength: 500,
-                  onChanged: (_) => setDialogState(() {}),
-                  decoration: InputDecoration(
-                    hintText: loc.feedbackInputHint,
-                    border: const OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: () async {
-                          final result = await FilePicker.platform.pickFiles(
-                            allowMultiple: true,
-                            type: FileType.custom,
-                            allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf'],
-                          );
-                          if (result != null) {
-                            setDialogState(() {
-                              selectedFiles.addAll(
-                                result.files
-                                    .map((f) => f.path)
-                                    .whereType<String>(),
-                              );
-                            });
-                          }
-                        },
-                        icon: const Icon(Icons.attach_file),
-                        label: Text(loc.attachFiles),
-                      ),
-                    ),
-                  ],
-                ),
-                if (selectedFiles.isNotEmpty) ...[
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    children: selectedFiles
-                        .map(
-                          (file) => Chip(
-                            label: Text(file.split(RegExp(r'[/\\]')).last),
-                            onDeleted: () => setDialogState(
-                              () => selectedFiles.remove(file),
-                            ),
-                          ),
-                        )
-                        .toList(),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: Text(loc.cancel),
-            ),
-            ElevatedButton(
-              onPressed: feedbackController.text.trim().isEmpty
-                  ? null
-                  : () async {
-                      final navigator = Navigator.of(ctx);
-                      final messenger = ScaffoldMessenger.of(context);
-                      try {
-                        await _feedbackService.addFeedback(
-                          widget.barcode,
-                          feedbackController.text.trim(),
-                          attachments: selectedFiles,
-                        );
-                        navigator.pop();
-                        messenger.showSnackBar(
-                          SnackBar(content: Text(loc.thankYouFeedback)),
-                        );
-                        await _loadFeedbacks();
-                      } catch (e) {
-                        messenger.showSnackBar(
-                          SnackBar(content: Text(loc.couldNotSubmitFeedback)),
-                        );
-                      }
-                    },
-              child: Text(loc.submit),
-            ),
-          ],
-        ),
-      ),
-    );
-    feedbackController.dispose();
   }
 
   Future<void> _showProducerReplyDialog(String feedbackId) async {
@@ -3298,4 +2609,3 @@ class _ResultScreenState extends State<ResultScreen> {
     );
   }
 }
-
