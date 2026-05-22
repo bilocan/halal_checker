@@ -8,23 +8,20 @@ import 'package:image_picker/image_picker.dart';
 import '../app_colors.dart';
 import '../config.dart';
 import '../localization/app_localizations.dart';
-import '../models/community.dart';
-import '../models/feedback.dart';
 import '../models/product.dart';
-import '../models/review_status.dart';
-import '../services/ai_ingredient_request_service.dart';
-import '../services/analysis_service.dart';
+import '../models/product_analysis.dart';
 import '../services/auth_service.dart';
-import '../services/community_service.dart';
-import '../services/database_service.dart';
 import '../services/feedback_service.dart';
 import '../services/product_image_service.dart';
-import '../services/product_service.dart';
 import '../widgets/feedback_dialog.dart';
 import '../widgets/report_sheets.dart';
+import '../widgets/sign_in_required_sheet.dart';
 import 'admin_panel_screen.dart';
+import 'deep_analysis_screen.dart';
 import 'discussion_screen.dart';
 import 'result/debug/local_db_debug_dialog.dart';
+import 'result/result_controller.dart';
+import 'result/widgets/result_analysis_card.dart';
 import 'result/widgets/result_bottom_nav.dart';
 import 'result/widgets/result_community_card.dart';
 import 'result/widgets/result_feedback_section.dart';
@@ -56,108 +53,38 @@ class ResultScreen extends StatefulWidget {
 }
 
 class _ResultScreenState extends State<ResultScreen> {
+  late final ResultController _controller;
   final FeedbackService _feedbackService = FeedbackService();
-  final ProductService _productService = ProductService();
-  final AnalysisService _analysisService = AnalysisService();
-  List<FeedbackItem> _feedbacks = [];
-  bool _isLoadingFeedback = false;
-  bool _isRefreshing = false;
-  bool _isFetchingAiIngredients = false;
-  ReviewStatus? _aiRequestStatus;
   ProductImageType? _uploadingImageType;
   bool _showTranslated = false;
-  String _note = '';
-  bool _isFlagged = false;
   bool _noteExpanded = false;
   final _noteController = TextEditingController();
-
-  List<Discussion> _discussions = [];
-  bool _isAdmin = false;
 
   @override
   void initState() {
     super.initState();
-    _loadAll();
-  }
-
-  Future<void> _loadAll() async {
-    await Future.wait([
-      _loadFeedbacks(),
-      _loadNote(),
-      _loadDiscussions(),
-      _loadAiRequestStatus(),
-      _loadAdminStatus(),
-    ]);
-  }
-
-  Future<void> _loadAdminStatus() async {
-    final admin = await _analysisService.isAdmin();
-    if (mounted) setState(() => _isAdmin = admin);
-  }
-
-  Future<void> _loadAiRequestStatus() async {
-    if (AuthService.currentUser == null) return;
-    final req = await AiIngredientRequestService.getRequestForBarcode(
-      widget.barcode,
+    _controller = ResultController(
+      barcode: widget.barcode,
+      product: widget.product,
     );
-    if (req != null && mounted) {
-      setState(
-        () => _aiRequestStatus = ReviewStatus.fromString(
-          req['status'] as String?,
-        ),
-      );
-    }
+    _controller.loadAll().then((_) {
+      if (!mounted) return;
+      _noteController.text = _controller.note;
+      if (_controller.feedbackLoadFailed) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context).couldNotLoadFeedback),
+          ),
+        );
+      }
+    });
   }
 
   @override
   void dispose() {
+    _controller.dispose();
     _noteController.dispose();
     super.dispose();
-  }
-
-  Future<void> _loadNote() async {
-    final data = await DatabaseService.instance.getScanNote(widget.barcode);
-    if (data != null && mounted) {
-      setState(() {
-        _note = data['notes'] as String? ?? '';
-        _isFlagged = data['isFlagged'] as bool;
-        _noteController.text = _note;
-      });
-    }
-  }
-
-  Future<void> _saveNote() async {
-    final note = _noteController.text.trim();
-    await DatabaseService.instance.updateScanNote(
-      widget.barcode,
-      note: note.isEmpty ? null : note,
-      isFlagged: _isFlagged,
-    );
-    if (!mounted) return;
-    setState(() => _note = note);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(AppLocalizations.of(context).noteSaved),
-        duration: const Duration(seconds: 1),
-      ),
-    );
-  }
-
-  Future<void> _toggleFlag() async {
-    final newFlag = !_isFlagged;
-    setState(() => _isFlagged = newFlag);
-    await DatabaseService.instance.updateScanNote(
-      widget.barcode,
-      note: _noteController.text.trim().isEmpty
-          ? null
-          : _noteController.text.trim(),
-      isFlagged: newFlag,
-    );
-  }
-
-  Future<void> _loadDiscussions() async {
-    final d = await CommunityService.getDiscussions(widget.barcode);
-    if (mounted) setState(() => _discussions = d);
   }
 
   void _copyToClipboard(String text, String label) {
@@ -180,121 +107,119 @@ class _ResultScreenState extends State<ResultScreen> {
     );
   }
 
-  Future<void> _loadFeedbacks() async {
-    setState(() => _isLoadingFeedback = true);
-    try {
-      final feedbacks = await _feedbackService.getFeedbacksForBarcode(
-        widget.barcode,
-      );
-      if (mounted) {
-        setState(() => _feedbacks = feedbacks);
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context).couldNotLoadFeedback),
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isLoadingFeedback = false);
-      }
-    }
+  Future<void> _saveNote() async {
+    await _controller.saveNote(_noteController.text);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(AppLocalizations.of(context).noteSaved),
+        duration: const Duration(seconds: 1),
+      ),
+    );
+  }
+
+  Future<void> _toggleFlag() async {
+    await _controller.toggleFlag(_noteController.text);
   }
 
   Future<void> _requestAiIngredients() async {
-    if (_isFetchingAiIngredients) return;
     if (AuthService.currentUser == null) {
-      _showSignInRequired(context);
+      await showSignInRequiredSheet(context);
       return;
     }
-    setState(() => _isFetchingAiIngredients = true);
-    try {
-      final submitted = await AiIngredientRequestService.submitRequest(
-        widget.barcode,
-        productName: widget.product?.name,
+    final submitted = await _controller.requestAiIngredients();
+    if (!mounted) return;
+    if (submitted == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to submit AI request.')),
       );
-      if (!mounted) return;
-      if (submitted) {
-        setState(() => _aiRequestStatus = ReviewStatus.pending);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('AI request submitted — pending admin review.'),
-            duration: Duration(seconds: 3),
-          ),
-        );
-      } else {
-        setState(() => _aiRequestStatus = ReviewStatus.pending);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('An AI request for this product is already pending.'),
-            duration: Duration(seconds: 3),
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to submit AI request.')),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isFetchingAiIngredients = false);
+      return;
     }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          submitted
+              ? 'AI request submitted — pending admin review.'
+              : 'An AI request for this product is already pending.',
+        ),
+        duration: const Duration(seconds: 3),
+      ),
+    );
   }
 
   Future<void> _refreshProductData() async {
-    if (_isRefreshing) return;
-
-    setState(() => _isRefreshing = true);
-
-    try {
-      final refreshedProduct = await _productService.refreshProduct(
-        widget.barcode,
+    final refreshed = await _controller.refreshProduct();
+    if (!mounted) return;
+    if (refreshed != null) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) =>
+              ResultScreen(product: refreshed, barcode: widget.barcode),
+        ),
       );
-      if (refreshedProduct != null && mounted) {
-        await DatabaseService.instance.insertScan(
-          barcode: widget.barcode,
-          productName: refreshedProduct.name,
-          isHalal: refreshedProduct.isHalal,
-        );
-        if (!mounted) return;
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) => ResultScreen(
-              product: refreshedProduct,
-              barcode: widget.barcode,
-            ),
-          ),
-        );
-      } else if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context).couldNotRefreshProduct),
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context).couldNotRefreshProduct),
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isRefreshing = false);
-      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppLocalizations.of(context).couldNotRefreshProduct),
+        ),
+      );
     }
+  }
+
+  Future<void> _requestAnalysis() async {
+    if (AuthService.currentUser == null) {
+      await showSignInRequiredSheet(context);
+      return;
+    }
+    final loc = AppLocalizations.of(context);
+    final result = await _controller.requestDeepAnalysis();
+    if (!mounted) return;
+    if (result != null &&
+        result.status != AnalysisStatus.pending &&
+        result.status != AnalysisStatus.aiAnalyzing) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => DeepAnalysisScreen(
+            productName: widget.product?.name ?? widget.barcode,
+            barcode: widget.barcode,
+            analysis: result,
+          ),
+        ),
+      );
+    } else if (result != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(loc.analysisQueued),
+          duration: const Duration(seconds: 4),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(loc.analysisFailed)));
+    }
+  }
+
+  void _openDeepAnalysis() {
+    final analysis = _controller.analysis;
+    if (analysis == null) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => DeepAnalysisScreen(
+          productName: widget.product?.name ?? widget.barcode,
+          barcode: widget.barcode,
+          analysis: analysis,
+        ),
+      ),
+    );
   }
 
   Future<void> _uploadProductImage(ProductImageType type) async {
     if (AuthService.currentUser == null) {
-      _showSignInRequired(context);
+      await showSignInRequiredSheet(context);
       return;
     }
     final loc = AppLocalizations.of(context);
@@ -351,7 +276,7 @@ class _ResultScreenState extends State<ResultScreen> {
 
   Future<void> _openDiscussion() async {
     if (AuthService.currentUser == null) {
-      _showSignInRequired(context);
+      await showSignInRequiredSheet(context);
       return;
     }
     await Navigator.push(
@@ -363,17 +288,20 @@ class _ResultScreenState extends State<ResultScreen> {
         ),
       ),
     );
-    _loadDiscussions();
+    await _controller.loadDiscussions();
   }
 
   Widget _buildBottomNav(AppLocalizations loc) {
-    return ResultBottomNav(
-      loc: loc,
-      isAdmin: _isAdmin,
-      onHome: () => Navigator.pop(context),
-      onAdmin: () => Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const AdminPanelScreen()),
+    return ListenableBuilder(
+      listenable: _controller,
+      builder: (_, _) => ResultBottomNav(
+        loc: loc,
+        isAdmin: _controller.isAdmin,
+        onHome: () => Navigator.pop(context),
+        onAdmin: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const AdminPanelScreen()),
+        ),
       ),
     );
   }
@@ -414,115 +342,139 @@ class _ResultScreenState extends State<ResultScreen> {
               onPressed: () => showLocalDbDebugDialog(
                 context: context,
                 barcode: barcode,
-                productService: _productService,
+                productService: _controller.productService,
               ),
               tooltip: 'Local DB debug',
             ),
-          IconButton(
-            icon: Icon(_isFlagged ? Icons.bookmark : Icons.bookmark_border),
-            onPressed: _toggleFlag,
-            tooltip: loc.checkLater,
-          ),
-          if (_isRefreshing)
-            const Padding(
-              padding: EdgeInsets.all(14),
-              child: SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  color: Colors.white,
-                  strokeWidth: 2,
-                ),
+          ListenableBuilder(
+            listenable: _controller,
+            builder: (_, _) => IconButton(
+              icon: Icon(
+                _controller.isFlagged ? Icons.bookmark : Icons.bookmark_border,
               ),
-            )
-          else
-            IconButton(
-              icon: const Icon(Icons.refresh),
-              onPressed: _refreshProductData,
-              tooltip: loc.refreshTooltip,
+              onPressed: _toggleFlag,
+              tooltip: loc.checkLater,
             ),
+          ),
+          ListenableBuilder(
+            listenable: _controller,
+            builder: (_, _) {
+              if (_controller.isRefreshing) {
+                return const Padding(
+                  padding: EdgeInsets.all(14),
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  ),
+                );
+              }
+              return IconButton(
+                icon: const Icon(Icons.refresh),
+                onPressed: _refreshProductData,
+                tooltip: loc.refreshTooltip,
+              );
+            },
+          ),
         ],
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              const SizedBox(height: 20),
-              ResultStatusBanner(product: product, loc: loc),
-              const SizedBox(height: 24),
-              ResultProductHeader(
-                product: product,
-                barcode: barcode,
-                onCopyBarcode: () => _copyToClipboard(barcode, 'Barcode'),
+      body: ListenableBuilder(
+        listenable: _controller,
+        builder: (context, _) {
+          return SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  const SizedBox(height: 20),
+                  ResultStatusBanner(product: product, loc: loc),
+                  const SizedBox(height: 24),
+                  ResultProductHeader(
+                    product: product,
+                    barcode: barcode,
+                    onCopyBarcode: () => _copyToClipboard(barcode, 'Barcode'),
+                  ),
+                  const SizedBox(height: 24),
+                  ResultProductImages(
+                    product: product,
+                    loc: loc,
+                    uploadingImageType: _uploadingImageType,
+                    onUpload: _uploadProductImage,
+                  ),
+                  const SizedBox(height: 24),
+                  ResultIngredientsSection(
+                    product: product,
+                    loc: loc,
+                    showTranslated: _showTranslated,
+                    languageCode: languageCode,
+                    onToggleTranslation: () =>
+                        setState(() => _showTranslated = !_showTranslated),
+                    onCopyIngredients: () => _copyToClipboard(
+                      product.ingredients.join(', '),
+                      'Ingredients',
+                    ),
+                    onReportIngredient: () =>
+                        _showIngredientReportSheet(context, product),
+                    adminReportedIngredients: widget.adminReportedIngredients,
+                    adminReportExplanation: widget.adminReportExplanation,
+                    aiRequestStatus: _controller.aiRequestStatus,
+                    isFetchingAiIngredients:
+                        _controller.isFetchingAiIngredients,
+                    onRequestAiIngredients: _requestAiIngredients,
+                    onRefreshProduct: _refreshProductData,
+                  ),
+                  const SizedBox(height: 16),
+                  ResultTransparencyCard(product: product, loc: loc),
+                  const SizedBox(height: 16),
+                  ResultNoteCard(
+                    loc: loc,
+                    note: _controller.note,
+                    isFlagged: _controller.isFlagged,
+                    isExpanded: _noteExpanded,
+                    noteController: _noteController,
+                    onToggleExpanded: () =>
+                        setState(() => _noteExpanded = !_noteExpanded),
+                    onToggleFlag: _toggleFlag,
+                    onSave: _saveNote,
+                    onReportWithNote: _reportWithNote,
+                  ),
+                  const SizedBox(height: 16),
+                  ResultAnalysisCard(
+                    loc: loc,
+                    analysis: _controller.analysis,
+                    isRequesting: _controller.isRequestingAnalysis,
+                    onRequest: _requestAnalysis,
+                    onOpenAnalysis: _openDeepAnalysis,
+                  ),
+                  const SizedBox(height: 8),
+                  ResultCommunityCard(
+                    loc: loc,
+                    discussionCount: _controller.discussions.length,
+                    onTap: _openDiscussion,
+                  ),
+                  const SizedBox(height: 16),
+                  ResultFeedbackSection(
+                    loc: loc,
+                    feedbacks: _controller.feedbacks,
+                    isLoading: _controller.isLoadingFeedback,
+                    onProducerReply: _showProducerReplyDialog,
+                  ),
+                  const SizedBox(height: 24),
+                  ResultFooterActions(
+                    loc: loc,
+                    onScanAnother: () => Navigator.pop(context),
+                    onFeedback: () => _onFeedbackTap(context),
+                    onReport: () => _showReportDialog(context, product),
+                  ),
+                ],
               ),
-              const SizedBox(height: 24),
-              ResultProductImages(
-                product: product,
-                loc: loc,
-                uploadingImageType: _uploadingImageType,
-                onUpload: _uploadProductImage,
-              ),
-              const SizedBox(height: 24),
-              ResultIngredientsSection(
-                product: product,
-                loc: loc,
-                showTranslated: _showTranslated,
-                languageCode: languageCode,
-                onToggleTranslation: () =>
-                    setState(() => _showTranslated = !_showTranslated),
-                onCopyIngredients: () => _copyToClipboard(
-                  product.ingredients.join(', '),
-                  'Ingredients',
-                ),
-                onReportIngredient: () =>
-                    _showIngredientReportSheet(context, product),
-                adminReportedIngredients: widget.adminReportedIngredients,
-                adminReportExplanation: widget.adminReportExplanation,
-                aiRequestStatus: _aiRequestStatus,
-                isFetchingAiIngredients: _isFetchingAiIngredients,
-                onRequestAiIngredients: _requestAiIngredients,
-                onRefreshProduct: _refreshProductData,
-              ),
-              const SizedBox(height: 16),
-              ResultTransparencyCard(product: product, loc: loc),
-              const SizedBox(height: 16),
-              ResultNoteCard(
-                loc: loc,
-                note: _note,
-                isFlagged: _isFlagged,
-                isExpanded: _noteExpanded,
-                noteController: _noteController,
-                onToggleExpanded: () =>
-                    setState(() => _noteExpanded = !_noteExpanded),
-                onToggleFlag: _toggleFlag,
-                onSave: _saveNote,
-                onReportWithNote: _reportWithNote,
-              ),
-              const SizedBox(height: 16),
-              ResultCommunityCard(
-                loc: loc,
-                discussionCount: _discussions.length,
-                onTap: _openDiscussion,
-              ),
-              const SizedBox(height: 16),
-              ResultFeedbackSection(
-                loc: loc,
-                feedbacks: _feedbacks,
-                isLoading: _isLoadingFeedback,
-                onProducerReply: _showProducerReplyDialog,
-              ),
-              const SizedBox(height: 24),
-              ResultFooterActions(
-                loc: loc,
-                onScanAnother: () => Navigator.pop(context),
-                onFeedback: () => _onFeedbackTap(context),
-                onReport: () => _showReportDialog(context, product),
-              ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
       bottomNavigationBar: _buildBottomNav(loc),
     );
@@ -530,74 +482,14 @@ class _ResultScreenState extends State<ResultScreen> {
 
   void _onFeedbackTap(BuildContext context) {
     if (AppConfig.hasSupabase && AuthService.currentUser == null) {
-      _showSignInRequired(context);
+      showSignInRequiredSheet(context);
       return;
     }
     showFeedbackDialog(
       context: context,
       barcode: widget.barcode,
       feedbackService: _feedbackService,
-      onSubmitted: _loadFeedbacks,
-    );
-  }
-
-  void _showSignInRequired(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (_) => Padding(
-        padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.lock_outline, size: 48, color: kGreen),
-            const SizedBox(height: 16),
-            const Text(
-              'Sign in required',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'You need to be signed in to submit feedback or suggestions.',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey),
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                icon: const Icon(Icons.login),
-                label: const Text('Sign in with Google'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: kGreen,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                onPressed: () async {
-                  Navigator.pop(context);
-                  try {
-                    final success = await AuthService.signInWithGoogle();
-                    if (!context.mounted) return;
-                    if (!success) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Sign-in failed. Please try again.'),
-                          duration: Duration(seconds: 3),
-                        ),
-                      );
-                    }
-                  } catch (_) {}
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
+      onSubmitted: _controller.loadFeedbacks,
     );
   }
 
@@ -667,7 +559,7 @@ class _ResultScreenState extends State<ResultScreen> {
                         messenger.showSnackBar(
                           SnackBar(content: Text(loc.replySubmitted)),
                         );
-                        await _loadFeedbacks();
+                        await _controller.loadFeedbacks();
                       } catch (e) {
                         messenger.showSnackBar(
                           SnackBar(content: Text(loc.couldNotSubmitReply)),
