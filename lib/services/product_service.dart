@@ -703,5 +703,4 @@ class ProductService {
       ingredientSource: approved.ingredientSource ?? base.ingredientSource,
     );
   }
-
 }
