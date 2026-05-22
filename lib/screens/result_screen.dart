@@ -1,38 +1,41 @@
-import 'dart:convert';
 import 'dart:io';
-import 'package:cached_network_image/cached_network_image.dart';
+
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:url_launcher/url_launcher.dart';
+
 import '../app_colors.dart';
 import '../config.dart';
 import '../localization/app_localizations.dart';
 import '../models/community.dart';
-import '../models/product.dart';
 import '../models/feedback.dart';
-import '../models/product_analysis.dart';
+import '../models/product.dart';
 import '../models/review_status.dart';
+import '../services/ai_ingredient_request_service.dart';
 import '../services/analysis_service.dart';
-import '../services/cache_service.dart';
 import '../services/auth_service.dart';
 import '../services/community_service.dart';
-import '../services/feedback_service.dart';
 import '../services/database_service.dart';
-import '../services/ai_ingredient_request_service.dart';
-import '../widgets/ingredient_source_badge.dart';
-import '../widgets/product_label_chips.dart';
-import '../widgets/contribute_ingredients_sheet.dart';
+import '../services/feedback_service.dart';
+import '../services/product_image_service.dart';
+import '../services/product_service.dart';
 import '../widgets/feedback_dialog.dart';
 import '../widgets/report_sheets.dart';
-import '../services/product_image_service.dart';
-import '../constants/ingredient_keywords.dart';
-import '../services/product_service.dart';
 import 'admin_panel_screen.dart';
-import 'deep_analysis_screen.dart';
 import 'discussion_screen.dart';
-import 'keywords_screen.dart';
+import 'result/debug/local_db_debug_dialog.dart';
+import 'result/widgets/result_bottom_nav.dart';
+import 'result/widgets/result_community_card.dart';
+import 'result/widgets/result_feedback_section.dart';
+import 'result/widgets/result_footer_actions.dart';
+import 'result/widgets/result_ingredients_section.dart';
+import 'result/widgets/result_not_found_body.dart';
+import 'result/widgets/result_note_card.dart';
+import 'result/widgets/result_product_header.dart';
+import 'result/widgets/result_product_images.dart';
+import 'result/widgets/result_status_banner.dart';
+import 'result/widgets/result_transparency_card.dart';
 
 class ResultScreen extends StatefulWidget {
   final Product? product;
@@ -68,8 +71,6 @@ class _ResultScreenState extends State<ResultScreen> {
   bool _noteExpanded = false;
   final _noteController = TextEditingController();
 
-  ProductAnalysis? _analysis;
-  bool _isRequestingAnalysis = false;
   List<Discussion> _discussions = [];
   bool _isAdmin = false;
 
@@ -83,7 +84,6 @@ class _ResultScreenState extends State<ResultScreen> {
     await Future.wait([
       _loadFeedbacks(),
       _loadNote(),
-      _loadAnalysis(),
       _loadDiscussions(),
       _loadAiRequestStatus(),
       _loadAdminStatus(),
@@ -155,54 +155,9 @@ class _ResultScreenState extends State<ResultScreen> {
     );
   }
 
-  Future<void> _loadAnalysis() async {
-    final a = await _analysisService.getAnalysis(widget.barcode);
-    if (mounted) setState(() => _analysis = a);
-  }
-
   Future<void> _loadDiscussions() async {
     final d = await CommunityService.getDiscussions(widget.barcode);
     if (mounted) setState(() => _discussions = d);
-  }
-
-  Future<void> _requestAnalysis() async {
-    if (AuthService.currentUser == null) {
-      _showSignInRequired(context);
-      return;
-    }
-    setState(() => _isRequestingAnalysis = true);
-    final result = await _analysisService.requestDeepAnalysis(
-      widget.barcode,
-      product: widget.product,
-    );
-    if (!mounted) return;
-    setState(() {
-      _isRequestingAnalysis = false;
-      if (result != null) _analysis = result;
-    });
-    if (result != null && result.status != AnalysisStatus.pending) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => DeepAnalysisScreen(
-            productName: widget.product?.name ?? widget.barcode,
-            barcode: widget.barcode,
-            analysis: result,
-          ),
-        ),
-      );
-    } else if (result != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(AppLocalizations.of(context).analysisQueued),
-          duration: const Duration(seconds: 4),
-        ),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context).analysisFailed)),
-      );
-    }
   }
 
   void _copyToClipboard(String text, String label) {
@@ -222,278 +177,6 @@ class _ResultScreenState extends State<ResultScreen> {
       context,
       product,
       initialNote: _noteController.text.trim(),
-    );
-  }
-
-  // ignore: unused_element
-  Widget _buildAnalysisCard() {
-    final analysis = _analysis;
-    final statusColor = switch (analysis?.status) {
-      AnalysisStatus.resolved => Colors.green.shade700,
-      AnalysisStatus.aiDone ||
-      AnalysisStatus.communityReview ||
-      AnalysisStatus.consulting => Colors.blue.shade700,
-      AnalysisStatus.aiAnalyzing => Colors.orange.shade700,
-      _ => Colors.purple.shade700,
-    };
-
-    return Card(
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap:
-            analysis != null &&
-                analysis.status != AnalysisStatus.pending &&
-                analysis.status != AnalysisStatus.aiAnalyzing
-            ? () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => DeepAnalysisScreen(
-                    productName: widget.product?.name ?? widget.barcode,
-                    barcode: widget.barcode,
-                    analysis: analysis,
-                  ),
-                ),
-              )
-            : null,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Icon(Icons.biotech, color: statusColor, size: 28),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      AppLocalizations.of(context).deepAnalysis,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15,
-                        color: statusColor,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      analysis == null
-                          ? AppLocalizations.of(context).perIngredientAiAnalysis
-                          : analysis.status.label,
-                      style: const TextStyle(fontSize: 12, color: Colors.grey),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              if (_isRequestingAnalysis)
-                const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              else if (analysis == null ||
-                  analysis.status == AnalysisStatus.pending)
-                FilledButton(
-                  style: FilledButton.styleFrom(
-                    backgroundColor: Colors.purple.shade700,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                  ),
-                  onPressed: _requestAnalysis,
-                  child: Text(
-                    AppLocalizations.of(context).analyse,
-                    style: const TextStyle(fontSize: 13),
-                  ),
-                )
-              else if (analysis.status == AnalysisStatus.aiAnalyzing)
-                const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              else
-                Icon(Icons.chevron_right, color: Colors.grey.shade400),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCommunityCard() {
-    final count = _discussions.length;
-    return Card(
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: () async {
-          if (AuthService.currentUser == null) {
-            _showSignInRequired(context);
-            return;
-          }
-          await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => DiscussionScreen(
-                barcode: widget.barcode,
-                productName: widget.product?.name ?? widget.barcode,
-              ),
-            ),
-          );
-          _loadDiscussions();
-        },
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Icon(Icons.forum_outlined, color: Colors.blue.shade700, size: 28),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      AppLocalizations.of(context).communityDiscussion,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15,
-                        color: Colors.blue.shade700,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      count == 0
-                          ? AppLocalizations.of(context).noDiscussionsYet
-                          : '$count discussion${count == 1 ? '' : 's'}',
-                      style: const TextStyle(fontSize: 12, color: Colors.grey),
-                    ),
-                  ],
-                ),
-              ),
-              Icon(Icons.chevron_right, color: Colors.grey.shade400),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNoteSection(AppLocalizations loc) {
-    final hasNote = _note.isNotEmpty;
-
-    return Card(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          InkWell(
-            onTap: () => setState(() => _noteExpanded = !_noteExpanded),
-            borderRadius: const BorderRadius.all(Radius.circular(12)),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Row(
-                children: [
-                  Icon(Icons.edit_note, size: 20, color: Colors.grey.shade700),
-                  const SizedBox(width: 8),
-                  Text(
-                    loc.myNote,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  if (hasNote) ...[
-                    const SizedBox(width: 6),
-                    Container(
-                      width: 7,
-                      height: 7,
-                      decoration: const BoxDecoration(
-                        color: kGreen,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  ],
-                  const Spacer(),
-                  GestureDetector(
-                    onTap: _toggleFlag,
-                    behavior: HitTestBehavior.opaque,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      child: Icon(
-                        _isFlagged ? Icons.bookmark : Icons.bookmark_border,
-                        color: _isFlagged
-                            ? Colors.orange.shade700
-                            : Colors.grey.shade500,
-                        size: 20,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Icon(
-                    _noteExpanded ? Icons.expand_less : Icons.expand_more,
-                    color: Colors.grey.shade500,
-                    size: 20,
-                  ),
-                ],
-              ),
-            ),
-          ),
-          AnimatedSize(
-            duration: const Duration(milliseconds: 200),
-            curve: Curves.easeInOut,
-            child: _noteExpanded
-                ? Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        const Divider(height: 1),
-                        const SizedBox(height: 12),
-                        TextField(
-                          controller: _noteController,
-                          maxLines: 3,
-                          maxLength: 300,
-                          decoration: InputDecoration(
-                            hintText: loc.noteHint,
-                            border: const OutlineInputBorder(),
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 10,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            TextButton.icon(
-                              onPressed: _reportWithNote,
-                              style: TextButton.styleFrom(
-                                foregroundColor: Colors.orange.shade700,
-                                padding: EdgeInsets.zero,
-                              ),
-                              icon: const Icon(Icons.flag_outlined, size: 16),
-                              label: Text(
-                                loc.reportWrongResult,
-                                style: const TextStyle(fontSize: 12),
-                              ),
-                            ),
-                            ElevatedButton(
-                              onPressed: _saveNote,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: kGreen,
-                                foregroundColor: Colors.white,
-                              ),
-                              child: Text(loc.submit),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  )
-                : const SizedBox.shrink(),
-          ),
-        ],
-      ),
     );
   }
 
@@ -543,7 +226,6 @@ class _ResultScreenState extends State<ResultScreen> {
           ),
         );
       } else {
-        // Already a pending request for this barcode.
         setState(() => _aiRequestStatus = ReviewStatus.pending);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -610,122 +292,6 @@ class _ResultScreenState extends State<ResultScreen> {
     }
   }
 
-  Future<void> _showLocalDbDebug() async {
-    final barcode = widget.barcode;
-    final cacheRaw = await CacheService().getRaw(barcode);
-    final dbProduct = await _productService.fetchFromSharedDbForDebug(barcode);
-
-    if (!mounted) return;
-    showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('Local DB — $barcode'),
-        content: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                '── SharedPreferences cache ──',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 4),
-              if (cacheRaw == null)
-                const Text('(empty)', style: TextStyle(color: Colors.grey))
-              else
-                _debugField('isHalal', _jsonField(cacheRaw, 'isHalal')),
-              if (cacheRaw != null)
-                _debugField('isUnknown', _jsonField(cacheRaw, 'isUnknown')),
-              if (cacheRaw != null)
-                _debugField('isManaged', _jsonField(cacheRaw, 'isManaged')),
-              if (cacheRaw != null)
-                _debugField(
-                  'ingredients#',
-                  _jsonListLen(cacheRaw, 'ingredients'),
-                ),
-              if (cacheRaw != null)
-                _debugField('_cachedAt', _jsonField(cacheRaw, '_cachedAt')),
-              const SizedBox(height: 12),
-              const Text(
-                '── Remote DB (products table) ──',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 4),
-              if (dbProduct == null)
-                const Text('(not found)', style: TextStyle(color: Colors.grey))
-              else ...[
-                _debugField('isHalal', '${dbProduct.isHalal}'),
-                _debugField('isUnknown', '${dbProduct.isUnknown}'),
-                _debugField('isManaged', '${dbProduct.isManaged}'),
-                _debugField('ingredients#', '${dbProduct.ingredients.length}'),
-                _debugField(
-                  'ingredients',
-                  dbProduct.ingredients.take(5).join(', '),
-                ),
-              ],
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () async {
-              await CacheService().removeProduct(barcode);
-              if (ctx.mounted) Navigator.pop(ctx);
-              if (mounted) {
-                ScaffoldMessenger.of(
-                  context,
-                ).showSnackBar(const SnackBar(content: Text('Cache cleared')));
-              }
-            },
-            child: const Text('Clear cache'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  static Widget _debugField(String label, String value) => Padding(
-    padding: const EdgeInsets.only(bottom: 2),
-    child: RichText(
-      text: TextSpan(
-        style: const TextStyle(
-          fontSize: 12,
-          color: Colors.black87,
-          fontFamily: 'monospace',
-        ),
-        children: [
-          TextSpan(
-            text: '$label: ',
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
-          TextSpan(text: value),
-        ],
-      ),
-    ),
-  );
-
-  static String _jsonField(String raw, String key) {
-    try {
-      final m = (jsonDecode(raw) as Map<String, dynamic>);
-      return '${m[key]}';
-    } catch (_) {
-      return '?';
-    }
-  }
-
-  static String _jsonListLen(String raw, String key) {
-    try {
-      final m = (jsonDecode(raw) as Map<String, dynamic>);
-      final v = m[key];
-      return v is List ? '${v.length}' : '?';
-    } catch (_) {
-      return '?';
-    }
-  }
-
   Future<void> _uploadProductImage(ProductImageType type) async {
     if (AuthService.currentUser == null) {
       _showSignInRequired(context);
@@ -783,44 +349,32 @@ class _ResultScreenState extends State<ResultScreen> {
     );
   }
 
-  BottomNavigationBar _buildBottomNav(AppLocalizations loc) {
-    final adminIndex = _isAdmin ? 3 : -1;
-    return BottomNavigationBar(
-      currentIndex: 0,
-      onTap: (index) {
-        if (index == 0) {
-          Navigator.pop(context);
-        } else if (index == adminIndex) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const AdminPanelScreen()),
-          );
-        }
-      },
-      selectedItemColor: kGreen,
-      unselectedItemColor: Colors.grey,
-      type: BottomNavigationBarType.fixed,
-      items: [
-        BottomNavigationBarItem(icon: const Icon(Icons.home), label: loc.home),
-        BottomNavigationBarItem(
-          icon: const Icon(Icons.list_alt),
-          label: loc.keywords,
+  Future<void> _openDiscussion() async {
+    if (AuthService.currentUser == null) {
+      _showSignInRequired(context);
+      return;
+    }
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => DiscussionScreen(
+          barcode: widget.barcode,
+          productName: widget.product?.name ?? widget.barcode,
         ),
-        BottomNavigationBarItem(
-          icon: const Icon(Icons.store_outlined),
-          label: loc.halalDirectory,
-        ),
-        if (_isAdmin)
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.admin_panel_settings_outlined),
-            activeIcon: const Icon(Icons.admin_panel_settings),
-            label: loc.adminPanel,
-          ),
-        BottomNavigationBarItem(
-          icon: const Icon(Icons.info_outline),
-          label: loc.about,
-        ),
-      ],
+      ),
+    );
+    _loadDiscussions();
+  }
+
+  Widget _buildBottomNav(AppLocalizations loc) {
+    return ResultBottomNav(
+      loc: loc,
+      isAdmin: _isAdmin,
+      onHome: () => Navigator.pop(context),
+      onAdmin: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const AdminPanelScreen()),
+      ),
     );
   }
 
@@ -829,6 +383,7 @@ class _ResultScreenState extends State<ResultScreen> {
     final loc = AppLocalizations.of(context);
     final product = widget.product;
     final barcode = widget.barcode;
+    final languageCode = Localizations.localeOf(context).languageCode;
 
     if (product == null) {
       return Scaffold(
@@ -837,68 +392,15 @@ class _ResultScreenState extends State<ResultScreen> {
           backgroundColor: kGreen,
           foregroundColor: Colors.white,
         ),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.search_off, size: 80, color: Colors.grey),
-              const SizedBox(height: 16),
-              Text(loc.productNotFound, style: const TextStyle(fontSize: 20)),
-              const SizedBox(height: 8),
-              GestureDetector(
-                onTap: () => _copyToClipboard(barcode, 'Barcode'),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'Barcode: $barcode',
-                      style: const TextStyle(color: Colors.grey),
-                    ),
-                    const SizedBox(width: 4),
-                    Icon(Icons.copy, size: 14, color: Colors.grey.shade400),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text(loc.scanAgain),
-              ),
-            ],
-          ),
+        body: ResultNotFoundBody(
+          barcode: barcode,
+          loc: loc,
+          onCopyBarcode: () => _copyToClipboard(barcode, 'Barcode'),
+          onScanAgain: () => Navigator.pop(context),
         ),
         bottomNavigationBar: _buildBottomNav(loc),
       );
     }
-
-    final isHalal = product.isHalal;
-    final isUnknown = product.isUnknown;
-    final isNonFood = product.isNonFood;
-    final ingredients = product.ingredients;
-    final suspiciousIngredients = product.suspiciousIngredients;
-
-    final bool requiresHalalCert = product.requiresHalalCert;
-    final Color statusColor = isNonFood
-        ? Colors.blueGrey.shade600
-        : isUnknown
-        ? Colors.orange.shade700
-        : requiresHalalCert
-        ? Colors.orange.shade700
-        : (isHalal ? kGreen : Colors.red);
-    final IconData statusIcon = isNonFood
-        ? Icons.info_outline
-        : isUnknown
-        ? Icons.help_outline
-        : requiresHalalCert
-        ? Icons.warning_amber_outlined
-        : (isHalal ? Icons.check_circle : Icons.cancel);
-    final String statusLabel = isNonFood
-        ? loc.nonFood
-        : isUnknown
-        ? loc.unknown
-        : requiresHalalCert
-        ? loc.noCert
-        : (isHalal ? '✅ HALAL' : '❌ NOT HALAL');
 
     return Scaffold(
       appBar: AppBar(
@@ -909,7 +411,11 @@ class _ResultScreenState extends State<ResultScreen> {
           if (kDebugMode)
             IconButton(
               icon: const Icon(Icons.bug_report_outlined),
-              onPressed: _showLocalDbDebug,
+              onPressed: () => showLocalDbDebugDialog(
+                context: context,
+                barcode: barcode,
+                productService: _productService,
+              ),
               tooltip: 'Local DB debug',
             ),
           IconButton(
@@ -944,732 +450,75 @@ class _ResultScreenState extends State<ResultScreen> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               const SizedBox(height: 20),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: statusColor,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Column(
-                  children: [
-                    Icon(statusIcon, color: Colors.white, size: 64),
-                    const SizedBox(height: 12),
-                    Semantics(
-                      label: statusLabel,
-                      child: Text(
-                        statusLabel,
-                        semanticsLabel: '',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      product.requiresHalalCert
-                          ? loc.explanationNoCert
-                          : product.explanation.isNotEmpty
-                          ? product.explanation
-                          : _halalReasonText(
-                              isHalal,
-                              isUnknown,
-                              suspiciousIngredients,
-                              loc,
-                            ),
-                      style: const TextStyle(color: Colors.white, fontSize: 14),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 12),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white24,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            product.analyzedByAI
-                                ? Icons.auto_awesome
-                                : Icons.manage_search,
-                            color: Colors.white70,
-                            size: 14,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            product.analyzedByAI
-                                ? loc.aiAnalysis
-                                : loc.keywordAnalysis,
-                            style: const TextStyle(
-                              color: Colors.white70,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (product.isManaged) ...[
-                      const SizedBox(height: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white24,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              Icons.verified,
-                              color: Colors.white70,
-                              size: 14,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              loc.managedProduct,
-                              style: const TextStyle(
-                                color: Colors.white70,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
+              ResultStatusBanner(product: product, loc: loc),
+              const SizedBox(height: 24),
+              ResultProductHeader(
+                product: product,
+                barcode: barcode,
+                onCopyBarcode: () => _copyToClipboard(barcode, 'Barcode'),
               ),
               const SizedBox(height: 24),
-              SelectableText(
-                product.name,
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              GestureDetector(
-                onTap: () => _copyToClipboard(barcode, 'Barcode'),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'Barcode: $barcode',
-                      style: const TextStyle(color: Colors.grey),
-                    ),
-                    const SizedBox(width: 4),
-                    Icon(Icons.copy, size: 14, color: Colors.grey.shade400),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 12),
-              Builder(
-                builder: (context) {
-                  final chips = ProductLabelChips.build(product.labels);
-                  if (chips.isEmpty) return const SizedBox.shrink();
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Wrap(spacing: 8, runSpacing: 8, children: chips),
-                      const SizedBox(height: 12),
-                    ],
-                  );
-                },
+              ResultProductImages(
+                product: product,
+                loc: loc,
+                uploadingImageType: _uploadingImageType,
+                onUpload: _uploadProductImage,
               ),
               const SizedBox(height: 24),
-              if (product.imageFrontUrl != null || product.imageUrl != null)
-                Stack(
-                  children: [
-                    Container(
-                      width: double.infinity,
-                      height: 200,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey.shade300),
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: _buildProductImage(product, loc),
-                      ),
-                    ),
-                    Positioned(
-                      bottom: 8,
-                      right: 8,
-                      child: _uploadingImageType == ProductImageType.front
-                          ? const SizedBox(
-                              width: 28,
-                              height: 28,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2.5,
-                              ),
-                            )
-                          : GestureDetector(
-                              onTap: () =>
-                                  _uploadProductImage(ProductImageType.front),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.black54,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: const Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      Icons.edit,
-                                      color: Colors.white,
-                                      size: 13,
-                                    ),
-                                    SizedBox(width: 4),
-                                    Text(
-                                      'Replace',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 11,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                    ),
-                  ],
-                )
-              else
-                Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey.shade300),
-                    color: Colors.grey.shade100,
-                  ),
-                  padding: const EdgeInsets.symmetric(vertical: 20),
-                  child: Center(
-                    child: _uploadingImageType == ProductImageType.front
-                        ? const CircularProgressIndicator()
-                        : Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(
-                                Icons.image,
-                                size: 40,
-                                color: Colors.grey,
-                              ),
-                              const SizedBox(height: 6),
-                              Text(
-                                loc.noProductImageAvailable,
-                                style: const TextStyle(
-                                  color: Colors.grey,
-                                  fontSize: 13,
-                                ),
-                              ),
-                              const SizedBox(height: 10),
-                              OutlinedButton.icon(
-                                onPressed: () =>
-                                    _uploadProductImage(ProductImageType.front),
-                                icon: const Icon(Icons.add_a_photo, size: 16),
-                                label: Text(loc.uploadProductPhoto),
-                                style: OutlinedButton.styleFrom(
-                                  foregroundColor: kGreen,
-                                  side: const BorderSide(color: kGreen),
-                                  visualDensity: VisualDensity.compact,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 6,
-                                  ),
-                                  textStyle: const TextStyle(fontSize: 13),
-                                ),
-                              ),
-                            ],
-                          ),
-                  ),
+              ResultIngredientsSection(
+                product: product,
+                loc: loc,
+                showTranslated: _showTranslated,
+                languageCode: languageCode,
+                onToggleTranslation: () =>
+                    setState(() => _showTranslated = !_showTranslated),
+                onCopyIngredients: () => _copyToClipboard(
+                  product.ingredients.join(', '),
+                  'Ingredients',
                 ),
+                onReportIngredient: () =>
+                    _showIngredientReportSheet(context, product),
+                adminReportedIngredients: widget.adminReportedIngredients,
+                adminReportExplanation: widget.adminReportExplanation,
+                aiRequestStatus: _aiRequestStatus,
+                isFetchingAiIngredients: _isFetchingAiIngredients,
+                onRequestAiIngredients: _requestAiIngredients,
+                onRefreshProduct: _refreshProductData,
+              ),
+              const SizedBox(height: 16),
+              ResultTransparencyCard(product: product, loc: loc),
+              const SizedBox(height: 16),
+              ResultNoteCard(
+                loc: loc,
+                note: _note,
+                isFlagged: _isFlagged,
+                isExpanded: _noteExpanded,
+                noteController: _noteController,
+                onToggleExpanded: () =>
+                    setState(() => _noteExpanded = !_noteExpanded),
+                onToggleFlag: _toggleFlag,
+                onSave: _saveNote,
+                onReportWithNote: _reportWithNote,
+              ),
+              const SizedBox(height: 16),
+              ResultCommunityCard(
+                loc: loc,
+                discussionCount: _discussions.length,
+                onTap: _openDiscussion,
+              ),
+              const SizedBox(height: 16),
+              ResultFeedbackSection(
+                loc: loc,
+                feedbacks: _feedbacks,
+                isLoading: _isLoadingFeedback,
+                onProducerReply: _showProducerReplyDialog,
+              ),
               const SizedBox(height: 24),
-              if (!product.isNonFood) ...[
-                Text(
-                  loc.additionalImages,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.grey.shade700,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                _buildImageSlot(
-                  product.imageIngredientsUrl,
-                  loc.ingredients,
-                  ProductImageType.ingredients,
-                ),
-                _buildImageSlot(
-                  product.imageNutritionUrl,
-                  loc.nutritionLabel,
-                  ProductImageType.nutrition,
-                ),
-                const SizedBox(height: 24),
-              ],
-              Row(
-                children: [
-                  Text(
-                    loc.ingredients,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey.shade900,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  if (product.ingredientSource != null)
-                    IngredientSourceBadge(source: product.ingredientSource!),
-                  const Spacer(),
-                  if (product.ingredientTranslations.isNotEmpty)
-                    TextButton.icon(
-                      onPressed: () =>
-                          setState(() => _showTranslated = !_showTranslated),
-                      icon: Icon(
-                        _showTranslated ? Icons.language : Icons.translate,
-                        size: 16,
-                      ),
-                      label: Text(
-                        _showTranslated
-                            ? 'Original'
-                            : Localizations.localeOf(
-                                context,
-                              ).languageCode.toUpperCase(),
-                        style: const TextStyle(fontSize: 12),
-                      ),
-                      style: TextButton.styleFrom(
-                        visualDensity: VisualDensity.compact,
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                      ),
-                    ),
-                  if (ingredients.isNotEmpty)
-                    IconButton(
-                      icon: const Icon(Icons.copy, size: 18),
-                      onPressed: () => _copyToClipboard(
-                        ingredients.join(', '),
-                        'Ingredients',
-                      ),
-                      tooltip: 'Copy ingredients',
-                      visualDensity: VisualDensity.compact,
-                      padding: EdgeInsets.zero,
-                      color: Colors.grey.shade600,
-                    ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              if (ingredients.isEmpty) ...[
-                Text(
-                  loc.noIngredientData,
-                  style: const TextStyle(color: Colors.grey),
-                ),
-                const SizedBox(height: 16),
-                _buildMissingIngredientActions(product, loc),
-              ] else
-                ...ingredients.map((ingredient) {
-                  final sourceStyle = IngredientSourceStyle.of(
-                    product.ingredientSource,
-                  );
-                  final warning = product.ingredientWarnings[ingredient];
-                  final isHaramIngredient = product.haramIngredients.contains(
-                    ingredient,
-                  );
-                  final canonical = product.ingredientCanonicals[ingredient];
-                  final localizedWarning = canonical != null
-                      ? (IngredientKeywords.localizedReason(
-                              canonical,
-                              Localizations.localeOf(context).languageCode,
-                            ) ??
-                            warning)
-                      : warning;
-                  final fattyAlcohol =
-                      warning == null &&
-                      ProductService.isFattyAlcohol(ingredient);
-                  final isReported =
-                      widget.adminReportedIngredients?.contains(ingredient) ??
-                      false;
-                  return Container(
-                    margin: const EdgeInsets.symmetric(vertical: 4),
-                    decoration: BoxDecoration(
-                      color: isReported
-                          ? Colors.orange.shade50
-                          : sourceStyle.fillColor,
-                      border: Border.all(
-                        color: isReported
-                            ? Colors.orange.shade400
-                            : sourceStyle.borderColor,
-                        width: isReported ? 1.5 : 1,
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        ListTile(
-                          tileColor: Colors.transparent,
-                          leading: Icon(
-                            warning != null
-                                ? (isHaramIngredient
-                                      ? Icons.warning
-                                      : Icons.warning_amber_outlined)
-                                : fattyAlcohol
-                                ? Icons.info_outline
-                                : Icons.check_circle_outline,
-                            color: warning != null
-                                ? (isHaramIngredient
-                                      ? Colors.red
-                                      : Colors.orange.shade700)
-                                : fattyAlcohol
-                                ? Colors.blue.shade400
-                                : kGreen,
-                          ),
-                          title: _ingredientTitle(
-                            ingredient,
-                            product.ingredientTranslations[ingredient],
-                            showTranslated: _showTranslated,
-                          ),
-                          subtitle: localizedWarning != null
-                              ? SelectableText(localizedWarning)
-                              : fattyAlcohol
-                              ? Text(
-                                  loc.fattyAlcoholNote,
-                                  style: TextStyle(
-                                    color: Colors.blue.shade700,
-                                    fontSize: 12,
-                                  ),
-                                )
-                              : null,
-                          dense: true,
-                        ),
-                        if (isReported)
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.report_problem_outlined,
-                                  size: 13,
-                                  color: Colors.orange.shade700,
-                                ),
-                                const SizedBox(width: 6),
-                                Expanded(
-                                  child: Text(
-                                    widget.adminReportExplanation?.isNotEmpty ==
-                                            true
-                                        ? widget.adminReportExplanation!
-                                        : loc.reportedIngredient,
-                                    style: TextStyle(
-                                      color: Colors.orange.shade700,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                      ],
-                    ),
-                  );
-                }),
-              if (ingredients.isNotEmpty)
-                SizedBox(
-                  width: double.infinity,
-                  child: TextButton.icon(
-                    style: TextButton.styleFrom(
-                      foregroundColor: Colors.orange.shade700,
-                      padding: const EdgeInsets.symmetric(vertical: 6),
-                      alignment: Alignment.centerLeft,
-                    ),
-                    onPressed: () =>
-                        _showIngredientReportSheet(context, product),
-                    icon: const Icon(Icons.report_outlined, size: 16),
-                    label: Text(
-                      loc.reportWrongIngredient,
-                      style: const TextStyle(fontSize: 13),
-                    ),
-                  ),
-                ),
-              if (!isHalal) ...[
-                const SizedBox(height: 16),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    loc.flaggedIngredients,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.red.shade700,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                ...product.haramIngredients.map((e) {
-                  final warning = product.ingredientWarnings[e];
-                  final canonical = product.ingredientCanonicals[e];
-                  final displayWarning = canonical != null
-                      ? (IngredientKeywords.localizedReason(
-                              canonical,
-                              Localizations.localeOf(context).languageCode,
-                            ) ??
-                            warning)
-                      : warning;
-                  return ListTile(
-                    leading: const Icon(Icons.error, color: Colors.red),
-                    title: _ingredientTitle(
-                      e,
-                      product.ingredientTranslations[e],
-                      showTranslated: _showTranslated,
-                    ),
-                    subtitle: SelectableText(
-                      displayWarning ?? loc.foundInIngredients,
-                    ),
-                    dense: true,
-                  );
-                }),
-              ],
-              if (suspiciousIngredients.isNotEmpty) ...[
-                const SizedBox(height: 16),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    loc.mayBeAnimalDerived,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.orange.shade700,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                ...suspiciousIngredients.map((e) {
-                  final warning = product.ingredientWarnings[e];
-                  final canonical = product.ingredientCanonicals[e];
-                  final displayWarning = canonical != null
-                      ? (IngredientKeywords.localizedReason(
-                              canonical,
-                              Localizations.localeOf(context).languageCode,
-                            ) ??
-                            warning)
-                      : warning;
-                  return ListTile(
-                    leading: Icon(Icons.warning, color: Colors.orange.shade600),
-                    title: _ingredientTitle(
-                      e,
-                      product.ingredientTranslations[e],
-                      showTranslated: _showTranslated,
-                    ),
-                    subtitle: SelectableText(
-                      displayWarning ?? loc.mayBeAnimalDerivedNote,
-                    ),
-                    dense: true,
-                  );
-                }),
-              ],
-              const SizedBox(height: 16),
-              _buildTransparencySection(product, loc),
-              const SizedBox(height: 16),
-              _buildNoteSection(loc),
-              const SizedBox(height: 16),
-              // _buildAnalysisCard(),
-              // const SizedBox(height: 8),
-              _buildCommunityCard(),
-              const SizedBox(height: 16),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  loc.communityFeedback,
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blue.shade700,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              if (_isLoadingFeedback)
-                const Center(child: CircularProgressIndicator())
-              else if (_feedbacks.isEmpty)
-                Text(
-                  loc.noFeedbackYet,
-                  style: const TextStyle(color: Colors.grey),
-                )
-              else
-                ..._feedbacks.map(
-                  (feedback) => Card(
-                    margin: const EdgeInsets.symmetric(vertical: 4),
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              const Icon(
-                                Icons.person,
-                                size: 16,
-                                color: Colors.grey,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                loc.userFeedback,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.grey.shade700,
-                                ),
-                              ),
-                              const Spacer(),
-                              Text(
-                                _formatDate(feedback.submittedAt),
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Text(feedback.userFeedback),
-                          if (feedback.attachments.isNotEmpty) ...[
-                            const SizedBox(height: 8),
-                            Wrap(
-                              spacing: 8,
-                              children: feedback.attachments
-                                  .map(
-                                    (attachment) => Chip(
-                                      label: Text(
-                                        '📎 ${attachment.split(RegExp(r'[/\\]')).last}',
-                                      ),
-                                      backgroundColor: Colors.blue.shade50,
-                                    ),
-                                  )
-                                  .toList(),
-                            ),
-                          ],
-                          if (feedback.producerReply != null) ...[
-                            const SizedBox(height: 12),
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: kGreenSurface,
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: kGreenLight),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      const Icon(
-                                        Icons.business,
-                                        size: 16,
-                                        color: kGreen,
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        loc.producerReply,
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          color: kGreenMid,
-                                        ),
-                                      ),
-                                      const Spacer(),
-                                      Text(
-                                        feedback.repliedAt != null
-                                            ? _formatDate(feedback.repliedAt!)
-                                            : '',
-                                        style: const TextStyle(
-                                          fontSize: 12,
-                                          color: Colors.grey,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(feedback.producerReply!),
-                                ],
-                              ),
-                            ),
-                          ] else ...[
-                            const SizedBox(height: 8),
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: TextButton.icon(
-                                onPressed: () =>
-                                    _showProducerReplyDialog(feedback.id),
-                                icon: const Icon(Icons.reply, size: 16),
-                                label: Text(loc.replyAsProducer),
-                                style: TextButton.styleFrom(
-                                  foregroundColor: kGreenMid,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: kGreen,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                  ),
-                  onPressed: () => Navigator.pop(context),
-                  child: Text(
-                    loc.scanAnotherProduct,
-                    style: const TextStyle(fontSize: 16),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton(
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: kGreen),
-                    foregroundColor: kGreen,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                  ),
-                  onPressed: () => _onFeedbackTap(context),
-                  child: Text(
-                    loc.provideFeedback,
-                    style: const TextStyle(fontSize: 14),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              SizedBox(
-                width: double.infinity,
-                child: TextButton.icon(
-                  style: TextButton.styleFrom(
-                    foregroundColor: Colors.orange.shade700,
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                  ),
-                  onPressed: () => _showReportDialog(context, product),
-                  icon: const Icon(Icons.flag_outlined, size: 18),
-                  label: Text(
-                    loc.reportWrongResult,
-                    style: const TextStyle(fontSize: 14),
-                  ),
-                ),
+              ResultFooterActions(
+                loc: loc,
+                onScanAnother: () => Navigator.pop(context),
+                onFeedback: () => _onFeedbackTap(context),
+                onReport: () => _showReportDialog(context, product),
               ),
             ],
           ),
@@ -1677,735 +526,6 @@ class _ResultScreenState extends State<ResultScreen> {
       ),
       bottomNavigationBar: _buildBottomNav(loc),
     );
-  }
-
-  Widget _ingredientTitle(
-    String ingredient,
-    String? canonical, {
-    bool showTranslated = false,
-  }) {
-    if (canonical == null) return Text(ingredient);
-    String norm(String s) => s.toLowerCase().replaceAll(RegExp(r'[-\s]'), '');
-    final locale = Localizations.localeOf(context).languageCode;
-    final display = ProductService.canonicalDisplay(canonical, locale);
-    if (norm(ingredient).contains(norm(display))) return Text(ingredient);
-    if (showTranslated) return Text(display);
-    return Text.rich(
-      TextSpan(
-        children: [
-          TextSpan(text: ingredient),
-          TextSpan(
-            text: '  ($display)',
-            style: const TextStyle(
-              color: Colors.grey,
-              fontSize: 12,
-              fontStyle: FontStyle.italic,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTransparencySection(Product product, AppLocalizations loc) {
-    Widget summaryRow(IconData icon, String label, String value, Color color) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 5),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(icon, size: 18, color: color),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey.shade600,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 1),
-                  Text(
-                    value,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.grey.shade900,
-                      height: 1.25,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    final explanation = product.requiresHalalCert
-        ? loc.explanationNoCert
-        : product.explanation.isNotEmpty
-        ? product.explanation
-        : _halalReasonText(
-            product.isHalal,
-            product.isUnknown,
-            product.suspiciousIngredients,
-            loc,
-          );
-    final resultLabel = product.isNonFood
-        ? loc.nonFood
-        : product.isUnknown
-        ? loc.unknown
-        : product.requiresHalalCert
-        ? loc.noCert
-        : product.isHalal
-        ? loc.halal
-        : loc.notHalal;
-    final checkedText = product.ingredients.isEmpty
-        ? loc.transparentNoIngredients
-        : '${product.ingredients.length} ${loc.ingredients.toLowerCase()}';
-    final flaggedText = product.haramIngredients.isEmpty
-        ? loc.transparentNoMatches
-        : product.haramIngredients.join(', ');
-    final suspiciousText = product.suspiciousIngredients.isEmpty
-        ? loc.transparentNoMatches
-        : product.suspiciousIngredients.join(', ');
-
-    return Card(
-      margin: EdgeInsets.zero,
-      child: ExpansionTile(
-        title: Text(
-          loc.analysisTransparency,
-          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
-        ),
-        leading: const Icon(Icons.visibility_outlined),
-        tilePadding: const EdgeInsets.symmetric(horizontal: 16),
-        childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-        children: [
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade50,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.grey.shade200),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  loc.transparentSummary,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 13,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                summaryRow(
-                  Icons.fact_check_outlined,
-                  loc.transparentResult,
-                  resultLabel,
-                  product.isHalal ? kGreen : Colors.red.shade600,
-                ),
-                summaryRow(
-                  Icons.format_list_bulleted,
-                  loc.transparentIngredientsChecked,
-                  checkedText,
-                  Colors.blueGrey.shade600,
-                ),
-                summaryRow(
-                  Icons.rule,
-                  loc.transparentRulesChecked,
-                  product.ingredients.isEmpty
-                      ? loc.transparentRulesAvailable(
-                          ProductService.keywordRuleCount,
-                        )
-                      : ProductService.keywordRuleCount.toString(),
-                  Colors.blueGrey.shade600,
-                ),
-                summaryRow(
-                  Icons.error_outline,
-                  loc.transparentFlagged,
-                  flaggedText,
-                  Colors.red.shade600,
-                ),
-                summaryRow(
-                  Icons.warning_amber,
-                  loc.transparentSuspicious,
-                  suspiciousText,
-                  Colors.orange.shade700,
-                ),
-                summaryRow(
-                  Icons.notes_outlined,
-                  loc.transparentExplanation,
-                  explanation,
-                  Colors.grey.shade700,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const KeywordsScreen()),
-              ),
-              icon: const Icon(Icons.list_alt_outlined),
-              label: Text(loc.viewAllCheckedKeywords),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: Colors.blue.shade50,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.blue.shade200),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.info_outline, size: 16, color: Colors.blue.shade600),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    loc.transparencyNote,
-                    style: TextStyle(fontSize: 12, color: Colors.blue.shade700),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  static String _thumbnailUrl(String url) => url.replaceAll('.400.', '.200.');
-
-  void _showFullscreenImage(String url, {String? label}) {
-    showDialog<void>(
-      context: context,
-      barrierColor: Colors.black87,
-      builder: (ctx) => Dialog.fullscreen(
-        backgroundColor: Colors.black,
-        child: Stack(
-          children: [
-            Center(
-              child: InteractiveViewer(
-                minScale: 0.5,
-                maxScale: 6.0,
-                child: CachedNetworkImage(
-                  imageUrl: url,
-                  fit: BoxFit.contain,
-                  placeholder: (_, _) =>
-                      const Center(child: CircularProgressIndicator()),
-                  errorWidget: (_, _, _) => const Icon(
-                    Icons.broken_image,
-                    size: 64,
-                    color: Colors.white38,
-                  ),
-                ),
-              ),
-            ),
-            Positioned(
-              top: 40,
-              right: 12,
-              child: SafeArea(
-                child: IconButton(
-                  style: IconButton.styleFrom(backgroundColor: Colors.black54),
-                  icon: const Icon(Icons.close, color: Colors.white, size: 24),
-                  onPressed: () => Navigator.pop(ctx),
-                ),
-              ),
-            ),
-            if (label != null)
-              Positioned(
-                bottom: 32,
-                left: 16,
-                child: SafeArea(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 5,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.black54,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      label,
-                      style: const TextStyle(color: Colors.white, fontSize: 13),
-                    ),
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildProductImage(Product product, AppLocalizations loc) {
-    final imageUrls = [
-      product.imageFrontUrl,
-      product.imageUrl,
-    ].where((url) => url != null && url.isNotEmpty).cast<String>().toList();
-
-    if (imageUrls.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.image_not_supported, size: 48, color: Colors.grey),
-            const SizedBox(height: 8),
-            Text(
-              loc.imageNotAvailable,
-              style: const TextStyle(color: Colors.grey),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return GestureDetector(
-      onTap: () => _showFullscreenImage(imageUrls.first),
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          CachedNetworkImage(
-            imageUrl: _thumbnailUrl(imageUrls.first),
-            fit: BoxFit.contain,
-            fadeInDuration: const Duration(milliseconds: 200),
-            placeholder: (context, url) =>
-                const Center(child: CircularProgressIndicator()),
-            errorWidget: (context, url, error) {
-              if (imageUrls.length > 1) {
-                return GestureDetector(
-                  onTap: () => _showFullscreenImage(imageUrls[1]),
-                  child: CachedNetworkImage(
-                    imageUrl: _thumbnailUrl(imageUrls[1]),
-                    fit: BoxFit.contain,
-                    errorWidget: (_, _, _) => Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(
-                            Icons.image_not_supported,
-                            size: 48,
-                            color: Colors.grey,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            loc.imageNotAvailable,
-                            style: const TextStyle(color: Colors.grey),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              }
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(
-                      Icons.image_not_supported,
-                      size: 48,
-                      color: Colors.grey,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      loc.imageNotAvailable,
-                      style: const TextStyle(color: Colors.grey),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-          const Positioned(
-            bottom: 8,
-            right: 8,
-            child: Icon(Icons.zoom_in, color: Colors.white70, size: 22),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildImageSlot(String? url, String label, ProductImageType type) {
-    debugPrint('[ImageSlot] $label → url=$url');
-    if (url != null) {
-      return Stack(
-        children: [
-          _buildLabelledImage(url, label),
-          Positioned(
-            bottom: 18,
-            right: 8,
-            child: _uploadingImageType == type
-                ? const SizedBox(
-                    width: 28,
-                    height: 28,
-                    child: CircularProgressIndicator(strokeWidth: 2.5),
-                  )
-                : GestureDetector(
-                    onTap: () => _uploadProductImage(type),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.black54,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.edit, color: Colors.white, size: 13),
-                          SizedBox(width: 4),
-                          Text(
-                            'Replace',
-                            style: TextStyle(color: Colors.white, fontSize: 11),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-          ),
-        ],
-      );
-    }
-    return GestureDetector(
-      onTap: () => _uploadProductImage(type),
-      child: Container(
-        width: double.infinity,
-        height: 100,
-        margin: const EdgeInsets.only(bottom: 12),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.grey.shade300),
-          color: Colors.grey.shade50,
-        ),
-        child: Center(
-          child: _uploadingImageType == type
-              ? const CircularProgressIndicator()
-              : Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.add_a_photo,
-                      color: Colors.grey.shade400,
-                      size: 26,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      label,
-                      style: TextStyle(
-                        color: Colors.grey.shade500,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLabelledImage(String imageUrl, String label) {
-    return GestureDetector(
-      onTap: () => _showFullscreenImage(imageUrl, label: label),
-      child: Container(
-        width: double.infinity,
-        height: 150,
-        margin: const EdgeInsets.only(bottom: 12),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.grey.shade300),
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: Stack(
-            children: [
-              CachedNetworkImage(
-                imageUrl: _thumbnailUrl(imageUrl),
-                fit: BoxFit.contain,
-                width: double.infinity,
-                fadeInDuration: const Duration(milliseconds: 200),
-                placeholder: (context, url) =>
-                    const Center(child: CircularProgressIndicator()),
-                errorWidget: (context, url, error) {
-                  debugPrint('[Image] failed to load: $url — $error');
-                  return const Center(
-                    child: Icon(
-                      Icons.broken_image,
-                      size: 48,
-                      color: Colors.grey,
-                    ),
-                  );
-                },
-              ),
-              Positioned(
-                top: 8,
-                left: 8,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.black54,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    label,
-                    style: const TextStyle(color: Colors.white, fontSize: 12),
-                  ),
-                ),
-              ),
-              const Positioned(
-                bottom: 8,
-                right: 8,
-                child: Icon(Icons.zoom_in, color: Colors.white70, size: 20),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMissingIngredientActions(Product product, AppLocalizations loc) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        // AI ingredient lookup card
-        Card(
-          color: const Color(0xFFF5F3FF),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      _aiRequestStatus == ReviewStatus.pending
-                          ? Icons.hourglass_top
-                          : _aiRequestStatus == ReviewStatus.rejected
-                          ? Icons.block
-                          : Icons.auto_awesome,
-                      color: _aiRequestStatus == ReviewStatus.rejected
-                          ? Colors.red.shade400
-                          : const Color(0xFF7C3AED),
-                    ),
-                    const SizedBox(width: 8),
-                    const Expanded(
-                      child: Text(
-                        'Find ingredients via AI',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF5B21B6),
-                          fontSize: 15,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  _aiRequestStatus == ReviewStatus.pending
-                      ? 'AI lookup requested — an admin will review and approve it shortly.'
-                      : _aiRequestStatus == ReviewStatus.rejected
-                      ? 'The AI request was rejected by an admin.'
-                      : 'Ask AI to search the web for this product\'s ingredient list.',
-                  style: TextStyle(
-                    color: _aiRequestStatus == ReviewStatus.rejected
-                        ? Colors.red.shade700
-                        : const Color(0xFF6D28D9),
-                    fontSize: 13,
-                  ),
-                ),
-                if (_aiRequestStatus == null ||
-                    _aiRequestStatus == ReviewStatus.rejected) ...[
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      icon: _isFetchingAiIngredients
-                          ? const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            )
-                          : const Icon(Icons.auto_awesome, size: 18),
-                      label: Text(
-                        _aiRequestStatus == ReviewStatus.rejected
-                            ? 'Request again'
-                            : 'Request via AI',
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF7C3AED),
-                        foregroundColor: Colors.white,
-                      ),
-                      onPressed: _isFetchingAiIngredients
-                          ? null
-                          : _requestAiIngredients,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 8),
-        // Contribute ingredients card
-        Card(
-          color: Colors.orange.shade50,
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(Icons.edit_note, color: Colors.orange.shade700),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        loc.contributeIngredients,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.orange.shade800,
-                          fontSize: 15,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  loc.contributeIngredientsHint,
-                  style: TextStyle(color: Colors.orange.shade900, fontSize: 13),
-                ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    icon: const Icon(Icons.add, size: 18),
-                    label: Text(loc.contributeIngredients),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.orange.shade700,
-                      foregroundColor: Colors.white,
-                    ),
-                    onPressed: () => showContributeIngredientsSheet(
-                      context,
-                      product,
-                      loc,
-                      onContributed: _refreshProductData,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 8),
-        // OpenFoodFacts deep link
-        Card(
-          color: Colors.blue.shade50,
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(Icons.open_in_new, color: Colors.blue.shade700),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        loc.improveOnOpenFoodFacts,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.blue.shade800,
-                          fontSize: 15,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  loc.improveOnOpenFoodFactsHint,
-                  style: TextStyle(color: Colors.blue.shade900, fontSize: 13),
-                ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    icon: const Icon(Icons.open_in_new, size: 18),
-                    label: Text(loc.improveOnOpenFoodFacts),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.blue.shade700,
-                      side: BorderSide(color: Colors.blue.shade300),
-                    ),
-                    onPressed: () => launchUrl(
-                      Uri.parse(
-                        'https://world.openfoodfacts.org/cgi/product.pl'
-                        '?type=edit&code=${product.barcode}',
-                      ),
-                      mode: LaunchMode.externalApplication,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  String _halalReasonText(
-    bool isHalal,
-    bool isUnknown,
-    List<String> suspiciousIngredients,
-    AppLocalizations loc,
-  ) {
-    if (isUnknown) return loc.explanationUnknown;
-    if (isHalal) {
-      return suspiciousIngredients.isEmpty
-          ? loc.explanationClean
-          : loc.explanationSuspiciousOnly(suspiciousIngredients.join(', '));
-    }
-    return loc.explanationHaram;
-  }
-
-  String _formatDate(DateTime date) {
-    final loc = AppLocalizations.of(context);
-    final now = DateTime.now();
-    final difference = now.difference(date);
-
-    if (difference.inDays == 0) return loc.today;
-    if (difference.inDays == 1) return loc.yesterday;
-    if (difference.inDays < 7) return loc.daysAgo(difference.inDays);
-
-    final y = date.year;
-    final m = date.month.toString().padLeft(2, '0');
-    final d = date.day.toString().padLeft(2, '0');
-    return '$y-$m-$d';
   }
 
   void _onFeedbackTap(BuildContext context) {
@@ -2484,7 +604,6 @@ class _ResultScreenState extends State<ResultScreen> {
   Future<void> _showProducerReplyDialog(String feedbackId) async {
     final loc = AppLocalizations.of(context);
 
-    // Warn users that producer replies are unverified before proceeding.
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -2506,8 +625,6 @@ class _ResultScreenState extends State<ResultScreen> {
 
     final TextEditingController replyController = TextEditingController();
 
-    // Use ValueListenableBuilder instead of StatefulBuilder + addListener to
-    // avoid accumulating duplicate listeners on every rebuild.
     await showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
