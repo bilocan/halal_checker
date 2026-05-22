@@ -88,21 +88,41 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
     });
   }
 
-  Future<void> _reviewPhoto(int id, String status) async {
-    setState(() => _processingPhotoIds.add(id));
-    final ok = await ProductImageService.updateSubmissionStatus(id, status);
+  static const _updateFailedSnackbar = SnackBar(
+    content: Text('Failed to update — check Supabase logs'),
+  );
+
+  Future<void> _reviewItem({
+    required int id,
+    required String status,
+    required Set<int> processingSet,
+    required List<Map<String, dynamic>> items,
+    required Future<bool> Function(int id, String status) update,
+    Future<void> Function(Map<String, dynamic> item)? onApproved,
+  }) async {
+    setState(() => processingSet.add(id));
+    final item = items.firstWhere(
+      (p) => (p['id'] as num).toInt() == id,
+      orElse: () => <String, dynamic>{},
+    );
+    final ok = await update(id, status);
     if (!mounted) return;
     if (ok) {
-      setState(
-        () => _photos.removeWhere((p) => (p['id'] as num).toInt() == id),
-      );
+      setState(() => items.removeWhere((p) => (p['id'] as num).toInt() == id));
+      if (status == 'approved') await onApproved?.call(item);
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to update — check Supabase logs')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(_updateFailedSnackbar);
     }
-    setState(() => _processingPhotoIds.remove(id));
+    setState(() => processingSet.remove(id));
   }
+
+  Future<void> _reviewPhoto(int id, String status) => _reviewItem(
+    id: id,
+    status: status,
+    processingSet: _processingPhotoIds,
+    items: _photos,
+    update: ProductImageService.updateSubmissionStatus,
+  );
 
   Future<void> _loadContributions() async {
     setState(() => _contributionsLoading = true);
@@ -114,60 +134,35 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
     });
   }
 
-  Future<void> _reviewContribution(int id, String status) async {
-    setState(() => _processingContributionIds.add(id));
-
-    // Get the barcode before updating (needed for re-analysis on approval)
-    final contribution = _contributions.firstWhere(
-      (c) => (c['id'] as num).toInt() == id,
-      orElse: () => <String, dynamic>{},
-    );
-    final barcode = contribution['barcode'] as String?;
-
-    final ok = await IngredientContributionService.updateStatus(id, status);
-    if (!mounted) return;
-    if (ok) {
-      setState(
-        () => _contributions.removeWhere((c) => (c['id'] as num).toInt() == id),
+  Future<void> _reviewContribution(int id, String status) => _reviewItem(
+    id: id,
+    status: status,
+    processingSet: _processingContributionIds,
+    items: _contributions,
+    update: IngredientContributionService.updateStatus,
+    onApproved: (item) async {
+      final barcode = item['barcode'] as String?;
+      if (barcode == null || barcode.isEmpty) return;
+      debugPrint(
+        '[AdminPanel] Triggering rule-based re-analysis for barcode: $barcode '
+        'after ingredient contribution approval',
       );
-
-      // Trigger rule-based re-analysis of the product when contribution is approved
-      if (status == 'approved' && barcode != null && barcode.isNotEmpty) {
-        debugPrint(
-          '[AdminPanel] Triggering rule-based re-analysis for barcode: $barcode '
-          'after ingredient contribution approval',
-        );
-        // Clear the local cache immediately to ensure the next lookup
-        // fetches the updated product from the remote database
-        unawaited(
-          CacheService().removeProduct(barcode).then((_) {
-            debugPrint('[AdminPanel] Cleared local cache for $barcode');
-          }),
-        );
-        // Also trigger a background refresh to pre-populate the cache
-        // with the updated product data
-        unawaited(
-          ProductService().refreshProduct(barcode).then((product) {
-            if (product != null) {
-              debugPrint(
-                '[AdminPanel] Rule-based re-analysis completed for $barcode: '
-                'isHalal=${product.isHalal}',
-              );
-            } else {
-              debugPrint(
-                '[AdminPanel] Rule-based re-analysis failed for $barcode',
-              );
-            }
-          }),
-        );
-      }
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to update — check Supabase logs')),
+      unawaited(
+        CacheService().removeProduct(barcode).then((_) {
+          debugPrint('[AdminPanel] Cleared local cache for $barcode');
+        }),
       );
-    }
-    setState(() => _processingContributionIds.remove(id));
-  }
+      unawaited(
+        ProductService().refreshProduct(barcode).then((product) {
+          debugPrint(
+            product != null
+                ? '[AdminPanel] Re-analysis completed for $barcode: isHalal=${product.isHalal}'
+                : '[AdminPanel] Re-analysis failed for $barcode',
+          );
+        }),
+      );
+    },
+  );
 
   Future<void> _loadReports() async {
     setState(() => _reportsLoading = true);
@@ -191,45 +186,27 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
     });
   }
 
-  Future<void> _reviewAiRequest(int id, String status) async {
-    setState(() => _processingAiRequestIds.add(id));
-
-    final request = _aiRequests.firstWhere(
-      (r) => (r['id'] as num).toInt() == id,
-      orElse: () => <String, dynamic>{},
-    );
-    final barcode = request['barcode'] as String?;
-
-    final ok = await AiIngredientRequestService.updateStatus(id, status);
-    if (!mounted) return;
-    if (ok) {
-      setState(
-        () => _aiRequests.removeWhere((r) => (r['id'] as num).toInt() == id),
+  Future<void> _reviewAiRequest(int id, String status) => _reviewItem(
+    id: id,
+    status: status,
+    processingSet: _processingAiRequestIds,
+    items: _aiRequests,
+    update: AiIngredientRequestService.updateStatus,
+    onApproved: (item) async {
+      final barcode = item['barcode'] as String?;
+      if (barcode == null || barcode.isEmpty) return;
+      unawaited(CacheService().removeProduct(barcode));
+      unawaited(
+        ProductService().fetchIngredientsByAI(barcode).then((product) {
+          debugPrint(
+            product != null
+                ? '[AdminPanel] AI ingredients fetched for $barcode: ${product.ingredients.length} ingredients'
+                : '[AdminPanel] AI ingredient fetch failed for $barcode',
+          );
+        }),
       );
-      if (status == 'approved' && barcode != null && barcode.isNotEmpty) {
-        unawaited(CacheService().removeProduct(barcode));
-        unawaited(
-          ProductService().fetchIngredientsByAI(barcode).then((product) {
-            if (product != null) {
-              debugPrint(
-                '[AdminPanel] AI ingredients fetched for $barcode: '
-                '${product.ingredients.length} ingredients',
-              );
-            } else {
-              debugPrint(
-                '[AdminPanel] AI ingredient fetch failed for $barcode',
-              );
-            }
-          }),
-        );
-      }
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to update — check Supabase logs')),
-      );
-    }
-    setState(() => _processingAiRequestIds.remove(id));
-  }
+    },
+  );
 
   Future<void> _reApproveAiRequest(int id) async {
     setState(() => _processingAiRequestIds.add(id));
@@ -266,21 +243,13 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
     setState(() => _processingAiRequestIds.remove(id));
   }
 
-  Future<void> _reviewReport(int id, String status) async {
-    setState(() => _processingReportIds.add(id));
-    final ok = await IngredientReportService.updateStatus(id, status);
-    if (!mounted) return;
-    if (ok) {
-      setState(
-        () => _reports.removeWhere((r) => (r['id'] as num).toInt() == id),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to update — check Supabase logs')),
-      );
-    }
-    setState(() => _processingReportIds.remove(id));
-  }
+  Future<void> _reviewReport(int id, String status) => _reviewItem(
+    id: id,
+    status: status,
+    processingSet: _processingReportIds,
+    items: _reports,
+    update: IngredientReportService.updateStatus,
+  );
 
   Future<void> _run({List<String>? ids}) async {
     setState(() => _running = true);
