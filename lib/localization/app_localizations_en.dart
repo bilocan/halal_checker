@@ -1008,6 +1008,70 @@ class AppLocalizationsEn extends AppLocalizations {
       'No pending ingredient contributions';
 
   @override
+  String get filterPending => 'Pending';
+
+  @override
+  String get filterApproved => 'Approved';
+
+  @override
+  String get filterAll => 'All';
+
+  @override
+  String get filterDone => 'Done';
+
+  @override
+  String get noPendingAiRequests => 'No pending AI ingredient requests';
+
+  @override
+  String get noApprovedAiRequests => 'No approved AI ingredient requests';
+
+  @override
+  String get adminBatchRequestFailed =>
+      'Batch request failed — check Supabase logs';
+
+  @override
+  String adminBatchDoneSummary(int done, int skipped) {
+    return 'Done: $done, skipped: $skipped';
+  }
+
+  @override
+  String adminBatchDoneWithErrors(int done, int skipped, int errors) {
+    return 'Done: $done, skipped: $skipped, failed: $errors — see logs';
+  }
+
+  @override
+  String get challengeVerdictWas => 'was';
+
+  @override
+  String get challengeVerdictShouldBe => 'should be';
+
+  @override
+  String get noAnalysesYet => 'No analyses yet';
+
+  @override
+  String get filterNothingHere => 'Nothing here';
+
+  @override
+  String get runAll => 'Run all';
+
+  @override
+  String get runningLabel => 'Running…';
+
+  @override
+  String runSelectedCount(int count) {
+    return 'Run $count';
+  }
+
+  @override
+  String get selectAllPending => 'Select all pending';
+
+  @override
+  String get deselectAllPending => 'Deselect all';
+
+  @override
+  String get unknownProduct => 'Unknown product';
+
+  @override
   String adminAiRefetching(String barcode) {
     return 'Re-fetching AI ingredients for $barcode…';
   }

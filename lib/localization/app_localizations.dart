@@ -1942,6 +1942,120 @@ abstract class AppLocalizations {
   /// **'No pending ingredient contributions'**
   String get noPendingIngredientContributions;
 
+  /// No description provided for @filterPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get filterPending;
+
+  /// No description provided for @filterApproved.
+  ///
+  /// In en, this message translates to:
+  /// **'Approved'**
+  String get filterApproved;
+
+  /// No description provided for @filterAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get filterAll;
+
+  /// No description provided for @filterDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get filterDone;
+
+  /// No description provided for @noPendingAiRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'No pending AI ingredient requests'**
+  String get noPendingAiRequests;
+
+  /// No description provided for @noApprovedAiRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'No approved AI ingredient requests'**
+  String get noApprovedAiRequests;
+
+  /// No description provided for @adminBatchRequestFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Batch request failed — check Supabase logs'**
+  String get adminBatchRequestFailed;
+
+  /// No description provided for @adminBatchDoneSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Done: {done}, skipped: {skipped}'**
+  String adminBatchDoneSummary(int done, int skipped);
+
+  /// No description provided for @adminBatchDoneWithErrors.
+  ///
+  /// In en, this message translates to:
+  /// **'Done: {done}, skipped: {skipped}, failed: {errors} — see logs'**
+  String adminBatchDoneWithErrors(int done, int skipped, int errors);
+
+  /// No description provided for @challengeVerdictWas.
+  ///
+  /// In en, this message translates to:
+  /// **'was'**
+  String get challengeVerdictWas;
+
+  /// No description provided for @challengeVerdictShouldBe.
+  ///
+  /// In en, this message translates to:
+  /// **'should be'**
+  String get challengeVerdictShouldBe;
+
+  /// No description provided for @noAnalysesYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No analyses yet'**
+  String get noAnalysesYet;
+
+  /// No description provided for @filterNothingHere.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing here'**
+  String get filterNothingHere;
+
+  /// No description provided for @runAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Run all'**
+  String get runAll;
+
+  /// No description provided for @runningLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Running…'**
+  String get runningLabel;
+
+  /// No description provided for @runSelectedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Run {count}'**
+  String runSelectedCount(int count);
+
+  /// No description provided for @selectAllPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Select all pending'**
+  String get selectAllPending;
+
+  /// No description provided for @deselectAllPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Deselect all'**
+  String get deselectAllPending;
+
+  /// No description provided for @unknownProduct.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown product'**
+  String get unknownProduct;
+
   /// No description provided for @adminAiRefetching.
   ///
   /// In en, this message translates to:

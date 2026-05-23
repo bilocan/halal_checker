@@ -1007,6 +1007,70 @@ class AppLocalizationsTr extends AppLocalizations {
   String get noPendingIngredientContributions => 'Bekleyen içerik katkısı yok';
 
   @override
+  String get filterPending => 'Bekleyen';
+
+  @override
+  String get filterApproved => 'Onaylandı';
+
+  @override
+  String get filterAll => 'Tümü';
+
+  @override
+  String get filterDone => 'Tamamlandı';
+
+  @override
+  String get noPendingAiRequests => 'Bekleyen yapay zeka içerik isteği yok';
+
+  @override
+  String get noApprovedAiRequests => 'Onaylanmış yapay zeka içerik isteği yok';
+
+  @override
+  String get adminBatchRequestFailed =>
+      'Toplu istek başarısız — Supabase günlüklerini kontrol edin';
+
+  @override
+  String adminBatchDoneSummary(int done, int skipped) {
+    return 'Tamam: $done, atlandı: $skipped';
+  }
+
+  @override
+  String adminBatchDoneWithErrors(int done, int skipped, int errors) {
+    return 'Tamam: $done, atlandı: $skipped, başarısız: $errors — günlüklere bakın';
+  }
+
+  @override
+  String get challengeVerdictWas => 'önce';
+
+  @override
+  String get challengeVerdictShouldBe => 'olmalı';
+
+  @override
+  String get noAnalysesYet => 'Henüz analiz yok';
+
+  @override
+  String get filterNothingHere => 'Burada bir şey yok';
+
+  @override
+  String get runAll => 'Tümünü çalıştır';
+
+  @override
+  String get runningLabel => 'Çalışıyor…';
+
+  @override
+  String runSelectedCount(int count) {
+    return '$count çalıştır';
+  }
+
+  @override
+  String get selectAllPending => 'Bekleyenlerin tümünü seç';
+
+  @override
+  String get deselectAllPending => 'Tümünün seçimini kaldır';
+
+  @override
+  String get unknownProduct => 'Bilinmeyen ürün';
+
+  @override
   String adminAiRefetching(String barcode) {
     return '$barcode için yapay zeka içerikleri yeniden alınıyor…';
   }

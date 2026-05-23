@@ -241,12 +241,18 @@ class _ChallengesTab extends StatelessWidget {
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    _verdictChip(c.currentVerdict, label: 'was'),
+                    _verdictChip(
+                      c.currentVerdict,
+                      label: loc.challengeVerdictWas,
+                    ),
                     const Padding(
                       padding: EdgeInsets.symmetric(horizontal: 6),
                       child: Icon(Icons.arrow_forward, size: 14),
                     ),
-                    _verdictChip(c.claimedVerdict, label: 'should be'),
+                    _verdictChip(
+                      c.claimedVerdict,
+                      label: loc.challengeVerdictShouldBe,
+                    ),
                   ],
                 ),
                 const SizedBox(height: 8),

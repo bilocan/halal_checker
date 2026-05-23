@@ -72,8 +72,8 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
     });
     if (result == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Batch request failed — check Supabase logs'),
+        SnackBar(
+          content: Text(AppLocalizations.of(context).adminBatchRequestFailed),
         ),
       );
       return;
@@ -85,12 +85,13 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
     for (final e in errorDetails) {
       debugPrint('[batch-analyze] ${e['barcode']}: ${e['reason']}');
     }
+    final loc = AppLocalizations.of(context);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
           errors > 0
-              ? 'Done: $done, skipped: $skipped, failed: $errors — see logs'
-              : 'Done: $done, skipped: $skipped',
+              ? loc.adminBatchDoneWithErrors(done, skipped, errors)
+              : loc.adminBatchDoneSummary(done, skipped),
         ),
         duration: const Duration(seconds: 5),
       ),
@@ -151,7 +152,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
               onPressed: _running ? null : () => _run(ids: _selected.toList()),
               icon: const Icon(Icons.play_arrow, color: Colors.white),
               label: Text(
-                'Run ${_selected.length}',
+                loc.runSelectedCount(_selected.length),
                 style: const TextStyle(color: Colors.white),
               ),
             ),
@@ -390,7 +391,9 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
                 visualDensity: VisualDensity.compact,
               ),
               child: Text(
-                allPendingSelected ? 'Deselect all' : 'Select all pending',
+                allPendingSelected
+                    ? AppLocalizations.of(context).deselectAllPending
+                    : AppLocalizations.of(context).selectAllPending,
                 style: const TextStyle(fontSize: 12),
               ),
             ),
@@ -407,7 +410,11 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
                     ),
                   )
                 : const Icon(Icons.play_arrow),
-            label: Text(_running ? 'Running…' : 'Run all'),
+            label: Text(
+              _running
+                  ? AppLocalizations.of(context).runningLabel
+                  : AppLocalizations.of(context).runAll,
+            ),
             style: FilledButton.styleFrom(
               backgroundColor: kGreen,
               visualDensity: VisualDensity.compact,
@@ -419,15 +426,16 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
   }
 
   Widget _buildFilterRow() {
+    final loc = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
-          _filterChip('All', 'all'),
+          _filterChip(loc.filterAll, 'all'),
           const SizedBox(width: 8),
-          _filterChip('Pending', 'pending'),
+          _filterChip(loc.filterPending, 'pending'),
           const SizedBox(width: 8),
-          _filterChip('Done', 'done'),
+          _filterChip(loc.filterDone, 'done'),
         ],
       ),
     );
@@ -454,9 +462,10 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
 
     final items = _filtered;
     if (items.isEmpty) {
+      final loc = AppLocalizations.of(context);
       return Center(
         child: Text(
-          _filter == 'all' ? 'No analyses yet' : 'Nothing here',
+          _filter == 'all' ? loc.noAnalysesYet : loc.filterNothingHere,
           style: TextStyle(color: Colors.grey.shade500),
         ),
       );
@@ -503,7 +512,7 @@ class _AnalysisRow extends StatelessWidget {
     final loc = AppLocalizations.of(context);
     final status = AnalysisStatus.fromString(row['status'] as String? ?? '');
     final productName =
-        (row['products'] as Map?)?['name'] as String? ?? 'Unknown product';
+        (row['products'] as Map?)?['name'] as String? ?? loc.unknownProduct;
     final barcode = row['barcode'] as String? ?? '';
     final createdAt = DateTime.tryParse(row['created_at'] as String? ?? '');
 

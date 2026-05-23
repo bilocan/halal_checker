@@ -386,6 +386,43 @@
   "photoNewLabel": "New",
   "noPendingPhotoSubmissions": "No pending photo submissions",
   "noPendingIngredientContributions": "No pending ingredient contributions",
+  "filterPending": "Pending",
+  "filterApproved": "Approved",
+  "filterAll": "All",
+  "filterDone": "Done",
+  "noPendingAiRequests": "No pending AI ingredient requests",
+  "noApprovedAiRequests": "No approved AI ingredient requests",
+  "adminBatchRequestFailed": "Batch request failed — check Supabase logs",
+  "adminBatchDoneSummary": "Done: {done}, skipped: {skipped}",
+  "@adminBatchDoneSummary": {
+    "placeholders": {
+      "done": { "type": "int" },
+      "skipped": { "type": "int" }
+    }
+  },
+  "adminBatchDoneWithErrors": "Done: {done}, skipped: {skipped}, failed: {errors} — see logs",
+  "@adminBatchDoneWithErrors": {
+    "placeholders": {
+      "done": { "type": "int" },
+      "skipped": { "type": "int" },
+      "errors": { "type": "int" }
+    }
+  },
+  "challengeVerdictWas": "was",
+  "challengeVerdictShouldBe": "should be",
+  "noAnalysesYet": "No analyses yet",
+  "filterNothingHere": "Nothing here",
+  "runAll": "Run all",
+  "runningLabel": "Running…",
+  "runSelectedCount": "Run {count}",
+  "@runSelectedCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "selectAllPending": "Select all pending",
+  "deselectAllPending": "Deselect all",
+  "unknownProduct": "Unknown product",
   "adminAiRefetching": "Re-fetching AI ingredients for {barcode}…",
   "@adminAiRefetching": {
     "placeholders": {

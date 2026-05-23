@@ -110,6 +110,7 @@ class AiApprovalTabState extends State<AiApprovalTab> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
     final isPending = _filter == ReviewStatus.pending;
     return Column(
       children: [
@@ -117,9 +118,9 @@ class AiApprovalTabState extends State<AiApprovalTab> {
           padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
           child: Row(
             children: [
-              _filterChip('Pending', ReviewStatus.pending),
+              _filterChip(loc.filterPending, ReviewStatus.pending),
               const SizedBox(width: 8),
-              _filterChip('Approved', ReviewStatus.approved),
+              _filterChip(loc.filterApproved, ReviewStatus.approved),
             ],
           ),
         ),
@@ -139,8 +140,8 @@ class AiApprovalTabState extends State<AiApprovalTab> {
                       const SizedBox(height: 12),
                       Text(
                         isPending
-                            ? 'No pending AI ingredient requests'
-                            : 'No approved AI ingredient requests',
+                            ? loc.noPendingAiRequests
+                            : loc.noApprovedAiRequests,
                         style: TextStyle(color: Colors.grey.shade500),
                       ),
                     ],

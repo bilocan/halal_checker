@@ -1026,6 +1026,70 @@ class AppLocalizationsDe extends AppLocalizations {
       'Keine ausstehenden Inhaltsstoff-Beiträge';
 
   @override
+  String get filterPending => 'Ausstehend';
+
+  @override
+  String get filterApproved => 'Genehmigt';
+
+  @override
+  String get filterAll => 'Alle';
+
+  @override
+  String get filterDone => 'Fertig';
+
+  @override
+  String get noPendingAiRequests => 'Keine ausstehenden KI-Zutatenanfragen';
+
+  @override
+  String get noApprovedAiRequests => 'Keine genehmigten KI-Zutatenanfragen';
+
+  @override
+  String get adminBatchRequestFailed =>
+      'Stapelanfrage fehlgeschlagen — Supabase-Logs prüfen';
+
+  @override
+  String adminBatchDoneSummary(int done, int skipped) {
+    return 'Fertig: $done, übersprungen: $skipped';
+  }
+
+  @override
+  String adminBatchDoneWithErrors(int done, int skipped, int errors) {
+    return 'Fertig: $done, übersprungen: $skipped, fehlgeschlagen: $errors — Logs prüfen';
+  }
+
+  @override
+  String get challengeVerdictWas => 'war';
+
+  @override
+  String get challengeVerdictShouldBe => 'sollte sein';
+
+  @override
+  String get noAnalysesYet => 'Noch keine Analysen';
+
+  @override
+  String get filterNothingHere => 'Nichts hier';
+
+  @override
+  String get runAll => 'Alle ausführen';
+
+  @override
+  String get runningLabel => 'Läuft…';
+
+  @override
+  String runSelectedCount(int count) {
+    return '$count ausführen';
+  }
+
+  @override
+  String get selectAllPending => 'Alle ausstehenden auswählen';
+
+  @override
+  String get deselectAllPending => 'Alle abwählen';
+
+  @override
+  String get unknownProduct => 'Unbekanntes Produkt';
+
+  @override
   String adminAiRefetching(String barcode) {
     return 'KI-Zutaten für $barcode werden erneut abgerufen…';
   }
