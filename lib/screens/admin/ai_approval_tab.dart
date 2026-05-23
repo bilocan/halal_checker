@@ -37,15 +37,28 @@ class AiApprovalTabState extends State<AiApprovalTab> {
 
   Future<void> _load() async {
     setState(() => _loading = true);
-    final rows = _filter == ReviewStatus.approved
-        ? await AiIngredientRequestService.getApprovedRequests()
-        : await AiIngredientRequestService.getPendingRequests();
-    if (!mounted) return;
-    setState(() {
-      _requests = rows.map(AiIngredientRequest.fromJson).toList();
-      _loading = false;
-    });
-    widget.onCountChanged(_requests.length);
+    try {
+      final rows = _filter == ReviewStatus.approved
+          ? await AiIngredientRequestService.getApprovedRequests()
+          : await AiIngredientRequestService.getPendingRequests();
+      if (!mounted) return;
+      setState(() {
+        _requests = rows.map(AiIngredientRequest.fromJson).toList();
+      });
+      widget.onCountChanged(_requests.length);
+    } catch (e, stack) {
+      debugPrint('[AiApprovalTab] _load error: $e\n$stack');
+      if (!mounted) return;
+      setState(() => _requests = []);
+      widget.onCountChanged(0);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not load AI requests — check connection'),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
   Future<void> _review(int id, ReviewStatus status) async {

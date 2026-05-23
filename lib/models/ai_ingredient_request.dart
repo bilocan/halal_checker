@@ -14,10 +14,26 @@ class AiIngredientRequest {
   factory AiIngredientRequest.fromJson(Map<String, dynamic> j) {
     final barcode = j['barcode'] as String? ?? '';
     return AiIngredientRequest(
-      id: (j['id'] as num).toInt(),
+      id: _parseId(j['id']),
       barcode: barcode,
       productName: j['product_name'] as String? ?? barcode,
-      createdAt: DateTime.tryParse(j['created_at'] as String? ?? ''),
+      createdAt: _parseDateTime(j['created_at']),
     );
+  }
+
+  static int _parseId(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) return int.parse(value);
+    throw FormatException('Invalid ai_ingredient_requests.id: $value');
+  }
+
+  static DateTime? _parseDateTime(dynamic value) {
+    if (value == null) return null;
+    if (value is DateTime) return value.toLocal();
+    if (value is String && value.isNotEmpty) {
+      return DateTime.tryParse(value);
+    }
+    return null;
   }
 }

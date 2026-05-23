@@ -48,14 +48,18 @@ class ResultController extends ChangeNotifier {
   bool isRequestingAnalysis = false;
 
   Future<void> loadAll() async {
-    await Future.wait([
-      loadFeedbacks(),
-      loadNote(),
-      loadDiscussions(),
-      loadAiRequestStatus(),
-      loadAdminStatus(),
-      loadAnalysis(),
-    ]);
+    try {
+      await Future.wait([
+        loadFeedbacks(),
+        loadNote(),
+        loadDiscussions(),
+        loadAiRequestStatus(),
+        loadAdminStatus(),
+        loadAnalysis(),
+      ]);
+    } on Object catch (e, stack) {
+      debugPrint('[ResultController] loadAll error: $e\n$stack');
+    }
   }
 
   Future<void> loadAdminStatus() async {
@@ -66,9 +70,16 @@ class ResultController extends ChangeNotifier {
 
   Future<void> loadAiRequestStatus() async {
     if (AuthService.currentUser == null) return;
-    final req = await AiIngredientRequestService.getRequestForBarcode(barcode);
-    if (req != null) {
-      aiRequestStatus = ReviewStatus.fromString(req['status'] as String?);
+    try {
+      final req = await AiIngredientRequestService.getRequestForBarcode(
+        barcode,
+      );
+      aiRequestStatus = req == null
+          ? null
+          : ReviewStatus.fromString(req['status'] as String?);
+    } catch (_) {
+      aiRequestStatus = null;
+    } finally {
       notifyListeners();
     }
   }
@@ -178,8 +189,9 @@ class ResultController extends ChangeNotifier {
         barcode,
         productName: product?.name,
       );
-      aiRequestStatus = ReviewStatus.pending;
-      notifyListeners();
+      if (submitted) {
+        aiRequestStatus = ReviewStatus.pending;
+      }
       return submitted;
     } catch (_) {
       return null;

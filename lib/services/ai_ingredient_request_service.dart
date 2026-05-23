@@ -1,22 +1,48 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../config.dart';
+import 'auth_service.dart';
+
 class AiIngredientRequestService {
-  static final _client = Supabase.instance.client;
+  AiIngredientRequestService._();
+
+  static const _queryTimeout = Duration(seconds: 15);
+
+  static SupabaseClient get _db => Supabase.instance.client;
+  static bool _supabaseAvailable = AppConfig.hasSupabase;
+
+  @visibleForTesting
+  static void enableForTesting() => _supabaseAvailable = true;
+
+  @visibleForTesting
+  static void resetForTesting() => _supabaseAvailable = AppConfig.hasSupabase;
+
+  static Future<bool> _ensureReady() async {
+    if (!_supabaseAvailable) return false;
+    return AuthService.ensureInitialized();
+  }
 
   /// Returns the most recent request for [barcode] regardless of status,
-  /// or null if no request has ever been made.
+  /// or null if none exists or the query fails.
   static Future<Map<String, dynamic>?> getRequestForBarcode(
     String barcode,
   ) async {
-    final res = await _client
-        .from('ai_ingredient_requests')
-        .select('id, status, created_at')
-        .eq('barcode', barcode)
-        .order('created_at', ascending: false)
-        .limit(1)
-        .maybeSingle();
-    return res;
+    if (!await _ensureReady()) return null;
+    try {
+      final res = await _db
+          .from('ai_ingredient_requests')
+          .select('id, status, created_at')
+          .eq('barcode', barcode)
+          .order('created_at', ascending: false)
+          .limit(1)
+          .maybeSingle()
+          .timeout(_queryTimeout);
+      return res;
+    } on Object catch (e, stack) {
+      _logQueryError('getRequestForBarcode', e, stack);
+      return null;
+    }
   }
 
   /// Submits a new AI ingredient request. Returns false if a pending request
@@ -25,53 +51,75 @@ class AiIngredientRequestService {
     String barcode, {
     String? productName,
   }) async {
-    final userId = _client.auth.currentUser?.id;
+    if (!await _ensureReady()) return false;
+    final userId = AuthService.currentUser?.id;
     if (userId == null) return false;
 
-    // Check for an existing pending request for this barcode.
-    final existing = await _client
-        .from('ai_ingredient_requests')
-        .select('id')
-        .eq('barcode', barcode)
-        .eq('status', 'pending')
-        .maybeSingle();
-    if (existing != null) return false;
+    try {
+      final existing = await _db
+          .from('ai_ingredient_requests')
+          .select('id')
+          .eq('barcode', barcode)
+          .eq('status', 'pending')
+          .maybeSingle()
+          .timeout(_queryTimeout);
+      if (existing != null) return false;
 
-    await _client.from('ai_ingredient_requests').insert({
-      'barcode': barcode,
-      'product_name': productName,
-      'requested_by': userId,
-    });
-    return true;
+      await _db
+          .from('ai_ingredient_requests')
+          .insert({
+            'barcode': barcode,
+            'product_name': productName,
+            'requested_by': userId,
+          })
+          .timeout(_queryTimeout);
+      return true;
+    } on Object catch (e, stack) {
+      _logQueryError('submitRequest', e, stack);
+      return false;
+    }
   }
 
-  /// Returns all pending AI ingredient requests. Admin/superadmin-only in
-  /// practice (RLS only allows those roles to write; reads are open to all
-  /// authenticated users).
+  /// Returns all pending AI ingredient requests.
   static Future<List<Map<String, dynamic>>> getPendingRequests() async {
-    final res = await _client
-        .from('ai_ingredient_requests')
-        .select()
-        .eq('status', 'pending')
-        .order('created_at', ascending: true);
-    return List<Map<String, dynamic>>.from(res as List);
+    if (!await _ensureReady()) return [];
+    try {
+      final res = await _db
+          .from('ai_ingredient_requests')
+          .select()
+          .eq('status', 'pending')
+          .order('created_at', ascending: true)
+          .timeout(_queryTimeout);
+      return List<Map<String, dynamic>>.from(res as List);
+    } on Object catch (e, stack) {
+      _logQueryError('getPendingRequests', e, stack);
+      return [];
+    }
   }
 
   /// Returns all approved AI ingredient requests.
   static Future<List<Map<String, dynamic>>> getApprovedRequests() async {
-    final res = await _client
-        .from('ai_ingredient_requests')
-        .select()
-        .eq('status', 'approved')
-        .order('created_at', ascending: false);
-    return List<Map<String, dynamic>>.from(res as List);
+    if (!await _ensureReady()) return [];
+    try {
+      final res = await _db
+          .from('ai_ingredient_requests')
+          .select()
+          .eq('status', 'approved')
+          .order('created_at', ascending: false)
+          .timeout(_queryTimeout);
+      return List<Map<String, dynamic>>.from(res as List);
+    } on Object catch (e, stack) {
+      _logQueryError('getApprovedRequests', e, stack);
+      return [];
+    }
   }
 
   /// Updates the status of a request (admin action).
   static Future<bool> updateStatus(int id, String status) async {
-    final userId = _client.auth.currentUser?.id;
+    if (!await _ensureReady()) return false;
+    final userId = AuthService.currentUser?.id;
     try {
-      final result = await _client
+      final result = await _db
           .from('ai_ingredient_requests')
           .update({
             'status': status,
@@ -79,7 +127,8 @@ class AiIngredientRequestService {
             'reviewed_by': userId,
           })
           .eq('id', id)
-          .select();
+          .select()
+          .timeout(_queryTimeout);
       if (result.isEmpty) {
         debugPrint(
           '[AiIngredientRequestService] updateStatus: no rows updated for id=$id — RLS may be blocking the write',
@@ -87,9 +136,23 @@ class AiIngredientRequestService {
         return false;
       }
       return true;
-    } catch (e) {
-      debugPrint('[AiIngredientRequestService] updateStatus error: $e');
+    } on Object catch (e, stack) {
+      _logQueryError('updateStatus', e, stack);
       return false;
     }
+  }
+
+  static void _logQueryError(String operation, Object e, StackTrace stack) {
+    if (e is PostgrestException && e.code == 'PGRST205') {
+      debugPrint(
+        '[AiIngredientRequestService] $operation: table public.ai_ingredient_requests '
+        'does not exist on this Supabase project. Apply migrations '
+        '(supabase db push) or run supabase/migrations/20260522000001_create_ai_ingredient_requests.sql '
+        'in the SQL editor.',
+      );
+      return;
+    }
+    debugPrint('[AiIngredientRequestService] $operation error: $e');
+    debugPrint('$stack');
   }
 }
