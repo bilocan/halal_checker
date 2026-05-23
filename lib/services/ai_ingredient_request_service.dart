@@ -13,10 +13,25 @@ class AiIngredientRequestService {
   static bool _supabaseAvailable = AppConfig.hasSupabase;
 
   @visibleForTesting
+  static Future<List<Map<String, dynamic>>> Function()? fakeGetPendingRequests;
+
+  @visibleForTesting
+  static Future<List<Map<String, dynamic>>> Function()? fakeGetApprovedRequests;
+
+  @visibleForTesting
+  static Future<Map<String, dynamic>?> Function(String)?
+  fakeGetRequestForBarcode;
+
+  @visibleForTesting
   static void enableForTesting() => _supabaseAvailable = true;
 
   @visibleForTesting
-  static void resetForTesting() => _supabaseAvailable = AppConfig.hasSupabase;
+  static void resetForTesting() {
+    _supabaseAvailable = AppConfig.hasSupabase;
+    fakeGetPendingRequests = null;
+    fakeGetApprovedRequests = null;
+    fakeGetRequestForBarcode = null;
+  }
 
   static Future<bool> _ensureReady() async {
     if (!_supabaseAvailable) return false;
@@ -28,6 +43,9 @@ class AiIngredientRequestService {
   static Future<Map<String, dynamic>?> getRequestForBarcode(
     String barcode,
   ) async {
+    if (fakeGetRequestForBarcode != null) {
+      return fakeGetRequestForBarcode!(barcode);
+    }
     if (!await _ensureReady()) return null;
     try {
       final res = await _db
@@ -82,6 +100,7 @@ class AiIngredientRequestService {
 
   /// Returns all pending AI ingredient requests.
   static Future<List<Map<String, dynamic>>> getPendingRequests() async {
+    if (fakeGetPendingRequests != null) return fakeGetPendingRequests!();
     if (!await _ensureReady()) return [];
     try {
       final res = await _db
@@ -99,6 +118,7 @@ class AiIngredientRequestService {
 
   /// Returns all approved AI ingredient requests.
   static Future<List<Map<String, dynamic>>> getApprovedRequests() async {
+    if (fakeGetApprovedRequests != null) return fakeGetApprovedRequests!();
     if (!await _ensureReady()) return [];
     try {
       final res = await _db

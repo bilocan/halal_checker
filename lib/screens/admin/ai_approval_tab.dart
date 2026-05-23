@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../app_colors.dart';
 import '../../localization/app_localizations.dart';
+import '../../localization/format_relative_time.dart';
 import '../../models/ai_ingredient_request.dart';
 import '../../models/review_status.dart';
 import '../../services/ai_ingredient_request_service.dart';
@@ -213,6 +214,7 @@ class _AiRequestCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
@@ -241,7 +243,7 @@ class _AiRequestCard extends StatelessWidget {
                 ),
                 if (item.createdAt != null)
                   Text(
-                    _formatAge(item.createdAt!),
+                    formatRelativeTime(loc, item.createdAt!),
                     style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
                   ),
               ],
@@ -324,11 +326,4 @@ class _AiRequestCard extends StatelessWidget {
       ),
     );
   }
-}
-
-String _formatAge(DateTime d) {
-  final diff = DateTime.now().difference(d);
-  if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
-  if (diff.inHours < 24) return '${diff.inHours}h ago';
-  return '${diff.inDays}d ago';
 }

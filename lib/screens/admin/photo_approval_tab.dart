@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../../app_colors.dart';
 import '../../localization/app_localizations.dart';
+import '../../localization/format_relative_time.dart';
 import '../../models/photo_submission.dart';
 import '../../models/review_status.dart';
 import '../../services/product_image_service.dart';
@@ -117,6 +118,7 @@ class _PhotoSubmissionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
     final typeColor = switch (item.imageType) {
       'ingredients' => Colors.orange.shade700,
       'nutrition' => Colors.purple.shade700,
@@ -236,7 +238,7 @@ class _PhotoSubmissionCard extends StatelessWidget {
                     if (item.createdAt != null) ...[
                       const SizedBox(width: 8),
                       Text(
-                        _formatAge(item.createdAt!),
+                        formatRelativeTime(loc, item.createdAt!),
                         style: TextStyle(
                           fontSize: 11,
                           color: Colors.grey.shade500,
@@ -407,11 +409,4 @@ class _PhotoSubmissionCard extends StatelessWidget {
       ),
     );
   }
-}
-
-String _formatAge(DateTime d) {
-  final diff = DateTime.now().difference(d);
-  if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
-  if (diff.inHours < 24) return '${diff.inHours}h ago';
-  return '${diff.inDays}d ago';
 }

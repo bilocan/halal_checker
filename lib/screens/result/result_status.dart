@@ -60,7 +60,9 @@ class ResultStatus {
         ? loc.halal
         : loc.notHalal;
 
-    final explanation = product.requiresHalalCert
+    final explanation = product.isNonFood
+        ? loc.explanationNonFood
+        : product.requiresHalalCert
         ? loc.explanationNoCert
         : product.explanation.isNotEmpty
         ? product.explanation

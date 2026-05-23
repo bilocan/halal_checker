@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../app_colors.dart';
 import '../constants/ingredient_keywords.dart';
 import '../localization/app_localizations.dart';
+import '../localization/format_relative_time.dart';
 import '../services/keyword_normalization.dart';
 import '../services/keyword_service.dart';
 
@@ -646,7 +647,7 @@ class _RulesManagementScreenState extends State<RulesManagementScreen>
             if (createdAt != null) ...[
               const SizedBox(height: 4),
               Text(
-                _formatAge(createdAt),
+                formatRelativeTime(loc, createdAt),
                 style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
               ),
             ],
@@ -682,12 +683,5 @@ class _RulesManagementScreenState extends State<RulesManagementScreen>
         ),
       ),
     );
-  }
-
-  String _formatAge(DateTime d) {
-    final diff = DateTime.now().difference(d);
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
-    if (diff.inHours < 24) return '${diff.inHours}h ago';
-    return '${diff.inDays}d ago';
   }
 }

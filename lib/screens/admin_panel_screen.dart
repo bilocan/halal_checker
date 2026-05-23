@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../app_colors.dart';
 import '../localization/app_localizations.dart';
+import '../localization/format_relative_time.dart';
 import '../models/product_analysis.dart';
 import '../services/analysis_service.dart';
 import 'admin/ai_approval_tab.dart';
@@ -499,6 +500,7 @@ class _AnalysisRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
     final status = AnalysisStatus.fromString(row['status'] as String? ?? '');
     final productName =
         (row['products'] as Map?)?['name'] as String? ?? 'Unknown product';
@@ -563,7 +565,7 @@ class _AnalysisRow extends StatelessWidget {
                     if (createdAt != null) ...[
                       const SizedBox(height: 2),
                       Text(
-                        _formatAge(createdAt),
+                        formatRelativeTime(loc, createdAt),
                         style: TextStyle(
                           fontSize: 11,
                           color: Colors.grey.shade500,
@@ -598,12 +600,5 @@ class _AnalysisRow extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  String _formatAge(DateTime d) {
-    final diff = DateTime.now().difference(d);
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
-    if (diff.inHours < 24) return '${diff.inHours}h ago';
-    return '${diff.inDays}d ago';
   }
 }

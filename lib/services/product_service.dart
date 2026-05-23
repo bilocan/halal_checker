@@ -623,8 +623,7 @@ class ProductService {
             isNonFood: true,
             isHalal: false,
             isUnknown: false,
-            explanation:
-                'This is a non-food product. Islamic dietary rules do not apply.',
+            explanation: '',
           );
         }
         // If OFf returned unknown (no ingredient data, no category signal),

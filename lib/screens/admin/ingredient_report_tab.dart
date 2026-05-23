@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../app_colors.dart';
 import '../../localization/app_localizations.dart';
+import '../../localization/format_relative_time.dart';
 import '../../models/ingredient_report.dart';
 import '../../services/ingredient_report_service.dart';
 import '../result_screen.dart';
@@ -147,7 +148,7 @@ class _IngredientReportCard extends StatelessWidget {
                 ),
                 if (item.createdAt != null)
                   Text(
-                    _formatAge(item.createdAt!),
+                    formatRelativeTime(loc, item.createdAt!),
                     style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
                   ),
               ],
@@ -241,11 +242,4 @@ class _IngredientReportCard extends StatelessWidget {
       ),
     );
   }
-}
-
-String _formatAge(DateTime d) {
-  final diff = DateTime.now().difference(d);
-  if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
-  if (diff.inHours < 24) return '${diff.inHours}h ago';
-  return '${diff.inDays}d ago';
 }

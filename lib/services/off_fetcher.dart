@@ -296,8 +296,7 @@ class OffFetcher {
           imageFrontUrl: imageFrontUrl,
           imageIngredientsUrl: imageIngredientsUrl,
           imageNutritionUrl: imageNutritionUrl,
-          explanation:
-              'This is a non-food product. Islamic dietary rules do not apply.',
+          explanation: '',
           analyzedByAI: false,
           ingredientSource: 'off',
         );
