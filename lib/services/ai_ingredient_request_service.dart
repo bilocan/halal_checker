@@ -172,7 +172,7 @@ class AiIngredientRequestService {
                 .eq('status', 'pending')
                 .order('created_at', ascending: true)
                 .timeout(_queryTimeout);
-      return List<Map<String, dynamic>>.from(res as List);
+      return List<Map<String, dynamic>>.from(res);
     } on Object catch (e, stack) {
       _logQueryError('getPendingRequests', e, stack);
       return [];
@@ -192,7 +192,7 @@ class AiIngredientRequestService {
                 .eq('status', 'approved')
                 .order('created_at', ascending: false)
                 .timeout(_queryTimeout);
-      return List<Map<String, dynamic>>.from(res as List);
+      return List<Map<String, dynamic>>.from(res);
     } on Object catch (e, stack) {
       _logQueryError('getApprovedRequests', e, stack);
       return [];

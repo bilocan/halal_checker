@@ -121,7 +121,7 @@ class IngredientReportService {
                 .select()
                 .eq('status', status)
                 .order('created_at', ascending: false);
-      final rows = List<Map<String, dynamic>>.from(raw as List);
+      final rows = List<Map<String, dynamic>>.from(raw);
       return rows;
     } catch (e) {
       debugPrint('IngredientReportService.getReports error: $e');

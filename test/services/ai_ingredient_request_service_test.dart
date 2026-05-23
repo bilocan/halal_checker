@@ -42,14 +42,17 @@ void main() {
   });
 
   group('AiIngredientRequestService — fakes', () {
-    test('getRequestForBarcode returns null when auth is unavailable', () async {
-      AiIngredientRequestService.enableForTesting();
+    test(
+      'getRequestForBarcode returns null when auth is unavailable',
+      () async {
+        AiIngredientRequestService.enableForTesting();
 
-      expect(
-        await AiIngredientRequestService.getRequestForBarcode('123'),
-        isNull,
-      );
-    });
+        expect(
+          await AiIngredientRequestService.getRequestForBarcode('123'),
+          isNull,
+        );
+      },
+    );
 
     test('getPendingRequests uses fake when set', () async {
       AiIngredientRequestService.fakeGetPendingRequests = () async => [
@@ -293,10 +296,7 @@ void main() {
           throw PostgrestException(message: 'missing', code: 'PGRST205');
         };
 
-        expect(
-          await AiIngredientRequestService.submitRequest('123'),
-          isFalse,
-        );
+        expect(await AiIngredientRequestService.submitRequest('123'), isFalse);
       },
     );
 

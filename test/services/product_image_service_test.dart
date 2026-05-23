@@ -170,7 +170,7 @@ void main() {
       Map<String, dynamic>? capturedPayload;
       ProductImageService.fakeReadImageBytes = (_) async =>
           Uint8List.fromList([1, 2, 3]);
-      ProductImageService.fakeUploadBinary = (_, __, mimeType) async {
+      ProductImageService.fakeUploadBinary = (_, _, mimeType) async {
         capturedMime = mimeType;
       };
       ProductImageService.fakeGetPublicUrl = (path) =>
@@ -199,8 +199,9 @@ void main() {
       Map<String, dynamic>? capturedPayload;
       ProductImageService.fakeReadImageBytes = (_) async =>
           Uint8List.fromList([1]);
-      ProductImageService.fakeUploadBinary = (_, __, ___) async {};
-      ProductImageService.fakeGetPublicUrl = (path) => 'https://example.com/$path';
+      ProductImageService.fakeUploadBinary = (_, _, _) async {};
+      ProductImageService.fakeGetPublicUrl = (path) =>
+          'https://example.com/$path';
       ProductImageService.fakeInsertSubmission = (payload) async {
         capturedPayload = payload;
       };
@@ -219,7 +220,7 @@ void main() {
       String? capturedMime;
       ProductImageService.fakeReadImageBytes = (_) async =>
           Uint8List.fromList([1]);
-      ProductImageService.fakeUploadBinary = (_, __, mimeType) async {
+      ProductImageService.fakeUploadBinary = (_, _, mimeType) async {
         capturedMime = mimeType;
       };
       ProductImageService.fakeGetPublicUrl = (path) =>
@@ -239,7 +240,7 @@ void main() {
       AuthService.setCurrentUserForTesting(fakeUser);
       ProductImageService.fakeReadImageBytes = (_) async =>
           Uint8List.fromList([1]);
-      ProductImageService.fakeUploadBinary = (_, __, ___) async =>
+      ProductImageService.fakeUploadBinary = (_, _, _) async =>
           throw Exception('upload failed');
 
       expect(
