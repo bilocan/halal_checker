@@ -87,7 +87,7 @@ class _CommentsScreenState extends State<_CommentsScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            result.error ?? "Couldn't post your comment. Please try again.",
+            result.error ?? AppLocalizations.of(context).couldNotPostComment,
           ),
         ),
       );
@@ -328,7 +328,7 @@ class _CommentTile extends StatelessWidget {
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      _formatAge(comment.createdAt),
+                      formatRelativeTime(loc, comment.createdAt),
                       style: TextStyle(
                         fontSize: 11,
                         color: Colors.grey.shade500,
@@ -339,7 +339,7 @@ class _CommentTile extends StatelessWidget {
                 const SizedBox(height: 4),
                 comment.isDeleted
                     ? Text(
-                        '[deleted]',
+                        loc.commentDeleted,
                         style: TextStyle(
                           color: Colors.grey.shade400,
                           fontStyle: FontStyle.italic,
@@ -414,15 +414,6 @@ class _CommentTile extends StatelessWidget {
         color: active ? Colors.blue.shade700 : Colors.grey.shade400,
       ),
     );
-  }
-
-  String _formatAge(DateTime dt) {
-    final diff = DateTime.now().difference(dt);
-    if (diff.inMinutes < 1) return 'just now';
-    if (diff.inHours < 1) return '${diff.inMinutes}m ago';
-    if (diff.inDays < 1) return '${diff.inHours}h ago';
-    if (diff.inDays < 30) return '${diff.inDays}d ago';
-    return '${dt.day}/${dt.month}/${dt.year}';
   }
 }
 

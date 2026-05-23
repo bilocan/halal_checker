@@ -957,6 +957,31 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String get commentDeleted => '[silindi]';
+
+  @override
+  String get couldNotPostComment =>
+      'Yorumunuz gönderilemedi. Lütfen tekrar deneyin.';
+
+  @override
+  String get timeJustNow => 'az önce';
+
+  @override
+  String timeMinutesAgo(int count) {
+    return '$count dk önce';
+  }
+
+  @override
+  String timeHoursAgo(int count) {
+    return '$count sa önce';
+  }
+
+  @override
+  String timeDaysAgo(int count) {
+    return '$count gün önce';
+  }
+
+  @override
   String adminAiRefetching(String barcode) {
     return '$barcode için yapay zeka içerikleri yeniden alınıyor…';
   }

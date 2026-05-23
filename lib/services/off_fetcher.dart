@@ -12,6 +12,16 @@ import 'halal_rules_engine.dart';
 class OffFetcher {
   static const _engine = HalalRulesEngine();
 
+  static const String offBaseUrl =
+      'https://world.openfoodfacts.org/api/v0/product';
+  static const String obfBaseUrl =
+      'https://world.openbeautyfacts.org/api/v0/product';
+  static const String opfBaseUrl =
+      'https://world.openproductsfacts.org/api/v0/product';
+
+  static const List<String> baseUrls = [offBaseUrl, obfBaseUrl, opfBaseUrl];
+  static const Set<String> nonFoodBaseUrls = {obfBaseUrl, opfBaseUrl};
+
   final http.Client _client;
   OffFetcher(this._client);
 

@@ -1858,6 +1858,42 @@ abstract class AppLocalizations {
   /// **'by {username}'**
   String challengeBy(String username);
 
+  /// No description provided for @commentDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'[deleted]'**
+  String get commentDeleted;
+
+  /// No description provided for @couldNotPostComment.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t post your comment. Please try again.'**
+  String get couldNotPostComment;
+
+  /// No description provided for @timeJustNow.
+  ///
+  /// In en, this message translates to:
+  /// **'just now'**
+  String get timeJustNow;
+
+  /// No description provided for @timeMinutesAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}m ago'**
+  String timeMinutesAgo(int count);
+
+  /// No description provided for @timeHoursAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}h ago'**
+  String timeHoursAgo(int count);
+
+  /// No description provided for @timeDaysAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}d ago'**
+  String timeDaysAgo(int count);
+
   /// No description provided for @adminAiRefetching.
   ///
   /// In en, this message translates to:

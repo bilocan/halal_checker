@@ -957,6 +957,31 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get commentDeleted => '[deleted]';
+
+  @override
+  String get couldNotPostComment =>
+      'Couldn\'t post your comment. Please try again.';
+
+  @override
+  String get timeJustNow => 'just now';
+
+  @override
+  String timeMinutesAgo(int count) {
+    return '${count}m ago';
+  }
+
+  @override
+  String timeHoursAgo(int count) {
+    return '${count}h ago';
+  }
+
+  @override
+  String timeDaysAgo(int count) {
+    return '${count}d ago';
+  }
+
+  @override
   String adminAiRefetching(String barcode) {
     return 'Re-fetching AI ingredients for $barcode…';
   }

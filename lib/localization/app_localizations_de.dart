@@ -974,6 +974,31 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
+  String get commentDeleted => '[gelöscht]';
+
+  @override
+  String get couldNotPostComment =>
+      'Kommentar konnte nicht gesendet werden. Bitte erneut versuchen.';
+
+  @override
+  String get timeJustNow => 'gerade eben';
+
+  @override
+  String timeMinutesAgo(int count) {
+    return 'vor $count Min.';
+  }
+
+  @override
+  String timeHoursAgo(int count) {
+    return 'vor $count Std.';
+  }
+
+  @override
+  String timeDaysAgo(int count) {
+    return 'vor $count Tg.';
+  }
+
+  @override
   String adminAiRefetching(String barcode) {
     return 'KI-Zutaten für $barcode werden erneut abgerufen…';
   }

@@ -351,6 +351,33 @@
       }
     }
   },
+  "commentDeleted": "[deleted]",
+  "couldNotPostComment": "Couldn't post your comment. Please try again.",
+  "timeJustNow": "just now",
+  "timeMinutesAgo": "{count}m ago",
+  "@timeMinutesAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "timeHoursAgo": "{count}h ago",
+  "@timeHoursAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "timeDaysAgo": "{count}d ago",
+  "@timeDaysAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "adminAiRefetching": "Re-fetching AI ingredients for {barcode}…",
   "@adminAiRefetching": {
     "placeholders": {

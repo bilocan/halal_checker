@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../app_colors.dart';
 import '../localization/app_localizations.dart';
+import '../localization/format_relative_time.dart';
 import '../models/community.dart';
 import '../services/auth_service.dart';
 import '../services/community_service.dart';

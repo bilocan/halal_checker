@@ -282,5 +282,11 @@
   "noChallengesYet": "Henüz içerik itirazı yok.",
   "noChallengesHint": "Kararı itiraz etmek için Derin Analiz'de bir içeriğe dokunun.",
   "challengeBy": "{username} tarafından",
+  "commentDeleted": "[silindi]",
+  "couldNotPostComment": "Yorumunuz gönderilemedi. Lütfen tekrar deneyin.",
+  "timeJustNow": "az önce",
+  "timeMinutesAgo": "{count} dk önce",
+  "timeHoursAgo": "{count} sa önce",
+  "timeDaysAgo": "{count} gün önce",
   "adminAiRefetching": "{barcode} için yapay zeka içerikleri yeniden alınıyor…"
 }

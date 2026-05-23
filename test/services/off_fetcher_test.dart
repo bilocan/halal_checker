@@ -6,9 +6,19 @@ import 'package:http/testing.dart';
 
 import 'package:halal_checker/services/off_fetcher.dart';
 
-const _baseUrl = 'https://world.openfoodfacts.org/api/v0/product';
-
 void main() {
+  test('exposes OFF/OBF/OPF base URLs in lookup order', () {
+    expect(OffFetcher.baseUrls, [
+      OffFetcher.offBaseUrl,
+      OffFetcher.obfBaseUrl,
+      OffFetcher.opfBaseUrl,
+    ]);
+    expect(OffFetcher.nonFoodBaseUrls, {
+      OffFetcher.obfBaseUrl,
+      OffFetcher.opfBaseUrl,
+    });
+  });
+
   group('OffFetcher.nameIndicatesAnimalProduct', () {
     test('detects meat terms in product name', () {
       expect(
@@ -36,13 +46,18 @@ void main() {
       final client = MockClient(
         (_) async => http.Response(jsonEncode({'status': 0}), 200),
       );
-      final product = await OffFetcher(client).fetch('123', _baseUrl);
+      final product = await OffFetcher(
+        client,
+      ).fetch('123', OffFetcher.offBaseUrl);
       expect(product, isNull);
     });
 
     test('returns null on non-200 response', () async {
       final client = MockClient((_) async => http.Response('', 404));
-      expect(await OffFetcher(client).fetch('123', _baseUrl), isNull);
+      expect(
+        await OffFetcher(client).fetch('123', OffFetcher.offBaseUrl),
+        isNull,
+      );
     });
 
     test('parses product with water ingredients as halal', () async {
@@ -55,7 +70,9 @@ void main() {
         },
       });
       final client = MockClient((_) async => http.Response(body, 200));
-      final product = await OffFetcher(client).fetch('1234567890123', _baseUrl);
+      final product = await OffFetcher(
+        client,
+      ).fetch('1234567890123', OffFetcher.offBaseUrl);
 
       expect(product, isNotNull);
       expect(product!.name, 'Spring Water');

@@ -282,5 +282,11 @@
   "noChallengesYet": "Noch keine Inhaltsstoff-Anfechtungen.",
   "noChallengesHint": "Tippen Sie in der Tiefenanalyse auf einen Inhaltsstoff, um das Urteil anzufechten.",
   "challengeBy": "von {username}",
+  "commentDeleted": "[gelöscht]",
+  "couldNotPostComment": "Kommentar konnte nicht gesendet werden. Bitte erneut versuchen.",
+  "timeJustNow": "gerade eben",
+  "timeMinutesAgo": "vor {count} Min.",
+  "timeHoursAgo": "vor {count} Std.",
+  "timeDaysAgo": "vor {count} Tg.",
   "adminAiRefetching": "KI-Zutaten für {barcode} werden erneut abgerufen…"
 }

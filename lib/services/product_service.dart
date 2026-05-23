@@ -49,13 +49,6 @@ class ProductService {
     _customDisplayNames.clear();
   }
 
-  static const String _offBaseUrl =
-      'https://world.openfoodfacts.org/api/v0/product';
-  static const String _obfBaseUrl =
-      'https://world.openbeautyfacts.org/api/v0/product';
-  static const String _opfBaseUrl =
-      'https://world.openproductsfacts.org/api/v0/product';
-
   final CacheService _cache = CacheService();
   final KeywordService _keywordService = KeywordService();
 
@@ -614,9 +607,8 @@ class ProductService {
     // Image URLs from Step 3 (edge function) are preserved here so that
     // approved community photos survive the raw OFF fetch, which has no
     // knowledge of our product_image_submissions table.
-    const nonFoodUrls = {_obfBaseUrl, _opfBaseUrl};
     Product? offUnknown;
-    for (final baseUrl in [_offBaseUrl, _obfBaseUrl, _opfBaseUrl]) {
+    for (final baseUrl in OffFetcher.baseUrls) {
       var product = await OffFetcher(_httpClient).fetch(barcode, baseUrl);
       debugPrint(
         '[Lookup $barcode] Step 4 ($baseUrl): '
@@ -626,7 +618,7 @@ class ProductService {
         'labels=${product?.labels}',
       );
       if (product != null) {
-        if (nonFoodUrls.contains(baseUrl)) {
+        if (OffFetcher.nonFoodBaseUrls.contains(baseUrl)) {
           product = product.copyWith(
             isNonFood: true,
             isHalal: false,
@@ -637,7 +629,7 @@ class ProductService {
         }
         // If OFf returned unknown (no ingredient data, no category signal),
         // continue to OBF/OPF — a cross-listing there confirms it is non-food.
-        if (product.isUnknown && baseUrl == _offBaseUrl) {
+        if (product.isUnknown && baseUrl == OffFetcher.offBaseUrl) {
           offUnknown = product;
           debugPrint('[Lookup $barcode] Step 4: OFf unknown — probing OBF/OPF');
           continue;
