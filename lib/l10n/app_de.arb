@@ -261,5 +261,9 @@
   "aiRequestSubmitFailed": "KI-Anfrage konnte nicht gesendet werden.",
   "aiRequestSubmitted": "KI-Anfrage gesendet — wartet auf Admin-Prüfung.",
   "aiRequestAlreadyPending": "Für dieses Produkt liegt bereits eine ausstehende KI-Anfrage vor.",
+  "labelCopied": "{label} kopiert",
+  "replacePhoto": "Ersetzen",
+  "batchImportAccessDenied": "Zugriff verweigert: nur Superadmin",
+  "batchImportNoBarcodes": "Keine gültigen Barcodes in der Datei gefunden",
   "adminAiRefetching": "KI-Zutaten für {barcode} werden erneut abgerufen…"
 }

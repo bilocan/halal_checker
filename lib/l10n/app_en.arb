@@ -309,6 +309,17 @@
   "aiRequestSubmitFailed": "Failed to submit AI request.",
   "aiRequestSubmitted": "AI request submitted — pending admin review.",
   "aiRequestAlreadyPending": "An AI request for this product is already pending.",
+  "labelCopied": "{label} copied",
+  "@labelCopied": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "replacePhoto": "Replace",
+  "batchImportAccessDenied": "Access denied: superadmin only",
+  "batchImportNoBarcodes": "No valid barcodes found in file",
   "adminAiRefetching": "Re-fetching AI ingredients for {barcode}…",
   "@adminAiRefetching": {
     "placeholders": {

@@ -887,6 +887,20 @@ class AppLocalizationsEn extends AppLocalizations {
       'An AI request for this product is already pending.';
 
   @override
+  String labelCopied(String label) {
+    return '$label copied';
+  }
+
+  @override
+  String get replacePhoto => 'Replace';
+
+  @override
+  String get batchImportAccessDenied => 'Access denied: superadmin only';
+
+  @override
+  String get batchImportNoBarcodes => 'No valid barcodes found in file';
+
+  @override
   String adminAiRefetching(String barcode) {
     return 'Re-fetching AI ingredients for $barcode…';
   }

@@ -902,6 +902,21 @@ class AppLocalizationsDe extends AppLocalizations {
       'Für dieses Produkt liegt bereits eine ausstehende KI-Anfrage vor.';
 
   @override
+  String labelCopied(String label) {
+    return '$label kopiert';
+  }
+
+  @override
+  String get replacePhoto => 'Ersetzen';
+
+  @override
+  String get batchImportAccessDenied => 'Zugriff verweigert: nur Superadmin';
+
+  @override
+  String get batchImportNoBarcodes =>
+      'Keine gültigen Barcodes in der Datei gefunden';
+
+  @override
   String adminAiRefetching(String barcode) {
     return 'KI-Zutaten für $barcode werden erneut abgerufen…';
   }

@@ -1732,6 +1732,30 @@ abstract class AppLocalizations {
   /// **'An AI request for this product is already pending.'**
   String get aiRequestAlreadyPending;
 
+  /// No description provided for @labelCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'{label} copied'**
+  String labelCopied(String label);
+
+  /// No description provided for @replacePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace'**
+  String get replacePhoto;
+
+  /// No description provided for @batchImportAccessDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Access denied: superadmin only'**
+  String get batchImportAccessDenied;
+
+  /// No description provided for @batchImportNoBarcodes.
+  ///
+  /// In en, this message translates to:
+  /// **'No valid barcodes found in file'**
+  String get batchImportNoBarcodes;
+
   /// No description provided for @adminAiRefetching.
   ///
   /// In en, this message translates to:

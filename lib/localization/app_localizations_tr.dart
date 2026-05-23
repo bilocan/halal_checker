@@ -885,6 +885,21 @@ class AppLocalizationsTr extends AppLocalizations {
       'Bu ürün için zaten bekleyen bir yapay zeka isteği var.';
 
   @override
+  String labelCopied(String label) {
+    return '$label kopyalandı';
+  }
+
+  @override
+  String get replacePhoto => 'Değiştir';
+
+  @override
+  String get batchImportAccessDenied =>
+      'Erişim reddedildi: yalnızca süper yönetici';
+
+  @override
+  String get batchImportNoBarcodes => 'Dosyada geçerli barkod bulunamadı';
+
+  @override
   String adminAiRefetching(String barcode) {
     return '$barcode için yapay zeka içerikleri yeniden alınıyor…';
   }

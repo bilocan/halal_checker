@@ -91,7 +91,7 @@ class _ResultScreenState extends State<ResultScreen> {
     Clipboard.setData(ClipboardData(text: text));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('$label copied'),
+        content: Text(AppLocalizations.of(context).labelCopied(label)),
         duration: const Duration(seconds: 1),
       ),
     );

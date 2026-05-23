@@ -261,5 +261,9 @@
   "aiRequestSubmitFailed": "Yapay zeka isteği gönderilemedi.",
   "aiRequestSubmitted": "Yapay zeka isteği gönderildi — yönetici incelemesi bekleniyor.",
   "aiRequestAlreadyPending": "Bu ürün için zaten bekleyen bir yapay zeka isteği var.",
+  "labelCopied": "{label} kopyalandı",
+  "replacePhoto": "Değiştir",
+  "batchImportAccessDenied": "Erişim reddedildi: yalnızca süper yönetici",
+  "batchImportNoBarcodes": "Dosyada geçerli barkod bulunamadı",
   "adminAiRefetching": "{barcode} için yapay zeka içerikleri yeniden alınıyor…"
 }
