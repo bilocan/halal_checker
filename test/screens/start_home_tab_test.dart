@@ -81,7 +81,9 @@ void main() {
     expect(find.byType(Dismissible), findsNothing);
   });
 
-  testWidgets('flagged filter hides non-flagged scans', (WidgetTester tester) async {
+  testWidgets('flagged filter hides non-flagged scans', (
+    WidgetTester tester,
+  ) async {
     await pumpStartHomeTab(
       tester,
       homeTab: StartHomeTab(
