@@ -20,19 +20,67 @@ class ProductImageService {
   ProductImageService._();
 
   static SupabaseClient get _db => Supabase.instance.client;
+  static bool _supabaseAvailable = AppConfig.hasSupabase;
 
   @visibleForTesting
   static Future<List<Map<String, dynamic>>> Function(String)?
   fakeGetSubmissions;
 
   @visibleForTesting
+  static Future<List<Map<String, dynamic>>> Function(String status)?
+  fakeFetchSubmissionsForStatus;
+
+  @visibleForTesting
   static Future<bool> Function(int id, String status)?
   fakeUpdateSubmissionStatus;
 
   @visibleForTesting
+  static Future<bool> Function({
+    required String barcode,
+    required File imageFile,
+    ProductImageType type,
+    String? productName,
+  })?
+  fakeUploadImage;
+
+  @visibleForTesting
+  static Future<List<Map<String, dynamic>>> Function(List<String> barcodes)?
+  fakeFetchProductsForBarcodes;
+
+  @visibleForTesting
+  static Future<Uint8List> Function(File file)? fakeReadImageBytes;
+
+  @visibleForTesting
+  static Future<void> Function(String path, Uint8List bytes, String mimeType)?
+  fakeUploadBinary;
+
+  @visibleForTesting
+  static String Function(String path)? fakeGetPublicUrl;
+
+  @visibleForTesting
+  static Future<void> Function(Map<String, dynamic> payload)?
+  fakeInsertSubmission;
+
+  @visibleForTesting
+  static Future<void> Function(int id, String status)?
+  fakePerformSubmissionStatusUpdate;
+
+  @visibleForTesting
+  static void enableForTesting() => _supabaseAvailable = true;
+
+  @visibleForTesting
   static void resetForTesting() {
+    _supabaseAvailable = AppConfig.hasSupabase;
     fakeGetSubmissions = null;
+    fakeFetchSubmissionsForStatus = null;
     fakeUpdateSubmissionStatus = null;
+    fakeUploadImage = null;
+    fakeFetchProductsForBarcodes = null;
+    fakeReadImageBytes = null;
+    fakeUploadBinary = null;
+    fakeGetPublicUrl = null;
+    fakeInsertSubmission = null;
+    fakePerformSubmissionStatusUpdate = null;
   }
 
   /// Uploads [imageFile] to the `product-images` storage bucket and records
@@ -43,28 +91,44 @@ class ProductImageService {
     ProductImageType type = ProductImageType.front,
     String? productName,
   }) async {
-    if (!AppConfig.hasSupabase) return false;
+    if (fakeUploadImage != null) {
+      return fakeUploadImage!(
+        barcode: barcode,
+        imageFile: imageFile,
+        type: type,
+        productName: productName,
+      );
+    }
+    if (!_supabaseAvailable) return false;
     final uid = AuthService.currentUser?.id;
     if (uid == null) return false;
 
     try {
-      final bytes = await imageFile.readAsBytes();
+      final bytes = fakeReadImageBytes != null
+          ? await fakeReadImageBytes!(imageFile)
+          : await imageFile.readAsBytes();
       final ext = imageFile.path.split('.').last.toLowerCase();
       final mimeType = ext == 'png' ? 'image/png' : 'image/jpeg';
       final ts = DateTime.now().millisecondsSinceEpoch;
       final path = '$barcode/${type.value}_$ts.$ext';
 
-      await _db.storage
-          .from('product-images')
-          .uploadBinary(
-            path,
-            bytes,
-            fileOptions: FileOptions(contentType: mimeType),
-          );
+      if (fakeUploadBinary != null) {
+        await fakeUploadBinary!(path, bytes, mimeType);
+      } else {
+        await _db.storage
+            .from('product-images')
+            .uploadBinary(
+              path,
+              bytes,
+              fileOptions: FileOptions(contentType: mimeType),
+            );
+      }
 
-      final publicUrl = _db.storage.from('product-images').getPublicUrl(path);
+      final publicUrl = fakeGetPublicUrl != null
+          ? fakeGetPublicUrl!(path)
+          : _db.storage.from('product-images').getPublicUrl(path);
 
-      await _db.from('product_image_submissions').insert({
+      final payload = {
         'barcode': barcode,
         'image_type': type.value,
         'storage_path': path,
@@ -72,7 +136,13 @@ class ProductImageService {
         'submitted_by': uid,
         if (productName != null && productName.isNotEmpty)
           'product_name': productName,
-      });
+      };
+
+      if (fakeInsertSubmission != null) {
+        await fakeInsertSubmission!(payload);
+      } else {
+        await _db.from('product_image_submissions').insert(payload);
+      }
 
       return true;
     } catch (e) {
@@ -89,13 +159,15 @@ class ProductImageService {
     String status = 'pending',
   }) async {
     if (fakeGetSubmissions != null) return fakeGetSubmissions!(status);
-    if (!AppConfig.hasSupabase) return [];
+    if (!_supabaseAvailable) return [];
     try {
-      final rows = await _db
-          .from('product_image_submissions')
-          .select()
-          .eq('status', status)
-          .order('created_at');
+      final rows = fakeFetchSubmissionsForStatus != null
+          ? await fakeFetchSubmissionsForStatus!(status)
+          : await _db
+                .from('product_image_submissions')
+                .select()
+                .eq('status', status)
+                .order('created_at');
 
       final submissions = List<Map<String, dynamic>>.from(rows);
       if (submissions.isEmpty) return [];
@@ -105,12 +177,14 @@ class ProductImageService {
           .map((r) => r['barcode'] as String)
           .toSet()
           .toList();
-      final products = await _db
-          .from('products')
-          .select(
-            'barcode, image_front_url, image_ingredients_url, image_nutrition_url',
-          )
-          .inFilter('barcode', barcodes);
+      final products = fakeFetchProductsForBarcodes != null
+          ? await fakeFetchProductsForBarcodes!(barcodes)
+          : await _db
+                .from('products')
+                .select(
+                  'barcode, image_front_url, image_ingredients_url, image_nutrition_url',
+                )
+                .inFilter('barcode', barcodes);
 
       final productMap = {
         for (final p in List<Map<String, dynamic>>.from(products))
@@ -139,12 +213,16 @@ class ProductImageService {
     if (fakeUpdateSubmissionStatus != null) {
       return fakeUpdateSubmissionStatus!(id, status);
     }
-    if (!AppConfig.hasSupabase) return false;
+    if (!_supabaseAvailable) return false;
     try {
-      await _db
-          .from('product_image_submissions')
-          .update({'status': status})
-          .eq('id', id);
+      if (fakePerformSubmissionStatusUpdate != null) {
+        await fakePerformSubmissionStatusUpdate!(id, status);
+      } else {
+        await _db
+            .from('product_image_submissions')
+            .update({'status': status})
+            .eq('id', id);
+      }
       return true;
     } catch (e) {
       debugPrint('updateSubmissionStatus error: $e');

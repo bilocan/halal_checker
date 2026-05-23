@@ -24,7 +24,7 @@ foreach ($prop in $defines.PSObject.Properties) {
     $dartDefineArgs += "--dart-define=$($prop.Name)=$($prop.Value)"
 }
 
-$flutterArgs = @("test", $TestFile, "--timeout", "${Timeout}s") + $dartDefineArgs
+$flutterArgs = @("test", $TestFile, "--concurrency", "1", "--timeout", "${Timeout}s") + $dartDefineArgs
 
 Write-Host "Running: flutter $($flutterArgs -join ' ')" -ForegroundColor Cyan
 & flutter @flutterArgs

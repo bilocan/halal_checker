@@ -398,6 +398,63 @@ flutter test test/services/ test/constants/ test/models/
 
 Tests cover the rules engine, keyword matching, product verdict logic, caching, community services, and UI smoke paths. CI runs them automatically on every push and pull request via GitHub Actions.
 
+### Integration tests (live API)
+
+These live under `test/integration/` and `integration_test/`. They are **not** run in CI — invoke them explicitly when you want to hit real services.
+
+All integration tests that need app credentials read from `dart_defines.json` (copy from `dart_defines.example.json`). Helper scripts pass those defines for you:
+
+```bash
+# Linux/macOS
+./run_integration_test.sh test/integration/barcode_lookup_test.dart
+./run_integration_test.sh test/integration/supabase_services_integration_test.dart
+
+# Windows (PowerShell)
+.\run_integration_test.ps1 -TestFile test/integration/barcode_lookup_test.dart
+.\run_integration_test.ps1 -TestFile test/integration/supabase_services_integration_test.dart
+```
+
+Both scripts accept an optional timeout (seconds) as the second argument on Linux/macOS, or `-Timeout` on Windows.
+
+#### Barcode lookup
+
+`test/integration/barcode_lookup_test.dart` looks up every barcode in `test/barcodes.txt` against the live lookup pipeline (Supabase Edge Function when credentials are available, otherwise OpenFoodFacts + keyword analysis). It prints a result table and optionally asserts expected outcomes.
+
+```bash
+# With credentials (recommended — mirrors the app)
+./run_integration_test.sh test/integration/barcode_lookup_test.dart
+
+# Without credentials (OFF + keyword fallback only)
+flutter test test/integration/barcode_lookup_test.dart --timeout 120s
+```
+
+Barcodes file format (`test/barcodes.txt`):
+
+```
+<barcode> [expected: halal|haram|unknown]   # expected outcome is optional
+```
+
+#### Supabase service integration
+
+`test/integration/supabase_services_integration_test.dart` exercises real PostgREST / storage paths for `IngredientReportService`, `AiIngredientRequestService`, and `ProductImageService` (no test fakes).
+
+Minimal run (anonymous ingredient-report insert only):
+
+```bash
+flutter test test/integration/supabase_services_integration_test.dart \
+  --dart-define-from-file=dart_defines.json --concurrency 1
+```
+
+For the full suite, add optional keys to `dart_defines.json`:
+
+| Define | Purpose |
+|--------|---------|
+| `SUPABASE_TEST_EMAIL` / `SUPABASE_TEST_PASSWORD` | Authenticated user flows (AI requests, image upload) |
+| `SUPABASE_TEST_ADMIN_EMAIL` / `SUPABASE_TEST_ADMIN_PASSWORD` | Admin read/update flows |
+| `SUPABASE_SERVICE_ROLE_KEY` | Automatic cleanup of test rows and storage objects |
+
+Tests for auth/admin paths are compiled in only when the corresponding defines are non-empty.
+
 ### Test fixtures
 
 `test_data/seed_products.json` contains pre-classified products (halal, haram, suspicious) loaded into a separate `halal_test.db` on debug builds. These barcodes are intercepted before any network call, making them available offline.
@@ -444,7 +501,7 @@ Each expected ingredient is declared explicitly in the test so a regression (OCR
 flutter test integration_test/ocr_pipeline_test.dart
 ```
 
-The test is tagged `manual` and excluded from CI — it must be run explicitly.
+The test is tagged `manual` and excluded from CI — it must be run explicitly. See [Integration tests (live API)](#integration-tests-live-api) above for credential-based integration tests under `test/integration/`.
 
 #### Adding a new product image
 
