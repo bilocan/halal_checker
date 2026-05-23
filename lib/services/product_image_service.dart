@@ -21,6 +21,20 @@ class ProductImageService {
 
   static SupabaseClient get _db => Supabase.instance.client;
 
+  @visibleForTesting
+  static Future<List<Map<String, dynamic>>> Function(String)?
+  fakeGetSubmissions;
+
+  @visibleForTesting
+  static Future<bool> Function(int id, String status)?
+  fakeUpdateSubmissionStatus;
+
+  @visibleForTesting
+  static void resetForTesting() {
+    fakeGetSubmissions = null;
+    fakeUpdateSubmissionStatus = null;
+  }
+
   /// Uploads [imageFile] to the `product-images` storage bucket and records
   /// the submission in `product_image_submissions`. Returns true on success.
   static Future<bool> uploadImage({
@@ -74,6 +88,7 @@ class ProductImageService {
   static Future<List<Map<String, dynamic>>> getSubmissions({
     String status = 'pending',
   }) async {
+    if (fakeGetSubmissions != null) return fakeGetSubmissions!(status);
     if (!AppConfig.hasSupabase) return [];
     try {
       final rows = await _db
@@ -121,6 +136,9 @@ class ProductImageService {
 
   /// Sets a submission's status to 'approved' or 'rejected'.
   static Future<bool> updateSubmissionStatus(int id, String status) async {
+    if (fakeUpdateSubmissionStatus != null) {
+      return fakeUpdateSubmissionStatus!(id, status);
+    }
     if (!AppConfig.hasSupabase) return false;
     try {
       await _db

@@ -1894,6 +1894,54 @@ abstract class AppLocalizations {
   /// **'{count}d ago'**
   String timeDaysAgo(int count);
 
+  /// No description provided for @aiApprovalHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve to trigger AI ingredient lookup via Gemini/Claude. The product will be updated automatically.'**
+  String get aiApprovalHint;
+
+  /// No description provided for @refetchAiIngredients.
+  ///
+  /// In en, this message translates to:
+  /// **'Re-fetch AI Ingredients'**
+  String get refetchAiIngredients;
+
+  /// No description provided for @approveAndFetch.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve & Fetch'**
+  String get approveAndFetch;
+
+  /// No description provided for @photoReplacement.
+  ///
+  /// In en, this message translates to:
+  /// **'replacement'**
+  String get photoReplacement;
+
+  /// No description provided for @photoCurrentLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Current'**
+  String get photoCurrentLabel;
+
+  /// No description provided for @photoNewLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'New'**
+  String get photoNewLabel;
+
+  /// No description provided for @noPendingPhotoSubmissions.
+  ///
+  /// In en, this message translates to:
+  /// **'No pending photo submissions'**
+  String get noPendingPhotoSubmissions;
+
+  /// No description provided for @noPendingIngredientContributions.
+  ///
+  /// In en, this message translates to:
+  /// **'No pending ingredient contributions'**
+  String get noPendingIngredientContributions;
+
   /// No description provided for @adminAiRefetching.
   ///
   /// In en, this message translates to:

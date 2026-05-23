@@ -378,6 +378,14 @@
       }
     }
   },
+  "aiApprovalHint": "Approve to trigger AI ingredient lookup via Gemini/Claude. The product will be updated automatically.",
+  "refetchAiIngredients": "Re-fetch AI Ingredients",
+  "approveAndFetch": "Approve & Fetch",
+  "photoReplacement": "replacement",
+  "photoCurrentLabel": "Current",
+  "photoNewLabel": "New",
+  "noPendingPhotoSubmissions": "No pending photo submissions",
+  "noPendingIngredientContributions": "No pending ingredient contributions",
   "adminAiRefetching": "Re-fetching AI ingredients for {barcode}…",
   "@adminAiRefetching": {
     "placeholders": {

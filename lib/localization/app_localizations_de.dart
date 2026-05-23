@@ -999,6 +999,33 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
+  String get aiApprovalHint =>
+      'Genehmigen, um KI-Zutatensuche über Gemini/Claude auszulösen. Das Produkt wird automatisch aktualisiert.';
+
+  @override
+  String get refetchAiIngredients => 'KI-Zutaten erneut abrufen';
+
+  @override
+  String get approveAndFetch => 'Genehmigen & abrufen';
+
+  @override
+  String get photoReplacement => 'Ersatz';
+
+  @override
+  String get photoCurrentLabel => 'Aktuell';
+
+  @override
+  String get photoNewLabel => 'Neu';
+
+  @override
+  String get noPendingPhotoSubmissions =>
+      'Keine ausstehenden Fotoeinreichungen';
+
+  @override
+  String get noPendingIngredientContributions =>
+      'Keine ausstehenden Inhaltsstoff-Beiträge';
+
+  @override
   String adminAiRefetching(String barcode) {
     return 'KI-Zutaten für $barcode werden erneut abgerufen…';
   }

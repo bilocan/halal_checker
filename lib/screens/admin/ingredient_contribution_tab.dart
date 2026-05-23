@@ -86,6 +86,7 @@ class IngredientContributionTabState extends State<IngredientContributionTab> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
     if (_loading) return const Center(child: CircularProgressIndicator());
     if (_contributions.isEmpty) {
       return Center(
@@ -99,7 +100,7 @@ class IngredientContributionTabState extends State<IngredientContributionTab> {
             ),
             const SizedBox(height: 12),
             Text(
-              'No pending ingredient contributions',
+              loc.noPendingIngredientContributions,
               style: TextStyle(color: Colors.grey.shade500),
             ),
           ],
@@ -211,7 +212,7 @@ class _ContributionCard extends StatelessWidget {
                     child: OutlinedButton.icon(
                       onPressed: onReject,
                       icon: const Icon(Icons.close, size: 16),
-                      label: const Text('Reject'),
+                      label: Text(loc.reject),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Colors.red.shade700,
                         side: BorderSide(color: Colors.red.shade300),
@@ -224,7 +225,7 @@ class _ContributionCard extends StatelessWidget {
                     child: FilledButton.icon(
                       onPressed: onApprove,
                       icon: const Icon(Icons.check, size: 16),
-                      label: const Text('Approve'),
+                      label: Text(loc.approve),
                       style: FilledButton.styleFrom(
                         backgroundColor: kGreen,
                         visualDensity: VisualDensity.compact,

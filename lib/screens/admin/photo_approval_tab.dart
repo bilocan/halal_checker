@@ -62,6 +62,7 @@ class PhotoApprovalTabState extends State<PhotoApprovalTab> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
     if (_loading) return const Center(child: CircularProgressIndicator());
     if (_photos.isEmpty) {
       return Center(
@@ -75,7 +76,7 @@ class PhotoApprovalTabState extends State<PhotoApprovalTab> {
             ),
             const SizedBox(height: 12),
             Text(
-              'No pending photo submissions',
+              loc.noPendingPhotoSubmissions,
               style: TextStyle(color: Colors.grey.shade500),
             ),
           ],
@@ -145,7 +146,7 @@ class _PhotoSubmissionCard extends StatelessWidget {
                     child: _imagePanel(
                       context,
                       item.currentUrl!,
-                      'Current',
+                      loc.photoCurrentLabel,
                       Colors.grey.shade700,
                     ),
                   ),
@@ -154,7 +155,7 @@ class _PhotoSubmissionCard extends StatelessWidget {
                     child: _imagePanel(
                       context,
                       item.submittedUrl,
-                      'New',
+                      loc.photoNewLabel,
                       Colors.green.shade700,
                     ),
                   ),
@@ -226,7 +227,7 @@ class _PhotoSubmissionCard extends StatelessWidget {
                           border: Border.all(color: Colors.amber.shade400),
                         ),
                         child: Text(
-                          'replacement',
+                          loc.photoReplacement,
                           style: TextStyle(
                             color: Colors.amber.shade800,
                             fontSize: 11,
@@ -281,7 +282,7 @@ class _PhotoSubmissionCard extends StatelessWidget {
                         child: OutlinedButton.icon(
                           onPressed: onReject,
                           icon: const Icon(Icons.close, size: 16),
-                          label: const Text('Reject'),
+                          label: Text(loc.reject),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: Colors.red.shade700,
                             side: BorderSide(color: Colors.red.shade300),
@@ -294,7 +295,7 @@ class _PhotoSubmissionCard extends StatelessWidget {
                         child: FilledButton.icon(
                           onPressed: onApprove,
                           icon: const Icon(Icons.check, size: 16),
-                          label: const Text('Approve'),
+                          label: Text(loc.approve),
                           style: FilledButton.styleFrom(
                             backgroundColor: kGreen,
                             visualDensity: VisualDensity.compact,

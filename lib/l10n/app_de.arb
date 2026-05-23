@@ -288,5 +288,13 @@
   "timeMinutesAgo": "vor {count} Min.",
   "timeHoursAgo": "vor {count} Std.",
   "timeDaysAgo": "vor {count} Tg.",
+  "aiApprovalHint": "Genehmigen, um KI-Zutatensuche über Gemini/Claude auszulösen. Das Produkt wird automatisch aktualisiert.",
+  "refetchAiIngredients": "KI-Zutaten erneut abrufen",
+  "approveAndFetch": "Genehmigen & abrufen",
+  "photoReplacement": "Ersatz",
+  "photoCurrentLabel": "Aktuell",
+  "photoNewLabel": "Neu",
+  "noPendingPhotoSubmissions": "Keine ausstehenden Fotoeinreichungen",
+  "noPendingIngredientContributions": "Keine ausstehenden Inhaltsstoff-Beiträge",
   "adminAiRefetching": "KI-Zutaten für {barcode} werden erneut abgerufen…"
 }

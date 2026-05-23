@@ -265,10 +265,9 @@ class _AiRequestCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(color: const Color(0xFFDDD6FE)),
               ),
-              child: const Text(
-                'Approve to trigger AI ingredient lookup via Gemini/Claude. '
-                'The product will be updated automatically.',
-                style: TextStyle(fontSize: 12, color: Color(0xFF5B21B6)),
+              child: Text(
+                loc.aiApprovalHint,
+                style: const TextStyle(fontSize: 12, color: Color(0xFF5B21B6)),
               ),
             ),
             const SizedBox(height: 10),
@@ -285,7 +284,7 @@ class _AiRequestCard extends StatelessWidget {
                 child: FilledButton.icon(
                   onPressed: onReApprove,
                   icon: const Icon(Icons.refresh, size: 16),
-                  label: const Text('Re-fetch AI Ingredients'),
+                  label: Text(loc.refetchAiIngredients),
                   style: FilledButton.styleFrom(
                     backgroundColor: const Color(0xFF7C3AED),
                     visualDensity: VisualDensity.compact,
@@ -299,7 +298,7 @@ class _AiRequestCard extends StatelessWidget {
                     child: OutlinedButton.icon(
                       onPressed: onReject,
                       icon: const Icon(Icons.close, size: 16),
-                      label: const Text('Reject'),
+                      label: Text(loc.reject),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Colors.red.shade700,
                         side: BorderSide(color: Colors.red.shade300),
@@ -312,7 +311,7 @@ class _AiRequestCard extends StatelessWidget {
                     child: FilledButton.icon(
                       onPressed: onApprove,
                       icon: const Icon(Icons.auto_awesome, size: 16),
-                      label: const Text('Approve & Fetch'),
+                      label: Text(loc.approveAndFetch),
                       style: FilledButton.styleFrom(
                         backgroundColor: const Color(0xFF7C3AED),
                         visualDensity: VisualDensity.compact,

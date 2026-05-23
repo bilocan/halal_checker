@@ -288,5 +288,13 @@
   "timeMinutesAgo": "{count} dk önce",
   "timeHoursAgo": "{count} sa önce",
   "timeDaysAgo": "{count} gün önce",
+  "aiApprovalHint": "Gemini/Claude ile yapay zeka içerik aramasını başlatmak için onaylayın. Ürün otomatik güncellenir.",
+  "refetchAiIngredients": "Yapay zeka içeriklerini yeniden al",
+  "approveAndFetch": "Onayla ve al",
+  "photoReplacement": "değiştirme",
+  "photoCurrentLabel": "Mevcut",
+  "photoNewLabel": "Yeni",
+  "noPendingPhotoSubmissions": "Bekleyen fotoğraf gönderimi yok",
+  "noPendingIngredientContributions": "Bekleyen içerik katkısı yok",
   "adminAiRefetching": "{barcode} için yapay zeka içerikleri yeniden alınıyor…"
 }

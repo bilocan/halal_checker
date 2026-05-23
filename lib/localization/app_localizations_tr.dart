@@ -982,6 +982,31 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String get aiApprovalHint =>
+      'Gemini/Claude ile yapay zeka içerik aramasını başlatmak için onaylayın. Ürün otomatik güncellenir.';
+
+  @override
+  String get refetchAiIngredients => 'Yapay zeka içeriklerini yeniden al';
+
+  @override
+  String get approveAndFetch => 'Onayla ve al';
+
+  @override
+  String get photoReplacement => 'değiştirme';
+
+  @override
+  String get photoCurrentLabel => 'Mevcut';
+
+  @override
+  String get photoNewLabel => 'Yeni';
+
+  @override
+  String get noPendingPhotoSubmissions => 'Bekleyen fotoğraf gönderimi yok';
+
+  @override
+  String get noPendingIngredientContributions => 'Bekleyen içerik katkısı yok';
+
+  @override
   String adminAiRefetching(String barcode) {
     return '$barcode için yapay zeka içerikleri yeniden alınıyor…';
   }

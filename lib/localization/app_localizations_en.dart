@@ -982,6 +982,32 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get aiApprovalHint =>
+      'Approve to trigger AI ingredient lookup via Gemini/Claude. The product will be updated automatically.';
+
+  @override
+  String get refetchAiIngredients => 'Re-fetch AI Ingredients';
+
+  @override
+  String get approveAndFetch => 'Approve & Fetch';
+
+  @override
+  String get photoReplacement => 'replacement';
+
+  @override
+  String get photoCurrentLabel => 'Current';
+
+  @override
+  String get photoNewLabel => 'New';
+
+  @override
+  String get noPendingPhotoSubmissions => 'No pending photo submissions';
+
+  @override
+  String get noPendingIngredientContributions =>
+      'No pending ingredient contributions';
+
+  @override
   String adminAiRefetching(String barcode) {
     return 'Re-fetching AI ingredients for $barcode…';
   }
