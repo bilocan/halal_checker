@@ -44,6 +44,7 @@ class _DiscussionsTab extends StatelessWidget {
         itemCount: discussions.length,
         itemBuilder: (_, i) {
           final d = discussions[i];
+          final loc = AppLocalizations.of(context);
           return Card(
             margin: const EdgeInsets.only(bottom: 10),
             child: InkWell(
@@ -79,7 +80,7 @@ class _DiscussionsTab extends StatelessWidget {
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
-                          'Linked to challenge',
+                          loc.linkedToChallenge,
                           style: TextStyle(
                             fontSize: 11,
                             color: Colors.orange.shade700,
@@ -96,7 +97,7 @@ class _DiscussionsTab extends StatelessWidget {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          d.createdByUsername ?? 'Anonymous',
+                          d.createdByUsername ?? loc.anonymous,
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.grey.shade600,
@@ -130,7 +131,7 @@ class _DiscussionsTab extends StatelessWidget {
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              'Locked',
+                              loc.locked,
                               style: TextStyle(
                                 fontSize: 11,
                                 color: Colors.grey.shade400,
@@ -171,6 +172,7 @@ class _ChallengesTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
     if (challenges.isEmpty) {
       return Center(
         child: Column(
@@ -179,12 +181,12 @@ class _ChallengesTab extends StatelessWidget {
             Icon(Icons.flag_outlined, size: 56, color: Colors.grey.shade300),
             const SizedBox(height: 12),
             Text(
-              'No ingredient challenges yet.',
+              loc.noChallengesYet,
               style: TextStyle(color: Colors.grey.shade500),
             ),
             const SizedBox(height: 4),
             Text(
-              'Tap an ingredient in Deep Analysis to challenge its verdict.',
+              loc.noChallengesHint,
               textAlign: TextAlign.center,
               style: TextStyle(color: Colors.grey.shade400, fontSize: 13),
             ),
@@ -197,6 +199,7 @@ class _ChallengesTab extends StatelessWidget {
       itemCount: challenges.length,
       itemBuilder: (_, i) {
         final c = challenges[i];
+        final loc = AppLocalizations.of(context);
         return Card(
           margin: const EdgeInsets.only(bottom: 10),
           child: Padding(
@@ -267,7 +270,7 @@ class _ChallengesTab extends StatelessWidget {
                 ],
                 const SizedBox(height: 6),
                 Text(
-                  'by ${c.createdByUsername ?? 'Anonymous'}',
+                  loc.challengeBy(c.createdByUsername ?? loc.anonymous),
                   style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
                 ),
               ],

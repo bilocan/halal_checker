@@ -901,6 +901,62 @@ class AppLocalizationsEn extends AppLocalizations {
   String get batchImportNoBarcodes => 'No valid barcodes found in file';
 
   @override
+  String get signInToComment => 'Sign in to comment.';
+
+  @override
+  String get discussionFallbackTitle => 'Discussion';
+
+  @override
+  String get noCommentsYet => 'No comments yet. Be the first!';
+
+  @override
+  String replyingTo(String username) {
+    return 'Replying to $username';
+  }
+
+  @override
+  String get writeCommentHint => 'Write a comment…';
+
+  @override
+  String get reply => 'Reply';
+
+  @override
+  String get failedStartDiscussion => 'Failed to start discussion. Try again.';
+
+  @override
+  String get startDiscussionTitle => 'Start a Discussion';
+
+  @override
+  String get topicOptionalLabel => 'Topic (optional)';
+
+  @override
+  String get topicOptionalHint => 'e.g. Is the gelatin source specified?';
+
+  @override
+  String get startDiscussionButton => 'Start Discussion';
+
+  @override
+  String get linkedToChallenge => 'Linked to challenge';
+
+  @override
+  String get locked => 'Locked';
+
+  @override
+  String get anonymous => 'Anonymous';
+
+  @override
+  String get noChallengesYet => 'No ingredient challenges yet.';
+
+  @override
+  String get noChallengesHint =>
+      'Tap an ingredient in Deep Analysis to challenge its verdict.';
+
+  @override
+  String challengeBy(String username) {
+    return 'by $username';
+  }
+
+  @override
   String adminAiRefetching(String barcode) {
     return 'Re-fetching AI ingredients for $barcode…';
   }

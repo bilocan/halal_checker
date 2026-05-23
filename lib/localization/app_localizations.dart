@@ -1756,6 +1756,108 @@ abstract class AppLocalizations {
   /// **'No valid barcodes found in file'**
   String get batchImportNoBarcodes;
 
+  /// No description provided for @signInToComment.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to comment.'**
+  String get signInToComment;
+
+  /// No description provided for @discussionFallbackTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Discussion'**
+  String get discussionFallbackTitle;
+
+  /// No description provided for @noCommentsYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No comments yet. Be the first!'**
+  String get noCommentsYet;
+
+  /// No description provided for @replyingTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Replying to {username}'**
+  String replyingTo(String username);
+
+  /// No description provided for @writeCommentHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Write a comment…'**
+  String get writeCommentHint;
+
+  /// No description provided for @reply.
+  ///
+  /// In en, this message translates to:
+  /// **'Reply'**
+  String get reply;
+
+  /// No description provided for @failedStartDiscussion.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to start discussion. Try again.'**
+  String get failedStartDiscussion;
+
+  /// No description provided for @startDiscussionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Start a Discussion'**
+  String get startDiscussionTitle;
+
+  /// No description provided for @topicOptionalLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Topic (optional)'**
+  String get topicOptionalLabel;
+
+  /// No description provided for @topicOptionalHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Is the gelatin source specified?'**
+  String get topicOptionalHint;
+
+  /// No description provided for @startDiscussionButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Start Discussion'**
+  String get startDiscussionButton;
+
+  /// No description provided for @linkedToChallenge.
+  ///
+  /// In en, this message translates to:
+  /// **'Linked to challenge'**
+  String get linkedToChallenge;
+
+  /// No description provided for @locked.
+  ///
+  /// In en, this message translates to:
+  /// **'Locked'**
+  String get locked;
+
+  /// No description provided for @anonymous.
+  ///
+  /// In en, this message translates to:
+  /// **'Anonymous'**
+  String get anonymous;
+
+  /// No description provided for @noChallengesYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No ingredient challenges yet.'**
+  String get noChallengesYet;
+
+  /// No description provided for @noChallengesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap an ingredient in Deep Analysis to challenge its verdict.'**
+  String get noChallengesHint;
+
+  /// No description provided for @challengeBy.
+  ///
+  /// In en, this message translates to:
+  /// **'by {username}'**
+  String challengeBy(String username);
+
   /// No description provided for @adminAiRefetching.
   ///
   /// In en, this message translates to:

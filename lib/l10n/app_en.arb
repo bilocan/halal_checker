@@ -320,6 +320,37 @@
   "replacePhoto": "Replace",
   "batchImportAccessDenied": "Access denied: superadmin only",
   "batchImportNoBarcodes": "No valid barcodes found in file",
+  "signInToComment": "Sign in to comment.",
+  "discussionFallbackTitle": "Discussion",
+  "noCommentsYet": "No comments yet. Be the first!",
+  "replyingTo": "Replying to {username}",
+  "@replyingTo": {
+    "placeholders": {
+      "username": {
+        "type": "String"
+      }
+    }
+  },
+  "writeCommentHint": "Write a comment…",
+  "reply": "Reply",
+  "failedStartDiscussion": "Failed to start discussion. Try again.",
+  "startDiscussionTitle": "Start a Discussion",
+  "topicOptionalLabel": "Topic (optional)",
+  "topicOptionalHint": "e.g. Is the gelatin source specified?",
+  "startDiscussionButton": "Start Discussion",
+  "linkedToChallenge": "Linked to challenge",
+  "locked": "Locked",
+  "anonymous": "Anonymous",
+  "noChallengesYet": "No ingredient challenges yet.",
+  "noChallengesHint": "Tap an ingredient in Deep Analysis to challenge its verdict.",
+  "challengeBy": "by {username}",
+  "@challengeBy": {
+    "placeholders": {
+      "username": {
+        "type": "String"
+      }
+    }
+  },
   "adminAiRefetching": "Re-fetching AI ingredients for {barcode}…",
   "@adminAiRefetching": {
     "placeholders": {

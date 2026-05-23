@@ -900,6 +900,63 @@ class AppLocalizationsTr extends AppLocalizations {
   String get batchImportNoBarcodes => 'Dosyada geçerli barkod bulunamadı';
 
   @override
+  String get signInToComment => 'Yorum yapmak için giriş yapın.';
+
+  @override
+  String get discussionFallbackTitle => 'Tartışma';
+
+  @override
+  String get noCommentsYet => 'Henüz yorum yok. İlk siz yazın!';
+
+  @override
+  String replyingTo(String username) {
+    return '$username kullanıcısına yanıt';
+  }
+
+  @override
+  String get writeCommentHint => 'Yorum yazın…';
+
+  @override
+  String get reply => 'Yanıtla';
+
+  @override
+  String get failedStartDiscussion =>
+      'Tartışma başlatılamadı. Lütfen tekrar deneyin.';
+
+  @override
+  String get startDiscussionTitle => 'Tartışma Başlat';
+
+  @override
+  String get topicOptionalLabel => 'Konu (isteğe bağlı)';
+
+  @override
+  String get topicOptionalHint => 'örn. Jelatin kaynağı belirtilmiş mi?';
+
+  @override
+  String get startDiscussionButton => 'Tartışmayı Başlat';
+
+  @override
+  String get linkedToChallenge => 'İtiraza bağlı';
+
+  @override
+  String get locked => 'Kilitli';
+
+  @override
+  String get anonymous => 'Anonim';
+
+  @override
+  String get noChallengesYet => 'Henüz içerik itirazı yok.';
+
+  @override
+  String get noChallengesHint =>
+      'Kararı itiraz etmek için Derin Analiz\'de bir içeriğe dokunun.';
+
+  @override
+  String challengeBy(String username) {
+    return '$username tarafından';
+  }
+
+  @override
   String adminAiRefetching(String barcode) {
     return '$barcode için yapay zeka içerikleri yeniden alınıyor…';
   }

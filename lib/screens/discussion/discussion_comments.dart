@@ -47,9 +47,10 @@ class _CommentsScreenState extends State<_CommentsScreen> {
     if (!await AuthService.ensureInitialized() ||
         AuthService.currentUser == null) {
       if (!mounted) return;
+      final loc = AppLocalizations.of(context);
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Sign in to comment.')));
+      ).showSnackBar(SnackBar(content: Text(loc.signInToComment)));
       return;
     }
 
@@ -120,11 +121,14 @@ class _CommentsScreenState extends State<_CommentsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
     final title = widget.discussion.title;
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          title != null && title.isNotEmpty ? title : 'Discussion',
+          title != null && title.isNotEmpty
+              ? title
+              : loc.discussionFallbackTitle,
           overflow: TextOverflow.ellipsis,
         ),
         backgroundColor: Colors.blue.shade700,
@@ -138,7 +142,7 @@ class _CommentsScreenState extends State<_CommentsScreen> {
                 : _comments.isEmpty
                 ? Center(
                     child: Text(
-                      'No comments yet. Be the first!',
+                      loc.noCommentsYet,
                       style: TextStyle(color: Colors.grey.shade500),
                     ),
                   )
@@ -166,6 +170,7 @@ class _CommentsScreenState extends State<_CommentsScreen> {
   }
 
   Widget _buildCommentInput() {
+    final loc = AppLocalizations.of(context);
     return Container(
       padding: EdgeInsets.fromLTRB(
         12,
@@ -193,7 +198,7 @@ class _CommentsScreenState extends State<_CommentsScreen> {
               child: Row(
                 children: [
                   Text(
-                    'Replying to $_replyToUsername',
+                    loc.replyingTo(_replyToUsername!),
                     style: TextStyle(fontSize: 12, color: Colors.blue.shade700),
                   ),
                   const SizedBox(width: 4),
@@ -220,9 +225,9 @@ class _CommentsScreenState extends State<_CommentsScreen> {
                   maxLines: 4,
                   minLines: 1,
                   textInputAction: TextInputAction.send,
-                  decoration: const InputDecoration(
-                    hintText: 'Write a comment…',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    hintText: loc.writeCommentHint,
+                    border: const OutlineInputBorder(),
                     contentPadding: EdgeInsets.symmetric(
                       horizontal: 12,
                       vertical: 10,
@@ -283,6 +288,7 @@ class _CommentTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
     final isReply = comment.parentId != null;
     return Padding(
       padding: EdgeInsets.only(left: isReply ? 24 : 0, bottom: 10),
@@ -314,7 +320,7 @@ class _CommentTile extends StatelessWidget {
                 Row(
                   children: [
                     Text(
-                      comment.createdByUsername ?? 'Anonymous',
+                      comment.createdByUsername ?? loc.anonymous,
                       style: const TextStyle(
                         fontWeight: FontWeight.w600,
                         fontSize: 13,
@@ -375,7 +381,7 @@ class _CommentTile extends StatelessWidget {
                         onTap: () =>
                             onReply(comment.id, comment.createdByUsername),
                         child: Text(
-                          'Reply',
+                          loc.reply,
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.blue.shade600,
@@ -459,13 +465,16 @@ class _StartDiscussionSheetState extends State<_StartDiscussionSheet> {
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to start discussion. Try again.')),
+        SnackBar(
+          content: Text(AppLocalizations.of(context).failedStartDiscussion),
+        ),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
     return Padding(
       padding: EdgeInsets.fromLTRB(
         20,
@@ -477,18 +486,18 @@ class _StartDiscussionSheetState extends State<_StartDiscussionSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Start a Discussion',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
+          Text(
+            loc.startDiscussionTitle,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
           ),
           const SizedBox(height: 16),
           TextField(
             controller: _titleController,
             maxLength: 120,
-            decoration: const InputDecoration(
-              labelText: 'Topic (optional)',
-              hintText: 'e.g. Is the gelatin source specified?',
-              border: OutlineInputBorder(),
+            decoration: InputDecoration(
+              labelText: loc.topicOptionalLabel,
+              hintText: loc.topicOptionalHint,
+              border: const OutlineInputBorder(),
             ),
             onChanged: (_) => setState(() {}),
           ),
@@ -510,7 +519,7 @@ class _StartDiscussionSheetState extends State<_StartDiscussionSheet> {
                         color: Colors.white,
                       ),
                     )
-                  : const Text('Start Discussion'),
+                  : Text(loc.startDiscussionButton),
             ),
           ),
         ],

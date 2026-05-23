@@ -917,6 +917,63 @@ class AppLocalizationsDe extends AppLocalizations {
       'Keine gültigen Barcodes in der Datei gefunden';
 
   @override
+  String get signInToComment => 'Zum Kommentieren anmelden.';
+
+  @override
+  String get discussionFallbackTitle => 'Diskussion';
+
+  @override
+  String get noCommentsYet => 'Noch keine Kommentare. Seien Sie der Erste!';
+
+  @override
+  String replyingTo(String username) {
+    return 'Antwort an $username';
+  }
+
+  @override
+  String get writeCommentHint => 'Kommentar schreiben…';
+
+  @override
+  String get reply => 'Antworten';
+
+  @override
+  String get failedStartDiscussion =>
+      'Diskussion konnte nicht gestartet werden. Bitte erneut versuchen.';
+
+  @override
+  String get startDiscussionTitle => 'Diskussion starten';
+
+  @override
+  String get topicOptionalLabel => 'Thema (optional)';
+
+  @override
+  String get topicOptionalHint => 'z. B. Ist die Gelatinequelle angegeben?';
+
+  @override
+  String get startDiscussionButton => 'Diskussion starten';
+
+  @override
+  String get linkedToChallenge => 'Mit Anfechtung verknüpft';
+
+  @override
+  String get locked => 'Gesperrt';
+
+  @override
+  String get anonymous => 'Anonym';
+
+  @override
+  String get noChallengesYet => 'Noch keine Inhaltsstoff-Anfechtungen.';
+
+  @override
+  String get noChallengesHint =>
+      'Tippen Sie in der Tiefenanalyse auf einen Inhaltsstoff, um das Urteil anzufechten.';
+
+  @override
+  String challengeBy(String username) {
+    return 'von $username';
+  }
+
+  @override
   String adminAiRefetching(String barcode) {
     return 'KI-Zutaten für $barcode werden erneut abgerufen…';
   }
