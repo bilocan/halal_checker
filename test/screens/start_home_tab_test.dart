@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:halal_checker/screens/start/widgets/start_home_tab.dart';
@@ -5,8 +6,46 @@ import 'package:halal_checker/services/database_service.dart';
 import '../helpers/database_test_setup.dart';
 import '../helpers/test_app.dart';
 
-/// Lightweight [StartHomeTab] smoke test without [StartScreen] (no lazy tabs/map).
-/// Scan list data paths are covered in [start_screen_scans_test] at the DB layer.
+Map<String, dynamic> _sampleScan({
+  String barcode = '1234567890123',
+  String productName = 'Test Halal Snack',
+  bool isHalal = true,
+  bool isFlagged = false,
+  String? notes,
+  int? timestamp,
+}) {
+  return {
+    'barcode': barcode,
+    'productName': productName,
+    'isHalal': isHalal,
+    'isFlagged': isFlagged,
+    'notes': notes,
+    'timestamp': timestamp ?? DateTime.now().millisecondsSinceEpoch,
+  };
+}
+
+/// Pumps [homeTab] and waits for [StartHomeTab]'s initial scan load to finish.
+Future<void> pumpStartHomeTab(
+  WidgetTester tester, {
+  required StartHomeTab homeTab,
+}) async {
+  await tester.pumpWidget(wrapWithTestApp(homeTab));
+  await tester.pump();
+  await tester.runAsync(() async {
+    if (homeTab.loadRecentScans != null) {
+      await homeTab.loadRecentScans!();
+    } else {
+      await DatabaseService.instance.getRecentScans();
+    }
+  });
+  await tester.pump();
+}
+
+/// Lightweight [StartHomeTab] tests without [StartScreen] (no lazy tabs/map).
+///
+/// Populated list tests inject scan rows (often loaded from the test DB first)
+/// with [StartHomeTab.enableSwipeToDelete] false — [Dismissible] also leaves
+/// pending timers when combined with sqflite FFI under the test binding.
 void main() {
   setUpAll(initTestDatabase);
 
@@ -15,14 +54,53 @@ void main() {
   testWidgets('mounts and shows empty state without full StartScreen shell', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(
-      wrapWithTestApp(const StartHomeTab(canBatchImport: false)),
+    await pumpStartHomeTab(
+      tester,
+      homeTab: const StartHomeTab(canBatchImport: false),
     );
-    await tester.pump();
-    await tester.runAsync(() => DatabaseService.instance.getRecentScans());
-    await tester.pump();
 
     expect(find.text('No recent scans saved yet.'), findsOneWidget);
     expect(find.text('All scans'), findsOneWidget);
+  });
+
+  testWidgets('shows scan rows from injected loader without Dismissible', (
+    WidgetTester tester,
+  ) async {
+    await pumpStartHomeTab(
+      tester,
+      homeTab: StartHomeTab(
+        canBatchImport: false,
+        enableSwipeToDelete: false,
+        loadRecentScans: () async => [
+          _sampleScan(productName: 'Injected Snack'),
+        ],
+      ),
+    );
+
+    expect(find.text('Injected Snack'), findsOneWidget);
+    expect(find.byType(Dismissible), findsNothing);
+  });
+
+  testWidgets('flagged filter hides non-flagged scans', (WidgetTester tester) async {
+    await pumpStartHomeTab(
+      tester,
+      homeTab: StartHomeTab(
+        canBatchImport: false,
+        enableSwipeToDelete: false,
+        loadRecentScans: () async => [
+          _sampleScan(barcode: '1', productName: 'Plain', isFlagged: false),
+          _sampleScan(barcode: '2', productName: 'Flagged', isFlagged: true),
+        ],
+      ),
+    );
+
+    expect(find.text('Plain'), findsOneWidget);
+    expect(find.text('Flagged'), findsOneWidget);
+
+    await tester.tap(find.text('Flagged only'));
+    await tester.pump();
+
+    expect(find.text('Plain'), findsNothing);
+    expect(find.text('Flagged'), findsOneWidget);
   });
 }

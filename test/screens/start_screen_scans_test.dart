@@ -4,8 +4,8 @@ import 'package:halal_checker/services/database_service.dart';
 import '../helpers/database_test_setup.dart';
 
 /// Scan history is rendered by [StartScreen]'s home tab. Listing is covered here
-/// at the DB layer; [start_home_tab_test] smoke-tests the widget shell without
-/// data (populated list + Dismissible still hangs under sqflite FFI in tests).
+/// at the DB layer; [start_home_tab_test] covers populated list UI with
+/// [StartHomeTab.enableSwipeToDelete] disabled (Dismissible timers hang in tests).
 void main() {
   setUpAll(initTestDatabase);
 

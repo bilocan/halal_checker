@@ -10,6 +10,7 @@ void initTestDatabase() {
 }
 
 Future<void> clearTestScans() async {
+  await DatabaseService.resetForTesting();
   final db = await DatabaseService.instance.database;
   await db.delete('scans');
 }

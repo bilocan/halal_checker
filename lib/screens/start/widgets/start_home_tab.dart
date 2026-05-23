@@ -18,6 +18,9 @@ import '../format_scan_date.dart';
 import 'start_auth_app_bar_action.dart';
 import 'start_filter_chip.dart';
 
+/// Loads recent scans for the home tab (override in widget tests).
+typedef LoadRecentScans = Future<List<Map<String, dynamic>>> Function();
+
 /// Home tab: recent scans, scan actions, and locale/auth app bar.
 class StartHomeTab extends StatefulWidget {
   const StartHomeTab({
@@ -25,11 +28,17 @@ class StartHomeTab extends StatefulWidget {
     required this.canBatchImport,
     this.onLocaleChanged,
     ProductService? productService,
+    this.loadRecentScans,
+    this.enableSwipeToDelete = true,
   }) : _productService = productService;
 
   final bool canBatchImport;
   final ValueChanged<Locale>? onLocaleChanged;
   final ProductService? _productService;
+  final LoadRecentScans? loadRecentScans;
+
+  /// When false, list rows omit [Dismissible] (avoids timer hangs in widget tests).
+  final bool enableSwipeToDelete;
 
   @override
   State<StartHomeTab> createState() => _StartHomeTabState();
@@ -51,7 +60,9 @@ class _StartHomeTabState extends State<StartHomeTab> {
   }
 
   Future<void> _loadRecentScans() async {
-    final scans = await DatabaseService.instance.getRecentScans();
+    final scans = widget.loadRecentScans != null
+        ? await widget.loadRecentScans!()
+        : await DatabaseService.instance.getRecentScans();
     if (mounted) {
       setState(() {
         _recentScans = scans;
@@ -327,6 +338,35 @@ class _StartHomeTabState extends State<StartHomeTab> {
     );
   }
 
+  Future<void> _onScanDismissed(
+    Map<String, dynamic> removed,
+    String barcode,
+    AppLocalizations loc,
+  ) async {
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _recentScans.removeWhere((s) => s['barcode'] == barcode));
+    await DatabaseService.instance.deleteScan(barcode);
+    if (!mounted) return;
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(loc.deletedFromHistory),
+        action: SnackBarAction(
+          label: loc.undo,
+          onPressed: () async {
+            await DatabaseService.instance.insertScan(
+              barcode: removed['barcode'] as String,
+              productName: removed['productName'] as String,
+              isHalal: removed['isHalal'] as bool,
+              notes: removed['notes'] as String?,
+              isFlagged: removed['isFlagged'] as bool,
+            );
+            await _loadRecentScans();
+          },
+        ),
+      ),
+    );
+  }
+
   Widget _buildScanList(AppLocalizations loc) {
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
@@ -377,6 +417,56 @@ class _StartHomeTabState extends State<StartHomeTab> {
         final barcode = scan['barcode'] as String;
         final note = scan['notes'] as String?;
 
+        final tile = Card(
+          margin: const EdgeInsets.only(bottom: 8),
+          child: ListTile(
+            leading: Semantics(
+              label: isHalal ? loc.halal : loc.notHalal,
+              child: Container(
+                width: 16,
+                height: 16,
+                decoration: BoxDecoration(
+                  color: isHalal ? kGreen : Colors.red,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+            title: Text(
+              scan['productName'] as String,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            subtitle: Text(
+              note != null && note.isNotEmpty
+                  ? note.length > 50
+                        ? '${note.substring(0, 50)}…'
+                        : note
+                  : '${loc.lastScanned}: ${formatScanDate(loc, scan['timestamp'] as int)}',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (isFlagged)
+                  Icon(Icons.bookmark, color: Colors.orange.shade700, size: 18),
+                IconButton(
+                  icon: const Icon(Icons.refresh),
+                  color: kGreen,
+                  tooltip: loc.recheck,
+                  onPressed: () => _openResult(scan, recheck: true),
+                ),
+                const Icon(Icons.chevron_right),
+              ],
+            ),
+            onTap: () => _openResult(scan),
+          ),
+        );
+
+        if (!widget.enableSwipeToDelete) {
+          return KeyedSubtree(key: ValueKey(barcode), child: tile);
+        }
+
         return Dismissible(
           key: ValueKey(barcode),
           direction: DismissDirection.endToStart,
@@ -390,82 +480,8 @@ class _StartHomeTabState extends State<StartHomeTab> {
             ),
             child: const Icon(Icons.delete_outline, color: Colors.white),
           ),
-          onDismissed: (_) async {
-            final removed = scan;
-            final messenger = ScaffoldMessenger.of(context);
-            setState(
-              () => _recentScans.removeWhere((s) => s['barcode'] == barcode),
-            );
-            await DatabaseService.instance.deleteScan(barcode);
-            if (!mounted) return;
-            messenger.showSnackBar(
-              SnackBar(
-                content: Text(loc.deletedFromHistory),
-                action: SnackBarAction(
-                  label: loc.undo,
-                  onPressed: () async {
-                    await DatabaseService.instance.insertScan(
-                      barcode: removed['barcode'] as String,
-                      productName: removed['productName'] as String,
-                      isHalal: removed['isHalal'] as bool,
-                      notes: removed['notes'] as String?,
-                      isFlagged: removed['isFlagged'] as bool,
-                    );
-                    await _loadRecentScans();
-                  },
-                ),
-              ),
-            );
-          },
-          child: Card(
-            margin: const EdgeInsets.only(bottom: 8),
-            child: ListTile(
-              leading: Semantics(
-                label: isHalal ? loc.halal : loc.notHalal,
-                child: Container(
-                  width: 16,
-                  height: 16,
-                  decoration: BoxDecoration(
-                    color: isHalal ? kGreen : Colors.red,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-              ),
-              title: Text(
-                scan['productName'] as String,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              subtitle: Text(
-                note != null && note.isNotEmpty
-                    ? note.length > 50
-                          ? '${note.substring(0, 50)}…'
-                          : note
-                    : '${loc.lastScanned}: ${formatScanDate(loc, scan['timestamp'] as int)}',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (isFlagged)
-                    Icon(
-                      Icons.bookmark,
-                      color: Colors.orange.shade700,
-                      size: 18,
-                    ),
-                  IconButton(
-                    icon: const Icon(Icons.refresh),
-                    color: kGreen,
-                    tooltip: loc.recheck,
-                    onPressed: () => _openResult(scan, recheck: true),
-                  ),
-                  const Icon(Icons.chevron_right),
-                ],
-              ),
-              onTap: () => _openResult(scan),
-            ),
-          ),
+          onDismissed: (_) => _onScanDismissed(scan, barcode, loc),
+          child: tile,
         );
       },
     );
