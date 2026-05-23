@@ -11,10 +11,14 @@ void main() {
   stdout.writeln('Icons written to assets/icon/');
 }
 
-void _generateIcon(String path, {required int size, required bool withBackground}) {
+void _generateIcon(
+  String path, {
+  required int size,
+  required bool withBackground,
+}) {
   final image = img.Image(width: size, height: size);
 
-  final bg = img.ColorRgba8(27, 94, 32, 255);   // #1B5E20 dark forest green
+  final bg = img.ColorRgba8(27, 94, 32, 255); // #1B5E20 dark forest green
   final fg = img.ColorRgba8(255, 255, 255, 255); // white
   final barColor = img.ColorRgba8(27, 94, 32, 255); // bars cut back to bg color
 
@@ -71,7 +75,9 @@ void _generateIcon(String path, {required int size, required bool withBackground
         }
       }
 
-      image.setPixelRgba(x, y,
+      image.setPixelRgba(
+        x,
+        y,
         inBar ? barColor.r.toInt() : fg.r.toInt(),
         inBar ? barColor.g.toInt() : fg.g.toInt(),
         inBar ? barColor.b.toInt() : fg.b.toInt(),
@@ -89,7 +95,13 @@ void _generateIcon(String path, {required int size, required bool withBackground
   File(path).writeAsBytesSync(img.encodePng(image));
 }
 
-void _drawStar(img.Image image, double cx, double cy, double outerR, img.Color color) {
+void _drawStar(
+  img.Image image,
+  double cx,
+  double cy,
+  double outerR,
+  img.Color color,
+) {
   const points = 4;
   final innerR = outerR * 0.42;
 
@@ -110,7 +122,14 @@ void _drawStar(img.Image image, double cx, double cy, double outerR, img.Color c
     for (var x = minX; x <= maxX; x++) {
       if (_pointInPolygon(x.toDouble(), y.toDouble(), vertices)) {
         if (x >= 0 && x < image.width && y >= 0 && y < image.height) {
-          image.setPixelRgba(x, y, color.r.toInt(), color.g.toInt(), color.b.toInt(), 255);
+          image.setPixelRgba(
+            x,
+            y,
+            color.r.toInt(),
+            color.g.toInt(),
+            color.b.toInt(),
+            255,
+          );
         }
       }
     }
