@@ -69,7 +69,9 @@ class ResultIngredientsSection extends StatelessWidget {
                   size: 16,
                 ),
                 label: Text(
-                  showTranslated ? 'Original' : languageCode.toUpperCase(),
+                  showTranslated
+                      ? loc.showOriginal
+                      : languageCode.toUpperCase(),
                   style: const TextStyle(fontSize: 12),
                 ),
                 style: TextButton.styleFrom(
@@ -81,7 +83,7 @@ class ResultIngredientsSection extends StatelessWidget {
               IconButton(
                 icon: const Icon(Icons.copy, size: 18),
                 onPressed: onCopyIngredients,
-                tooltip: 'Copy ingredients',
+                tooltip: loc.copyIngredientsTooltip,
                 visualDensity: VisualDensity.compact,
                 padding: EdgeInsets.zero,
                 color: Colors.grey.shade600,

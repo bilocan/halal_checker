@@ -1075,4 +1075,67 @@ class AppLocalizationsEn extends AppLocalizations {
   String adminAiRefetching(String barcode) {
     return 'Re-fetching AI ingredients for $barcode…';
   }
+
+  @override
+  String get close => 'Close';
+
+  @override
+  String get barcodeLabel => 'Barcode';
+
+  @override
+  String barcodeWithValue(String barcode) {
+    return 'Barcode: $barcode';
+  }
+
+  @override
+  String localDbDebugTitle(String barcode) {
+    return 'Local DB — $barcode';
+  }
+
+  @override
+  String get localDbDebugTooltip => 'Local DB debug';
+
+  @override
+  String get debugCacheSection => '── SharedPreferences cache ──';
+
+  @override
+  String get debugRemoteDbSection => '── Remote DB (products table) ──';
+
+  @override
+  String get debugEmpty => '(empty)';
+
+  @override
+  String get debugNotFound => '(not found)';
+
+  @override
+  String get debugCacheCleared => 'Cache cleared';
+
+  @override
+  String get debugClearCache => 'Clear cache';
+
+  @override
+  String get showOriginal => 'Original';
+
+  @override
+  String get copyIngredientsTooltip => 'Copy ingredients';
+
+  @override
+  String get findIngredientsViaAi => 'Find ingredients via AI';
+
+  @override
+  String get aiLookupPendingHint =>
+      'AI lookup requested — an admin will review and approve it shortly.';
+
+  @override
+  String get aiLookupRejectedHint => 'The AI request was rejected by an admin.';
+
+  @override
+  String get aiLookupPromptHint =>
+      'Ask AI to search the web for this product\'s ingredient list.';
+
+  @override
+  String get requestViaAi => 'Request via AI';
+
+  @override
+  String get requestAgain => 'Request again';
 }

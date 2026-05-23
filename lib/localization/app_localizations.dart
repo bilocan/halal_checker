@@ -2061,6 +2061,120 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Re-fetching AI ingredients for {barcode}…'**
   String adminAiRefetching(String barcode);
+
+  /// No description provided for @close.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get close;
+
+  /// No description provided for @barcodeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Barcode'**
+  String get barcodeLabel;
+
+  /// No description provided for @barcodeWithValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Barcode: {barcode}'**
+  String barcodeWithValue(String barcode);
+
+  /// No description provided for @localDbDebugTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Local DB — {barcode}'**
+  String localDbDebugTitle(String barcode);
+
+  /// No description provided for @localDbDebugTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Local DB debug'**
+  String get localDbDebugTooltip;
+
+  /// No description provided for @debugCacheSection.
+  ///
+  /// In en, this message translates to:
+  /// **'── SharedPreferences cache ──'**
+  String get debugCacheSection;
+
+  /// No description provided for @debugRemoteDbSection.
+  ///
+  /// In en, this message translates to:
+  /// **'── Remote DB (products table) ──'**
+  String get debugRemoteDbSection;
+
+  /// No description provided for @debugEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'(empty)'**
+  String get debugEmpty;
+
+  /// No description provided for @debugNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'(not found)'**
+  String get debugNotFound;
+
+  /// No description provided for @debugCacheCleared.
+  ///
+  /// In en, this message translates to:
+  /// **'Cache cleared'**
+  String get debugCacheCleared;
+
+  /// No description provided for @debugClearCache.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear cache'**
+  String get debugClearCache;
+
+  /// No description provided for @showOriginal.
+  ///
+  /// In en, this message translates to:
+  /// **'Original'**
+  String get showOriginal;
+
+  /// No description provided for @copyIngredientsTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy ingredients'**
+  String get copyIngredientsTooltip;
+
+  /// No description provided for @findIngredientsViaAi.
+  ///
+  /// In en, this message translates to:
+  /// **'Find ingredients via AI'**
+  String get findIngredientsViaAi;
+
+  /// No description provided for @aiLookupPendingHint.
+  ///
+  /// In en, this message translates to:
+  /// **'AI lookup requested — an admin will review and approve it shortly.'**
+  String get aiLookupPendingHint;
+
+  /// No description provided for @aiLookupRejectedHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The AI request was rejected by an admin.'**
+  String get aiLookupRejectedHint;
+
+  /// No description provided for @aiLookupPromptHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask AI to search the web for this product\'s ingredient list.'**
+  String get aiLookupPromptHint;
+
+  /// No description provided for @requestViaAi.
+  ///
+  /// In en, this message translates to:
+  /// **'Request via AI'**
+  String get requestViaAi;
+
+  /// No description provided for @requestAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Request again'**
+  String get requestAgain;
 }
 
 class _AppLocalizationsDelegate

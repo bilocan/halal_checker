@@ -49,10 +49,10 @@ class ResultMissingIngredients extends StatelessWidget {
                           : const Color(0xFF7C3AED),
                     ),
                     const SizedBox(width: 8),
-                    const Expanded(
+                    Expanded(
                       child: Text(
-                        'Find ingredients via AI',
-                        style: TextStyle(
+                        loc.findIngredientsViaAi,
+                        style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           color: Color(0xFF5B21B6),
                           fontSize: 15,
@@ -64,10 +64,10 @@ class ResultMissingIngredients extends StatelessWidget {
                 const SizedBox(height: 8),
                 Text(
                   aiRequestStatus == ReviewStatus.pending
-                      ? 'AI lookup requested — an admin will review and approve it shortly.'
+                      ? loc.aiLookupPendingHint
                       : aiRequestStatus == ReviewStatus.rejected
-                      ? 'The AI request was rejected by an admin.'
-                      : 'Ask AI to search the web for this product\'s ingredient list.',
+                      ? loc.aiLookupRejectedHint
+                      : loc.aiLookupPromptHint,
                   style: TextStyle(
                     color: aiRequestStatus == ReviewStatus.rejected
                         ? Colors.red.shade700
@@ -93,8 +93,8 @@ class ResultMissingIngredients extends StatelessWidget {
                           : const Icon(Icons.auto_awesome, size: 18),
                       label: Text(
                         aiRequestStatus == ReviewStatus.rejected
-                            ? 'Request again'
-                            : 'Request via AI',
+                            ? loc.requestAgain
+                            : loc.requestViaAi,
                       ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF7C3AED),

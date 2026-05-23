@@ -1093,4 +1093,68 @@ class AppLocalizationsDe extends AppLocalizations {
   String adminAiRefetching(String barcode) {
     return 'KI-Zutaten für $barcode werden erneut abgerufen…';
   }
+
+  @override
+  String get close => 'Schließen';
+
+  @override
+  String get barcodeLabel => 'Barcode';
+
+  @override
+  String barcodeWithValue(String barcode) {
+    return 'Barcode: $barcode';
+  }
+
+  @override
+  String localDbDebugTitle(String barcode) {
+    return 'Lokale DB — $barcode';
+  }
+
+  @override
+  String get localDbDebugTooltip => 'Lokale DB (Debug)';
+
+  @override
+  String get debugCacheSection => '── SharedPreferences-Cache ──';
+
+  @override
+  String get debugRemoteDbSection => '── Remote-DB (products) ──';
+
+  @override
+  String get debugEmpty => '(leer)';
+
+  @override
+  String get debugNotFound => '(nicht gefunden)';
+
+  @override
+  String get debugCacheCleared => 'Cache geleert';
+
+  @override
+  String get debugClearCache => 'Cache leeren';
+
+  @override
+  String get showOriginal => 'Original';
+
+  @override
+  String get copyIngredientsTooltip => 'Zutaten kopieren';
+
+  @override
+  String get findIngredientsViaAi => 'Zutaten per KI finden';
+
+  @override
+  String get aiLookupPendingHint =>
+      'KI-Suche angefordert — ein Admin prüft und genehmigt sie in Kürze.';
+
+  @override
+  String get aiLookupRejectedHint =>
+      'Die KI-Anfrage wurde von einem Admin abgelehnt.';
+
+  @override
+  String get aiLookupPromptHint =>
+      'KI bitten, im Web nach der Zutatenliste dieses Produkts zu suchen.';
+
+  @override
+  String get requestViaAi => 'Per KI anfragen';
+
+  @override
+  String get requestAgain => 'Erneut anfragen';
 }

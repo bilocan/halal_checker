@@ -430,5 +430,34 @@
         "type": "String"
       }
     }
-  }
+  },
+  "close": "Close",
+  "barcodeLabel": "Barcode",
+  "barcodeWithValue": "Barcode: {barcode}",
+  "@barcodeWithValue": {
+    "placeholders": {
+      "barcode": { "type": "String" }
+    }
+  },
+  "localDbDebugTitle": "Local DB — {barcode}",
+  "@localDbDebugTitle": {
+    "placeholders": {
+      "barcode": { "type": "String" }
+    }
+  },
+  "localDbDebugTooltip": "Local DB debug",
+  "debugCacheSection": "── SharedPreferences cache ──",
+  "debugRemoteDbSection": "── Remote DB (products table) ──",
+  "debugEmpty": "(empty)",
+  "debugNotFound": "(not found)",
+  "debugCacheCleared": "Cache cleared",
+  "debugClearCache": "Clear cache",
+  "showOriginal": "Original",
+  "copyIngredientsTooltip": "Copy ingredients",
+  "findIngredientsViaAi": "Find ingredients via AI",
+  "aiLookupPendingHint": "AI lookup requested — an admin will review and approve it shortly.",
+  "aiLookupRejectedHint": "The AI request was rejected by an admin.",
+  "aiLookupPromptHint": "Ask AI to search the web for this product's ingredient list.",
+  "requestViaAi": "Request via AI",
+  "requestAgain": "Request again"
 }

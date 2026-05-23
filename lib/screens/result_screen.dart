@@ -322,7 +322,7 @@ class _ResultScreenState extends State<ResultScreen> {
         body: ResultNotFoundBody(
           barcode: barcode,
           loc: loc,
-          onCopyBarcode: () => _copyToClipboard(barcode, 'Barcode'),
+          onCopyBarcode: () => _copyToClipboard(barcode, loc.barcodeLabel),
           onScanAgain: () => Navigator.pop(context),
         ),
         bottomNavigationBar: _buildBottomNav(loc),
@@ -343,7 +343,7 @@ class _ResultScreenState extends State<ResultScreen> {
                 barcode: barcode,
                 productService: _controller.productService,
               ),
-              tooltip: 'Local DB debug',
+              tooltip: loc.localDbDebugTooltip,
             ),
           ListenableBuilder(
             listenable: _controller,
@@ -395,7 +395,8 @@ class _ResultScreenState extends State<ResultScreen> {
                   ResultProductHeader(
                     product: product,
                     barcode: barcode,
-                    onCopyBarcode: () => _copyToClipboard(barcode, 'Barcode'),
+                    onCopyBarcode: () =>
+                        _copyToClipboard(barcode, loc.barcodeLabel),
                   ),
                   const SizedBox(height: 24),
                   ResultProductImages(
@@ -414,7 +415,7 @@ class _ResultScreenState extends State<ResultScreen> {
                         setState(() => _showTranslated = !_showTranslated),
                     onCopyIngredients: () => _copyToClipboard(
                       product.ingredients.join(', '),
-                      'Ingredients',
+                      loc.ingredients,
                     ),
                     onReportIngredient: () =>
                         _showIngredientReportSheet(context, product),

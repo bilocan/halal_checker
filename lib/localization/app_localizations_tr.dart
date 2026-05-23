@@ -1074,4 +1074,68 @@ class AppLocalizationsTr extends AppLocalizations {
   String adminAiRefetching(String barcode) {
     return '$barcode için yapay zeka içerikleri yeniden alınıyor…';
   }
+
+  @override
+  String get close => 'Kapat';
+
+  @override
+  String get barcodeLabel => 'Barkod';
+
+  @override
+  String barcodeWithValue(String barcode) {
+    return 'Barkod: $barcode';
+  }
+
+  @override
+  String localDbDebugTitle(String barcode) {
+    return 'Yerel DB — $barcode';
+  }
+
+  @override
+  String get localDbDebugTooltip => 'Yerel DB hata ayıklama';
+
+  @override
+  String get debugCacheSection => '── SharedPreferences önbelleği ──';
+
+  @override
+  String get debugRemoteDbSection => '── Uzak DB (products tablosu) ──';
+
+  @override
+  String get debugEmpty => '(boş)';
+
+  @override
+  String get debugNotFound => '(bulunamadı)';
+
+  @override
+  String get debugCacheCleared => 'Önbellek temizlendi';
+
+  @override
+  String get debugClearCache => 'Önbelleği temizle';
+
+  @override
+  String get showOriginal => 'Orijinal';
+
+  @override
+  String get copyIngredientsTooltip => 'İçerikleri kopyala';
+
+  @override
+  String get findIngredientsViaAi => 'Yapay zeka ile içerik bul';
+
+  @override
+  String get aiLookupPendingHint =>
+      'Yapay zeka araması istendi — bir yönetici kısa süre içinde inceleyip onaylayacak.';
+
+  @override
+  String get aiLookupRejectedHint =>
+      'Yapay zeka isteği bir yönetici tarafından reddedildi.';
+
+  @override
+  String get aiLookupPromptHint =>
+      'Yapay zekadan bu ürünün içerik listesini webde aramasını isteyin.';
+
+  @override
+  String get requestViaAi => 'Yapay zeka ile iste';
+
+  @override
+  String get requestAgain => 'Tekrar iste';
 }
