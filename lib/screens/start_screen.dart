@@ -6,7 +6,9 @@ import 'package:supabase_flutter/supabase_flutter.dart' show AuthState;
 
 import '../app_colors.dart';
 import '../localization/app_localizations.dart';
+import '../main.dart' show HalalCheckerApp;
 import '../services/analysis_service.dart';
+import '../widgets/lazy_indexed_stack.dart';
 import '../services/auth_service.dart';
 import '../services/version_service.dart';
 import 'about_screen.dart';
@@ -99,21 +101,42 @@ class _StartScreenState extends State<StartScreen> {
     } catch (_) {}
   }
 
-  List<Widget> _tabBodies() {
-    return [
-      StartHomeTab(canBatchImport: _canBatchImport),
-      const KeywordsScreen(),
-      const DirectoryScreen(),
-      if (_isAdmin) widget.adminPanel ?? const AdminPanelScreen(),
-      const AboutScreen(),
-    ];
+  int get _tabCount => _isAdmin ? 5 : 4;
+
+  Widget _tabBody(BuildContext context, int index) {
+    switch (index) {
+      case 0:
+        return StartHomeTab(
+          canBatchImport: _canBatchImport,
+          onLocaleChanged: (locale) =>
+              HalalCheckerApp.of(context)?.setLocale(locale),
+        );
+      case 1:
+        return const KeywordsScreen();
+      case 2:
+        return const DirectoryScreen();
+      case 3:
+        if (_isAdmin) {
+          return widget.adminPanel ?? const AdminPanelScreen();
+        }
+        return const AboutScreen();
+      case 4:
+        return const AboutScreen();
+      default:
+        return const SizedBox.shrink();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context);
     return Scaffold(
-      body: IndexedStack(index: _selectedIndex, children: _tabBodies()),
+      body: LazyIndexedStack(
+        key: ValueKey(_isAdmin),
+        index: _selectedIndex,
+        itemCount: _tabCount,
+        itemBuilder: _tabBody,
+      ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: (i) => setState(() => _selectedIndex = i),

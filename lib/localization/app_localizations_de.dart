@@ -867,4 +867,42 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get dismissReport => 'Ablehnen';
+
+  @override
+  String get signInRequired => 'Anmeldung erforderlich';
+
+  @override
+  String get signInRequiredMessage =>
+      'Sie müssen angemeldet sein, um Feedback oder Vorschläge zu senden.';
+
+  @override
+  String get signInWithGoogle => 'Mit Google anmelden';
+
+  @override
+  String get batchImport => 'Stapelimport';
+
+  @override
+  String get adminUpdateFailed =>
+      'Aktualisierung fehlgeschlagen — Supabase-Logs prüfen';
+
+  @override
+  String get adminAiRequestsLoadFailed =>
+      'KI-Anfragen konnten nicht geladen werden — Verbindung prüfen';
+
+  @override
+  String get aiRequestSubmitFailed =>
+      'KI-Anfrage konnte nicht gesendet werden.';
+
+  @override
+  String get aiRequestSubmitted =>
+      'KI-Anfrage gesendet — wartet auf Admin-Prüfung.';
+
+  @override
+  String get aiRequestAlreadyPending =>
+      'Für dieses Produkt liegt bereits eine ausstehende KI-Anfrage vor.';
+
+  @override
+  String adminAiRefetching(String barcode) {
+    return 'KI-Zutaten für $barcode werden erneut abgerufen…';
+  }
 }

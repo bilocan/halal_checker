@@ -251,5 +251,15 @@
   "noReports": "Keine ausstehenden Meldungen",
   "openProduct": "Produkt öffnen",
   "resolveReport": "Lösen",
-  "dismissReport": "Ablehnen"
+  "dismissReport": "Ablehnen",
+  "signInRequired": "Anmeldung erforderlich",
+  "signInRequiredMessage": "Sie müssen angemeldet sein, um Feedback oder Vorschläge zu senden.",
+  "signInWithGoogle": "Mit Google anmelden",
+  "batchImport": "Stapelimport",
+  "adminUpdateFailed": "Aktualisierung fehlgeschlagen — Supabase-Logs prüfen",
+  "adminAiRequestsLoadFailed": "KI-Anfragen konnten nicht geladen werden — Verbindung prüfen",
+  "aiRequestSubmitFailed": "KI-Anfrage konnte nicht gesendet werden.",
+  "aiRequestSubmitted": "KI-Anfrage gesendet — wartet auf Admin-Prüfung.",
+  "aiRequestAlreadyPending": "Für dieses Produkt liegt bereits eine ausstehende KI-Anfrage vor.",
+  "adminAiRefetching": "KI-Zutaten für {barcode} werden erneut abgerufen…"
 }

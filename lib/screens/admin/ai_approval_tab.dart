@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../app_colors.dart';
+import '../../localization/app_localizations.dart';
 import '../../models/ai_ingredient_request.dart';
 import '../../models/review_status.dart';
 import '../../services/ai_ingredient_request_service.dart';
@@ -22,10 +23,6 @@ class AiApprovalTabState extends State<AiApprovalTab> {
   bool _loading = false;
   final Set<int> _processing = {};
   ReviewStatus _filter = ReviewStatus.pending;
-
-  static const _failedSnackbar = SnackBar(
-    content: Text('Failed to update — check Supabase logs'),
-  );
 
   @override
   void initState() {
@@ -52,8 +49,8 @@ class AiApprovalTabState extends State<AiApprovalTab> {
       setState(() => _requests = []);
       widget.onCountChanged(0);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Could not load AI requests — check connection'),
+        SnackBar(
+          content: Text(AppLocalizations.of(context).adminAiRequestsLoadFailed),
         ),
       );
     } finally {
@@ -82,7 +79,9 @@ class AiApprovalTabState extends State<AiApprovalTab> {
         );
       }
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(_failedSnackbar);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppLocalizations.of(context).adminUpdateFailed)),
+      );
     }
     setState(() => _processing.remove(id));
   }
@@ -101,10 +100,9 @@ class AiApprovalTabState extends State<AiApprovalTab> {
       }),
     );
     if (!mounted) return;
+    final loc = AppLocalizations.of(context);
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Re-fetching AI ingredients for ${item.barcode}…'),
-      ),
+      SnackBar(content: Text(loc.adminAiRefetching(item.barcode))),
     );
     setState(() => _processing.remove(id));
   }

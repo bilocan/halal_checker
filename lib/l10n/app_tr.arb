@@ -251,5 +251,15 @@
   "noReports": "Bekleyen rapor yok",
   "openProduct": "Ürünü aç",
   "resolveReport": "Çözüldü",
-  "dismissReport": "Reddet"
+  "dismissReport": "Reddet",
+  "signInRequired": "Giriş gerekli",
+  "signInRequiredMessage": "Geri bildirim veya öneri göndermek için giriş yapmalısınız.",
+  "signInWithGoogle": "Google ile giriş yap",
+  "batchImport": "Toplu İçe Aktarma",
+  "adminUpdateFailed": "Güncellenemedi — Supabase günlüklerini kontrol edin",
+  "adminAiRequestsLoadFailed": "Yapay zeka istekleri yüklenemedi — bağlantıyı kontrol edin",
+  "aiRequestSubmitFailed": "Yapay zeka isteği gönderilemedi.",
+  "aiRequestSubmitted": "Yapay zeka isteği gönderildi — yönetici incelemesi bekleniyor.",
+  "aiRequestAlreadyPending": "Bu ürün için zaten bekleyen bir yapay zeka isteği var.",
+  "adminAiRefetching": "{barcode} için yapay zeka içerikleri yeniden alınıyor…"
 }

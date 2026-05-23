@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../../app_colors.dart';
+import '../../localization/app_localizations.dart';
 import '../../models/photo_submission.dart';
 import '../../models/review_status.dart';
 import '../../services/product_image_service.dart';
@@ -20,10 +21,6 @@ class PhotoApprovalTabState extends State<PhotoApprovalTab> {
   List<PhotoSubmission> _photos = [];
   bool _loading = false;
   final Set<int> _processing = {};
-
-  static const _failedSnackbar = SnackBar(
-    content: Text('Failed to update — check Supabase logs'),
-  );
 
   @override
   void initState() {
@@ -55,7 +52,9 @@ class PhotoApprovalTabState extends State<PhotoApprovalTab> {
       setState(() => _photos.removeWhere((p) => p.id == id));
       widget.onCountChanged(_photos.length);
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(_failedSnackbar);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppLocalizations.of(context).adminUpdateFailed)),
+      );
     }
     setState(() => _processing.remove(id));
   }

@@ -15,7 +15,7 @@ import '../services/feedback_service.dart';
 import '../services/product_image_service.dart';
 import '../widgets/feedback_dialog.dart';
 import '../widgets/report_sheets.dart';
-import '../widgets/sign_in_required_sheet.dart';
+import '../widgets/sign_in_sheet.dart';
 import 'admin_panel_screen.dart';
 import 'deep_analysis_screen.dart';
 import 'discussion_screen.dart';
@@ -129,18 +129,17 @@ class _ResultScreenState extends State<ResultScreen> {
     }
     final submitted = await _controller.requestAiIngredients();
     if (!mounted) return;
+    final loc = AppLocalizations.of(context);
     if (submitted == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to submit AI request.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(loc.aiRequestSubmitFailed)));
       return;
     }
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          submitted
-              ? 'AI request submitted — pending admin review.'
-              : 'An AI request for this product is already pending.',
+          submitted ? loc.aiRequestSubmitted : loc.aiRequestAlreadyPending,
         ),
         duration: const Duration(seconds: 3),
       ),

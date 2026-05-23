@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:halal_checker/screens/directory_screen.dart';
 import 'package:halal_checker/screens/start_screen.dart';
 import 'package:halal_checker/services/database_service.dart';
 import '../helpers/database_test_setup.dart';
@@ -13,7 +14,8 @@ const testAdminPanel = SizedBox(key: testAdminPanelKey);
 Future<void> pumpStartScreen(WidgetTester tester, StartScreen screen) async {
   await tester.pumpWidget(wrapWithTestApp(screen));
   await tester.pump();
-  await tester.pump(const Duration(milliseconds: 20));
+  await tester.runAsync(() => DatabaseService.instance.getRecentScans());
+  await tester.pump();
 }
 
 StartScreen nonAdminScreen() =>
@@ -50,11 +52,14 @@ void main() {
     ) async {
       await pumpStartScreen(tester, adminScreen());
 
-      expect(
-        find.byKey(testAdminPanelKey, skipOffstage: false),
-        findsOneWidget,
-      );
+      expect(find.byKey(testAdminPanelKey, skipOffstage: false), findsNothing);
       expect(find.byIcon(Icons.admin_panel_settings_outlined), findsOneWidget);
+
+      await tester.tap(find.byIcon(Icons.admin_panel_settings_outlined));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 20));
+
+      expect(find.byKey(testAdminPanelKey), findsOneWidget);
 
       final nav = tester.widget<BottomNavigationBar>(
         find.byType(BottomNavigationBar),
@@ -76,6 +81,20 @@ void main() {
       await pumpStartScreen(tester, adminScreen());
 
       expect(find.text('Batch Import'), findsNothing);
+    });
+
+    testWidgets('does not mount Directory tab until it is opened', (
+      WidgetTester tester,
+    ) async {
+      await pumpStartScreen(tester, nonAdminScreen());
+
+      expect(find.byType(DirectoryScreen), findsNothing);
+
+      await tester.tap(find.byIcon(Icons.store_outlined));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 20));
+
+      expect(find.byType(DirectoryScreen), findsOneWidget);
     });
 
     testWidgets('switches to About tab', (WidgetTester tester) async {

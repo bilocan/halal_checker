@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../app_colors.dart';
+import '../../localization/app_localizations.dart';
 import '../../models/ingredient_contribution.dart';
 import '../../models/review_status.dart';
 import '../../services/cache_service.dart';
@@ -22,10 +23,6 @@ class IngredientContributionTabState extends State<IngredientContributionTab> {
   List<IngredientContribution> _contributions = [];
   bool _loading = false;
   final Set<int> _processing = {};
-
-  static const _failedSnackbar = SnackBar(
-    content: Text('Failed to update — check Supabase logs'),
-  );
 
   @override
   void initState() {
@@ -79,7 +76,9 @@ class IngredientContributionTabState extends State<IngredientContributionTab> {
         );
       }
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(_failedSnackbar);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppLocalizations.of(context).adminUpdateFailed)),
+      );
     }
     setState(() => _processing.remove(id));
   }

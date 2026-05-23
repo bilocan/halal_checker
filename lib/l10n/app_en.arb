@@ -299,5 +299,22 @@
   "noReports": "No pending reports",
   "openProduct": "Open product",
   "resolveReport": "Resolve",
-  "dismissReport": "Dismiss"
+  "dismissReport": "Dismiss",
+  "signInRequired": "Sign in required",
+  "signInRequiredMessage": "You need to be signed in to submit feedback or suggestions.",
+  "signInWithGoogle": "Sign in with Google",
+  "batchImport": "Batch Import",
+  "adminUpdateFailed": "Failed to update — check Supabase logs",
+  "adminAiRequestsLoadFailed": "Could not load AI requests — check connection",
+  "aiRequestSubmitFailed": "Failed to submit AI request.",
+  "aiRequestSubmitted": "AI request submitted — pending admin review.",
+  "aiRequestAlreadyPending": "An AI request for this product is already pending.",
+  "adminAiRefetching": "Re-fetching AI ingredients for {barcode}…",
+  "@adminAiRefetching": {
+    "placeholders": {
+      "barcode": {
+        "type": "String"
+      }
+    }
+  }
 }

@@ -6,7 +6,6 @@ import 'package:image_picker/image_picker.dart';
 import '../../../app_colors.dart';
 import '../../../config.dart';
 import '../../../localization/app_localizations.dart';
-import '../../../main.dart';
 import '../../../models/product.dart';
 import '../../../services/database_service.dart';
 import '../../../services/ingredient_sanitizer.dart';
@@ -24,10 +23,12 @@ class StartHomeTab extends StatefulWidget {
   const StartHomeTab({
     super.key,
     required this.canBatchImport,
+    this.onLocaleChanged,
     ProductService? productService,
   }) : _productService = productService;
 
   final bool canBatchImport;
+  final ValueChanged<Locale>? onLocaleChanged;
   final ProductService? _productService;
 
   @override
@@ -218,7 +219,7 @@ class _StartHomeTabState extends State<StartHomeTab> {
         actions: [
           PopupMenuButton<String>(
             onSelected: (value) {
-              HalalCheckerApp.of(context)?.setLocale(Locale(value));
+              widget.onLocaleChanged?.call(Locale(value));
             },
             itemBuilder: (context) => [
               PopupMenuItem(
@@ -300,7 +301,7 @@ class _StartHomeTabState extends State<StartHomeTab> {
                     child: OutlinedButton.icon(
                       onPressed: _openBatchScan,
                       icon: const Icon(Icons.upload_file_outlined),
-                      label: const Text('Batch Import'),
+                      label: Text(loc.batchImport),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: kGreen,
                         side: const BorderSide(color: kGreenLight),

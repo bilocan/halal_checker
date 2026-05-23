@@ -19,10 +19,6 @@ class IngredientReportTabState extends State<IngredientReportTab> {
   bool _loading = false;
   final Set<int> _processing = {};
 
-  static const _failedSnackbar = SnackBar(
-    content: Text('Failed to update — check Supabase logs'),
-  );
-
   @override
   void initState() {
     super.initState();
@@ -50,7 +46,9 @@ class IngredientReportTabState extends State<IngredientReportTab> {
       setState(() => _reports.removeWhere((r) => r.id == id));
       widget.onCountChanged(_reports.length);
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(_failedSnackbar);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppLocalizations.of(context).adminUpdateFailed)),
+      );
     }
     setState(() => _processing.remove(id));
   }

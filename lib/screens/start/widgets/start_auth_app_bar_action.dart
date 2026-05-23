@@ -4,7 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart' show AuthState;
 
 import '../../../localization/app_localizations.dart';
 import '../../../services/auth_service.dart';
-import 'start_sign_in_sheet.dart';
+import '../../../widgets/sign_in_sheet.dart';
 
 /// App-bar auth control: sign-in button or signed-in account menu.
 class StartAuthAppBarAction extends StatelessWidget {

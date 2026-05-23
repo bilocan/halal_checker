@@ -851,4 +851,41 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get dismissReport => 'Reddet';
+
+  @override
+  String get signInRequired => 'Giriş gerekli';
+
+  @override
+  String get signInRequiredMessage =>
+      'Geri bildirim veya öneri göndermek için giriş yapmalısınız.';
+
+  @override
+  String get signInWithGoogle => 'Google ile giriş yap';
+
+  @override
+  String get batchImport => 'Toplu İçe Aktarma';
+
+  @override
+  String get adminUpdateFailed =>
+      'Güncellenemedi — Supabase günlüklerini kontrol edin';
+
+  @override
+  String get adminAiRequestsLoadFailed =>
+      'Yapay zeka istekleri yüklenemedi — bağlantıyı kontrol edin';
+
+  @override
+  String get aiRequestSubmitFailed => 'Yapay zeka isteği gönderilemedi.';
+
+  @override
+  String get aiRequestSubmitted =>
+      'Yapay zeka isteği gönderildi — yönetici incelemesi bekleniyor.';
+
+  @override
+  String get aiRequestAlreadyPending =>
+      'Bu ürün için zaten bekleyen bir yapay zeka isteği var.';
+
+  @override
+  String adminAiRefetching(String barcode) {
+    return '$barcode için yapay zeka içerikleri yeniden alınıyor…';
+  }
 }

@@ -1677,6 +1677,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Dismiss'**
   String get dismissReport;
+
+  /// No description provided for @signInRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in required'**
+  String get signInRequired;
+
+  /// No description provided for @signInRequiredMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'You need to be signed in to submit feedback or suggestions.'**
+  String get signInRequiredMessage;
+
+  /// No description provided for @signInWithGoogle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with Google'**
+  String get signInWithGoogle;
+
+  /// No description provided for @batchImport.
+  ///
+  /// In en, this message translates to:
+  /// **'Batch Import'**
+  String get batchImport;
+
+  /// No description provided for @adminUpdateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to update — check Supabase logs'**
+  String get adminUpdateFailed;
+
+  /// No description provided for @adminAiRequestsLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load AI requests — check connection'**
+  String get adminAiRequestsLoadFailed;
+
+  /// No description provided for @aiRequestSubmitFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to submit AI request.'**
+  String get aiRequestSubmitFailed;
+
+  /// No description provided for @aiRequestSubmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'AI request submitted — pending admin review.'**
+  String get aiRequestSubmitted;
+
+  /// No description provided for @aiRequestAlreadyPending.
+  ///
+  /// In en, this message translates to:
+  /// **'An AI request for this product is already pending.'**
+  String get aiRequestAlreadyPending;
+
+  /// No description provided for @adminAiRefetching.
+  ///
+  /// In en, this message translates to:
+  /// **'Re-fetching AI ingredients for {barcode}…'**
+  String adminAiRefetching(String barcode);
 }
 
 class _AppLocalizationsDelegate

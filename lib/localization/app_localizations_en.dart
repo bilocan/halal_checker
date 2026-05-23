@@ -854,4 +854,40 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dismissReport => 'Dismiss';
+
+  @override
+  String get signInRequired => 'Sign in required';
+
+  @override
+  String get signInRequiredMessage =>
+      'You need to be signed in to submit feedback or suggestions.';
+
+  @override
+  String get signInWithGoogle => 'Sign in with Google';
+
+  @override
+  String get batchImport => 'Batch Import';
+
+  @override
+  String get adminUpdateFailed => 'Failed to update — check Supabase logs';
+
+  @override
+  String get adminAiRequestsLoadFailed =>
+      'Could not load AI requests — check connection';
+
+  @override
+  String get aiRequestSubmitFailed => 'Failed to submit AI request.';
+
+  @override
+  String get aiRequestSubmitted =>
+      'AI request submitted — pending admin review.';
+
+  @override
+  String get aiRequestAlreadyPending =>
+      'An AI request for this product is already pending.';
+
+  @override
+  String adminAiRefetching(String barcode) {
+    return 'Re-fetching AI ingredients for $barcode…';
+  }
 }
