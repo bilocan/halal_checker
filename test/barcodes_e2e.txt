@@ -1,6 +1,9 @@
 # UI E2E scenarios (integration_test/ui_barcode_flow_test.dart).
-# Format: <barcode> [expected: halal|haram|unknown]
+# Format: <barcode> [expected: halal|haram|unknown|not_found]
 # Only lines with an expected value are asserted. See TESTING.md → UI E2E coverage.
+#
+# unknown     — product found but inconclusive (e2e-result-unknown)
+# not_found   — no product (e2e-product-not-found)
 #
 # SCN-001 halal — local edge fn / OFF (E2E_LIVE_LOOKUP)
 90098369 halal
@@ -8,5 +11,5 @@
 # SCN-002 haram — pork / haram ingredients
 5014379008630 haram
 #
-# SCN-003 not found — valid digits, not in OFF/OBF/OPF/local DB
+# SCN-003 inconclusive — OFF may return unknown product (not the not-found screen)
 9999999999999 unknown

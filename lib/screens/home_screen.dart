@@ -3,6 +3,7 @@ import 'package:flutter/services.dart'
     show Clipboard, HapticFeedback, FilteringTextInputFormatter;
 import 'package:mobile_scanner/mobile_scanner.dart';
 import '../app_colors.dart';
+import '../config.dart';
 import '../integration_test_keys.dart';
 import '../localization/app_localizations.dart';
 import '../services/database_service.dart';
@@ -28,6 +29,10 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    if (AppConfig.e2eSkipCamera) {
+      _scannerInitialized = false;
+      return;
+    }
     _initializeScanner();
   }
 
@@ -54,6 +59,16 @@ class _HomeScreenState extends State<HomeScreen> {
       _scannerInitialized = false;
       if (mounted) setState(() {});
     }
+  }
+
+  Widget? _scannerBackButton(BuildContext context) {
+    if (!Navigator.of(context).canPop()) return null;
+    return IconButton(
+      key: IntegrationTestKeys.scannerBack,
+      icon: const Icon(Icons.arrow_back),
+      color: Colors.white,
+      onPressed: () => Navigator.of(context).pop(),
+    );
   }
 
   Widget _buildScannerWidget() {
@@ -246,10 +261,13 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context);
 
-    // If scanner failed to initialize, show manual entry screen
+    // Scanner off: E2E manual-only mode, or hardware / Play Services init failed.
     if (!_scannerInitialized) {
+      final manualOnly = AppConfig.e2eSkipCamera;
       return Scaffold(
         appBar: AppBar(
+          leading: _scannerBackButton(context),
+          automaticallyImplyLeading: false,
           title: Text(loc.appTitle),
           backgroundColor: kGreen,
           foregroundColor: Colors.white,
@@ -260,21 +278,27 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.camera_alt, size: 80, color: Colors.grey),
+              Icon(
+                manualOnly ? Icons.edit : Icons.camera_alt,
+                size: 80,
+                color: Colors.grey,
+              ),
               const SizedBox(height: 20),
               Text(
-                'Camera scanner unavailable',
+                manualOnly ? loc.enterBarcodeManually : loc.cameraError,
                 style: Theme.of(context).textTheme.headlineSmall,
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 10),
-              Text(
-                'Please enter barcode manually',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyMedium?.copyWith(color: Colors.grey),
-                textAlign: TextAlign.center,
-              ),
+              if (!manualOnly) ...[
+                const SizedBox(height: 10),
+                Text(
+                  loc.manualEntry,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(color: Colors.grey),
+                  textAlign: TextAlign.center,
+                ),
+              ],
               const SizedBox(height: 40),
               ElevatedButton.icon(
                 key: IntegrationTestKeys.homeManualEntry,
@@ -299,6 +323,8 @@ class _HomeScreenState extends State<HomeScreen> {
     // Normal scanner UI
     return Scaffold(
       appBar: AppBar(
+        leading: _scannerBackButton(context),
+        automaticallyImplyLeading: false,
         title: Text(loc.appTitle),
         backgroundColor: kGreen,
         foregroundColor: Colors.white,

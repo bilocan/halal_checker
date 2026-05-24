@@ -12,40 +12,42 @@ import 'services/seed_data_service.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  FlutterError.onError = (FlutterErrorDetails details) {
-    FlutterError.dumpErrorToConsole(details);
-  };
+  if (!AppConfig.isE2e) {
+    FlutterError.onError = (FlutterErrorDetails details) {
+      FlutterError.dumpErrorToConsole(details);
+    };
 
-  PlatformDispatcher.instance.onError = (error, stack) {
-    debugPrint('Platform error caught: $error');
-    debugPrint('Stack trace: $stack');
-    return true;
-  };
+    PlatformDispatcher.instance.onError = (error, stack) {
+      debugPrint('Platform error caught: $error');
+      debugPrint('Stack trace: $stack');
+      return true;
+    };
 
-  ErrorWidget.builder = (FlutterErrorDetails details) {
-    debugPrint('Flutter error: ${details.exception}');
-    return Container(
-      color: Colors.white,
-      child: const Center(
-        child: Padding(
-          padding: EdgeInsets.all(20),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.error, size: 64, color: Colors.red),
-              SizedBox(height: 20),
-              Text(
-                'Something went wrong',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 10),
-              Text('Please restart the app.', textAlign: TextAlign.center),
-            ],
+    ErrorWidget.builder = (FlutterErrorDetails details) {
+      debugPrint('Flutter error: ${details.exception}');
+      return Container(
+        color: Colors.white,
+        child: const Center(
+          child: Padding(
+            padding: EdgeInsets.all(20),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.error, size: 64, color: Colors.red),
+                SizedBox(height: 20),
+                Text(
+                  'Something went wrong',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 10),
+                Text('Please restart the app.', textAlign: TextAlign.center),
+              ],
+            ),
           ),
         ),
-      ),
-    );
-  };
+      );
+    };
+  }
 
   await AuthService.initializeIfSessionExists();
   await SeedDataService.seedIfNeeded(); // fast: JSON fixtures only

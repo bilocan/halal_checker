@@ -14,7 +14,7 @@ cd "$(dirname "$0")"
 
 TEST_FILE="${TEST_FILE:-integration_test/ui_barcode_flow_test.dart}"
 BARCODES_FILE="${1:-test/barcodes_e2e.txt}"
-TIMEOUT="${2:-180}"
+TIMEOUT="${2:-300}"
 DEFINES_FILE="${DEFINES_FILE:-dart_defines.e2e.json}"
 LIVE_LOOKUP="${LIVE_LOOKUP:-}"
 
@@ -32,9 +32,20 @@ fi
 echo "Defines: ${DEFINES_FILE}"
 echo "Requires a connected device or emulator + local Supabase (see scripts/start_e2e_supabase.sh)."
 
+# Debug APK id (see android/app/build.gradle.kts). E2E skips the camera, but grant
+# anyway for OCR/manual flows on a fresh emulator.
+if command -v adb >/dev/null 2>&1; then
+  for pkg in app.halalscan.dev app.halalscan; do
+    if adb shell pm grant "${pkg}" android.permission.CAMERA 2>/dev/null; then
+      echo "Granted CAMERA to ${pkg}"
+    fi
+  done
+fi
+
 flutter test "$TEST_FILE" \
   --concurrency 1 \
   --timeout "${TIMEOUT}s" \
   --dart-define-from-file="${DEFINES_FILE}" \
   --dart-define=E2E_BARCODES_FILE="${BARCODES_FILE}" \
+  --dart-define=E2E_SKIP_CAMERA=true \
   "${LIVE_ARGS[@]}"

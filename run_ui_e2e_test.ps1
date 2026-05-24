@@ -34,6 +34,7 @@ foreach ($prop in $defines.PSObject.Properties) {
     $dartDefineArgs += "--dart-define=$($prop.Name)=$($prop.Value)"
 }
 $dartDefineArgs += "--dart-define=E2E_BARCODES_FILE=$BarcodesFile"
+$dartDefineArgs += "--dart-define=E2E_SKIP_CAMERA=true"
 if ($LiveLookup) {
     $dartDefineArgs += "--dart-define=E2E_LIVE_LOOKUP=true"
 }

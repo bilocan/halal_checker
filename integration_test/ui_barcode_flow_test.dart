@@ -6,7 +6,6 @@
 
 // @Tags(['e2e'])
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:halal_checker/integration_test_keys.dart';
 import 'package:halal_checker/main.dart' as app;
@@ -21,7 +20,9 @@ const _barcodesFile = String.fromEnvironment(
 );
 
 void main() {
-  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  // Let the app paint between network/async work (default onlyPumps can stall).
+  binding.framePolicy = LiveTestWidgetsFlutterBindingFramePolicy.fullyLive;
 
   late List<E2eBarcodeEntry> entries;
 
@@ -33,25 +34,22 @@ void main() {
     }
   });
 
-  // SCN-001/002/003 — see test/barcodes_e2e.txt and TESTING.md UI E2E coverage.
+  // SCN-001–003 — see test/barcodes_e2e.txt and TESTING.md UI E2E coverage.
   testWidgets('manual barcode lookup shows correct result UI', (tester) async {
-    final errorWidgetBuilderBeforeTest = ErrorWidget.builder;
-    addTearDown(() => ErrorWidget.builder = errorWidgetBuilderBeforeTest);
-
     app.main();
     await pumpUntilFound(tester, find.byKey(IntegrationTestKeys.startScan));
 
     for (final entry in entries) {
       await _lookupBarcode(tester, entry.barcode);
-      await _assertExpectedOutcome(tester, entry.expected!);
-      await _returnToStart(tester);
+      await pumpUntilResultScreen(tester);
+      assertExpectedResultVisible(tester, entry.expected!);
+      await pumpUntilStartScan(tester);
     }
   });
 }
 
 Future<void> _lookupBarcode(WidgetTester tester, String barcode) async {
   await tester.tap(find.byKey(IntegrationTestKeys.startScan));
-  // Camera preview never "settles" — wait for manual entry instead.
   await pumpUntilFound(tester, find.byKey(IntegrationTestKeys.homeManualEntry));
 
   await tester.tap(find.byKey(IntegrationTestKeys.homeManualEntry));
@@ -59,43 +57,6 @@ Future<void> _lookupBarcode(WidgetTester tester, String barcode) async {
 
   await tester.enterText(find.byKey(IntegrationTestKeys.barcodeField), barcode);
   await tester.tap(find.byKey(IntegrationTestKeys.barcodeSubmit));
-  await tester.pump();
-}
-
-Future<void> _assertExpectedOutcome(
-  WidgetTester tester,
-  String expected,
-) async {
-  if (expected == 'unknown') {
-    await pumpUntilFound(
-      tester,
-      find.byKey(IntegrationTestKeys.productNotFound),
-    );
-    return;
-  }
-
-  await pumpUntilFound(
-    tester,
-    find.byKey(IntegrationTestKeys.resultStatus(expected)),
-  );
-}
-
-Future<void> _returnToStart(WidgetTester tester) async {
-  final resultHome = find.byKey(IntegrationTestKeys.resultHome);
-  if (resultHome.evaluate().isNotEmpty) {
-    await tester.tap(resultHome);
-    await tester.pump(const Duration(milliseconds: 400));
-  }
-
-  final enabledBack = find.byWidgetPredicate(
-    (w) => w is BackButton && w.onPressed != null,
-  );
-  var safety = 0;
-  while (enabledBack.evaluate().isNotEmpty && safety < 3) {
-    safety++;
-    await tester.tap(enabledBack.first);
-    await tester.pump(const Duration(milliseconds: 400));
-  }
-
-  await pumpUntilFound(tester, find.byKey(IntegrationTestKeys.startScan));
+  // Dialog must close before we wait for the result route.
+  await pumpUntilGone(tester, find.byKey(IntegrationTestKeys.barcodeField));
 }

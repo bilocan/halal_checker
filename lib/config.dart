@@ -34,4 +34,10 @@ class AppConfig {
 
   /// True when running UI E2E (`E2E_FORCE_LOCALE` set in `dart_defines.e2e.json`).
   static bool get isE2e => e2eForceLocale.isNotEmpty;
+
+  /// When true, [HomeScreen] skips [MobileScanner] (set only by `run_ui_e2e_test`).
+  static const bool e2eSkipCamera = bool.fromEnvironment(
+    'E2E_SKIP_CAMERA',
+    defaultValue: false,
+  );
 }

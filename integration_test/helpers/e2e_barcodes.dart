@@ -62,7 +62,7 @@ List<E2eBarcodeEntry> _parseBarcodeContents(String contents) {
 }
 
 String? _validateExpected(String token) {
-  const valid = {'halal', 'haram', 'unknown'};
+  const valid = {'halal', 'haram', 'unknown', 'not_found'};
   final lower = token.toLowerCase();
   return valid.contains(lower) ? lower : null;
 }

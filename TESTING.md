@@ -131,8 +131,11 @@ Default: `test/barcodes_e2e.txt` (short list for quick runs).
 Format (same as `test/barcodes.txt`):
 
 ```
-<barcode> [expected: halal|haram|unknown]
+<barcode> [expected: halal|haram|unknown|not_found]
 ```
+
+- `unknown` — product exists but verdict is inconclusive (`e2e-result-unknown`).
+- `not_found` — no product (`e2e-product-not-found`).
 
 Lines starting with `#` are comments. Only rows with an `expected` value are asserted in UI E2E.
 
@@ -151,6 +154,7 @@ To use the full barcode list:
 | `E2E_FORCE_LOCALE` | `en` | Stable English UI |
 | `E2E_LIVE_LOOKUP` | `true` | Skip debug test DB; use network / local edge fn |
 | `E2E_BARCODES_FILE` | Set by runner script | Barcode list path |
+| `E2E_SKIP_CAMERA` | `true` (runner only) | Manual barcode UI; no `MobileScanner` |
 
 Optional CLI override: `-LiveLookup` / `LIVE_LOOKUP=1` forces `E2E_LIVE_LOOKUP=true` even if omitted from JSON.
 
@@ -169,18 +173,63 @@ Production widgets expose keys from `lib/integration_test_keys.dart`:
 | `e2e-result-halal` / `haram` / `unknown` | Result status banner |
 | `e2e-product-not-found` | Product not found body |
 | `e2e-result-home` | Result bottom nav — Home (pop to scanner) |
+| `e2e-scanner-back` | Scanner AppBar — back to start home tab |
 
 When adding new E2E flows, prefer new keys in that file over `find.text(...)` (locale-safe). Grep `e2e-` in `lib/` for the full key list.
 
 ### UI E2E coverage
 
-Tracked by **scenario ID** (`SCN-xxx`), `test/barcodes_e2e.txt`, and `lib/integration_test_keys.dart`. Update this table when you add a scenario, key, or test file.
+Tracked in three places (keep them in sync):
+
+| Artifact | Role |
+|----------|------|
+| [`test/e2e_coverage.json`](test/e2e_coverage.json) | Machine-readable registry (scenarios, keys, gaps) |
+| [`test/barcodes_e2e.txt`](test/barcodes_e2e.txt) | Barcodes exercised on device |
+| [`lib/integration_test_keys.dart`](lib/integration_test_keys.dart) | Stable widget keys |
+| Table below | Human-readable summary |
+
+**Preview (read the registry):**
+
+```bash
+./scripts/preview_e2e_coverage.sh
+# or: dart run tool/e2e_coverage_report.dart
+```
+
+Prints automated scenarios, gaps, and which barcodes/keys are wired — for humans, not consumed by the app.
+
+**Validate (CI sync check):**
+
+```bash
+./scripts/validate_e2e_coverage.sh
+# or: flutter test test/constants/e2e_coverage_test.dart
+```
+
+CI runs this via `flutter test test/constants/`. The check fails if you add an `e2e-*` key or SCN barcode line without updating the registry.
+
+**How the pieces connect:**
+
+```text
+test/e2e_coverage.json          ← you edit (checklist + documentation)
+        │
+        ├─► dart run tool/e2e_coverage_report.dart     ← preview in terminal
+        ├─► test/constants/e2e_coverage_test.dart      ← CI: JSON ↔ keys ↔ barcodes
+        └─► TESTING.md table                         ← same info for reading in git
+
+integration_test/ui_barcode_flow_test.dart  ← runs on device
+        │
+        └─► reads test/barcodes_e2e.txt only (NOT the JSON file)
+```
+
+**Line coverage:** UI E2E on a device does not feed CI Codecov (only unit tests do). Use the registry + scenario IDs for flow coverage, not `lcov` percentages.
+
+Tracked by **scenario ID** (`SCN-xxx`). Update the JSON and this table when you add a scenario, key, or test file.
 
 | ID | Screen / flow | UI E2E | Widget (`test/screens/`) | Pipeline (`test/integration/`) | Notes |
 |----|---------------|--------|---------------------------|----------------------------------|-------|
 | SCN-001 | Start → scan → manual entry → **halal** result | Yes | Partial | Via `90098369` in `barcodes.txt` | Default `barcodes_e2e.txt` |
 | SCN-002 | Same path → **haram** result | Yes | Partial | Via `5014379008630` | Default `barcodes_e2e.txt` |
-| SCN-003 | Same path → **not found** | Yes | Partial | — | `9999999999999 unknown` |
+| SCN-003 | Same path → **inconclusive** (`unknown`) | Yes | Partial | — | `9999999999999 unknown` |
+| SCN-004 | Same path → **not found** | Yes | Partial | — | use `not_found` when lookup returns no product |
 | — | Camera scan | No | No | — | Manual entry only (camera never settles) |
 | — | Result: ingredients, community, deep analysis, images | No | Partial | — | |
 | — | Start tabs: Keywords, Directory, About, Admin | No | `start_screen_*` | — | Screenshots test opens Directory only |
@@ -200,14 +249,15 @@ When adding new E2E flows, prefer new keys in that file over `find.text(...)` (l
 
 ### Implementation notes
 
-- **Camera:** E2E uses manual entry only; the live camera preview never “settles”, so the test waits for the manual-entry key instead of `pumpAndSettle()` on the scanner screen.
+- **Camera:** Only automated UI E2E passes `E2E_SKIP_CAMERA=true` (manual entry UI; no `MobileScanner`). Normal runs with `dart_defines.e2e.json` still use the camera — grant permission on the emulator (**Allow**) or run `adb shell pm grant app.halalscan.dev android.permission.CAMERA`. `run_ui_e2e_test.sh` grants CAMERA when `adb` is available.
+- **Stuck after lookup logs (result on emulator, test idle):** the test uses `LiveTestWidgetsFlutterBindingFramePolicy.fullyLive` and waits for `ResultScreen` / e2e keys after the manual-entry dialog closes. If it still hangs, check the failure text for the verdict actually shown vs `test/barcodes_e2e.txt`.
 - **Debug test DB:** barcodes in `test_data/` may resolve offline in debug without `-LiveLookup`. UI is still real; use `-LiveLookup` to mirror production network behavior.
 - **Tagged `e2e`:** skipped by default in `dart_test.yaml`; always run via `run_ui_e2e_test.ps1` / `.sh`.
 
 ### Adding a UI E2E scenario
 
 1. Pick or add a **scenario ID** in the [UI E2E coverage](#ui-e2e-coverage) table (`SCN-xxx`).
-2. Add a commented line to `test/barcodes_e2e.txt` with `halal`, `haram`, or `unknown` (or extend `ui_barcode_flow_test.dart` for non-barcode flows).
+2. Add a commented line to `test/barcodes_e2e.txt` with `halal`, `haram`, `unknown`, or `not_found` (or extend `ui_barcode_flow_test.dart` for non-barcode flows).
 3. If a new control needs tapping, add a key in `integration_test_keys.dart`, wire it on the production widget, and document it in the table above.
 4. Run `.\run_ui_e2e_test.ps1` / `./run_ui_e2e_test.sh` on a connected device.
 
@@ -398,6 +448,10 @@ Used for offline dev, not for UI E2E unless you intentionally test fixture barco
 |------|------|
 | `test/barcodes.txt` | Pipeline integration barcode list |
 | `test/barcodes_e2e.txt` | Default UI E2E barcode list |
+| `test/e2e_coverage.json` | UI E2E scenario + gap registry |
+| `scripts/preview_e2e_coverage.sh` | Print human-readable coverage report |
+| `tool/e2e_coverage_report.dart` | Same report (`dart run tool/...`) |
+| `scripts/validate_e2e_coverage.sh` | Validate registry vs keys/barcodes (no device) |
 | `run_integration_test.ps1` / `.sh` | Pipeline integration runner |
 | `dart_defines.e2e.example.json` | E2E defines template (local Supabase) |
 | `scripts/start_e2e_supabase.ps1` / `.sh` | Start Docker Supabase + migrations |
