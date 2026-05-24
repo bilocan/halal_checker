@@ -1,6 +1,6 @@
 # HalalScan — agent guide
 
-Short checklist for Cursor/Claude agents. Full detail: [CLAUDE.md](CLAUDE.md).
+Short checklist for Cursor/Claude agents. Full detail: [CLAUDE.md](CLAUDE.md). **Testing:** [TESTING.md](TESTING.md).
 
 ## Verify before done
 
@@ -22,7 +22,7 @@ flutter test test/services/ test/constants/ test/models/ test/config_test.dart
 | Lookup pipeline | `lib/services/product_service.dart` |
 | Keywords | `lib/services/keyword_service.dart` |
 | Edge function | `supabase/functions/lookup-product/` |
-| Tests | `test/services/`, `test_data/` |
+| Tests | `test/services/`, `test_data/`, [TESTING.md](TESTING.md) |
 
 ## Run app (debug)
 

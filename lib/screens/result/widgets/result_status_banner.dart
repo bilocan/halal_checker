@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../integration_test_keys.dart';
 import '../../../localization/app_localizations.dart';
 import '../../../models/product.dart';
 import '../result_status.dart';
@@ -14,11 +15,18 @@ class ResultStatusBanner extends StatelessWidget {
   final Product product;
   final AppLocalizations loc;
 
+  String _e2eOutcome(Product product) {
+    if (product.isUnknown) return 'unknown';
+    if (product.isHalal) return 'halal';
+    return 'haram';
+  }
+
   @override
   Widget build(BuildContext context) {
     final status = ResultStatus.from(product, loc);
 
     return Container(
+      key: IntegrationTestKeys.resultStatus(_e2eOutcome(product)),
       width: double.infinity,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(

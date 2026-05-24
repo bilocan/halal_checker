@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../../app_colors.dart';
 import '../../../config.dart';
+import '../../../integration_test_keys.dart';
 import '../../../localization/app_localizations.dart';
 import '../../../models/product.dart';
 import '../../../services/database_service.dart';
@@ -505,6 +506,7 @@ class _StartHomeTabState extends State<StartHomeTab> {
               ],
             ),
             child: ElevatedButton(
+              key: IntegrationTestKeys.startScan,
               onPressed: _openScan,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.transparent,

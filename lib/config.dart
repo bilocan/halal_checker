@@ -19,4 +19,16 @@ class AppConfig {
       supabaseUrl.isNotEmpty && supabaseAnonKey.isNotEmpty;
 
   static bool get hasGoogleAuth => googleWebClientId.isNotEmpty;
+
+  /// When set (e.g. `en`), forces app locale during UI E2E runs.
+  static const String e2eForceLocale = String.fromEnvironment(
+    'E2E_FORCE_LOCALE',
+    defaultValue: '',
+  );
+
+  /// When true, debug builds skip the offline test DB so lookups hit the network.
+  static const bool e2eLiveLookup = bool.fromEnvironment(
+    'E2E_LIVE_LOOKUP',
+    defaultValue: false,
+  );
 }

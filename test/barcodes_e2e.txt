@@ -1,0 +1,8 @@
+# Short list for UI E2E (integration_test/ui_barcode_flow_test.dart).
+# Format: <barcode> [expected: halal|haram|unknown]
+#
+# 90098369 is in debug test DB (offline fixture) — still exercises real UI.
+# 5014379008630 hits the live lookup pipeline on device.
+
+90098369 halal
+5014379008630 haram

@@ -7,7 +7,7 @@
 //   - Android or iOS device / emulator (ML Kit does not run in the Dart VM)
 //   - Test image placed at: test/assets/soletti_ingredients.jpg
 //
-// To add a new product image, see the "OCR testing" section in README.md.
+// To add a new product image, see TESTING.md (OCR testing).
 
 // @Tags(['manual'])
 

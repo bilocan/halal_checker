@@ -485,7 +485,7 @@ class ProductService {
     // resolved; the fresh result is written back to the test DB below.
     // Bypassed entirely on force-refresh so the refresh button always hits the network.
     var hadStaleTestFixture = false;
-    if (kDebugMode && !forceBackendRefresh) {
+    if (kDebugMode && !forceBackendRefresh && !AppConfig.e2eLiveLookup) {
       final fixture = await TestProductRepository.instance.getByBarcode(
         barcode,
       );

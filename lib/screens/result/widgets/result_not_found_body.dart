@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../app_colors.dart';
+import '../../../integration_test_keys.dart';
 import '../../../localization/app_localizations.dart';
 import 'copy_barcode_row.dart';
 
@@ -21,6 +22,7 @@ class ResultNotFoundBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
+      key: IntegrationTestKeys.productNotFound,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [

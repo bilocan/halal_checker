@@ -3,6 +3,7 @@ import 'dart:ui' show PlatformDispatcher;
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'config.dart';
 import 'localization/app_localizations.dart';
 import 'screens/start_screen.dart';
 import 'services/auth_service.dart';
@@ -53,7 +54,10 @@ void main() async {
   ); // slow: network fetches, non-blocking
   final prefs = await SharedPreferences.getInstance();
   final savedLocale = prefs.getString('locale') ?? 'en';
-  runApp(HalalCheckerApp(initialLocale: Locale(savedLocale)));
+  final localeCode = AppConfig.e2eForceLocale.isNotEmpty
+      ? AppConfig.e2eForceLocale
+      : savedLocale;
+  runApp(HalalCheckerApp(initialLocale: Locale(localeCode)));
 }
 
 class HalalCheckerApp extends StatefulWidget {

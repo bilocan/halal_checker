@@ -6,6 +6,8 @@ alwaysApply: false
 
 # Testing (HalalScan)
 
+Full guide: [TESTING.md](../../TESTING.md) (UI E2E, integration, OCR, fixtures).
+
 ## CI test command
 
 ```bash
@@ -23,3 +25,7 @@ Run this after behavior changes in `lib/` or `test/`.
 ## Fixtures
 
 - Offline product fixtures: `test_data/` and `halal_test.db` (debug); seed via `test_data/seed_barcodes.txt` per `CLAUDE.md`.
+
+## UI E2E (no widget mocks)
+
+- After navigation / scan / result UI changes: local Supabase + `.\run_ui_e2e_test.ps1` (`dart_defines.e2e.json`). See [TESTING.md](../../TESTING.md#local-supabase-for-e2e).

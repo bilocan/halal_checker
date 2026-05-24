@@ -10,8 +10,10 @@ Requires `dart_defines.json` in the project root (copy from `dart_defines.exampl
 
 ## Running tests
 
+Full guide: [TESTING.md](TESTING.md) (CI, integration, UI E2E, OCR).
+
 ```bash
-flutter test test/services/
+flutter test test/services/ test/constants/ test/models/ test/config_test.dart
 ```
 
 ## Architecture

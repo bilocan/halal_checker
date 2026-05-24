@@ -3,6 +3,7 @@ import 'package:flutter/services.dart'
     show Clipboard, HapticFeedback, FilteringTextInputFormatter;
 import 'package:mobile_scanner/mobile_scanner.dart';
 import '../app_colors.dart';
+import '../integration_test_keys.dart';
 import '../localization/app_localizations.dart';
 import '../services/database_service.dart';
 import '../services/product_service.dart';
@@ -175,6 +176,7 @@ class _HomeScreenState extends State<HomeScreen> {
         return AlertDialog(
           title: Text(loc.enterBarcodeManually),
           content: TextField(
+            key: IntegrationTestKeys.barcodeField,
             controller: _barcodeController,
             keyboardType: TextInputType.number,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
@@ -211,6 +213,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Text(loc.cancel),
             ),
             ElevatedButton(
+              key: IntegrationTestKeys.barcodeSubmit,
               onPressed: () {
                 Navigator.of(dialogContext).pop();
                 _submitBarcode(_barcodeController.text);
@@ -274,6 +277,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(height: 40),
               ElevatedButton.icon(
+                key: IntegrationTestKeys.homeManualEntry,
                 onPressed: _showManualEntryDialog,
                 icon: const Icon(Icons.edit),
                 label: Text(loc.manualEntry),
@@ -367,6 +371,7 @@ class _HomeScreenState extends State<HomeScreen> {
             left: 32,
             right: 32,
             child: ElevatedButton(
+              key: IntegrationTestKeys.homeManualEntry,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.white70,
                 foregroundColor: kGreenDark,
