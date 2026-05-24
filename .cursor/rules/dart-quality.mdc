@@ -1,0 +1,35 @@
+---
+description: Dart/Flutter quality bar — format, analyze, conventions
+globs: "**/*.dart"
+alwaysApply: false
+---
+
+# Dart quality (HalalScan)
+
+## Before finishing non-trivial Dart work
+
+Run (same as CI):
+
+```bash
+dart format .
+flutter analyze --no-fatal-infos
+```
+
+Fix all analyzer errors and warnings you introduced.
+
+## Conventions
+
+- Follow `analysis_options.yaml` (`package:flutter_lints/flutter.yaml`).
+- Match existing patterns in `lib/services/` for new services.
+- Smallest correct diff; no drive-by refactors or unrelated files.
+- Do not touch `android/` or `ios/` unless the task is platform-specific.
+
+## Secrets
+
+- Never hardcode API keys.
+- Use `dart_defines.json` + `String.fromEnvironment()` via `lib/config.dart`.
+
+## Halal logic
+
+- Lookup pipeline and layers: see `CLAUDE.md`.
+- Keyword safety override after AI must remain intact; lists live in `product_service.dart`.

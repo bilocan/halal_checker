@@ -1,0 +1,28 @@
+---
+description: HalalScan agent checklist — architecture, scope, definition of done
+alwaysApply: true
+---
+
+# Agent checklist (HalalScan)
+
+## Definition of done
+
+After non-trivial code changes:
+
+1. `dart format .`
+2. `flutter analyze --no-fatal-infos`
+3. `flutter test test/services/ test/constants/ test/models/ test/config_test.dart`
+
+Do not claim work is complete until these pass or you report the failures.
+
+## Architecture (read `CLAUDE.md` for detail)
+
+- Lookup: test DB → local cache → Supabase edge function → OpenFoodFacts + keywords.
+- Halal layers: AI → keywords → **keyword safety override** (must not be weakened).
+- Halal logic: `lib/` and `supabase/`; avoid `android/`/`ios/` unless platform task.
+
+## Scope
+
+- Minimal diff; match local naming and structure.
+- Never commit or push unless the user explicitly asks.
+- For multi-file or architectural changes, prefer Plan mode first, then implement.
