@@ -48,7 +48,8 @@ void main() {
         expect(
           keysFile,
           contains(key),
-          reason: 'Add $key to lib/integration_test_keys.dart or remove from '
+          reason:
+              'Add $key to lib/integration_test_keys.dart or remove from '
               'test/e2e_coverage.json',
         );
       }
@@ -85,8 +86,7 @@ void main() {
         expect(
           barcodesFile,
           contains(line.trim()),
-          reason:
-              '${scenario['id']}: add "$line" to test/barcodes_e2e.txt',
+          reason: '${scenario['id']}: add "$line" to test/barcodes_e2e.txt',
         );
       }
     });

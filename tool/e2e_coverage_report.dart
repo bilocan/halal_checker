@@ -8,6 +8,11 @@
 import 'dart:convert';
 import 'dart:io';
 
+const _headerRule =
+    '============================================================';
+const _sectionRule =
+    '────────────────────────────────────────────────────────────';
+
 void main() {
   const path = 'test/e2e_coverage.json';
   final file = File(path);
@@ -37,14 +42,18 @@ void main() {
 
   print('');
   print('HalalScan UI E2E coverage (from $path)');
-  print('${"=" * 60}');
+  print(_headerRule);
   print('');
   print('Summary');
-  print('  Automated scenarios (device): ${automated.length} '
-      '($automatedWithBarcode with barcodes in barcodes_e2e.txt)');
+  print(
+    '  Automated scenarios (device): ${automated.length} '
+    '($automatedWithBarcode with barcodes in barcodes_e2e.txt)',
+  );
   print('  E2E widget keys registered:  ${keys.length}');
-  print('  Documented gaps:             ${gaps.length} '
-      '($gapNoE2e not covered, $gapPartial partial)');
+  print(
+    '  Documented gaps:             ${gaps.length} '
+    '($gapNoE2e not covered, $gapPartial partial)',
+  );
   print('  Manual device tests:         ${manual.length}');
   print('');
   print('How this file is used');
@@ -54,15 +63,15 @@ void main() {
   print('  • Device test ui_barcode_flow_test.dart does NOT read this file;');
   print('    it runs barcodes from test/barcodes_e2e.txt only.');
   print('');
-  print('${"─" * 60}');
+  print(_sectionRule);
   print('Automated UI E2E (./run_ui_e2e_test.sh)');
-  print('${"─" * 60}');
+  print(_sectionRule);
   for (final raw in automated) {
     final s = raw as Map<String, dynamic>;
     final id = s['id'];
     final flow = s['flow'];
     final line = s['barcode_line'];
-    final barcode = line == null ? '(no barcode yet)' : line;
+    final barcode = line ?? '(no barcode yet)';
     final status = line == null ? 'PLANNED' : 'ACTIVE';
     print('');
     print('  [$status] $id — $flow');
@@ -81,9 +90,9 @@ void main() {
     }
   }
   print('');
-  print('${"─" * 60}');
+  print(_sectionRule);
   print('Gaps (not fully covered by automated UI E2E)');
-  print('${"─" * 60}');
+  print(_sectionRule);
   for (final raw in gaps) {
     final g = raw as Map<String, dynamic>;
     final ui = _flag(g['ui_e2e']);
@@ -99,9 +108,9 @@ void main() {
   }
   if (manual.isNotEmpty) {
     print('');
-    print('${"─" * 60}');
+    print(_sectionRule);
     print('Manual device tests (not in run_ui_e2e_test.sh)');
-    print('${"─" * 60}');
+    print(_sectionRule);
     for (final raw in manual) {
       final m = raw as Map<String, dynamic>;
       print('  ${m['id']} — ${m['file']}');
