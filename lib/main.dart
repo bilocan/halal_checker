@@ -49,9 +49,11 @@ void main() async {
 
   await AuthService.initializeIfSessionExists();
   await SeedDataService.seedIfNeeded(); // fast: JSON fixtures only
-  unawaited(
-    SeedDataService.seedFromBarcodes(),
-  ); // slow: network fetches, non-blocking
+  if (!AppConfig.isE2e) {
+    unawaited(
+      SeedDataService.seedFromBarcodes(),
+    ); // slow: network fetches, non-blocking
+  }
   final prefs = await SharedPreferences.getInstance();
   final savedLocale = prefs.getString('locale') ?? 'en';
   final localeCode = AppConfig.e2eForceLocale.isNotEmpty

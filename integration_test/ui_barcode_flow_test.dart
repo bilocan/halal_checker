@@ -25,16 +25,19 @@ void main() {
 
   late List<E2eBarcodeEntry> entries;
 
-  setUpAll(() {
-    entries = loadE2eBarcodes(
-      path: _barcodesFile,
-    ).where((e) => e.expected != null).toList();
+  setUpAll(() async {
+    final loaded = await loadE2eBarcodes(path: _barcodesFile);
+    entries = loaded.where((e) => e.expected != null).toList();
     if (entries.isEmpty) {
       throw StateError('No barcodes with expected outcomes in $_barcodesFile');
     }
   });
 
+  // SCN-001/002/003 — see test/barcodes_e2e.txt and TESTING.md UI E2E coverage.
   testWidgets('manual barcode lookup shows correct result UI', (tester) async {
+    final errorWidgetBuilderBeforeTest = ErrorWidget.builder;
+    addTearDown(() => ErrorWidget.builder = errorWidgetBuilderBeforeTest);
+
     app.main();
     await pumpUntilFound(tester, find.byKey(IntegrationTestKeys.startScan));
 
@@ -78,12 +81,21 @@ Future<void> _assertExpectedOutcome(
 }
 
 Future<void> _returnToStart(WidgetTester tester) async {
-  final back = find.byType(BackButton);
-  var safety = 0;
-  while (back.evaluate().isNotEmpty && safety < 5) {
-    safety++;
-    await tester.tap(back.first);
+  final resultHome = find.byKey(IntegrationTestKeys.resultHome);
+  if (resultHome.evaluate().isNotEmpty) {
+    await tester.tap(resultHome);
     await tester.pump(const Duration(milliseconds: 400));
   }
+
+  final enabledBack = find.byWidgetPredicate(
+    (w) => w is BackButton && w.onPressed != null,
+  );
+  var safety = 0;
+  while (enabledBack.evaluate().isNotEmpty && safety < 3) {
+    safety++;
+    await tester.tap(enabledBack.first);
+    await tester.pump(const Duration(milliseconds: 400));
+  }
+
   await pumpUntilFound(tester, find.byKey(IntegrationTestKeys.startScan));
 }

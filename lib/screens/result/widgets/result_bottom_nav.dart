@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../app_colors.dart';
+import '../../../integration_test_keys.dart';
 import '../../../localization/app_localizations.dart';
 
 class ResultBottomNav extends StatelessWidget {
@@ -33,7 +34,10 @@ class ResultBottomNav extends StatelessWidget {
       unselectedItemColor: Colors.grey,
       type: BottomNavigationBarType.fixed,
       items: [
-        BottomNavigationBarItem(icon: const Icon(Icons.home), label: loc.home),
+        BottomNavigationBarItem(
+          icon: const Icon(Icons.home, key: IntegrationTestKeys.resultHome),
+          label: loc.home,
+        ),
         BottomNavigationBarItem(
           icon: const Icon(Icons.list_alt),
           label: loc.keywords,

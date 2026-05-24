@@ -1,8 +1,12 @@
-# Short list for UI E2E (integration_test/ui_barcode_flow_test.dart).
+# UI E2E scenarios (integration_test/ui_barcode_flow_test.dart).
 # Format: <barcode> [expected: halal|haram|unknown]
+# Only lines with an expected value are asserted. See TESTING.md → UI E2E coverage.
 #
-# 90098369 is in debug test DB (offline fixture) — still exercises real UI.
-# 5014379008630 hits the live lookup pipeline on device.
-
+# SCN-001 halal — local edge fn / OFF (E2E_LIVE_LOOKUP)
 90098369 halal
+#
+# SCN-002 haram — pork / haram ingredients
 5014379008630 haram
+#
+# SCN-003 not found — valid digits, not in OFF/OBF/OPF/local DB
+9999999999999 unknown

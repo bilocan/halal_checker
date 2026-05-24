@@ -31,4 +31,7 @@ class AppConfig {
     'E2E_LIVE_LOOKUP',
     defaultValue: false,
   );
+
+  /// True when running UI E2E (`E2E_FORCE_LOCALE` set in `dart_defines.e2e.json`).
+  static bool get isE2e => e2eForceLocale.isNotEmpty;
 }

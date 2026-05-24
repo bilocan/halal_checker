@@ -168,6 +168,33 @@ Production widgets expose keys from `lib/integration_test_keys.dart`:
 | `e2e-barcode-submit` | Manual entry dialog — Submit |
 | `e2e-result-halal` / `haram` / `unknown` | Result status banner |
 | `e2e-product-not-found` | Product not found body |
+| `e2e-result-home` | Result bottom nav — Home (pop to scanner) |
+
+When adding new E2E flows, prefer new keys in that file over `find.text(...)` (locale-safe). Grep `e2e-` in `lib/` for the full key list.
+
+### UI E2E coverage
+
+Tracked by **scenario ID** (`SCN-xxx`), `test/barcodes_e2e.txt`, and `lib/integration_test_keys.dart`. Update this table when you add a scenario, key, or test file.
+
+| ID | Screen / flow | UI E2E | Widget (`test/screens/`) | Pipeline (`test/integration/`) | Notes |
+|----|---------------|--------|---------------------------|----------------------------------|-------|
+| SCN-001 | Start → scan → manual entry → **halal** result | Yes | Partial | Via `90098369` in `barcodes.txt` | Default `barcodes_e2e.txt` |
+| SCN-002 | Same path → **haram** result | Yes | Partial | Via `5014379008630` | Default `barcodes_e2e.txt` |
+| SCN-003 | Same path → **not found** | Yes | Partial | — | `9999999999999 unknown` |
+| — | Camera scan | No | No | — | Manual entry only (camera never settles) |
+| — | Result: ingredients, community, deep analysis, images | No | Partial | — | |
+| — | Start tabs: Keywords, Directory, About, Admin | No | `start_screen_*` | — | Screenshots test opens Directory only |
+| — | Batch scan, ingredient OCR, discussions | No | No | — | |
+| — | Auth / sign-in sheets | No | No | — | |
+| — | OCR pipeline (photo → keywords) | No | — | — | `ocr_pipeline_test.dart` (`@manual`) |
+
+**Other integration tests (not UI regression):**
+
+| File | Purpose |
+|------|---------|
+| `integration_test/ocr_pipeline_test.dart` | ML Kit OCR + sanitizer on device (`@manual`) |
+| `integration_test/screenshots_test.dart` | Store screenshots; fake `Product` data |
+| `test/integration/barcode_lookup_test.dart` | Live lookup API, no UI |
 
 When adding new E2E flows, prefer new keys in that file over `find.text(...)` (locale-safe).
 
@@ -179,9 +206,10 @@ When adding new E2E flows, prefer new keys in that file over `find.text(...)` (l
 
 ### Adding a UI E2E scenario
 
-1. Add a line to `test/barcodes_e2e.txt` with `halal`, `haram`, or `unknown`.
-2. Run `.\run_ui_e2e_test.ps1` on a connected device.
-3. If a new screen needs tapping, add a key in `integration_test_keys.dart` and wire it on the production widget.
+1. Pick or add a **scenario ID** in the [UI E2E coverage](#ui-e2e-coverage) table (`SCN-xxx`).
+2. Add a commented line to `test/barcodes_e2e.txt` with `halal`, `haram`, or `unknown` (or extend `ui_barcode_flow_test.dart` for non-barcode flows).
+3. If a new control needs tapping, add a key in `integration_test_keys.dart`, wire it on the production widget, and document it in the table above.
+4. Run `.\run_ui_e2e_test.ps1` / `./run_ui_e2e_test.sh` on a connected device.
 
 Source: `integration_test/ui_barcode_flow_test.dart`, helpers in `integration_test/helpers/`.
 

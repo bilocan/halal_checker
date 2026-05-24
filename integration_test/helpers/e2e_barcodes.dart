@@ -1,17 +1,39 @@
 import 'dart:io';
 
+import 'package:flutter/services.dart';
+
 /// One barcode scenario from a barcodes file (same format as `test/barcodes.txt`).
 typedef E2eBarcodeEntry = ({String barcode, String? expected});
 
 /// Reads barcodes from [path] (default `test/barcodes_e2e.txt`).
-List<E2eBarcodeEntry> loadE2eBarcodes({String path = 'test/barcodes_e2e.txt'}) {
-  final file = File(path);
-  if (!file.existsSync()) {
-    throw StateError('$path not found');
-  }
+///
+/// UI integration tests run on a device/emulator, so the file must be listed in
+/// [pubspec.yaml] assets. On the host VM, falls back to [File] if the asset is
+/// missing (e.g. a custom path not bundled).
+Future<List<E2eBarcodeEntry>> loadE2eBarcodes({
+  String path = 'test/barcodes_e2e.txt',
+}) async {
+  final contents = await _readBarcodeFile(path);
+  return _parseBarcodeContents(contents);
+}
 
-  return file
-      .readAsLinesSync()
+Future<String> _readBarcodeFile(String path) async {
+  try {
+    return await rootBundle.loadString(path);
+  } catch (_) {
+    final file = File(path);
+    if (file.existsSync()) {
+      return file.readAsStringSync();
+    }
+    throw StateError(
+      '$path not found (add it under flutter.assets in pubspec.yaml for device E2E)',
+    );
+  }
+}
+
+List<E2eBarcodeEntry> _parseBarcodeContents(String contents) {
+  return contents
+      .split('\n')
       .map((line) {
         final commentIdx = line.indexOf('#');
         return commentIdx == -1 ? line : line.substring(0, commentIdx);

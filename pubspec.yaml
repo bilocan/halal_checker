@@ -95,6 +95,8 @@ flutter:
   assets:
     - test_data/seed_products.json
     - test_data/seed_barcodes.txt
+    - test/barcodes_e2e.txt
+    - test/barcodes.txt
     - test/assets/
 
   # An image asset can refer to one or more resolution-specific "variants", see
