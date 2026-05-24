@@ -299,5 +299,165 @@
   "noReports": "No pending reports",
   "openProduct": "Open product",
   "resolveReport": "Resolve",
-  "dismissReport": "Dismiss"
+  "dismissReport": "Dismiss",
+  "signInRequired": "Sign in required",
+  "signInRequiredMessage": "You need to be signed in to submit feedback or suggestions.",
+  "signInWithGoogle": "Sign in with Google",
+  "batchImport": "Batch Import",
+  "adminUpdateFailed": "Failed to update — check Supabase logs",
+  "adminAiRequestsLoadFailed": "Could not load AI requests — check connection",
+  "aiRequestSubmitFailed": "Failed to submit AI request.",
+  "aiRequestSubmitted": "AI request submitted — pending admin review.",
+  "aiRequestAlreadyPending": "An AI request for this product is already pending.",
+  "labelCopied": "{label} copied",
+  "@labelCopied": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "replacePhoto": "Replace",
+  "batchImportAccessDenied": "Access denied: superadmin only",
+  "batchImportNoBarcodes": "No valid barcodes found in file",
+  "signInToComment": "Sign in to comment.",
+  "discussionFallbackTitle": "Discussion",
+  "noCommentsYet": "No comments yet. Be the first!",
+  "replyingTo": "Replying to {username}",
+  "@replyingTo": {
+    "placeholders": {
+      "username": {
+        "type": "String"
+      }
+    }
+  },
+  "writeCommentHint": "Write a comment…",
+  "reply": "Reply",
+  "failedStartDiscussion": "Failed to start discussion. Try again.",
+  "startDiscussionTitle": "Start a Discussion",
+  "topicOptionalLabel": "Topic (optional)",
+  "topicOptionalHint": "e.g. Is the gelatin source specified?",
+  "startDiscussionButton": "Start Discussion",
+  "linkedToChallenge": "Linked to challenge",
+  "locked": "Locked",
+  "anonymous": "Anonymous",
+  "noChallengesYet": "No ingredient challenges yet.",
+  "noChallengesHint": "Tap an ingredient in Deep Analysis to challenge its verdict.",
+  "challengeBy": "by {username}",
+  "@challengeBy": {
+    "placeholders": {
+      "username": {
+        "type": "String"
+      }
+    }
+  },
+  "commentDeleted": "[deleted]",
+  "couldNotPostComment": "Couldn't post your comment. Please try again.",
+  "timeJustNow": "just now",
+  "timeMinutesAgo": "{count}m ago",
+  "@timeMinutesAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "timeHoursAgo": "{count}h ago",
+  "@timeHoursAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "timeDaysAgo": "{count}d ago",
+  "@timeDaysAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "aiApprovalHint": "Approve to trigger AI ingredient lookup via Gemini/Claude. The product will be updated automatically.",
+  "refetchAiIngredients": "Re-fetch AI Ingredients",
+  "approveAndFetch": "Approve & Fetch",
+  "photoReplacement": "replacement",
+  "photoCurrentLabel": "Current",
+  "photoNewLabel": "New",
+  "noPendingPhotoSubmissions": "No pending photo submissions",
+  "noPendingIngredientContributions": "No pending ingredient contributions",
+  "filterPending": "Pending",
+  "filterApproved": "Approved",
+  "filterAll": "All",
+  "filterDone": "Done",
+  "noPendingAiRequests": "No pending AI ingredient requests",
+  "noApprovedAiRequests": "No approved AI ingredient requests",
+  "adminBatchRequestFailed": "Batch request failed — check Supabase logs",
+  "adminBatchDoneSummary": "Done: {done}, skipped: {skipped}",
+  "@adminBatchDoneSummary": {
+    "placeholders": {
+      "done": { "type": "int" },
+      "skipped": { "type": "int" }
+    }
+  },
+  "adminBatchDoneWithErrors": "Done: {done}, skipped: {skipped}, failed: {errors} — see logs",
+  "@adminBatchDoneWithErrors": {
+    "placeholders": {
+      "done": { "type": "int" },
+      "skipped": { "type": "int" },
+      "errors": { "type": "int" }
+    }
+  },
+  "challengeVerdictWas": "was",
+  "challengeVerdictShouldBe": "should be",
+  "noAnalysesYet": "No analyses yet",
+  "filterNothingHere": "Nothing here",
+  "runAll": "Run all",
+  "runningLabel": "Running…",
+  "runSelectedCount": "Run {count}",
+  "@runSelectedCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "selectAllPending": "Select all pending",
+  "deselectAllPending": "Deselect all",
+  "unknownProduct": "Unknown product",
+  "adminAiRefetching": "Re-fetching AI ingredients for {barcode}…",
+  "@adminAiRefetching": {
+    "placeholders": {
+      "barcode": {
+        "type": "String"
+      }
+    }
+  },
+  "close": "Close",
+  "barcodeLabel": "Barcode",
+  "barcodeWithValue": "Barcode: {barcode}",
+  "@barcodeWithValue": {
+    "placeholders": {
+      "barcode": { "type": "String" }
+    }
+  },
+  "localDbDebugTitle": "Local DB — {barcode}",
+  "@localDbDebugTitle": {
+    "placeholders": {
+      "barcode": { "type": "String" }
+    }
+  },
+  "localDbDebugTooltip": "Local DB debug",
+  "debugCacheSection": "── SharedPreferences cache ──",
+  "debugRemoteDbSection": "── Remote DB (products table) ──",
+  "debugEmpty": "(empty)",
+  "debugNotFound": "(not found)",
+  "debugCacheCleared": "Cache cleared",
+  "debugClearCache": "Clear cache",
+  "showOriginal": "Original",
+  "copyIngredientsTooltip": "Copy ingredients",
+  "findIngredientsViaAi": "Find ingredients via AI",
+  "aiLookupPendingHint": "AI lookup requested — an admin will review and approve it shortly.",
+  "aiLookupRejectedHint": "The AI request was rejected by an admin.",
+  "aiLookupPromptHint": "Ask AI to search the web for this product's ingredient list.",
+  "requestViaAi": "Request via AI",
+  "requestAgain": "Request again"
 }

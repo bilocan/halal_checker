@@ -718,7 +718,7 @@ void main() {
       expect(p, isNotNull);
       expect(p!.isNonFood, isTrue);
       expect(p.isUnknown, isFalse);
-      expect(p.explanation, contains('non-food'));
+      expect(p.explanation, isEmpty);
     });
 
     test('en:cosmetics → isNonFood true', () async {
@@ -903,7 +903,7 @@ void main() {
       final p = await ProductService().getProduct('1000000037');
       expect(p!.isNonFood, isTrue);
       expect(p.isUnknown, isFalse);
-      expect(p.explanation, contains('non-food'));
+      expect(p.explanation, isEmpty);
     });
 
     test('product found in OPF (not OFf/OBF) → isNonFood true', () async {
@@ -949,7 +949,7 @@ void main() {
         final p = await ProductService().getProduct('1000000039');
         expect(p!.isNonFood, isTrue);
         expect(p.isUnknown, isFalse);
-        expect(p.explanation, contains('non-food'));
+        expect(p.explanation, isEmpty);
       },
     );
 

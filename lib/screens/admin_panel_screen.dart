@@ -1,19 +1,14 @@
-import 'dart:async';
-
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../app_colors.dart';
 import '../localization/app_localizations.dart';
+import '../localization/format_relative_time.dart';
 import '../models/product_analysis.dart';
 import '../services/analysis_service.dart';
-import '../services/cache_service.dart';
-import '../services/ai_ingredient_request_service.dart';
-import '../services/ingredient_contribution_service.dart';
-import '../services/ingredient_report_service.dart';
-import '../services/product_image_service.dart';
-import '../services/product_service.dart';
-import 'result_screen.dart';
+import 'admin/ai_approval_tab.dart';
+import 'admin/ingredient_contribution_tab.dart';
+import 'admin/ingredient_report_tab.dart';
+import 'admin/photo_approval_tab.dart';
 import 'rules_management_screen.dart';
 
 class AdminPanelScreen extends StatefulWidget {
@@ -34,34 +29,22 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
   bool _running = false;
   String _filter = 'all';
 
-  // ── photos tab ────────────────────────────────────────────────────────────
-  List<Map<String, dynamic>> _photos = [];
-  bool _photosLoading = false;
-  final Set<int> _processingPhotoIds = {};
+  // ── tab badge counts (updated by each tab via onCountChanged) ─────────────
+  int _photoBadge = 0;
+  int _contributionBadge = 0;
+  int _reportBadge = 0;
+  int _aiRequestBadge = 0;
 
-  // ── ingredients tab ───────────────────────────────────────────────────────
-  List<Map<String, dynamic>> _contributions = [];
-  bool _contributionsLoading = false;
-  final Set<int> _processingContributionIds = {};
-
-  // ── reports tab ───────────────────────────────────────────────────────────
-  List<Map<String, dynamic>> _reports = [];
-  bool _reportsLoading = false;
-  final Set<int> _processingReportIds = {};
-
-  // ── AI requests tab ───────────────────────────────────────────────────────
-  List<Map<String, dynamic>> _aiRequests = [];
-  bool _aiRequestsLoading = false;
-  final Set<int> _processingAiRequestIds = {};
+  // ── GlobalKeys for imperative refresh from AppBar ─────────────────────────
+  final _photosKey = GlobalKey<PhotoApprovalTabState>();
+  final _ingredientsKey = GlobalKey<IngredientContributionTabState>();
+  final _reportsKey = GlobalKey<IngredientReportTabState>();
+  final _aiRequestsKey = GlobalKey<AiApprovalTabState>();
 
   @override
   void initState() {
     super.initState();
     _load();
-    _loadPhotos();
-    _loadContributions();
-    _loadReports();
-    _loadAiRequests();
   }
 
   Future<void> _load() async {
@@ -77,173 +60,6 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
     });
   }
 
-  Future<void> _loadPhotos() async {
-    setState(() => _photosLoading = true);
-    final list = await ProductImageService.getSubmissions();
-    if (!mounted) return;
-    setState(() {
-      _photos = list;
-      _photosLoading = false;
-    });
-  }
-
-  Future<void> _reviewPhoto(int id, String status) async {
-    setState(() => _processingPhotoIds.add(id));
-    final ok = await ProductImageService.updateSubmissionStatus(id, status);
-    if (!mounted) return;
-    if (ok) {
-      setState(
-        () => _photos.removeWhere((p) => (p['id'] as num).toInt() == id),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to update — check Supabase logs')),
-      );
-    }
-    setState(() => _processingPhotoIds.remove(id));
-  }
-
-  Future<void> _loadContributions() async {
-    setState(() => _contributionsLoading = true);
-    final list = await IngredientContributionService.getContributions();
-    if (!mounted) return;
-    setState(() {
-      _contributions = list;
-      _contributionsLoading = false;
-    });
-  }
-
-  Future<void> _reviewContribution(int id, String status) async {
-    setState(() => _processingContributionIds.add(id));
-
-    // Get the barcode before updating (needed for re-analysis on approval)
-    final contribution = _contributions.firstWhere(
-      (c) => (c['id'] as num).toInt() == id,
-      orElse: () => <String, dynamic>{},
-    );
-    final barcode = contribution['barcode'] as String?;
-
-    final ok = await IngredientContributionService.updateStatus(id, status);
-    if (!mounted) return;
-    if (ok) {
-      setState(
-        () => _contributions.removeWhere((c) => (c['id'] as num).toInt() == id),
-      );
-
-      // Trigger rule-based re-analysis of the product when contribution is approved
-      if (status == 'approved' && barcode != null && barcode.isNotEmpty) {
-        debugPrint(
-          '[AdminPanel] Triggering rule-based re-analysis for barcode: $barcode '
-          'after ingredient contribution approval',
-        );
-        // Clear the local cache immediately to ensure the next lookup
-        // fetches the updated product from the remote database
-        unawaited(
-          CacheService().removeProduct(barcode).then((_) {
-            debugPrint('[AdminPanel] Cleared local cache for $barcode');
-          }),
-        );
-        // Also trigger a background refresh to pre-populate the cache
-        // with the updated product data
-        unawaited(
-          ProductService().refreshProduct(barcode).then((product) {
-            if (product != null) {
-              debugPrint(
-                '[AdminPanel] Rule-based re-analysis completed for $barcode: '
-                'isHalal=${product.isHalal}',
-              );
-            } else {
-              debugPrint(
-                '[AdminPanel] Rule-based re-analysis failed for $barcode',
-              );
-            }
-          }),
-        );
-      }
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to update — check Supabase logs')),
-      );
-    }
-    setState(() => _processingContributionIds.remove(id));
-  }
-
-  Future<void> _loadReports() async {
-    setState(() => _reportsLoading = true);
-    final list = await IngredientReportService.getReports();
-    if (!mounted) return;
-    setState(() {
-      _reports = list;
-      _reportsLoading = false;
-    });
-  }
-
-  Future<void> _loadAiRequests() async {
-    setState(() => _aiRequestsLoading = true);
-    final list = await AiIngredientRequestService.getPendingRequests();
-    if (!mounted) return;
-    setState(() {
-      _aiRequests = list;
-      _aiRequestsLoading = false;
-    });
-  }
-
-  Future<void> _reviewAiRequest(int id, String status) async {
-    setState(() => _processingAiRequestIds.add(id));
-
-    final request = _aiRequests.firstWhere(
-      (r) => (r['id'] as num).toInt() == id,
-      orElse: () => <String, dynamic>{},
-    );
-    final barcode = request['barcode'] as String?;
-
-    final ok = await AiIngredientRequestService.updateStatus(id, status);
-    if (!mounted) return;
-    if (ok) {
-      setState(
-        () => _aiRequests.removeWhere((r) => (r['id'] as num).toInt() == id),
-      );
-      if (status == 'approved' && barcode != null && barcode.isNotEmpty) {
-        unawaited(CacheService().removeProduct(barcode));
-        unawaited(
-          ProductService().fetchIngredientsByAI(barcode).then((product) {
-            if (product != null) {
-              debugPrint(
-                '[AdminPanel] AI ingredients fetched for $barcode: '
-                '${product.ingredients.length} ingredients',
-              );
-            } else {
-              debugPrint(
-                '[AdminPanel] AI ingredient fetch failed for $barcode',
-              );
-            }
-          }),
-        );
-      }
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to update — check Supabase logs')),
-      );
-    }
-    setState(() => _processingAiRequestIds.remove(id));
-  }
-
-  Future<void> _reviewReport(int id, String status) async {
-    setState(() => _processingReportIds.add(id));
-    final ok = await IngredientReportService.updateStatus(id, status);
-    if (!mounted) return;
-    if (ok) {
-      setState(
-        () => _reports.removeWhere((r) => (r['id'] as num).toInt() == id),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to update — check Supabase logs')),
-      );
-    }
-    setState(() => _processingReportIds.remove(id));
-  }
-
   Future<void> _run({List<String>? ids}) async {
     setState(() => _running = true);
     final result = ids != null
@@ -256,8 +72,8 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
     });
     if (result == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Batch request failed — check Supabase logs'),
+        SnackBar(
+          content: Text(AppLocalizations.of(context).adminBatchRequestFailed),
         ),
       );
       return;
@@ -269,12 +85,13 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
     for (final e in errorDetails) {
       debugPrint('[batch-analyze] ${e['barcode']}: ${e['reason']}');
     }
+    final loc = AppLocalizations.of(context);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
           errors > 0
-              ? 'Done: $done, skipped: $skipped, failed: $errors — see logs'
-              : 'Done: $done, skipped: $skipped',
+              ? loc.adminBatchDoneWithErrors(done, skipped, errors)
+              : loc.adminBatchDoneSummary(done, skipped),
         ),
         duration: const Duration(seconds: 5),
       ),
@@ -335,7 +152,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
               onPressed: _running ? null : () => _run(ids: _selected.toList()),
               icon: const Icon(Icons.play_arrow, color: Colors.white),
               label: Text(
-                'Run ${_selected.length}',
+                loc.runSelectedCount(_selected.length),
                 style: const TextStyle(color: Colors.white),
               ),
             ),
@@ -347,22 +164,22 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
           if (_tabIndex == 2)
             IconButton(
               icon: const Icon(Icons.refresh),
-              onPressed: _photosLoading ? null : _loadPhotos,
+              onPressed: () => _photosKey.currentState?.refresh(),
             ),
           if (_tabIndex == 3)
             IconButton(
               icon: const Icon(Icons.refresh),
-              onPressed: _contributionsLoading ? null : _loadContributions,
+              onPressed: () => _ingredientsKey.currentState?.refresh(),
             ),
           if (_tabIndex == 4)
             IconButton(
               icon: const Icon(Icons.refresh),
-              onPressed: _reportsLoading ? null : _loadReports,
+              onPressed: () => _reportsKey.currentState?.refresh(),
             ),
           if (_tabIndex == 5)
             IconButton(
               icon: const Icon(Icons.refresh),
-              onPressed: _aiRequestsLoading ? null : _loadAiRequests,
+              onPressed: () => _aiRequestsKey.currentState?.refresh(),
             ),
         ],
       ),
@@ -370,14 +187,29 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
         children: [
           _buildTabBar(loc),
           Expanded(
-            child: switch (_tabIndex) {
-              0 => _buildAnalysisBody(),
-              1 => const RulesManagementScreen(),
-              2 => _buildPhotosBody(loc),
-              3 => _buildIngredientsBody(loc),
-              4 => _buildReportsBody(loc),
-              _ => _buildAiRequestsBody(),
-            },
+            child: IndexedStack(
+              index: _tabIndex,
+              children: [
+                _buildAnalysisBody(),
+                const RulesManagementScreen(),
+                PhotoApprovalTab(
+                  key: _photosKey,
+                  onCountChanged: (n) => setState(() => _photoBadge = n),
+                ),
+                IngredientContributionTab(
+                  key: _ingredientsKey,
+                  onCountChanged: (n) => setState(() => _contributionBadge = n),
+                ),
+                IngredientReportTab(
+                  key: _reportsKey,
+                  onCountChanged: (n) => setState(() => _reportBadge = n),
+                ),
+                AiApprovalTab(
+                  key: _aiRequestsKey,
+                  onCountChanged: (n) => setState(() => _aiRequestBadge = n),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -408,7 +240,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
               label: loc.photosTab,
               icon: Icons.photo_library_outlined,
               index: 2,
-              badge: _photos.isNotEmpty ? _photos.length : null,
+              badge: _photoBadge > 0 ? _photoBadge : null,
             ),
           ),
           Expanded(
@@ -416,7 +248,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
               label: loc.ingredientsTab,
               icon: Icons.list_alt_outlined,
               index: 3,
-              badge: _contributions.isNotEmpty ? _contributions.length : null,
+              badge: _contributionBadge > 0 ? _contributionBadge : null,
             ),
           ),
           Expanded(
@@ -424,7 +256,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
               label: loc.reportsTab,
               icon: Icons.flag_outlined,
               index: 4,
-              badge: _reports.isNotEmpty ? _reports.length : null,
+              badge: _reportBadge > 0 ? _reportBadge : null,
             ),
           ),
           Expanded(
@@ -432,7 +264,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
               label: 'AI Req.',
               icon: Icons.auto_awesome_outlined,
               index: 5,
-              badge: _aiRequests.isNotEmpty ? _aiRequests.length : null,
+              badge: _aiRequestBadge > 0 ? _aiRequestBadge : null,
             ),
           ),
         ],
@@ -448,12 +280,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
   }) {
     final selected = _tabIndex == index;
     return InkWell(
-      onTap: () {
-        setState(() => _tabIndex = index);
-        if (index == 3) _loadContributions();
-        if (index == 4) _loadReports();
-        if (index == 5) _loadAiRequests();
-      },
+      onTap: () => setState(() => _tabIndex = index),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
@@ -485,7 +312,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            if (badge != null && badge > 0) ...[
+            if (badge != null) ...[
               const SizedBox(width: 4),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
@@ -564,7 +391,9 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
                 visualDensity: VisualDensity.compact,
               ),
               child: Text(
-                allPendingSelected ? 'Deselect all' : 'Select all pending',
+                allPendingSelected
+                    ? AppLocalizations.of(context).deselectAllPending
+                    : AppLocalizations.of(context).selectAllPending,
                 style: const TextStyle(fontSize: 12),
               ),
             ),
@@ -581,7 +410,11 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
                     ),
                   )
                 : const Icon(Icons.play_arrow),
-            label: Text(_running ? 'Running…' : 'Run all'),
+            label: Text(
+              _running
+                  ? AppLocalizations.of(context).runningLabel
+                  : AppLocalizations.of(context).runAll,
+            ),
             style: FilledButton.styleFrom(
               backgroundColor: kGreen,
               visualDensity: VisualDensity.compact,
@@ -593,15 +426,16 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
   }
 
   Widget _buildFilterRow() {
+    final loc = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
-          _filterChip('All', 'all'),
+          _filterChip(loc.filterAll, 'all'),
           const SizedBox(width: 8),
-          _filterChip('Pending', 'pending'),
+          _filterChip(loc.filterPending, 'pending'),
           const SizedBox(width: 8),
-          _filterChip('Done', 'done'),
+          _filterChip(loc.filterDone, 'done'),
         ],
       ),
     );
@@ -628,9 +462,10 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
 
     final items = _filtered;
     if (items.isEmpty) {
+      final loc = AppLocalizations.of(context);
       return Center(
         child: Text(
-          _filter == 'all' ? 'No analyses yet' : 'Nothing here',
+          _filter == 'all' ? loc.noAnalysesYet : loc.filterNothingHere,
           style: TextStyle(color: Colors.grey.shade500),
         ),
       );
@@ -655,193 +490,6 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
       ),
     );
   }
-
-  // ── photos tab ────────────────────────────────────────────────────────────
-
-  Widget _buildPhotosBody(AppLocalizations loc) {
-    if (_photosLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-    if (_photos.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.check_circle_outline,
-              size: 56,
-              color: Colors.grey.shade400,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'No pending photo submissions',
-              style: TextStyle(color: Colors.grey.shade500),
-            ),
-          ],
-        ),
-      );
-    }
-    return RefreshIndicator(
-      onRefresh: _loadPhotos,
-      child: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: _photos.length,
-        itemBuilder: (_, i) {
-          final row = _photos[i];
-          final id = (row['id'] as num).toInt();
-          return _PhotoSubmissionCard(
-            row: row,
-            isProcessing: _processingPhotoIds.contains(id),
-            onApprove: () => _reviewPhoto(id, 'approved'),
-            onReject: () => _reviewPhoto(id, 'rejected'),
-          );
-        },
-      ),
-    );
-  }
-
-  // ── reports tab ───────────────────────────────────────────────────────────
-
-  Widget _buildReportsBody(AppLocalizations loc) {
-    if (_reportsLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-    if (_reports.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.check_circle_outline,
-              size: 56,
-              color: Colors.grey.shade400,
-            ),
-            const SizedBox(height: 12),
-            Text(loc.noReports, style: TextStyle(color: Colors.grey.shade500)),
-          ],
-        ),
-      );
-    }
-    return RefreshIndicator(
-      onRefresh: _loadReports,
-      child: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: _reports.length,
-        itemBuilder: (_, i) {
-          final row = _reports[i];
-          final id = (row['id'] as num).toInt();
-          return _IngredientReportCard(
-            row: row,
-            isProcessing: _processingReportIds.contains(id),
-            onResolve: () => _reviewReport(id, 'resolved'),
-            onDismiss: () => _reviewReport(id, 'dismissed'),
-            onOpenProduct: () => Navigator.push(
-              context,
-              MaterialPageRoute<void>(
-                builder: (_) => ResultScreen(
-                  product: null,
-                  barcode: row['barcode'] as String,
-                  adminReportedIngredients: List<String>.from(
-                    row['reported_ingredients'] as List,
-                  ),
-                  adminReportExplanation: row['explanation'] as String?,
-                ),
-              ),
-            ),
-            loc: loc,
-          );
-        },
-      ),
-    );
-  }
-
-  // ── AI requests tab ───────────────────────────────────────────────────────
-
-  Widget _buildAiRequestsBody() {
-    if (_aiRequestsLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-    if (_aiRequests.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.check_circle_outline,
-              size: 56,
-              color: Colors.grey.shade400,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'No pending AI ingredient requests',
-              style: TextStyle(color: Colors.grey.shade500),
-            ),
-          ],
-        ),
-      );
-    }
-    return RefreshIndicator(
-      onRefresh: _loadAiRequests,
-      child: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: _aiRequests.length,
-        itemBuilder: (_, i) {
-          final row = _aiRequests[i];
-          final id = (row['id'] as num).toInt();
-          return _AiRequestCard(
-            row: row,
-            isProcessing: _processingAiRequestIds.contains(id),
-            onApprove: () => _reviewAiRequest(id, 'approved'),
-            onReject: () => _reviewAiRequest(id, 'rejected'),
-          );
-        },
-      ),
-    );
-  }
-
-  // ── ingredients tab ───────────────────────────────────────────────────────
-
-  Widget _buildIngredientsBody(AppLocalizations loc) {
-    if (_contributionsLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-    if (_contributions.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.check_circle_outline,
-              size: 56,
-              color: Colors.grey.shade400,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'No pending ingredient contributions',
-              style: TextStyle(color: Colors.grey.shade500),
-            ),
-          ],
-        ),
-      );
-    }
-    return RefreshIndicator(
-      onRefresh: _loadContributions,
-      child: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: _contributions.length,
-        itemBuilder: (_, i) {
-          final row = _contributions[i];
-          final id = (row['id'] as num).toInt();
-          return _ContributionCard(
-            row: row,
-            isProcessing: _processingContributionIds.contains(id),
-            onApprove: () => _reviewContribution(id, 'approved'),
-            onReject: () => _reviewContribution(id, 'rejected'),
-          );
-        },
-      ),
-    );
-  }
 }
 
 // ── analysis row ─────────────────────────────────────────────────────────────
@@ -861,9 +509,10 @@ class _AnalysisRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context);
     final status = AnalysisStatus.fromString(row['status'] as String? ?? '');
     final productName =
-        (row['products'] as Map?)?['name'] as String? ?? 'Unknown product';
+        (row['products'] as Map?)?['name'] as String? ?? loc.unknownProduct;
     final barcode = row['barcode'] as String? ?? '';
     final createdAt = DateTime.tryParse(row['created_at'] as String? ?? '');
 
@@ -925,7 +574,7 @@ class _AnalysisRow extends StatelessWidget {
                     if (createdAt != null) ...[
                       const SizedBox(height: 2),
                       Text(
-                        _formatAge(createdAt),
+                        formatRelativeTime(loc, createdAt),
                         style: TextStyle(
                           fontSize: 11,
                           color: Colors.grey.shade500,
@@ -960,746 +609,5 @@ class _AnalysisRow extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  String _formatAge(DateTime d) {
-    final diff = DateTime.now().difference(d);
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
-    if (diff.inHours < 24) return '${diff.inHours}h ago';
-    return '${diff.inDays}d ago';
-  }
-}
-
-// ── photo submission card ─────────────────────────────────────────────────────
-
-class _PhotoSubmissionCard extends StatelessWidget {
-  final Map<String, dynamic> row;
-  final bool isProcessing;
-  final VoidCallback onApprove;
-  final VoidCallback onReject;
-
-  const _PhotoSubmissionCard({
-    required this.row,
-    required this.isProcessing,
-    required this.onApprove,
-    required this.onReject,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final barcode = row['barcode'] as String? ?? '';
-    final productName = row['product_name'] as String? ?? barcode;
-    final imageType = row['image_type'] as String? ?? 'front';
-    final submittedUrl = row['public_url'] as String? ?? '';
-    final currentUrl = row['current_image_url'] as String?;
-    final hasReplacement = currentUrl != null && currentUrl.isNotEmpty;
-    final createdAt = DateTime.tryParse(row['created_at'] as String? ?? '');
-
-    final typeColor = switch (imageType) {
-      'ingredients' => Colors.orange.shade700,
-      'nutrition' => Colors.purple.shade700,
-      _ => Colors.blue.shade700,
-    };
-    final typeBg = switch (imageType) {
-      'ingredients' => Colors.orange.shade50,
-      'nutrition' => Colors.purple.shade50,
-      _ => Colors.blue.shade50,
-    };
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Image comparison: old on left, new on right (or just new if no old)
-          if (hasReplacement)
-            IntrinsicHeight(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Expanded(
-                    child: _imagePanel(
-                      context,
-                      currentUrl,
-                      'Current',
-                      Colors.grey.shade700,
-                    ),
-                  ),
-                  Container(width: 1, color: Colors.grey.shade300),
-                  Expanded(
-                    child: _imagePanel(
-                      context,
-                      submittedUrl,
-                      'New',
-                      Colors.green.shade700,
-                    ),
-                  ),
-                ],
-              ),
-            )
-          else if (submittedUrl.isNotEmpty)
-            GestureDetector(
-              onTap: () => _showFullscreen(context, submittedUrl),
-              child: CachedNetworkImage(
-                imageUrl: submittedUrl,
-                height: 220,
-                width: double.infinity,
-                fit: BoxFit.contain,
-                placeholder: (_, _) => const SizedBox(
-                  height: 220,
-                  child: Center(child: CircularProgressIndicator()),
-                ),
-                errorWidget: (_, _, _) => const SizedBox(
-                  height: 100,
-                  child: Center(
-                    child: Icon(
-                      Icons.broken_image,
-                      size: 48,
-                      color: Colors.grey,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: typeBg,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: typeColor.withValues(alpha: 0.4),
-                        ),
-                      ),
-                      child: Text(
-                        imageType,
-                        style: TextStyle(
-                          color: typeColor,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                    if (hasReplacement) ...[
-                      const SizedBox(width: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.amber.shade50,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.amber.shade400),
-                        ),
-                        child: Text(
-                          'replacement',
-                          style: TextStyle(
-                            color: Colors.amber.shade800,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
-                    if (createdAt != null) ...[
-                      const SizedBox(width: 8),
-                      Text(
-                        _formatAge(createdAt),
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Colors.grey.shade500,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  productName,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  barcode,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey.shade600,
-                    fontFamily: 'monospace',
-                  ),
-                ),
-                const SizedBox(height: 10),
-                if (isProcessing)
-                  const Center(
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(vertical: 4),
-                      child: CircularProgressIndicator(),
-                    ),
-                  )
-                else
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: onReject,
-                          icon: const Icon(Icons.close, size: 16),
-                          label: const Text('Reject'),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: Colors.red.shade700,
-                            side: BorderSide(color: Colors.red.shade300),
-                            visualDensity: VisualDensity.compact,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: FilledButton.icon(
-                          onPressed: onApprove,
-                          icon: const Icon(Icons.check, size: 16),
-                          label: const Text('Approve'),
-                          style: FilledButton.styleFrom(
-                            backgroundColor: kGreen,
-                            visualDensity: VisualDensity.compact,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  static void _showFullscreen(BuildContext context, String url) {
-    showDialog<void>(
-      context: context,
-      barrierColor: Colors.black87,
-      builder: (ctx) => Dialog.fullscreen(
-        backgroundColor: Colors.black,
-        child: Stack(
-          children: [
-            Center(
-              child: InteractiveViewer(
-                minScale: 0.5,
-                maxScale: 6.0,
-                child: CachedNetworkImage(
-                  imageUrl: url,
-                  fit: BoxFit.contain,
-                  placeholder: (_, _) =>
-                      const Center(child: CircularProgressIndicator()),
-                  errorWidget: (_, _, _) => const Icon(
-                    Icons.broken_image,
-                    size: 64,
-                    color: Colors.white38,
-                  ),
-                ),
-              ),
-            ),
-            Positioned(
-              top: 40,
-              right: 12,
-              child: SafeArea(
-                child: IconButton(
-                  style: IconButton.styleFrom(backgroundColor: Colors.black54),
-                  icon: const Icon(Icons.close, color: Colors.white, size: 24),
-                  onPressed: () => Navigator.pop(ctx),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _imagePanel(
-    BuildContext context,
-    String url,
-    String label,
-    Color labelColor,
-  ) {
-    return GestureDetector(
-      onTap: () => _showFullscreen(context, url),
-      child: Stack(
-        children: [
-          CachedNetworkImage(
-            imageUrl: url,
-            height: 200,
-            width: double.infinity,
-            fit: BoxFit.contain,
-            placeholder: (_, _) => const SizedBox(
-              height: 200,
-              child: Center(child: CircularProgressIndicator()),
-            ),
-            errorWidget: (_, _, _) => const SizedBox(
-              height: 120,
-              child: Center(
-                child: Icon(Icons.broken_image, size: 36, color: Colors.grey),
-              ),
-            ),
-          ),
-          Positioned(
-            top: 6,
-            left: 6,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: Colors.black54,
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Text(
-                label,
-                style: TextStyle(
-                  color: labelColor == Colors.green.shade700
-                      ? Colors.greenAccent
-                      : Colors.white70,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ),
-          const Positioned(
-            bottom: 6,
-            right: 6,
-            child: Icon(Icons.zoom_in, color: Colors.white54, size: 18),
-          ),
-        ],
-      ),
-    );
-  }
-
-  String _formatAge(DateTime d) {
-    final diff = DateTime.now().difference(d);
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
-    if (diff.inHours < 24) return '${diff.inHours}h ago';
-    return '${diff.inDays}d ago';
-  }
-}
-
-// ── ingredient contribution card ─────────────────────────────────────────────
-
-class _ContributionCard extends StatelessWidget {
-  final Map<String, dynamic> row;
-  final bool isProcessing;
-  final VoidCallback onApprove;
-  final VoidCallback onReject;
-
-  const _ContributionCard({
-    required this.row,
-    required this.isProcessing,
-    required this.onApprove,
-    required this.onReject,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final barcode = row['barcode'] as String? ?? '';
-    final productName =
-        (row['products'] as Map?)?['name'] as String? ?? barcode;
-    final ingredientText = row['ingredient_text'] as String? ?? '';
-    final createdAt = DateTime.tryParse(row['created_at'] as String? ?? '');
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    productName,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                if (createdAt != null)
-                  Text(
-                    _formatAge(createdAt),
-                    style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 2),
-            Text(
-              barcode,
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey.shade600,
-                fontFamily: 'monospace',
-              ),
-            ),
-            const SizedBox(height: 8),
-            Container(
-              width: double.infinity,
-              constraints: const BoxConstraints(maxHeight: 120),
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey.shade300),
-              ),
-              child: SingleChildScrollView(
-                child: Text(
-                  ingredientText,
-                  style: const TextStyle(fontSize: 12),
-                ),
-              ),
-            ),
-            const SizedBox(height: 10),
-            if (isProcessing)
-              const Center(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(vertical: 4),
-                  child: CircularProgressIndicator(),
-                ),
-              )
-            else
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: onReject,
-                      icon: const Icon(Icons.close, size: 16),
-                      label: const Text('Reject'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.red.shade700,
-                        side: BorderSide(color: Colors.red.shade300),
-                        visualDensity: VisualDensity.compact,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: FilledButton.icon(
-                      onPressed: onApprove,
-                      icon: const Icon(Icons.check, size: 16),
-                      label: const Text('Approve'),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: kGreen,
-                        visualDensity: VisualDensity.compact,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  String _formatAge(DateTime d) {
-    final diff = DateTime.now().difference(d);
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
-    if (diff.inHours < 24) return '${diff.inHours}h ago';
-    return '${diff.inDays}d ago';
-  }
-}
-
-// ── ingredient report card ────────────────────────────────────────────────────
-
-class _IngredientReportCard extends StatelessWidget {
-  final Map<String, dynamic> row;
-  final bool isProcessing;
-  final VoidCallback onResolve;
-  final VoidCallback onDismiss;
-  final VoidCallback onOpenProduct;
-  final AppLocalizations loc;
-
-  const _IngredientReportCard({
-    required this.row,
-    required this.isProcessing,
-    required this.onResolve,
-    required this.onDismiss,
-    required this.onOpenProduct,
-    required this.loc,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final barcode = row['barcode'] as String? ?? '';
-    final productName = row['product_name'] as String? ?? barcode;
-    final reported = List<String>.from(
-      row['reported_ingredients'] as List? ?? [],
-    );
-    final explanation = row['explanation'] as String?;
-    final createdAt = DateTime.tryParse(row['created_at'] as String? ?? '');
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    productName,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                if (createdAt != null)
-                  Text(
-                    _formatAge(createdAt),
-                    style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 2),
-            Text(
-              barcode,
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey.shade600,
-                fontFamily: 'monospace',
-              ),
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 6,
-              runSpacing: 4,
-              children: reported
-                  .map(
-                    (ing) => Chip(
-                      label: Text(ing, style: const TextStyle(fontSize: 11)),
-                      backgroundColor: Colors.orange.shade50,
-                      side: BorderSide(color: Colors.orange.shade300),
-                      padding: EdgeInsets.zero,
-                      labelPadding: const EdgeInsets.symmetric(horizontal: 6),
-                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      visualDensity: VisualDensity.compact,
-                    ),
-                  )
-                  .toList(),
-            ),
-            if (explanation != null && explanation.isNotEmpty) ...[
-              const SizedBox(height: 6),
-              Text(
-                explanation,
-                style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
-              ),
-            ],
-            const SizedBox(height: 10),
-            if (isProcessing)
-              const Center(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(vertical: 4),
-                  child: CircularProgressIndicator(),
-                ),
-              )
-            else
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: onDismiss,
-                      icon: const Icon(Icons.close, size: 16),
-                      label: Text(loc.dismissReport),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.red.shade700,
-                        side: BorderSide(color: Colors.red.shade300),
-                        visualDensity: VisualDensity.compact,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: onOpenProduct,
-                      icon: const Icon(Icons.open_in_new, size: 16),
-                      label: Text(loc.openProduct),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: kGreen,
-                        side: const BorderSide(color: kGreen),
-                        visualDensity: VisualDensity.compact,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: FilledButton.icon(
-                      onPressed: onResolve,
-                      icon: const Icon(Icons.check, size: 16),
-                      label: Text(loc.resolveReport),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: kGreen,
-                        visualDensity: VisualDensity.compact,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  String _formatAge(DateTime d) {
-    final diff = DateTime.now().difference(d);
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
-    if (diff.inHours < 24) return '${diff.inHours}h ago';
-    return '${diff.inDays}d ago';
-  }
-}
-
-// ── AI request card ───────────────────────────────────────────────────────────
-
-class _AiRequestCard extends StatelessWidget {
-  final Map<String, dynamic> row;
-  final bool isProcessing;
-  final VoidCallback onApprove;
-  final VoidCallback onReject;
-
-  const _AiRequestCard({
-    required this.row,
-    required this.isProcessing,
-    required this.onApprove,
-    required this.onReject,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final barcode = row['barcode'] as String? ?? '';
-    final productName = row['product_name'] as String? ?? barcode;
-    final createdAt = DateTime.tryParse(row['created_at'] as String? ?? '');
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(
-                  Icons.auto_awesome,
-                  size: 16,
-                  color: Color(0xFF7C3AED),
-                ),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Text(
-                    productName,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                if (createdAt != null)
-                  Text(
-                    _formatAge(createdAt),
-                    style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 2),
-            Text(
-              barcode,
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey.shade600,
-                fontFamily: 'monospace',
-              ),
-            ),
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF5F3FF),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFFDDD6FE)),
-              ),
-              child: const Text(
-                'Approve to trigger AI ingredient lookup via Gemini/Claude. '
-                'The product will be updated automatically.',
-                style: TextStyle(fontSize: 12, color: Color(0xFF5B21B6)),
-              ),
-            ),
-            const SizedBox(height: 10),
-            if (isProcessing)
-              const Center(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(vertical: 4),
-                  child: CircularProgressIndicator(),
-                ),
-              )
-            else
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: onReject,
-                      icon: const Icon(Icons.close, size: 16),
-                      label: const Text('Reject'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.red.shade700,
-                        side: BorderSide(color: Colors.red.shade300),
-                        visualDensity: VisualDensity.compact,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: FilledButton.icon(
-                      onPressed: onApprove,
-                      icon: const Icon(Icons.auto_awesome, size: 16),
-                      label: const Text('Approve & Fetch'),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: const Color(0xFF7C3AED),
-                        visualDensity: VisualDensity.compact,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  String _formatAge(DateTime d) {
-    final diff = DateTime.now().difference(d);
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
-    if (diff.inHours < 24) return '${diff.inHours}h ago';
-    return '${diff.inDays}d ago';
   }
 }

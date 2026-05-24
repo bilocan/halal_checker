@@ -11,15 +11,14 @@ import '../services/ocr_service.dart';
 import '../services/product_service.dart';
 import 'result_screen.dart';
 
-class IngredientsCameraScreen extends StatefulWidget {
-  const IngredientsCameraScreen({super.key});
+class IngredientOcrScreen extends StatefulWidget {
+  const IngredientOcrScreen({super.key});
 
   @override
-  State<IngredientsCameraScreen> createState() =>
-      _IngredientsCameraScreenState();
+  State<IngredientOcrScreen> createState() => _IngredientOcrScreenState();
 }
 
-class _IngredientsCameraScreenState extends State<IngredientsCameraScreen> {
+class _IngredientOcrScreenState extends State<IngredientOcrScreen> {
   bool _isProcessing = false;
 
   @override

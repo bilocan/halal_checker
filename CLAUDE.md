@@ -10,8 +10,10 @@ Requires `dart_defines.json` in the project root (copy from `dart_defines.exampl
 
 ## Running tests
 
+Full guide: [TESTING.md](TESTING.md) (CI, integration, UI E2E, OCR).
+
 ```bash
-flutter test test/services/
+flutter test test/services/ test/constants/ test/models/ test/config_test.dart
 ```
 
 ## Architecture
@@ -31,6 +33,7 @@ flutter test test/services/
 **Backend:**
 - Supabase Edge Function at `supabase/functions/lookup-product/` handles OpenFoodFacts fetching, Claude AI analysis, and shared caching
 - Claude API key lives as a Supabase secret (`CLAUDE_API_KEY`) — never in the app
+- Gemini (`GEMINI_API_KEY`, optional `GEMINI_ENABLED`) powers web-grounded ingredient lookup when Open Food Facts has no list, and tier-1 halal analysis
 
 ## Halal analysis layers
 

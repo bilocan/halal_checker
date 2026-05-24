@@ -851,4 +851,291 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get dismissReport => 'Reddet';
+
+  @override
+  String get signInRequired => 'Giriş gerekli';
+
+  @override
+  String get signInRequiredMessage =>
+      'Geri bildirim veya öneri göndermek için giriş yapmalısınız.';
+
+  @override
+  String get signInWithGoogle => 'Google ile giriş yap';
+
+  @override
+  String get batchImport => 'Toplu İçe Aktarma';
+
+  @override
+  String get adminUpdateFailed =>
+      'Güncellenemedi — Supabase günlüklerini kontrol edin';
+
+  @override
+  String get adminAiRequestsLoadFailed =>
+      'Yapay zeka istekleri yüklenemedi — bağlantıyı kontrol edin';
+
+  @override
+  String get aiRequestSubmitFailed => 'Yapay zeka isteği gönderilemedi.';
+
+  @override
+  String get aiRequestSubmitted =>
+      'Yapay zeka isteği gönderildi — yönetici incelemesi bekleniyor.';
+
+  @override
+  String get aiRequestAlreadyPending =>
+      'Bu ürün için zaten bekleyen bir yapay zeka isteği var.';
+
+  @override
+  String labelCopied(String label) {
+    return '$label kopyalandı';
+  }
+
+  @override
+  String get replacePhoto => 'Değiştir';
+
+  @override
+  String get batchImportAccessDenied =>
+      'Erişim reddedildi: yalnızca süper yönetici';
+
+  @override
+  String get batchImportNoBarcodes => 'Dosyada geçerli barkod bulunamadı';
+
+  @override
+  String get signInToComment => 'Yorum yapmak için giriş yapın.';
+
+  @override
+  String get discussionFallbackTitle => 'Tartışma';
+
+  @override
+  String get noCommentsYet => 'Henüz yorum yok. İlk siz yazın!';
+
+  @override
+  String replyingTo(String username) {
+    return '$username kullanıcısına yanıt';
+  }
+
+  @override
+  String get writeCommentHint => 'Yorum yazın…';
+
+  @override
+  String get reply => 'Yanıtla';
+
+  @override
+  String get failedStartDiscussion =>
+      'Tartışma başlatılamadı. Lütfen tekrar deneyin.';
+
+  @override
+  String get startDiscussionTitle => 'Tartışma Başlat';
+
+  @override
+  String get topicOptionalLabel => 'Konu (isteğe bağlı)';
+
+  @override
+  String get topicOptionalHint => 'örn. Jelatin kaynağı belirtilmiş mi?';
+
+  @override
+  String get startDiscussionButton => 'Tartışmayı Başlat';
+
+  @override
+  String get linkedToChallenge => 'İtiraza bağlı';
+
+  @override
+  String get locked => 'Kilitli';
+
+  @override
+  String get anonymous => 'Anonim';
+
+  @override
+  String get noChallengesYet => 'Henüz içerik itirazı yok.';
+
+  @override
+  String get noChallengesHint =>
+      'Kararı itiraz etmek için Derin Analiz\'de bir içeriğe dokunun.';
+
+  @override
+  String challengeBy(String username) {
+    return '$username tarafından';
+  }
+
+  @override
+  String get commentDeleted => '[silindi]';
+
+  @override
+  String get couldNotPostComment =>
+      'Yorumunuz gönderilemedi. Lütfen tekrar deneyin.';
+
+  @override
+  String get timeJustNow => 'az önce';
+
+  @override
+  String timeMinutesAgo(int count) {
+    return '$count dk önce';
+  }
+
+  @override
+  String timeHoursAgo(int count) {
+    return '$count sa önce';
+  }
+
+  @override
+  String timeDaysAgo(int count) {
+    return '$count gün önce';
+  }
+
+  @override
+  String get aiApprovalHint =>
+      'Gemini/Claude ile yapay zeka içerik aramasını başlatmak için onaylayın. Ürün otomatik güncellenir.';
+
+  @override
+  String get refetchAiIngredients => 'Yapay zeka içeriklerini yeniden al';
+
+  @override
+  String get approveAndFetch => 'Onayla ve al';
+
+  @override
+  String get photoReplacement => 'değiştirme';
+
+  @override
+  String get photoCurrentLabel => 'Mevcut';
+
+  @override
+  String get photoNewLabel => 'Yeni';
+
+  @override
+  String get noPendingPhotoSubmissions => 'Bekleyen fotoğraf gönderimi yok';
+
+  @override
+  String get noPendingIngredientContributions => 'Bekleyen içerik katkısı yok';
+
+  @override
+  String get filterPending => 'Bekleyen';
+
+  @override
+  String get filterApproved => 'Onaylandı';
+
+  @override
+  String get filterAll => 'Tümü';
+
+  @override
+  String get filterDone => 'Tamamlandı';
+
+  @override
+  String get noPendingAiRequests => 'Bekleyen yapay zeka içerik isteği yok';
+
+  @override
+  String get noApprovedAiRequests => 'Onaylanmış yapay zeka içerik isteği yok';
+
+  @override
+  String get adminBatchRequestFailed =>
+      'Toplu istek başarısız — Supabase günlüklerini kontrol edin';
+
+  @override
+  String adminBatchDoneSummary(int done, int skipped) {
+    return 'Tamam: $done, atlandı: $skipped';
+  }
+
+  @override
+  String adminBatchDoneWithErrors(int done, int skipped, int errors) {
+    return 'Tamam: $done, atlandı: $skipped, başarısız: $errors — günlüklere bakın';
+  }
+
+  @override
+  String get challengeVerdictWas => 'önce';
+
+  @override
+  String get challengeVerdictShouldBe => 'olmalı';
+
+  @override
+  String get noAnalysesYet => 'Henüz analiz yok';
+
+  @override
+  String get filterNothingHere => 'Burada bir şey yok';
+
+  @override
+  String get runAll => 'Tümünü çalıştır';
+
+  @override
+  String get runningLabel => 'Çalışıyor…';
+
+  @override
+  String runSelectedCount(int count) {
+    return '$count çalıştır';
+  }
+
+  @override
+  String get selectAllPending => 'Bekleyenlerin tümünü seç';
+
+  @override
+  String get deselectAllPending => 'Tümünün seçimini kaldır';
+
+  @override
+  String get unknownProduct => 'Bilinmeyen ürün';
+
+  @override
+  String adminAiRefetching(String barcode) {
+    return '$barcode için yapay zeka içerikleri yeniden alınıyor…';
+  }
+
+  @override
+  String get close => 'Kapat';
+
+  @override
+  String get barcodeLabel => 'Barkod';
+
+  @override
+  String barcodeWithValue(String barcode) {
+    return 'Barkod: $barcode';
+  }
+
+  @override
+  String localDbDebugTitle(String barcode) {
+    return 'Yerel DB — $barcode';
+  }
+
+  @override
+  String get localDbDebugTooltip => 'Yerel DB hata ayıklama';
+
+  @override
+  String get debugCacheSection => '── SharedPreferences önbelleği ──';
+
+  @override
+  String get debugRemoteDbSection => '── Uzak DB (products tablosu) ──';
+
+  @override
+  String get debugEmpty => '(boş)';
+
+  @override
+  String get debugNotFound => '(bulunamadı)';
+
+  @override
+  String get debugCacheCleared => 'Önbellek temizlendi';
+
+  @override
+  String get debugClearCache => 'Önbelleği temizle';
+
+  @override
+  String get showOriginal => 'Orijinal';
+
+  @override
+  String get copyIngredientsTooltip => 'İçerikleri kopyala';
+
+  @override
+  String get findIngredientsViaAi => 'Yapay zeka ile içerik bul';
+
+  @override
+  String get aiLookupPendingHint =>
+      'Yapay zeka araması istendi — bir yönetici kısa süre içinde inceleyip onaylayacak.';
+
+  @override
+  String get aiLookupRejectedHint =>
+      'Yapay zeka isteği bir yönetici tarafından reddedildi.';
+
+  @override
+  String get aiLookupPromptHint =>
+      'Yapay zekadan bu ürünün içerik listesini webde aramasını isteyin.';
+
+  @override
+  String get requestViaAi => 'Yapay zeka ile iste';
+
+  @override
+  String get requestAgain => 'Tekrar iste';
 }

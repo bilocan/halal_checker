@@ -1677,6 +1677,504 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Dismiss'**
   String get dismissReport;
+
+  /// No description provided for @signInRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in required'**
+  String get signInRequired;
+
+  /// No description provided for @signInRequiredMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'You need to be signed in to submit feedback or suggestions.'**
+  String get signInRequiredMessage;
+
+  /// No description provided for @signInWithGoogle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with Google'**
+  String get signInWithGoogle;
+
+  /// No description provided for @batchImport.
+  ///
+  /// In en, this message translates to:
+  /// **'Batch Import'**
+  String get batchImport;
+
+  /// No description provided for @adminUpdateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to update — check Supabase logs'**
+  String get adminUpdateFailed;
+
+  /// No description provided for @adminAiRequestsLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load AI requests — check connection'**
+  String get adminAiRequestsLoadFailed;
+
+  /// No description provided for @aiRequestSubmitFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to submit AI request.'**
+  String get aiRequestSubmitFailed;
+
+  /// No description provided for @aiRequestSubmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'AI request submitted — pending admin review.'**
+  String get aiRequestSubmitted;
+
+  /// No description provided for @aiRequestAlreadyPending.
+  ///
+  /// In en, this message translates to:
+  /// **'An AI request for this product is already pending.'**
+  String get aiRequestAlreadyPending;
+
+  /// No description provided for @labelCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'{label} copied'**
+  String labelCopied(String label);
+
+  /// No description provided for @replacePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace'**
+  String get replacePhoto;
+
+  /// No description provided for @batchImportAccessDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Access denied: superadmin only'**
+  String get batchImportAccessDenied;
+
+  /// No description provided for @batchImportNoBarcodes.
+  ///
+  /// In en, this message translates to:
+  /// **'No valid barcodes found in file'**
+  String get batchImportNoBarcodes;
+
+  /// No description provided for @signInToComment.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to comment.'**
+  String get signInToComment;
+
+  /// No description provided for @discussionFallbackTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Discussion'**
+  String get discussionFallbackTitle;
+
+  /// No description provided for @noCommentsYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No comments yet. Be the first!'**
+  String get noCommentsYet;
+
+  /// No description provided for @replyingTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Replying to {username}'**
+  String replyingTo(String username);
+
+  /// No description provided for @writeCommentHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Write a comment…'**
+  String get writeCommentHint;
+
+  /// No description provided for @reply.
+  ///
+  /// In en, this message translates to:
+  /// **'Reply'**
+  String get reply;
+
+  /// No description provided for @failedStartDiscussion.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to start discussion. Try again.'**
+  String get failedStartDiscussion;
+
+  /// No description provided for @startDiscussionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Start a Discussion'**
+  String get startDiscussionTitle;
+
+  /// No description provided for @topicOptionalLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Topic (optional)'**
+  String get topicOptionalLabel;
+
+  /// No description provided for @topicOptionalHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Is the gelatin source specified?'**
+  String get topicOptionalHint;
+
+  /// No description provided for @startDiscussionButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Start Discussion'**
+  String get startDiscussionButton;
+
+  /// No description provided for @linkedToChallenge.
+  ///
+  /// In en, this message translates to:
+  /// **'Linked to challenge'**
+  String get linkedToChallenge;
+
+  /// No description provided for @locked.
+  ///
+  /// In en, this message translates to:
+  /// **'Locked'**
+  String get locked;
+
+  /// No description provided for @anonymous.
+  ///
+  /// In en, this message translates to:
+  /// **'Anonymous'**
+  String get anonymous;
+
+  /// No description provided for @noChallengesYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No ingredient challenges yet.'**
+  String get noChallengesYet;
+
+  /// No description provided for @noChallengesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap an ingredient in Deep Analysis to challenge its verdict.'**
+  String get noChallengesHint;
+
+  /// No description provided for @challengeBy.
+  ///
+  /// In en, this message translates to:
+  /// **'by {username}'**
+  String challengeBy(String username);
+
+  /// No description provided for @commentDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'[deleted]'**
+  String get commentDeleted;
+
+  /// No description provided for @couldNotPostComment.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t post your comment. Please try again.'**
+  String get couldNotPostComment;
+
+  /// No description provided for @timeJustNow.
+  ///
+  /// In en, this message translates to:
+  /// **'just now'**
+  String get timeJustNow;
+
+  /// No description provided for @timeMinutesAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}m ago'**
+  String timeMinutesAgo(int count);
+
+  /// No description provided for @timeHoursAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}h ago'**
+  String timeHoursAgo(int count);
+
+  /// No description provided for @timeDaysAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}d ago'**
+  String timeDaysAgo(int count);
+
+  /// No description provided for @aiApprovalHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve to trigger AI ingredient lookup via Gemini/Claude. The product will be updated automatically.'**
+  String get aiApprovalHint;
+
+  /// No description provided for @refetchAiIngredients.
+  ///
+  /// In en, this message translates to:
+  /// **'Re-fetch AI Ingredients'**
+  String get refetchAiIngredients;
+
+  /// No description provided for @approveAndFetch.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve & Fetch'**
+  String get approveAndFetch;
+
+  /// No description provided for @photoReplacement.
+  ///
+  /// In en, this message translates to:
+  /// **'replacement'**
+  String get photoReplacement;
+
+  /// No description provided for @photoCurrentLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Current'**
+  String get photoCurrentLabel;
+
+  /// No description provided for @photoNewLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'New'**
+  String get photoNewLabel;
+
+  /// No description provided for @noPendingPhotoSubmissions.
+  ///
+  /// In en, this message translates to:
+  /// **'No pending photo submissions'**
+  String get noPendingPhotoSubmissions;
+
+  /// No description provided for @noPendingIngredientContributions.
+  ///
+  /// In en, this message translates to:
+  /// **'No pending ingredient contributions'**
+  String get noPendingIngredientContributions;
+
+  /// No description provided for @filterPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get filterPending;
+
+  /// No description provided for @filterApproved.
+  ///
+  /// In en, this message translates to:
+  /// **'Approved'**
+  String get filterApproved;
+
+  /// No description provided for @filterAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get filterAll;
+
+  /// No description provided for @filterDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get filterDone;
+
+  /// No description provided for @noPendingAiRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'No pending AI ingredient requests'**
+  String get noPendingAiRequests;
+
+  /// No description provided for @noApprovedAiRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'No approved AI ingredient requests'**
+  String get noApprovedAiRequests;
+
+  /// No description provided for @adminBatchRequestFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Batch request failed — check Supabase logs'**
+  String get adminBatchRequestFailed;
+
+  /// No description provided for @adminBatchDoneSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Done: {done}, skipped: {skipped}'**
+  String adminBatchDoneSummary(int done, int skipped);
+
+  /// No description provided for @adminBatchDoneWithErrors.
+  ///
+  /// In en, this message translates to:
+  /// **'Done: {done}, skipped: {skipped}, failed: {errors} — see logs'**
+  String adminBatchDoneWithErrors(int done, int skipped, int errors);
+
+  /// No description provided for @challengeVerdictWas.
+  ///
+  /// In en, this message translates to:
+  /// **'was'**
+  String get challengeVerdictWas;
+
+  /// No description provided for @challengeVerdictShouldBe.
+  ///
+  /// In en, this message translates to:
+  /// **'should be'**
+  String get challengeVerdictShouldBe;
+
+  /// No description provided for @noAnalysesYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No analyses yet'**
+  String get noAnalysesYet;
+
+  /// No description provided for @filterNothingHere.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing here'**
+  String get filterNothingHere;
+
+  /// No description provided for @runAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Run all'**
+  String get runAll;
+
+  /// No description provided for @runningLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Running…'**
+  String get runningLabel;
+
+  /// No description provided for @runSelectedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Run {count}'**
+  String runSelectedCount(int count);
+
+  /// No description provided for @selectAllPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Select all pending'**
+  String get selectAllPending;
+
+  /// No description provided for @deselectAllPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Deselect all'**
+  String get deselectAllPending;
+
+  /// No description provided for @unknownProduct.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown product'**
+  String get unknownProduct;
+
+  /// No description provided for @adminAiRefetching.
+  ///
+  /// In en, this message translates to:
+  /// **'Re-fetching AI ingredients for {barcode}…'**
+  String adminAiRefetching(String barcode);
+
+  /// No description provided for @close.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get close;
+
+  /// No description provided for @barcodeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Barcode'**
+  String get barcodeLabel;
+
+  /// No description provided for @barcodeWithValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Barcode: {barcode}'**
+  String barcodeWithValue(String barcode);
+
+  /// No description provided for @localDbDebugTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Local DB — {barcode}'**
+  String localDbDebugTitle(String barcode);
+
+  /// No description provided for @localDbDebugTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Local DB debug'**
+  String get localDbDebugTooltip;
+
+  /// No description provided for @debugCacheSection.
+  ///
+  /// In en, this message translates to:
+  /// **'── SharedPreferences cache ──'**
+  String get debugCacheSection;
+
+  /// No description provided for @debugRemoteDbSection.
+  ///
+  /// In en, this message translates to:
+  /// **'── Remote DB (products table) ──'**
+  String get debugRemoteDbSection;
+
+  /// No description provided for @debugEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'(empty)'**
+  String get debugEmpty;
+
+  /// No description provided for @debugNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'(not found)'**
+  String get debugNotFound;
+
+  /// No description provided for @debugCacheCleared.
+  ///
+  /// In en, this message translates to:
+  /// **'Cache cleared'**
+  String get debugCacheCleared;
+
+  /// No description provided for @debugClearCache.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear cache'**
+  String get debugClearCache;
+
+  /// No description provided for @showOriginal.
+  ///
+  /// In en, this message translates to:
+  /// **'Original'**
+  String get showOriginal;
+
+  /// No description provided for @copyIngredientsTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy ingredients'**
+  String get copyIngredientsTooltip;
+
+  /// No description provided for @findIngredientsViaAi.
+  ///
+  /// In en, this message translates to:
+  /// **'Find ingredients via AI'**
+  String get findIngredientsViaAi;
+
+  /// No description provided for @aiLookupPendingHint.
+  ///
+  /// In en, this message translates to:
+  /// **'AI lookup requested — an admin will review and approve it shortly.'**
+  String get aiLookupPendingHint;
+
+  /// No description provided for @aiLookupRejectedHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The AI request was rejected by an admin.'**
+  String get aiLookupRejectedHint;
+
+  /// No description provided for @aiLookupPromptHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask AI to search the web for this product\'s ingredient list.'**
+  String get aiLookupPromptHint;
+
+  /// No description provided for @requestViaAi.
+  ///
+  /// In en, this message translates to:
+  /// **'Request via AI'**
+  String get requestViaAi;
+
+  /// No description provided for @requestAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Request again'**
+  String get requestAgain;
 }
 
 class _AppLocalizationsDelegate

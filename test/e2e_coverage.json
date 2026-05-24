@@ -1,0 +1,129 @@
+{
+  "description": "UI flow coverage registry for HalalScan. Validated by test/constants/e2e_coverage_test.dart. Update when adding SCN-xxx, e2e keys, or barcodes_e2e lines.",
+  "automated_ui_e2e": [
+    {
+      "id": "SCN-001",
+      "flow": "Start → manual entry → halal result",
+      "test_file": "integration_test/ui_barcode_flow_test.dart",
+      "barcode_line": "90098369 halal",
+      "keys": [
+        "e2e-start-scan",
+        "e2e-home-manual-entry",
+        "e2e-barcode-field",
+        "e2e-barcode-submit",
+        "e2e-result-halal",
+        "e2e-result-home",
+        "e2e-scanner-back"
+      ],
+      "screens": ["StartScreen", "HomeScreen", "ResultScreen"]
+    },
+    {
+      "id": "SCN-002",
+      "flow": "Same path → haram result",
+      "barcode_line": "5014379008630 haram",
+      "keys": ["e2e-result-haram"]
+    },
+    {
+      "id": "SCN-003",
+      "flow": "Same path → inconclusive (unknown banner)",
+      "barcode_line": "9999999999999 unknown",
+      "keys": ["e2e-result-unknown"]
+    },
+    {
+      "id": "SCN-004",
+      "flow": "Same path → product not found",
+      "barcode_line": null,
+      "keys": ["e2e-product-not-found"],
+      "notes": "Add a barcode with expected not_found when you have a reliable null lookup"
+    }
+  ],
+  "e2e_keys": [
+    "e2e-start-scan",
+    "e2e-home-manual-entry",
+    "e2e-barcode-field",
+    "e2e-barcode-submit",
+    "e2e-product-not-found",
+    "e2e-result-home",
+    "e2e-scanner-back",
+    "e2e-result-halal",
+    "e2e-result-haram",
+    "e2e-result-unknown"
+  ],
+  "manual_device_tests": [
+    {
+      "id": "MAN-001",
+      "file": "integration_test/ocr_pipeline_test.dart",
+      "tag": "manual",
+      "covers": "OCR → sanitizer → keywords (no full UI navigation)"
+    },
+    {
+      "id": "MAN-002",
+      "file": "integration_test/screenshots_test.dart",
+      "covers": "Marketing screenshots (not regression)"
+    }
+  ],
+  "gaps": [
+    {
+      "area": "Camera barcode scan",
+      "screens": ["HomeScreen"],
+      "ui_e2e": false,
+      "widget": false,
+      "pipeline": false
+    },
+    {
+      "area": "Result detail (ingredients, community, deep analysis, images)",
+      "screens": ["ResultScreen"],
+      "ui_e2e": "partial",
+      "widget": "partial",
+      "pipeline": true
+    },
+    {
+      "area": "Start tabs: Keywords, Directory, About, Admin",
+      "screens": [
+        "KeywordsScreen",
+        "DirectoryScreen",
+        "AboutScreen",
+        "AdminPanelScreen"
+      ],
+      "ui_e2e": false,
+      "widget": "partial",
+      "pipeline": false
+    },
+    {
+      "area": "Batch scan",
+      "screens": ["BatchScanScreen"],
+      "ui_e2e": false,
+      "widget": false,
+      "pipeline": false
+    },
+    {
+      "area": "Ingredient OCR screen",
+      "screens": ["IngredientOcrScreen"],
+      "ui_e2e": false,
+      "widget": false,
+      "pipeline": false
+    },
+    {
+      "area": "Discussions / deep analysis",
+      "screens": ["DiscussionScreen", "DeepAnalysisScreen"],
+      "ui_e2e": false,
+      "widget": false,
+      "pipeline": false
+    },
+    {
+      "area": "Auth / sign-in sheets",
+      "screens": [],
+      "ui_e2e": false,
+      "widget": false,
+      "pipeline": false
+    },
+    {
+      "area": "SCN-004 not found UI",
+      "screens": ["ResultScreen"],
+      "ui_e2e": false,
+      "widget": "partial",
+      "pipeline": false,
+      "notes": "Key exists; no default barcode in barcodes_e2e.txt yet"
+    }
+  ]
+}

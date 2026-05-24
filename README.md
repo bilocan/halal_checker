@@ -337,7 +337,12 @@ Backend (Supabase)
 
 ```bash
 supabase secrets set CLAUDE_API_KEY=sk-ant-...
+supabase secrets set GEMINI_API_KEY=your_google_ai_studio_key
+# Optional — omit or set to false to disable Gemini (ingredient lookup + halal tier-1)
+supabase secrets set GEMINI_ENABLED=true
 ```
+
+Gemini ingredient lookup uses **Grounding with Google Search** (billable on the Gemini API). Use the same Google AI Studio project/key you test with in chat, with billing enabled if searches return no `groundingMetadata` in Edge Function logs.
 
 ### Database migrations
 
@@ -384,169 +389,20 @@ flutter build apk --release --split-per-abi --dart-define-from-file=dart_defines
 
 ## Development
 
-### Running tests
+### Testing
+
+See **[TESTING.md](TESTING.md)** for the full guide: CI unit tests, live API integration, **UI E2E** (full app, no widget mocks), OCR on device, fixtures, and when to use each layer.
+
+Quick start:
 
 ```bash
-# Fast unit tests — no device required, runs in CI
-flutter test test/services/ test/constants/ test/models/
+# CI (every change)
+flutter test test/services/ test/constants/ test/models/ test/config_test.dart
+
+# UI E2E on emulator (local Supabase — see TESTING.md)
+.\scripts\start_e2e_supabase.ps1
+.\run_ui_e2e_test.ps1          # uses dart_defines.e2e.json
 ```
-
-Tests cover the rules engine, keyword matching, product verdict logic, caching, community services, and UI smoke paths. CI runs them automatically on every push and pull request via GitHub Actions.
-
-### Test fixtures
-
-`test_data/seed_products.json` contains pre-classified products (halal, haram, suspicious) loaded into a separate `halal_test.db` on debug builds. These barcodes are intercepted before any network call, making them available offline.
-
-To add a real product as a fixture, append its barcode to `test_data/seed_barcodes.txt`. The app fetches real product data on the next debug launch and freezes it in the test DB.
-
----
-
-### OCR testing
-
-OCR uses on-device ML Kit, which requires a real Android or iOS device and cannot run in the Dart test VM. Testing is split into two layers:
-
-#### Layer 1 — Sanitizer unit tests (fast, no device)
-
-`test/services/ingredient_sanitizer_test.dart` tests the full sanitize → keyword analysis path using a hardcoded string that represents realistic ML Kit output from a multilingual European label (Soletti Salzgebäckmischung). These run with the normal test suite and cover:
-
-- Section label stripping (`Zutaten:`, `Ingredients:`, `(GB)`, `(A)(D)(CH)`, …)
-- Smart comma splitting that keeps `(…)` sub-ingredient lists as a single token
-- Hyphenated line-break repair (`natür-\nliches` → `natürliches`)
-- Visual line-wrap joining (`WHEY\nPOWDER` → `WHEY POWDER`)
-- Correct suspicious flags for the specific product
-
-```bash
-flutter test test/services/ingredient_sanitizer_test.dart
-```
-
-#### Layer 2 — Full OCR integration test (manual, device required)
-
-`integration_test/ocr_pipeline_test.dart` runs the complete pipeline on a real photo:
-
-```
-image file  →  ML Kit OCR  →  IngredientSanitizer  →  analyzeWithKeywords  →  assertions
-```
-
-Each expected ingredient is declared explicitly in the test so a regression (OCR misread, sanitizer bug, or missing keyword variant) fails with a clear message naming exactly which ingredient was lost.
-
-**Setup:**
-
-1. Place the ingredient label photo at `test/assets/soletti_ingredients.jpg`.
-2. Connect an Android or iOS device, or start an emulator.
-3. Run:
-
-```bash
-flutter test integration_test/ocr_pipeline_test.dart
-```
-
-The test is tagged `manual` and excluded from CI — it must be run explicitly.
-
-#### Adding a new product image
-
-Follow these steps to add OCR coverage for another product:
-
-**1. Save the photo**
-
-Take a clear, well-lit photo of the ingredient label (the side of the package, not the front). Save it to:
-
-```
-test/assets/<product-name>.jpg
-```
-
-The `test/assets/` directory is already registered as a Flutter asset in `pubspec.yaml`, so no further config is needed.
-
-**2. Transcribe the expected ingredients**
-
-Read the label manually and note every ingredient from every language section. For each one you expect OCR to pick up, write a **lowercase substring** — not an exact string. Substrings tolerate OCR capitalisation variance and minor spacing differences.
-
-```dart
-// Good — flexible, survives OCR capitalisation
-'whey powder'
-
-// Too strict — fails if OCR returns "WHEY POWDER" or "Whey Powder"
-'Whey Powder'
-```
-
-For sub-ingredient parents (e.g. `raising agents (ammonium…, sodium…)`), include the parent keyword **and** assert the entry contains `(`:
-
-```dart
-test('raising agents kept as single token', () {
-  final entry = ingredients.firstWhere(
-    (e) => e.toLowerCase().contains('raising agents') && e.contains('('),
-    orElse: () => '',
-  );
-  expect(entry, isNotEmpty);
-});
-```
-
-For ingredients that should be flagged suspicious or haram, add explicit analysis assertions — they double as regression tests if the keyword list changes.
-
-**3. Add a test group**
-
-Copy the existing Soletti group in `integration_test/ocr_pipeline_test.dart` as a template. Key things to include:
-
-```dart
-// At the top of the file — add alongside the existing list
-const _<productName>ExpectedIngredients = <String>[
-  // DE section
-  'zucker',
-  'weizenmehl',
-  // EN section
-  'sugar',
-  'wheat flour',
-  // suspicious / haram ingredients — list these explicitly
-  'whey powder',
-  'natural flavouring',
-];
-
-// Inside main()
-group('OCR → Sanitize → Analyze — <Product Name> label', () {
-  File? imageFile;
-  String? rawOcrText;
-  List<String> ingredients = const [];
-
-  setUpAll(() async {
-    final data = await rootBundle.load('test/assets/<product-name>.jpg');
-    final dir = await getTemporaryDirectory();
-    imageFile = File('${dir.path}/<product-name>_test.jpg');
-    await imageFile!.writeAsBytes(data.buffer.asUint8List());
-    rawOcrText = await OcrService.extractIngredientsFromFile(imageFile!);
-    ingredients = rawOcrText != null
-        ? IngredientSanitizer.sanitize(rawOcrText!)
-        : [];
-  });
-
-  tearDownAll(() async {
-    await imageFile?.delete().catchError((_) => imageFile!);
-  });
-
-  for (final expected in _<productName>ExpectedIngredients) {
-    test('sanitized output contains "$expected"', () {
-      final lower = ingredients.map((e) => e.toLowerCase()).toList();
-      expect(
-        lower.any((e) => e.contains(expected)),
-        isTrue,
-        reason: '"$expected" not found.\nSanitized:\n  ${ingredients.join('\n  ')}',
-      );
-    });
-  }
-
-  test('analysis verdict is correct', () {
-    final result = ProductService.analyzeWithKeywords(ingredients);
-    expect(result.isHalal, isTrue); // or isFalse for haram products
-    expect(result.haram, isEmpty);
-  });
-});
-```
-
-**4. What to do when an expected ingredient fails**
-
-| Symptom | Likely cause | Fix |
-|---|---|---|
-| Ingredient not found at all | OCR missed that area of the image | Retake photo with better lighting/angle; or remove from expected list with a comment |
-| Ingredient split across two entries | Line-wrap not joined | Check `IngredientSanitizer` — it should join newlines before splitting |
-| Sub-ingredient list is split | Comma inside `(…)` was treated as separator | `_smartSplit` in `IngredientSanitizer` should handle this; add a unit test to `ingredient_sanitizer_test.dart` |
-| Suspicious ingredient not flagged | Keyword variant missing | Add the variant to `IngredientKeywords.suspiciousVariants` and cover it in `keyword_analysis_test.dart` |
 
 ### Parallel install (debug + release)
 

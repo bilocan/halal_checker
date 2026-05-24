@@ -10,6 +10,12 @@ class DatabaseService {
 
   Database? _db;
 
+  /// Closes the open database so the next access uses [testDatabasePath] again.
+  static Future<void> resetForTesting() async {
+    await instance._db?.close();
+    instance._db = null;
+  }
+
   Future<Database> get database async {
     _db ??= await _open();
     return _db!;

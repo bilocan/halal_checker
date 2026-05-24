@@ -1,6 +1,5 @@
-# Supabase local dev config — only the sections the CLI needs for deploy.
-# Full local stack (supabase start) is not required; this file is needed
-# so that `supabase functions deploy` can locate and bundle your functions.
+# Supabase CLI config (deploy + local Docker stack).
+# UI E2E: scripts/start_e2e_supabase.* then supabase functions serve — see TESTING.md.
 
 project_id = "your-project-ref"   # replace with your actual project ref
 

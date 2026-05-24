@@ -3,5 +3,15 @@
   "deno.unstable": false,
   "[typescript]": {
     "editor.defaultFormatter": "denoland.vscode-deno"
-  }
+  },
+  "[dart]": {
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll": "explicit",
+      "source.organizeImports": "explicit"
+    }
+  },
+  "dart.analysisExcludedFolders": ["build", ".dart_tool"],
+  "dart.showTodos": true,
+  "dart.lineLength": 80
 }

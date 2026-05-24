@@ -854,4 +854,288 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dismissReport => 'Dismiss';
+
+  @override
+  String get signInRequired => 'Sign in required';
+
+  @override
+  String get signInRequiredMessage =>
+      'You need to be signed in to submit feedback or suggestions.';
+
+  @override
+  String get signInWithGoogle => 'Sign in with Google';
+
+  @override
+  String get batchImport => 'Batch Import';
+
+  @override
+  String get adminUpdateFailed => 'Failed to update — check Supabase logs';
+
+  @override
+  String get adminAiRequestsLoadFailed =>
+      'Could not load AI requests — check connection';
+
+  @override
+  String get aiRequestSubmitFailed => 'Failed to submit AI request.';
+
+  @override
+  String get aiRequestSubmitted =>
+      'AI request submitted — pending admin review.';
+
+  @override
+  String get aiRequestAlreadyPending =>
+      'An AI request for this product is already pending.';
+
+  @override
+  String labelCopied(String label) {
+    return '$label copied';
+  }
+
+  @override
+  String get replacePhoto => 'Replace';
+
+  @override
+  String get batchImportAccessDenied => 'Access denied: superadmin only';
+
+  @override
+  String get batchImportNoBarcodes => 'No valid barcodes found in file';
+
+  @override
+  String get signInToComment => 'Sign in to comment.';
+
+  @override
+  String get discussionFallbackTitle => 'Discussion';
+
+  @override
+  String get noCommentsYet => 'No comments yet. Be the first!';
+
+  @override
+  String replyingTo(String username) {
+    return 'Replying to $username';
+  }
+
+  @override
+  String get writeCommentHint => 'Write a comment…';
+
+  @override
+  String get reply => 'Reply';
+
+  @override
+  String get failedStartDiscussion => 'Failed to start discussion. Try again.';
+
+  @override
+  String get startDiscussionTitle => 'Start a Discussion';
+
+  @override
+  String get topicOptionalLabel => 'Topic (optional)';
+
+  @override
+  String get topicOptionalHint => 'e.g. Is the gelatin source specified?';
+
+  @override
+  String get startDiscussionButton => 'Start Discussion';
+
+  @override
+  String get linkedToChallenge => 'Linked to challenge';
+
+  @override
+  String get locked => 'Locked';
+
+  @override
+  String get anonymous => 'Anonymous';
+
+  @override
+  String get noChallengesYet => 'No ingredient challenges yet.';
+
+  @override
+  String get noChallengesHint =>
+      'Tap an ingredient in Deep Analysis to challenge its verdict.';
+
+  @override
+  String challengeBy(String username) {
+    return 'by $username';
+  }
+
+  @override
+  String get commentDeleted => '[deleted]';
+
+  @override
+  String get couldNotPostComment =>
+      'Couldn\'t post your comment. Please try again.';
+
+  @override
+  String get timeJustNow => 'just now';
+
+  @override
+  String timeMinutesAgo(int count) {
+    return '${count}m ago';
+  }
+
+  @override
+  String timeHoursAgo(int count) {
+    return '${count}h ago';
+  }
+
+  @override
+  String timeDaysAgo(int count) {
+    return '${count}d ago';
+  }
+
+  @override
+  String get aiApprovalHint =>
+      'Approve to trigger AI ingredient lookup via Gemini/Claude. The product will be updated automatically.';
+
+  @override
+  String get refetchAiIngredients => 'Re-fetch AI Ingredients';
+
+  @override
+  String get approveAndFetch => 'Approve & Fetch';
+
+  @override
+  String get photoReplacement => 'replacement';
+
+  @override
+  String get photoCurrentLabel => 'Current';
+
+  @override
+  String get photoNewLabel => 'New';
+
+  @override
+  String get noPendingPhotoSubmissions => 'No pending photo submissions';
+
+  @override
+  String get noPendingIngredientContributions =>
+      'No pending ingredient contributions';
+
+  @override
+  String get filterPending => 'Pending';
+
+  @override
+  String get filterApproved => 'Approved';
+
+  @override
+  String get filterAll => 'All';
+
+  @override
+  String get filterDone => 'Done';
+
+  @override
+  String get noPendingAiRequests => 'No pending AI ingredient requests';
+
+  @override
+  String get noApprovedAiRequests => 'No approved AI ingredient requests';
+
+  @override
+  String get adminBatchRequestFailed =>
+      'Batch request failed — check Supabase logs';
+
+  @override
+  String adminBatchDoneSummary(int done, int skipped) {
+    return 'Done: $done, skipped: $skipped';
+  }
+
+  @override
+  String adminBatchDoneWithErrors(int done, int skipped, int errors) {
+    return 'Done: $done, skipped: $skipped, failed: $errors — see logs';
+  }
+
+  @override
+  String get challengeVerdictWas => 'was';
+
+  @override
+  String get challengeVerdictShouldBe => 'should be';
+
+  @override
+  String get noAnalysesYet => 'No analyses yet';
+
+  @override
+  String get filterNothingHere => 'Nothing here';
+
+  @override
+  String get runAll => 'Run all';
+
+  @override
+  String get runningLabel => 'Running…';
+
+  @override
+  String runSelectedCount(int count) {
+    return 'Run $count';
+  }
+
+  @override
+  String get selectAllPending => 'Select all pending';
+
+  @override
+  String get deselectAllPending => 'Deselect all';
+
+  @override
+  String get unknownProduct => 'Unknown product';
+
+  @override
+  String adminAiRefetching(String barcode) {
+    return 'Re-fetching AI ingredients for $barcode…';
+  }
+
+  @override
+  String get close => 'Close';
+
+  @override
+  String get barcodeLabel => 'Barcode';
+
+  @override
+  String barcodeWithValue(String barcode) {
+    return 'Barcode: $barcode';
+  }
+
+  @override
+  String localDbDebugTitle(String barcode) {
+    return 'Local DB — $barcode';
+  }
+
+  @override
+  String get localDbDebugTooltip => 'Local DB debug';
+
+  @override
+  String get debugCacheSection => '── SharedPreferences cache ──';
+
+  @override
+  String get debugRemoteDbSection => '── Remote DB (products table) ──';
+
+  @override
+  String get debugEmpty => '(empty)';
+
+  @override
+  String get debugNotFound => '(not found)';
+
+  @override
+  String get debugCacheCleared => 'Cache cleared';
+
+  @override
+  String get debugClearCache => 'Clear cache';
+
+  @override
+  String get showOriginal => 'Original';
+
+  @override
+  String get copyIngredientsTooltip => 'Copy ingredients';
+
+  @override
+  String get findIngredientsViaAi => 'Find ingredients via AI';
+
+  @override
+  String get aiLookupPendingHint =>
+      'AI lookup requested — an admin will review and approve it shortly.';
+
+  @override
+  String get aiLookupRejectedHint => 'The AI request was rejected by an admin.';
+
+  @override
+  String get aiLookupPromptHint =>
+      'Ask AI to search the web for this product\'s ingredient list.';
+
+  @override
+  String get requestViaAi => 'Request via AI';
+
+  @override
+  String get requestAgain => 'Request again';
 }

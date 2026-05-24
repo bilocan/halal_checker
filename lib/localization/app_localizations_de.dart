@@ -867,4 +867,294 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get dismissReport => 'Ablehnen';
+
+  @override
+  String get signInRequired => 'Anmeldung erforderlich';
+
+  @override
+  String get signInRequiredMessage =>
+      'Sie müssen angemeldet sein, um Feedback oder Vorschläge zu senden.';
+
+  @override
+  String get signInWithGoogle => 'Mit Google anmelden';
+
+  @override
+  String get batchImport => 'Stapelimport';
+
+  @override
+  String get adminUpdateFailed =>
+      'Aktualisierung fehlgeschlagen — Supabase-Logs prüfen';
+
+  @override
+  String get adminAiRequestsLoadFailed =>
+      'KI-Anfragen konnten nicht geladen werden — Verbindung prüfen';
+
+  @override
+  String get aiRequestSubmitFailed =>
+      'KI-Anfrage konnte nicht gesendet werden.';
+
+  @override
+  String get aiRequestSubmitted =>
+      'KI-Anfrage gesendet — wartet auf Admin-Prüfung.';
+
+  @override
+  String get aiRequestAlreadyPending =>
+      'Für dieses Produkt liegt bereits eine ausstehende KI-Anfrage vor.';
+
+  @override
+  String labelCopied(String label) {
+    return '$label kopiert';
+  }
+
+  @override
+  String get replacePhoto => 'Ersetzen';
+
+  @override
+  String get batchImportAccessDenied => 'Zugriff verweigert: nur Superadmin';
+
+  @override
+  String get batchImportNoBarcodes =>
+      'Keine gültigen Barcodes in der Datei gefunden';
+
+  @override
+  String get signInToComment => 'Zum Kommentieren anmelden.';
+
+  @override
+  String get discussionFallbackTitle => 'Diskussion';
+
+  @override
+  String get noCommentsYet => 'Noch keine Kommentare. Seien Sie der Erste!';
+
+  @override
+  String replyingTo(String username) {
+    return 'Antwort an $username';
+  }
+
+  @override
+  String get writeCommentHint => 'Kommentar schreiben…';
+
+  @override
+  String get reply => 'Antworten';
+
+  @override
+  String get failedStartDiscussion =>
+      'Diskussion konnte nicht gestartet werden. Bitte erneut versuchen.';
+
+  @override
+  String get startDiscussionTitle => 'Diskussion starten';
+
+  @override
+  String get topicOptionalLabel => 'Thema (optional)';
+
+  @override
+  String get topicOptionalHint => 'z. B. Ist die Gelatinequelle angegeben?';
+
+  @override
+  String get startDiscussionButton => 'Diskussion starten';
+
+  @override
+  String get linkedToChallenge => 'Mit Anfechtung verknüpft';
+
+  @override
+  String get locked => 'Gesperrt';
+
+  @override
+  String get anonymous => 'Anonym';
+
+  @override
+  String get noChallengesYet => 'Noch keine Inhaltsstoff-Anfechtungen.';
+
+  @override
+  String get noChallengesHint =>
+      'Tippen Sie in der Tiefenanalyse auf einen Inhaltsstoff, um das Urteil anzufechten.';
+
+  @override
+  String challengeBy(String username) {
+    return 'von $username';
+  }
+
+  @override
+  String get commentDeleted => '[gelöscht]';
+
+  @override
+  String get couldNotPostComment =>
+      'Kommentar konnte nicht gesendet werden. Bitte erneut versuchen.';
+
+  @override
+  String get timeJustNow => 'gerade eben';
+
+  @override
+  String timeMinutesAgo(int count) {
+    return 'vor $count Min.';
+  }
+
+  @override
+  String timeHoursAgo(int count) {
+    return 'vor $count Std.';
+  }
+
+  @override
+  String timeDaysAgo(int count) {
+    return 'vor $count Tg.';
+  }
+
+  @override
+  String get aiApprovalHint =>
+      'Genehmigen, um KI-Zutatensuche über Gemini/Claude auszulösen. Das Produkt wird automatisch aktualisiert.';
+
+  @override
+  String get refetchAiIngredients => 'KI-Zutaten erneut abrufen';
+
+  @override
+  String get approveAndFetch => 'Genehmigen & abrufen';
+
+  @override
+  String get photoReplacement => 'Ersatz';
+
+  @override
+  String get photoCurrentLabel => 'Aktuell';
+
+  @override
+  String get photoNewLabel => 'Neu';
+
+  @override
+  String get noPendingPhotoSubmissions =>
+      'Keine ausstehenden Fotoeinreichungen';
+
+  @override
+  String get noPendingIngredientContributions =>
+      'Keine ausstehenden Inhaltsstoff-Beiträge';
+
+  @override
+  String get filterPending => 'Ausstehend';
+
+  @override
+  String get filterApproved => 'Genehmigt';
+
+  @override
+  String get filterAll => 'Alle';
+
+  @override
+  String get filterDone => 'Fertig';
+
+  @override
+  String get noPendingAiRequests => 'Keine ausstehenden KI-Zutatenanfragen';
+
+  @override
+  String get noApprovedAiRequests => 'Keine genehmigten KI-Zutatenanfragen';
+
+  @override
+  String get adminBatchRequestFailed =>
+      'Stapelanfrage fehlgeschlagen — Supabase-Logs prüfen';
+
+  @override
+  String adminBatchDoneSummary(int done, int skipped) {
+    return 'Fertig: $done, übersprungen: $skipped';
+  }
+
+  @override
+  String adminBatchDoneWithErrors(int done, int skipped, int errors) {
+    return 'Fertig: $done, übersprungen: $skipped, fehlgeschlagen: $errors — Logs prüfen';
+  }
+
+  @override
+  String get challengeVerdictWas => 'war';
+
+  @override
+  String get challengeVerdictShouldBe => 'sollte sein';
+
+  @override
+  String get noAnalysesYet => 'Noch keine Analysen';
+
+  @override
+  String get filterNothingHere => 'Nichts hier';
+
+  @override
+  String get runAll => 'Alle ausführen';
+
+  @override
+  String get runningLabel => 'Läuft…';
+
+  @override
+  String runSelectedCount(int count) {
+    return '$count ausführen';
+  }
+
+  @override
+  String get selectAllPending => 'Alle ausstehenden auswählen';
+
+  @override
+  String get deselectAllPending => 'Alle abwählen';
+
+  @override
+  String get unknownProduct => 'Unbekanntes Produkt';
+
+  @override
+  String adminAiRefetching(String barcode) {
+    return 'KI-Zutaten für $barcode werden erneut abgerufen…';
+  }
+
+  @override
+  String get close => 'Schließen';
+
+  @override
+  String get barcodeLabel => 'Barcode';
+
+  @override
+  String barcodeWithValue(String barcode) {
+    return 'Barcode: $barcode';
+  }
+
+  @override
+  String localDbDebugTitle(String barcode) {
+    return 'Lokale DB — $barcode';
+  }
+
+  @override
+  String get localDbDebugTooltip => 'Lokale DB (Debug)';
+
+  @override
+  String get debugCacheSection => '── SharedPreferences-Cache ──';
+
+  @override
+  String get debugRemoteDbSection => '── Remote-DB (products) ──';
+
+  @override
+  String get debugEmpty => '(leer)';
+
+  @override
+  String get debugNotFound => '(nicht gefunden)';
+
+  @override
+  String get debugCacheCleared => 'Cache geleert';
+
+  @override
+  String get debugClearCache => 'Cache leeren';
+
+  @override
+  String get showOriginal => 'Original';
+
+  @override
+  String get copyIngredientsTooltip => 'Zutaten kopieren';
+
+  @override
+  String get findIngredientsViaAi => 'Zutaten per KI finden';
+
+  @override
+  String get aiLookupPendingHint =>
+      'KI-Suche angefordert — ein Admin prüft und genehmigt sie in Kürze.';
+
+  @override
+  String get aiLookupRejectedHint =>
+      'Die KI-Anfrage wurde von einem Admin abgelehnt.';
+
+  @override
+  String get aiLookupPromptHint =>
+      'KI bitten, im Web nach der Zutatenliste dieses Produkts zu suchen.';
+
+  @override
+  String get requestViaAi => 'Per KI anfragen';
+
+  @override
+  String get requestAgain => 'Erneut anfragen';
 }

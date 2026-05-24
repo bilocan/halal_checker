@@ -4,6 +4,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
 import '../app_colors.dart';
+import '../localization/app_localizations.dart';
 import '../models/product.dart';
 import '../services/analysis_service.dart';
 import '../services/product_service.dart';
@@ -44,7 +45,9 @@ class _BatchScanScreenState extends State<BatchScanScreen> {
     if (!allowed) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Access denied: superadmin only')),
+          SnackBar(
+            content: Text(AppLocalizations.of(context).batchImportAccessDenied),
+          ),
         );
         Navigator.pop(context);
       }
@@ -74,7 +77,9 @@ class _BatchScanScreenState extends State<BatchScanScreen> {
     if (barcodes.isEmpty) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No valid barcodes found in file')),
+        SnackBar(
+          content: Text(AppLocalizations.of(context).batchImportNoBarcodes),
+        ),
       );
       Navigator.pop(context);
       return;
@@ -152,7 +157,7 @@ class _BatchScanScreenState extends State<BatchScanScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Batch Import'),
+        title: Text(AppLocalizations.of(context).batchImport),
         backgroundColor: kGreen,
         foregroundColor: Colors.white,
       ),

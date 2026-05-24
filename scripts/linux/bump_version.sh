@@ -140,11 +140,15 @@ if command -v gh &>/dev/null; then
     --generate-notes
 
   echo "Opening pull request..."
-  gh pr create \
+  REPO_SLUG=$(git remote get-url origin | sed 's|.*github.com[:/]||;s|\.git$||')
+  if ! gh pr create \
     --title "chore: bump version to $NEW_VERSION" \
     --body "Bumps \`pubspec.yaml\` to \`$NEW_FULL\` and tags \`$TAG\`." \
     --base main \
-    --head "$BRANCH"
+    --head "$BRANCH"; then
+    echo "Warning: PR creation failed (GitHub API error). Create it manually:" >&2
+    echo "  → https://github.com/$REPO_SLUG/compare/$BRANCH?expand=1"
+  fi
 else
   REPO_SLUG=$(git remote get-url origin | sed 's|.*github.com[:/]||;s|\.git$||')
   echo "Install the gh CLI to auto-create releases and PRs."
