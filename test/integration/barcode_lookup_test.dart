@@ -2,10 +2,11 @@
 // live API (Supabase Edge Function if credentials are available, otherwise
 // direct OpenFoodFacts) and prints a result table.
 //
-// Run with credentials (recommended — mirrors the app exactly):
+// Run with test Supabase + edge function (recommended):
 //   .\run_integration_test.ps1
+//   ./run_all_integration_tests.sh
 //
-// Run without credentials (keyword-only fallback):
+// Run without Supabase (OpenFoodFacts + keywords only):
 //   flutter test test/integration/barcode_lookup_test.dart --timeout 120s
 //
 // Barcodes file format (test/barcodes.txt):

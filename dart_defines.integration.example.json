@@ -1,0 +1,10 @@
+{
+  "SUPABASE_URL": "https://your-test-project-ref.supabase.co",
+  "SUPABASE_ANON_KEY": "your-test-project-anon-key",
+  "GOOGLE_WEB_CLIENT_ID": "",
+  "SUPABASE_TEST_EMAIL": "integration-test-user@example.com",
+  "SUPABASE_TEST_PASSWORD": "",
+  "SUPABASE_TEST_ADMIN_EMAIL": "integration-test-admin@example.com",
+  "SUPABASE_TEST_ADMIN_PASSWORD": "",
+  "SUPABASE_SERVICE_ROLE_KEY": "required-for-admin-tests-assigns-profiles-role"
+}

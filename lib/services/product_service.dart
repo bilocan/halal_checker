@@ -183,6 +183,9 @@ class ProductService {
   Product _applyKeywordSafety(Product product) {
     final kwCheck = analyzeWithKeywords(product.ingredients);
     final customCheck = _customKeywordAnalysis(product.ingredients);
+    final nameCheck = product.name.trim().isEmpty
+        ? null
+        : analyzeWithKeywords([product.name.toLowerCase()]);
 
     // Also analyze the already-flagged ingredients directly: their exact strings
     // (from AI) may differ in case/spacing from product.ingredients entries, so
@@ -200,26 +203,31 @@ class ProductService {
       ...product.haramIngredients,
       ...kwCheck.haram,
       ...customCheck.haram,
+      if (nameCheck != null) ...nameCheck.haram,
     }.toList();
     final allSuspicious = {
       ...product.suspiciousIngredients,
       ...kwCheck.suspicious,
       ...customCheck.suspicious,
+      if (nameCheck != null) ...nameCheck.suspicious,
     }.toList();
     final allWarnings = {
       ...product.ingredientWarnings,
       ...kwCheck.warnings,
       ...customCheck.warnings,
+      if (nameCheck != null) ...nameCheck.warnings,
     };
     final allTranslations = {
       ...product.ingredientTranslations,
       ...kwCheck.translations,
       ...customCheck.translations,
+      if (nameCheck != null) ...nameCheck.translations,
     };
     final allCanonicals = {
       ...product.ingredientCanonicals,
       ...kwCheck.canonicals,
       if (flaggedCheck != null) ...flaggedCheck.canonicals,
+      if (nameCheck != null) ...nameCheck.canonicals,
     };
     final isNowHalal = ProductVerdict.isHalalFromFlags(
       haramIngredients: allHaram,
@@ -232,6 +240,8 @@ class ProductService {
       final explanation = allHaram.isNotEmpty
           ? (kwCheck.haram.isNotEmpty
                 ? kwCheck.explanation
+                : (nameCheck != null && nameCheck.haram.isNotEmpty)
+                ? nameCheck.explanation
                 : 'This product contains ingredient(s) that are not permissible: '
                       '${customCheck.haram.join(', ')}. '
                       'Flagged by custom keyword.')

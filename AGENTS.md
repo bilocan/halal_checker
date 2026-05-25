@@ -15,6 +15,7 @@ flutter test test/services/ test/constants/ test/models/ test/config_test.dart
 
 - **Keyword safety override** after AI analysis (`product_service.dart` + `keyword_service.dart`).
 - **Secrets** only via `dart_defines.json` / `lib/config.dart` — never in source.
+- **Integration tests** use `dart_defines.integration.json` (test Supabase project), not `dart_defines.json`.
 
 ## Where to work
 

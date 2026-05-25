@@ -1,6 +1,7 @@
 # Local secret defines (never commit)
 dart_defines.json
 dart_defines.e2e.json
+dart_defines.integration.json
 supabase/.env.local
 
 # Android signing credentials (never commit)

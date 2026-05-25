@@ -26,6 +26,15 @@ cp dart_defines.example.json dart_defines.json
 
 Edit `dart_defines.json` with your Supabase project credentials. This file is gitignored and must never be committed.
 
+**Pipeline integration** (optional, against a separate **test** Supabase project):
+
+```bash
+cp dart_defines.integration.example.json dart_defines.integration.json
+./run_all_integration_tests.sh
+```
+
+See [TESTING.md → Pipeline integration](TESTING.md#pipeline-integration--live-api-no-ui).
+
 ### Run
 
 ```bash

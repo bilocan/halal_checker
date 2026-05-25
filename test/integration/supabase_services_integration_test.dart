@@ -1,16 +1,13 @@
-// Live Supabase integration tests for service-layer DB paths.
+// Live Supabase integration tests for service-layer DB paths (test project only).
 //
-// Run (mirrors the app credentials):
-//   flutter test test/integration/supabase_services_integration_test.dart \
-//     --dart-define-from-file=dart_defines.json --concurrency 1
+//   ./run_integration_test.sh test/integration/supabase_services_integration_test.dart
+//   ./run_all_integration_tests.sh
 //
-// Optional defines (add to dart_defines.json for full coverage):
+// Uses dart_defines.integration.json (copy from dart_defines.integration.example.json).
+// Optional defines in that file:
 //   SUPABASE_TEST_EMAIL, SUPABASE_TEST_PASSWORD
 //   SUPABASE_TEST_ADMIN_EMAIL, SUPABASE_TEST_ADMIN_PASSWORD
 //   SUPABASE_SERVICE_ROLE_KEY
-//
-// On Linux/macOS:
-//   ./run_integration_test.sh test/integration/supabase_services_integration_test.dart
 
 import 'dart:io';
 import 'dart:typed_data';
