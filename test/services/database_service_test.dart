@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:path/path.dart' as p;
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import 'package:halal_checker/services/database_service.dart';
@@ -11,9 +12,16 @@ void main() {
   });
 
   setUp(() async {
-    // Clear all rows before each test — the singleton reuses the same DB.
+    await DatabaseService.resetForTesting();
     final db = await DatabaseService.instance.database;
     await db.delete('scans');
+  });
+
+  test('resetForTesting closes database so next access reopens', () async {
+    final first = await DatabaseService.instance.database;
+    await DatabaseService.resetForTesting();
+    final second = await DatabaseService.instance.database;
+    expect(identical(first, second), isFalse);
   });
 
   group('DatabaseService.insertScan', () {
@@ -46,6 +54,17 @@ void main() {
       expect(matches.length, equals(1));
       expect(matches.first['productName'], equals('Version 2'));
       expect(matches.first['isHalal'], isFalse);
+    });
+
+    test('stores verdict when provided', () async {
+      await DatabaseService.instance.insertScan(
+        barcode: 'verdict_bc',
+        productName: 'Cert Gap Snack',
+        isHalal: false,
+        verdict: 'nocert',
+      );
+      final scans = await DatabaseService.instance.getRecentScans();
+      expect(scans.first['verdict'], 'nocert');
     });
 
     test('stores isHalal false correctly', () async {
@@ -151,6 +170,63 @@ void main() {
       final scans = await DatabaseService.instance.getRecentScans();
       expect(scans.first['timestamp'], isA<int>());
       expect(scans.first['timestamp'] as int, greaterThan(0));
+    });
+  });
+
+  group('DatabaseService — schema upgrade', () {
+    test('migrates v1 database to v3 with notes and verdict columns', () async {
+      final dir = await getDatabasesPath();
+      final legacyPath = p.join(
+        dir,
+        'halal_scan_legacy_${DateTime.now().microsecondsSinceEpoch}.db',
+      );
+
+      final legacy = await openDatabase(
+        legacyPath,
+        version: 1,
+        onCreate: (db, _) async {
+          await db.execute('''
+            CREATE TABLE scans (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              barcode TEXT NOT NULL,
+              product_name TEXT NOT NULL,
+              is_halal INTEGER NOT NULL DEFAULT 0,
+              timestamp INTEGER NOT NULL
+            )
+          ''');
+        },
+      );
+      await legacy.insert('scans', {
+        'barcode': 'legacy_bc',
+        'product_name': 'Legacy Product',
+        'is_halal': 1,
+        'timestamp': DateTime.now().millisecondsSinceEpoch,
+      });
+      await legacy.close();
+
+      DatabaseService.testDatabasePath = legacyPath;
+      await DatabaseService.resetForTesting();
+
+      final scans = await DatabaseService.instance.getRecentScans();
+      expect(scans, hasLength(1));
+      expect(scans.first['barcode'], 'legacy_bc');
+      expect(scans.first['notes'], isNull);
+      expect(scans.first['verdict'], isNull);
+
+      await DatabaseService.instance.insertScan(
+        barcode: 'legacy_bc',
+        productName: 'Legacy Product',
+        isHalal: true,
+        verdict: 'halal',
+        notes: 'Upgraded',
+      );
+      final updated = await DatabaseService.instance.getRecentScans();
+      expect(updated.first['verdict'], 'halal');
+      expect(updated.first['notes'], 'Upgraded');
+
+      await DatabaseService.resetForTesting();
+      await deleteDatabase(legacyPath);
+      DatabaseService.testDatabasePath = ':memory:';
     });
   });
 }

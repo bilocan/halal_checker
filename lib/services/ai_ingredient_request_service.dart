@@ -34,6 +34,9 @@ class AiIngredientRequestService {
   static Future<bool> Function()? fakeIsAdmin;
 
   @visibleForTesting
+  static Future<Map<String, dynamic>?> Function()? fakeFetchProfileRole;
+
+  @visibleForTesting
   static Future<bool> Function(int id, String status)? fakeUpdateStatus;
 
   @visibleForTesting
@@ -76,6 +79,7 @@ class AiIngredientRequestService {
     fakeGetRequestForBarcode = null;
     fakeSubmitRequest = null;
     fakeIsAdmin = null;
+    fakeFetchProfileRole = null;
     fakeUpdateStatus = null;
     fakeEnsureReady = null;
     fakeFindPendingByBarcode = null;
@@ -124,12 +128,14 @@ class AiIngredientRequestService {
     final uid = AuthService.currentUser?.id;
     if (uid == null) return false;
     try {
-      final row = await _db
-          .from('profiles')
-          .select('role')
-          .eq('id', uid)
-          .maybeSingle()
-          .timeout(_queryTimeout);
+      final row = fakeFetchProfileRole != null
+          ? await fakeFetchProfileRole!()
+          : await _db
+                .from('profiles')
+                .select('role')
+                .eq('id', uid)
+                .maybeSingle()
+                .timeout(_queryTimeout);
       final role = row?['role'] as String?;
       return role == 'admin' || role == 'superadmin';
     } on Object catch (e, stack) {

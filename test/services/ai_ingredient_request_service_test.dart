@@ -161,26 +161,29 @@ void main() {
       },
     );
 
-    test('admin submitRequest approves existing pending request', () async {
-      AiIngredientRequestService.fakeFindPendingByBarcode = (_) async => {
-        'id': 7,
-      };
-      AiIngredientRequestService.fakeIsAdmin = () async => true;
-      AiIngredientRequestService.fakePerformStatusUpdate =
-          (id, status, userId) async {
-            expect(id, 7);
-            expect(status, 'approved');
-            expect(userId, 'test-uid');
-            return [
-              {'id': 7},
-            ];
-          };
+    test(
+      'admin submitRequest approves existing pending request with numeric id',
+      () async {
+        AiIngredientRequestService.fakeFindPendingByBarcode = (_) async => {
+          'id': 7.0,
+        };
+        AiIngredientRequestService.fakeIsAdmin = () async => true;
+        AiIngredientRequestService.fakePerformStatusUpdate =
+            (id, status, userId) async {
+              expect(id, 7);
+              expect(status, 'approved');
+              expect(userId, 'test-uid');
+              return [
+                {'id': 7},
+              ];
+            };
 
-      expect(
-        await AiIngredientRequestService.submitRequest('123'),
-        AiIngredientSubmitResult.approved,
-      );
-    });
+        expect(
+          await AiIngredientRequestService.submitRequest('123'),
+          AiIngredientSubmitResult.approved,
+        );
+      },
+    );
 
     test(
       'submitRequest inserts pending when no pending request exists',
@@ -208,6 +211,71 @@ void main() {
         );
         expect(capturedBarcode, '456');
         expect(capturedUserId, 'test-uid');
+      },
+    );
+
+    test(
+      '_currentUserIsAdmin treats superadmin role as admin via profile fake',
+      () async {
+        AiIngredientRequestService.fakeIsAdmin = null;
+        AiIngredientRequestService.fakeFetchProfileRole = () async => {
+          'role': 'superadmin',
+        };
+        AiIngredientRequestService.fakeFindPendingByBarcode = (_) async => null;
+        AiIngredientRequestService.fakeInsertRequest =
+            ({
+              required String barcode,
+              productName,
+              required String userId,
+            }) async {};
+
+        expect(
+          await AiIngredientRequestService.submitRequest('456'),
+          AiIngredientSubmitResult.approved,
+        );
+      },
+    );
+
+    test(
+      '_currentUserIsAdmin returns false when profile role is not admin',
+      () async {
+        AiIngredientRequestService.fakeIsAdmin = null;
+        AiIngredientRequestService.fakeFetchProfileRole = () async => {
+          'role': 'user',
+        };
+        AiIngredientRequestService.fakeFindPendingByBarcode = (_) async => null;
+        AiIngredientRequestService.fakeInsertRequest =
+            ({
+              required String barcode,
+              productName,
+              required String userId,
+            }) async {};
+
+        expect(
+          await AiIngredientRequestService.submitRequest('456'),
+          AiIngredientSubmitResult.pending,
+        );
+      },
+    );
+
+    test(
+      '_currentUserIsAdmin returns false when profile lookup fails',
+      () async {
+        AiIngredientRequestService.fakeIsAdmin = null;
+        AiIngredientRequestService.fakeFetchProfileRole = () async =>
+            throw Exception('profile query failed');
+        AiIngredientRequestService.fakeFindPendingByBarcode = (_) async => null;
+        AiIngredientRequestService.fakeInsertRequest =
+            ({
+              required String barcode,
+              productName,
+              required String userId,
+            }) async {};
+
+        expect(
+          await AiIngredientRequestService.submitRequest('456'),
+          AiIngredientSubmitResult.pending,
+        );
       },
     );
 
