@@ -207,6 +207,13 @@ Deno.test('keywordAnalysis — pork → isHalal false', () => {
   assertEquals(r.haram, ['pork'])
 })
 
+Deno.test('keywordAnalysis — e471 → isHalal false, suspicious populated', () => {
+  const r = keywordAnalysis(['flour', 'e471', 'salt'])
+  assertEquals(r.isHalal, false)
+  assertEquals(r.suspicious.length, 1)
+  assertEquals(r.haram.length, 0)
+})
+
 Deno.test('keywordAnalysis — empty list → isUnknown true', () => {
   const r = keywordAnalysis([])
   assertEquals(r.isUnknown, true)

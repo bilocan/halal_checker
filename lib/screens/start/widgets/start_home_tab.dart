@@ -9,6 +9,7 @@ import '../../../integration_test_keys.dart';
 import '../../../localization/app_localizations.dart';
 import '../../../models/product.dart';
 import '../../../services/database_service.dart';
+import '../../../services/product_verdict.dart';
 import '../../../services/ingredient_sanitizer.dart';
 import '../../../services/ocr_service.dart';
 import '../../../services/product_service.dart';
@@ -162,6 +163,7 @@ class _StartHomeTabState extends State<StartHomeTab> {
         barcode: barcode,
         productName: product.name,
         isHalal: product.isHalal,
+        verdict: ProductVerdict.storageKey(product),
       );
 
       if (!mounted) return;
@@ -192,6 +194,7 @@ class _StartHomeTabState extends State<StartHomeTab> {
           barcode: scan['barcode'] as String,
           productName: product.name,
           isHalal: product.isHalal,
+          verdict: ProductVerdict.storageKey(product),
         );
       }
       if (!mounted) return;
@@ -413,21 +416,37 @@ class _StartHomeTabState extends State<StartHomeTab> {
       itemCount: displayed.length,
       itemBuilder: (context, index) {
         final scan = displayed[index];
+        final verdict = scan['verdict'] as String?;
         final isHalal = scan['isHalal'] as bool;
         final isFlagged = scan['isFlagged'] as bool;
         final barcode = scan['barcode'] as String;
         final note = scan['notes'] as String?;
+        final dotColor = switch (verdict) {
+          'halal' => kGreen,
+          'suspicious' || 'nocert' => Colors.orange.shade700,
+          'unknown' => Colors.orange.shade700,
+          'haram' => Colors.red,
+          _ => isHalal ? kGreen : Colors.red,
+        };
+        final dotLabel = switch (verdict) {
+          'halal' => loc.halal,
+          'suspicious' => loc.suspiciousResult,
+          'nocert' => loc.noCert,
+          'unknown' => loc.unknown,
+          'haram' => loc.notHalal,
+          _ => isHalal ? loc.halal : loc.notHalal,
+        };
 
         final tile = Card(
           margin: const EdgeInsets.only(bottom: 8),
           child: ListTile(
             leading: Semantics(
-              label: isHalal ? loc.halal : loc.notHalal,
+              label: dotLabel,
               child: Container(
                 width: 16,
                 height: 16,
                 decoration: BoxDecoration(
-                  color: isHalal ? kGreen : Colors.red,
+                  color: dotColor,
                   shape: BoxShape.circle,
                 ),
               ),

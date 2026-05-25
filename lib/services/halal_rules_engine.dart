@@ -45,7 +45,7 @@ class HalalRulesResult {
     required this.explanation,
   });
 
-  bool get isHalal => verdict != HalalRuleVerdict.haram;
+  bool get isHalal => verdict == HalalRuleVerdict.halal;
 
   List<String> get haram => matches
       .where((m) => m.verdict == HalalRuleVerdict.haram)
@@ -216,6 +216,8 @@ class HalalRulesEngine {
 
     final verdict = matches.any((m) => m.verdict == HalalRuleVerdict.haram)
         ? HalalRuleVerdict.haram
+        : matches.any((m) => m.verdict == HalalRuleVerdict.suspicious)
+        ? HalalRuleVerdict.suspicious
         : HalalRuleVerdict.halal;
 
     return HalalRulesResult(

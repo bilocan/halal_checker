@@ -26,7 +26,7 @@ class DatabaseService {
     final path = testDatabasePath ?? join(dir, 'halal_scan.db');
     return openDatabase(
       path,
-      version: 2,
+      version: 3,
       onCreate: (db, _) async {
         await db.execute('''
           CREATE TABLE scans (
@@ -34,6 +34,7 @@ class DatabaseService {
             barcode TEXT NOT NULL,
             product_name TEXT NOT NULL,
             is_halal INTEGER NOT NULL DEFAULT 0,
+            verdict TEXT,
             timestamp INTEGER NOT NULL,
             notes TEXT,
             is_flagged INTEGER NOT NULL DEFAULT 0
@@ -50,6 +51,9 @@ class DatabaseService {
             'ALTER TABLE scans ADD COLUMN is_flagged INTEGER NOT NULL DEFAULT 0',
           );
         }
+        if (oldVersion < 3) {
+          await db.execute('ALTER TABLE scans ADD COLUMN verdict TEXT');
+        }
       },
     );
   }
@@ -58,6 +62,7 @@ class DatabaseService {
     required String barcode,
     required String productName,
     required bool isHalal,
+    String? verdict,
     String? notes,
     bool? isFlagged,
   }) async {
@@ -81,6 +86,7 @@ class DatabaseService {
       'barcode': barcode,
       'product_name': productName,
       'is_halal': isHalal ? 1 : 0,
+      'verdict': verdict,
       'timestamp': DateTime.now().millisecondsSinceEpoch,
       'notes': existingNotes,
       'is_flagged': existingFlagged,
@@ -144,6 +150,7 @@ class DatabaseService {
             'barcode': row['barcode'] as String,
             'productName': row['product_name'] as String,
             'isHalal': (row['is_halal'] as int) == 1,
+            'verdict': row['verdict'] as String?,
             'timestamp': row['timestamp'] as int,
             'notes': row['notes'] as String?,
             'isFlagged': (row['is_flagged'] as int?) == 1,

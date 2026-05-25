@@ -91,7 +91,7 @@ void main() {
       expect(p.suspiciousIngredients, isEmpty);
     });
 
-    test('whey → suspicious but still halal', () async {
+    test('whey → suspicious, not halal', () async {
       ProductService().setHttpClientForTesting(
         _mockGet(
           _offJson(name: 'Yogurt', ingredients: 'milk, whey powder, cultures'),
@@ -99,7 +99,7 @@ void main() {
       );
 
       final p = await ProductService().getProduct('1000000002');
-      expect(p!.isHalal, isTrue);
+      expect(p!.isHalal, isFalse);
       expect(p.suspiciousIngredients.any((i) => i.contains('whey')), isTrue);
     });
 
@@ -612,13 +612,13 @@ void main() {
       expect(result.warnings['pork'], isNotNull);
     });
 
-    test('suspicious ingredient → isHalal true, suspicious list populated', () {
+    test('suspicious ingredient → isHalal false, suspicious list populated', () {
       final result = ProductService.analyzeWithKeywords([
         'flour',
         'enzymes',
         'water',
       ]);
-      expect(result.isHalal, isTrue);
+      expect(result.isHalal, isFalse);
       expect(result.suspicious, contains('enzymes'));
       expect(result.warnings['enzymes'], isNotNull);
     });

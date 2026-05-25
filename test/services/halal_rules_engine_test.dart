@@ -17,12 +17,12 @@ void main() {
     });
 
     test(
-      'returns halal verdict with suspicious matches for doubtful items',
+      'returns suspicious verdict for doubtful items such as e471',
       () {
         final result = engine.analyzeIngredients(['flour', 'e471', 'salt']);
 
-        expect(result.verdict, HalalRuleVerdict.halal);
-        expect(result.isHalal, isTrue);
+        expect(result.verdict, HalalRuleVerdict.suspicious);
+        expect(result.isHalal, isFalse);
         expect(result.haram, isEmpty);
         expect(result.suspicious, contains('e471'));
         expect(result.explanation, contains('require verification'));
@@ -335,7 +335,8 @@ void main() {
         final result = engine.analyzeIngredients([
           'mono und diglyceride von speisefettsäuren',
         ]);
-        expect(result.verdict, HalalRuleVerdict.halal);
+        expect(result.verdict, HalalRuleVerdict.suspicious);
+        expect(result.isHalal, isFalse);
         expect(
           result.suspicious,
           contains('mono und diglyceride von speisefettsäuren'),

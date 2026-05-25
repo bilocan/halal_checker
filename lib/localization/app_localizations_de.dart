@@ -151,6 +151,12 @@ class AppLocalizationsDe extends AppLocalizations {
   String get notHalal => 'HARAM';
 
   @override
+  String get suspiciousVerdict => '⚠️ PRÜFEN';
+
+  @override
+  String get suspiciousResult => 'PRÜFEN';
+
+  @override
   String get lastScanned => 'Zuletzt gescannt';
 
   @override

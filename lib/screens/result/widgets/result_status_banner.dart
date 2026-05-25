@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../integration_test_keys.dart';
 import '../../../localization/app_localizations.dart';
 import '../../../models/product.dart';
+import '../../../services/product_verdict.dart';
 import '../result_status.dart';
 
 class ResultStatusBanner extends StatelessWidget {
@@ -15,11 +16,7 @@ class ResultStatusBanner extends StatelessWidget {
   final Product product;
   final AppLocalizations loc;
 
-  String _e2eOutcome(Product product) {
-    if (product.isUnknown) return 'unknown';
-    if (product.isHalal) return 'halal';
-    return 'haram';
-  }
+  String _e2eOutcome(Product product) => ProductVerdict.e2eOutcomeKey(product);
 
   @override
   Widget build(BuildContext context) {

@@ -380,7 +380,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Keyword safety override: haram keywords always win over AI verdict.
+    // Keyword safety override: haram/suspicious keywords always win over AI verdict.
     // Reuses kwFirst — no need to re-run keyword analysis.
     if (kwFirst.haram.length > 0 && isHalal) {
       isHalal            = false
@@ -388,6 +388,13 @@ Deno.serve(async (req) => {
       haramIngredients   = [...new Set([...haramIngredients, ...kwFirst.haram])]
       ingredientWarnings = { ...ingredientWarnings, ...kwFirst.warnings }
       explanation        = kwFirst.explanation
+    }
+    if (kwFirst.suspicious.length > 0 && isHalal) {
+      isHalal                 = false
+      isUnknown               = false
+      suspiciousIngredients   = [...new Set([...suspiciousIngredients, ...kwFirst.suspicious])]
+      ingredientWarnings      = { ...ingredientWarnings, ...kwFirst.warnings }
+      if (kwFirst.haram.length === 0) explanation = kwFirst.explanation
     }
 
     // Category-based override: known alcoholic categories always win.
@@ -421,6 +428,12 @@ Deno.serve(async (req) => {
     if (requiresHalalCert) {
       isHalal   = false
       isUnknown = false
+    }
+
+    // Halal only when no haram, no suspicious, and no missing slaughter cert.
+    if (!isUnknown && !isHalalByCategory && haramIngredients.length === 0 &&
+        suspiciousIngredients.length > 0) {
+      isHalal = false
     }
 
     console.log(`[${barcode}] verdict: isHalal=${isHalal} isUnknown=${isUnknown} analyzedByAI=${analyzedByAI} requiresHalalCert=${requiresHalalCert} haram=[${haramIngredients.join(', ')}] suspicious=[${suspiciousIngredients.join(', ')}]`)

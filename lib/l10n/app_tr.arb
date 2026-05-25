@@ -44,6 +44,8 @@
   "vegan": "Vegan",
   "halal": "HELAL",
   "notHalal": "HARAM",
+  "suspiciousVerdict": "⚠️ KONTROL",
+  "suspiciousResult": "KONTROL",
   "lastScanned": "Son tarama",
   "today": "Bugün",
   "yesterday": "Dün",

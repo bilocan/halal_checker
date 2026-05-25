@@ -12,6 +12,7 @@ import '../../services/community_service.dart';
 import '../../services/database_service.dart';
 import '../../services/feedback_service.dart';
 import '../../services/product_service.dart';
+import '../../services/product_verdict.dart';
 
 /// Async state and actions for [ResultScreen].
 class ResultController extends ChangeNotifier {
@@ -169,6 +170,7 @@ class ResultController extends ChangeNotifier {
           barcode: barcode,
           productName: refreshed.name,
           isHalal: refreshed.isHalal,
+          verdict: ProductVerdict.storageKey(refreshed),
         );
       }
       return refreshed;

@@ -173,5 +173,12 @@ export function keywordAnalysis(
         ? 'No ingredient data found. Halal status cannot be determined — check the packaging directly.'
         : 'No haram or suspicious ingredients detected. Assessed by keyword matching.'
 
-  return { isHalal: !isUnknown && haram.length === 0, isUnknown, haram, suspicious, warnings, explanation }
+  return {
+    isHalal: !isUnknown && haram.length === 0 && suspicious.length === 0,
+    isUnknown,
+    haram,
+    suspicious,
+    warnings,
+    explanation,
+  }
 }

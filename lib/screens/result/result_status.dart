@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../app_colors.dart';
 import '../../localization/app_localizations.dart';
 import '../../models/product.dart';
+import '../../services/product_verdict.dart';
 
 /// Visual and textual halal verdict derived from a [Product].
 class ResultStatus {
@@ -21,57 +22,51 @@ class ResultStatus {
   final String resultLabel;
 
   factory ResultStatus.from(Product product, AppLocalizations loc) {
-    final isHalal = product.isHalal;
-    final isUnknown = product.isUnknown;
-    final isNonFood = product.isNonFood;
-    final requiresHalalCert = product.requiresHalalCert;
+    final outcome = ProductVerdict.outcome(product);
 
-    final color = isNonFood
-        ? Colors.blueGrey.shade600
-        : isUnknown
-        ? Colors.orange.shade700
-        : requiresHalalCert
-        ? Colors.orange.shade700
-        : (isHalal ? kGreen : Colors.red);
+    final color = switch (outcome) {
+      ProductOutcome.nonFood => Colors.blueGrey.shade600,
+      ProductOutcome.unknown => Colors.orange.shade700,
+      ProductOutcome.haram => Colors.red,
+      ProductOutcome.suspicious => Colors.orange.shade700,
+      ProductOutcome.noCert => Colors.orange.shade700,
+      ProductOutcome.halal => kGreen,
+    };
 
-    final icon = isNonFood
-        ? Icons.info_outline
-        : isUnknown
-        ? Icons.help_outline
-        : requiresHalalCert
-        ? Icons.warning_amber_outlined
-        : (isHalal ? Icons.check_circle : Icons.cancel);
+    final icon = switch (outcome) {
+      ProductOutcome.nonFood => Icons.info_outline,
+      ProductOutcome.unknown => Icons.help_outline,
+      ProductOutcome.haram => Icons.cancel,
+      ProductOutcome.suspicious => Icons.warning_amber_outlined,
+      ProductOutcome.noCert => Icons.warning_amber_outlined,
+      ProductOutcome.halal => Icons.check_circle,
+    };
 
-    final label = isNonFood
-        ? loc.nonFood
-        : isUnknown
-        ? loc.unknown
-        : requiresHalalCert
-        ? loc.noCert
-        : (isHalal ? '✅ HALAL' : '❌ NOT HALAL');
+    final label = switch (outcome) {
+      ProductOutcome.nonFood => loc.nonFood,
+      ProductOutcome.unknown => loc.unknown,
+      ProductOutcome.haram => '❌ ${loc.notHalal}',
+      ProductOutcome.suspicious => loc.suspiciousVerdict,
+      ProductOutcome.noCert => loc.noCert,
+      ProductOutcome.halal => '✅ ${loc.halal}',
+    };
 
-    final resultLabel = isNonFood
-        ? loc.nonFood
-        : isUnknown
-        ? loc.unknown
-        : requiresHalalCert
-        ? loc.noCert
-        : isHalal
-        ? loc.halal
-        : loc.notHalal;
+    final resultLabel = switch (outcome) {
+      ProductOutcome.nonFood => loc.nonFood,
+      ProductOutcome.unknown => loc.unknown,
+      ProductOutcome.haram => loc.notHalal,
+      ProductOutcome.suspicious => loc.suspiciousResult,
+      ProductOutcome.noCert => loc.noCert,
+      ProductOutcome.halal => loc.halal,
+    };
 
     final explanation = product.isNonFood
         ? loc.explanationNonFood
-        : product.requiresHalalCert
+        : product.requiresHalalCert && outcome == ProductOutcome.noCert
         ? loc.explanationNoCert
         : product.explanation.isNotEmpty
         ? product.explanation
-        : halalReasonText(
-            isHalal: isHalal,
-            isUnknown: isUnknown,
-            suspiciousIngredients: product.suspiciousIngredients,
-            loc: loc,
-          );
+        : defaultExplanation(product, outcome, loc);
 
     return ResultStatus(
       color: color,
@@ -83,17 +78,19 @@ class ResultStatus {
   }
 }
 
-String halalReasonText({
-  required bool isHalal,
-  required bool isUnknown,
-  required List<String> suspiciousIngredients,
-  required AppLocalizations loc,
-}) {
-  if (isUnknown) return loc.explanationUnknown;
-  if (isHalal) {
-    return suspiciousIngredients.isEmpty
-        ? loc.explanationClean
-        : loc.explanationSuspiciousOnly(suspiciousIngredients.join(', '));
-  }
-  return loc.explanationHaram;
+String defaultExplanation(
+  Product product,
+  ProductOutcome outcome,
+  AppLocalizations loc,
+) {
+  return switch (outcome) {
+    ProductOutcome.unknown => loc.explanationUnknown,
+    ProductOutcome.haram => loc.explanationHaram,
+    ProductOutcome.suspicious => loc.explanationSuspiciousOnly(
+      product.suspiciousIngredients.join(', '),
+    ),
+    ProductOutcome.halal => loc.explanationClean,
+    ProductOutcome.noCert => loc.explanationNoCert,
+    ProductOutcome.nonFood => loc.explanationNonFood,
+  };
 }
