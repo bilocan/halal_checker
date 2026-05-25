@@ -643,6 +643,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noDiscussionsHint => 'Be the first to start one!';
 
   @override
+  String get approvalsTab => 'Approvals';
+
+  @override
   String get analysisTab => 'Analysis';
 
   @override
@@ -653,6 +656,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get ingredientsTab => 'Ingredients';
+
+  @override
+  String get ingredientContributionsTab => 'Ingredient Contributions';
+
+  @override
+  String get aiIngredientsLookupTab => 'AI Ingredients Lookup';
 
   @override
   String get customRulesTab => 'Custom';

@@ -1282,6 +1282,12 @@ abstract class AppLocalizations {
   /// **'Be the first to start one!'**
   String get noDiscussionsHint;
 
+  /// No description provided for @approvalsTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Approvals'**
+  String get approvalsTab;
+
   /// No description provided for @analysisTab.
   ///
   /// In en, this message translates to:
@@ -1305,6 +1311,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Ingredients'**
   String get ingredientsTab;
+
+  /// No description provided for @ingredientContributionsTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Ingredient Contributions'**
+  String get ingredientContributionsTab;
+
+  /// No description provided for @aiIngredientsLookupTab.
+  ///
+  /// In en, this message translates to:
+  /// **'AI Ingredients Lookup'**
+  String get aiIngredientsLookupTab;
 
   /// No description provided for @customRulesTab.
   ///

@@ -641,6 +641,9 @@ class AppLocalizationsTr extends AppLocalizations {
   String get noDiscussionsHint => 'İlk tartışmayı siz başlatın!';
 
   @override
+  String get approvalsTab => 'Onaylar';
+
+  @override
   String get analysisTab => 'Analiz';
 
   @override
@@ -651,6 +654,12 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get ingredientsTab => 'Malzemeler';
+
+  @override
+  String get ingredientContributionsTab => 'İçerik Katkıları';
+
+  @override
+  String get aiIngredientsLookupTab => 'Yapay Zeka İçerik Araması';
 
   @override
   String get customRulesTab => 'Özel';

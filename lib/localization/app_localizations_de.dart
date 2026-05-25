@@ -650,6 +650,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get noDiscussionsHint => 'Seien Sie der Erste!';
 
   @override
+  String get approvalsTab => 'Freigaben';
+
+  @override
   String get analysisTab => 'Analyse';
 
   @override
@@ -660,6 +663,12 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get ingredientsTab => 'Zutaten';
+
+  @override
+  String get ingredientContributionsTab => 'Zutatenbeiträge';
+
+  @override
+  String get aiIngredientsLookupTab => 'KI-Zutatensuche';
 
   @override
   String get customRulesTab => 'Benutzerdefiniert';
