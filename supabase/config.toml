@@ -1,7 +1,7 @@
 # Supabase CLI config (deploy + local Docker stack).
 # UI E2E: scripts/start_e2e_supabase.* then supabase functions serve — see TESTING.md.
 
-project_id = "your-project-ref"   # replace with your actual project ref
+project_id = "halal-scna-local"   # replace with your actual project ref
 
 [api]
 enabled = true
