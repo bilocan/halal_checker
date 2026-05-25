@@ -333,13 +333,17 @@ Backend (Supabase)
 
 - Flutter SDK (stable channel)
 - A [Supabase](https://supabase.com) project with Edge Functions deployed
-- An [Anthropic](https://console.anthropic.com) API key set as a Supabase secret
 - Google OAuth configured in the Supabase dashboard (Authentication → Providers → Google)
+
+Claude / Anthropic is **optional** — scans work via Open Food Facts + keywords. Claude is **off** in this project for now (`CLAUDE_ENABLED=false`; no API key required).
 
 ### Supabase secrets
 
 ```bash
-supabase secrets set CLAUDE_API_KEY=sk-ant-...
+# Claude disabled by default (omit CLAUDE_API_KEY unless re-enabling)
+supabase secrets set CLAUDE_ENABLED=false
+# supabase secrets set CLAUDE_API_KEY=sk-ant-...
+
 supabase secrets set GEMINI_API_KEY=your_google_ai_studio_key
 # Optional — omit or set to false to disable Gemini (ingredient lookup + halal tier-1)
 supabase secrets set GEMINI_ENABLED=true
