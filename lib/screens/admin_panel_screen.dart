@@ -9,6 +9,7 @@ import 'admin/ai_approval_tab.dart';
 import 'admin/ingredient_contribution_tab.dart';
 import 'admin/ingredient_report_tab.dart';
 import 'admin/photo_approval_tab.dart';
+import 'admin/system_settings_tab.dart';
 import 'rules_management_screen.dart';
 
 class AdminPanelScreen extends StatefulWidget {
@@ -21,6 +22,17 @@ class AdminPanelScreen extends StatefulWidget {
 class _AdminPanelScreenState extends State<AdminPanelScreen> {
   final _service = AnalysisService();
   int _tabIndex = 0;
+  int _approvalsSubTabIndex = 0;
+
+  static const int _tabApprovals = 0;
+  static const int _tabRules = 1;
+  static const int _tabReports = 2;
+  static const int _tabSettings = 3;
+
+  static const int _subAnalysis = 0;
+  static const int _subPhotos = 1;
+  static const int _subContributions = 2;
+  static const int _subAiLookup = 3;
 
   // ── analysis tab ──────────────────────────────────────────────────────────
   List<Map<String, dynamic>> _analyses = [];
@@ -34,17 +46,39 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
   int _contributionBadge = 0;
   int _reportBadge = 0;
   int _aiRequestBadge = 0;
+  bool _isSuperAdmin = false;
 
   // ── GlobalKeys for imperative refresh from AppBar ─────────────────────────
   final _photosKey = GlobalKey<PhotoApprovalTabState>();
   final _ingredientsKey = GlobalKey<IngredientContributionTabState>();
   final _reportsKey = GlobalKey<IngredientReportTabState>();
   final _aiRequestsKey = GlobalKey<AiApprovalTabState>();
+  final _settingsKey = GlobalKey<SystemSettingsTabState>();
+
+  int get _settingsTabIndex => _tabSettings;
+
+  int get _approvalsBadge {
+    var total = _photoBadge + _contributionBadge + _aiRequestBadge;
+    if (_pendingCount > 0) total += _pendingCount;
+    return total;
+  }
 
   @override
   void initState() {
     super.initState();
     _load();
+    _loadSuperAdmin();
+  }
+
+  Future<void> _loadSuperAdmin() async {
+    final isSuper = await _service.isSuperAdmin();
+    if (!mounted) return;
+    setState(() {
+      _isSuperAdmin = isSuper;
+      if (!_isSuperAdmin && _tabIndex == _settingsTabIndex) {
+        _tabIndex = 0;
+      }
+    });
   }
 
   Future<void> _load() async {
@@ -147,7 +181,9 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
         backgroundColor: kGreen,
         foregroundColor: Colors.white,
         actions: [
-          if (_tabIndex == 0 && _selected.isNotEmpty)
+          if (_tabIndex == _tabApprovals &&
+              _approvalsSubTabIndex == _subAnalysis &&
+              _selected.isNotEmpty)
             TextButton.icon(
               onPressed: _running ? null : () => _run(ids: _selected.toList()),
               icon: const Icon(Icons.play_arrow, color: Colors.white),
@@ -156,30 +192,38 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
                 style: const TextStyle(color: Colors.white),
               ),
             ),
-          if (_tabIndex == 0)
+          if (_tabIndex == _tabApprovals &&
+              _approvalsSubTabIndex == _subAnalysis)
             IconButton(
               icon: const Icon(Icons.refresh),
               onPressed: _loading ? null : _load,
             ),
-          if (_tabIndex == 2)
+          if (_tabIndex == _tabApprovals && _approvalsSubTabIndex == _subPhotos)
             IconButton(
               icon: const Icon(Icons.refresh),
               onPressed: () => _photosKey.currentState?.refresh(),
             ),
-          if (_tabIndex == 3)
+          if (_tabIndex == _tabApprovals &&
+              _approvalsSubTabIndex == _subContributions)
             IconButton(
               icon: const Icon(Icons.refresh),
               onPressed: () => _ingredientsKey.currentState?.refresh(),
             ),
-          if (_tabIndex == 4)
+          if (_tabIndex == _tabApprovals &&
+              _approvalsSubTabIndex == _subAiLookup)
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              onPressed: () => _aiRequestsKey.currentState?.refresh(),
+            ),
+          if (_tabIndex == _tabReports)
             IconButton(
               icon: const Icon(Icons.refresh),
               onPressed: () => _reportsKey.currentState?.refresh(),
             ),
-          if (_tabIndex == 5)
+          if (_isSuperAdmin && _tabIndex == _settingsTabIndex)
             IconButton(
               icon: const Icon(Icons.refresh),
-              onPressed: () => _aiRequestsKey.currentState?.refresh(),
+              onPressed: () => _settingsKey.currentState?.refresh(),
             ),
         ],
       ),
@@ -190,24 +234,13 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
             child: IndexedStack(
               index: _tabIndex,
               children: [
-                _buildAnalysisBody(),
+                _buildApprovalsBody(),
                 const RulesManagementScreen(),
-                PhotoApprovalTab(
-                  key: _photosKey,
-                  onCountChanged: (n) => setState(() => _photoBadge = n),
-                ),
-                IngredientContributionTab(
-                  key: _ingredientsKey,
-                  onCountChanged: (n) => setState(() => _contributionBadge = n),
-                ),
                 IngredientReportTab(
                   key: _reportsKey,
                   onCountChanged: (n) => setState(() => _reportBadge = n),
                 ),
-                AiApprovalTab(
-                  key: _aiRequestsKey,
-                  onCountChanged: (n) => setState(() => _aiRequestBadge = n),
-                ),
+                if (_isSuperAdmin) SystemSettingsTab(key: _settingsKey),
               ],
             ),
           ),
@@ -223,51 +256,100 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
         children: [
           Expanded(
             child: _tabButton(
-              label: loc.analysisTab,
-              icon: Icons.analytics_outlined,
-              index: 0,
+              label: loc.approvalsTab,
+              icon: Icons.fact_check_outlined,
+              index: _tabApprovals,
+              badge: _approvalsBadge > 0 ? _approvalsBadge : null,
             ),
           ),
           Expanded(
             child: _tabButton(
               label: loc.rulesEngineTab,
               icon: Icons.rule_outlined,
-              index: 1,
-            ),
-          ),
-          Expanded(
-            child: _tabButton(
-              label: loc.photosTab,
-              icon: Icons.photo_library_outlined,
-              index: 2,
-              badge: _photoBadge > 0 ? _photoBadge : null,
-            ),
-          ),
-          Expanded(
-            child: _tabButton(
-              label: loc.ingredientsTab,
-              icon: Icons.list_alt_outlined,
-              index: 3,
-              badge: _contributionBadge > 0 ? _contributionBadge : null,
+              index: _tabRules,
             ),
           ),
           Expanded(
             child: _tabButton(
               label: loc.reportsTab,
               icon: Icons.flag_outlined,
-              index: 4,
+              index: _tabReports,
               badge: _reportBadge > 0 ? _reportBadge : null,
             ),
           ),
-          Expanded(
-            child: _tabButton(
-              label: 'AI Req.',
-              icon: Icons.auto_awesome_outlined,
-              index: 5,
+          if (_isSuperAdmin)
+            Expanded(
+              child: _tabButton(
+                label: loc.systemSettingsTab,
+                icon: Icons.settings_outlined,
+                index: _settingsTabIndex,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildApprovalsBody() {
+    final loc = AppLocalizations.of(context);
+    return Column(
+      children: [
+        _buildApprovalsSubTabBar(loc),
+        Expanded(
+          child: IndexedStack(
+            index: _approvalsSubTabIndex,
+            children: [
+              _buildAnalysisBody(),
+              PhotoApprovalTab(
+                key: _photosKey,
+                onCountChanged: (n) => setState(() => _photoBadge = n),
+              ),
+              IngredientContributionTab(
+                key: _ingredientsKey,
+                onCountChanged: (n) => setState(() => _contributionBadge = n),
+              ),
+              AiApprovalTab(
+                key: _aiRequestsKey,
+                onCountChanged: (n) => setState(() => _aiRequestBadge = n),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildApprovalsSubTabBar(AppLocalizations loc) {
+    return Container(
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: Colors.grey.shade300)),
+      ),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            _subTabButton(
+              label: loc.analysisTab,
+              index: _subAnalysis,
+              badge: _pendingCount > 0 ? _pendingCount : null,
+            ),
+            _subTabButton(
+              label: loc.photosTab,
+              index: _subPhotos,
+              badge: _photoBadge > 0 ? _photoBadge : null,
+            ),
+            _subTabButton(
+              label: loc.ingredientContributionsTab,
+              index: _subContributions,
+              badge: _contributionBadge > 0 ? _contributionBadge : null,
+            ),
+            _subTabButton(
+              label: loc.aiIngredientsLookupTab,
+              index: _subAiLookup,
               badge: _aiRequestBadge > 0 ? _aiRequestBadge : null,
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -312,25 +394,62 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            if (badge != null) ...[
-              const SizedBox(width: 4),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                decoration: BoxDecoration(
-                  color: Colors.orange.shade700,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  '$badge',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
+            if (badge != null) ...[const SizedBox(width: 4), _badgeChip(badge)],
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _subTabButton({
+    required String label,
+    required int index,
+    int? badge,
+  }) {
+    final selected = _approvalsSubTabIndex == index;
+    return InkWell(
+      onTap: () => setState(() => _approvalsSubTabIndex = index),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          border: Border(
+            bottom: BorderSide(
+              color: selected ? kGreen : Colors.transparent,
+              width: 2,
+            ),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+                color: selected ? kGreen : Colors.grey.shade600,
+              ),
+            ),
+            if (badge != null) ...[const SizedBox(width: 4), _badgeChip(badge)],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _badgeChip(int badge) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+      decoration: BoxDecoration(
+        color: Colors.orange.shade700,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        '$badge',
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
         ),
       ),
     );

@@ -14,26 +14,76 @@ Thank you for helping make halal food verification more accessible.
 
 - Flutter SDK (stable channel)
 - A [Supabase](https://supabase.com) project with the `lookup-product` Edge Function deployed
-- An [Anthropic](https://console.anthropic.com) API key set as a Supabase secret (`CLAUDE_API_KEY`)
+- **Claude / Anthropic is optional** — lookup works via Open Food Facts + keyword analysis without it. This project keeps Claude **off** for now (`CLAUDE_ENABLED=false` on edge functions; no `CLAUDE_API_KEY` required). To re-enable later, set the secret and `CLAUDE_ENABLED=true` (or unset `CLAUDE_ENABLED`).
+
+### Environments (local / test / production)
+
+HalalScan does not use a single runtime “environment” flag. Separation is by **which dart-defines file you pass** and **which Supabase stack** that file points at. Pick the right file for what you are doing — there is no automatic guard when you `flutter run`.
+
+| Environment | Config file | Supabase backend | Typical use |
+|-------------|-------------|------------------|-------------|
+| **Production / dev app** | `dart_defines.json` | Your real hosted project | `flutter run`, release builds, day-to-day development |
+| **Pipeline integration** | `dart_defines.integration.json` | A **second** hosted project (test only) | `test/integration/*`, `run_integration_test.*` |
+| **UI E2E (local)** | `dart_defines.e2e.json` | Local Docker via Supabase CLI (`127.0.0.1:54321` or `10.0.2.2` on Android emulator) | `run_ui_e2e_test.*` |
+
+All three files are **gitignored**; copy from the matching `*.example.json` in the repo root. Secrets are read at compile time via [`lib/config.dart`](lib/config.dart) (`String.fromEnvironment`) — never hardcode keys in source.
+
+**What is enforced**
+
+- Integration tests call `assertIntegrationProjectOnly()` ([`test/integration/helpers/supabase_integration_helper.dart`](test/integration/helpers/supabase_integration_helper.dart)): `INTEGRATION_PROJECT_REF` must be set and must match the host in `SUPABASE_URL`, so accidentally using `dart_defines.json` fails fast.
+- Unit tests (`flutter test test/services/ …`) do not use Supabase; they use mocks and offline fixtures.
+
+**What is manual**
+
+- You must use a **different** Supabase project for `dart_defines.json` (prod) and `dart_defines.integration.json` (test). The guard only checks ref ↔ URL consistency, not that prod and test refs differ.
+- UI E2E must use `dart_defines.e2e.json`, not `dart_defines.json`.
+
+**Backend / CI (high level)**
+
+| Layer | Production | Test (hosted) | Local |
+|-------|------------|---------------|-------|
+| App deploy & release builds | `SUPABASE_*` GitHub secrets | — | — |
+| Optional integration workflow | — | `INTEGRATION_*` secrets → writes `dart_defines.integration.json` in CI | — |
+| Edge function deploy & migrations | `.github/workflows/deploy-supabase.yml` → `SUPABASE_PROJECT_REF` | Apply same migrations to the test project | `supabase start` + [`scripts/start_e2e_supabase.ps1`](scripts/start_e2e_supabase.ps1) / `.sh` |
+| Edge function secrets (optional AI) | `CLAUDE_ENABLED=false` by default; optional `GEMINI_*`; `GEMINI_LOOKUP_EMPTY_OFF=true` skips admin approval for empty-OFF Gemini lookup | Same if needed on test project | `supabase/.env.local` (gitignored) for `supabase functions serve` during E2E — see [`supabase/.env.e2e.example`](supabase/.env.e2e.example) |
+
+**Debug-only offline fixtures** (`halal_test.db`, `test_data/`) are used in debug builds when not running E2E with `E2E_LIVE_LOOKUP=true`. They do not touch production data.
+
+Full testing setup (E2E Docker stack, barcodes, CI secrets): [TESTING.md](TESTING.md).
 
 ### Local configuration
 
-Copy the example config and fill in your own values:
+**App (production Supabase project):**
 
 ```bash
 cp dart_defines.example.json dart_defines.json
 ```
 
-Edit `dart_defines.json` with your Supabase project credentials. This file is gitignored and must never be committed.
+Edit `dart_defines.json` with your Supabase URL, anon key, and Google OAuth client ID. Never commit this file.
 
-**Pipeline integration** (optional, against a separate **test** Supabase project):
+**Pipeline integration** (separate **test** Supabase project — not production):
 
 ```bash
 cp dart_defines.integration.example.json dart_defines.integration.json
-./run_all_integration_tests.sh
 ```
 
-See [TESTING.md → Pipeline integration](TESTING.md#pipeline-integration--live-api-no-ui).
+Set `INTEGRATION_PROJECT_REF` to the test project ref from the dashboard URL; `SUPABASE_URL` must be `https://<that-ref>.supabase.co`. Add test Auth users and `SUPABASE_SERVICE_ROLE_KEY` only for admin/cleanup tests (never ship the service role in the app).
+
+```bash
+./run_all_integration_tests.sh    # Linux/macOS/Git Bash
+# .\run_all_integration_tests.ps1   # Windows
+```
+
+**UI E2E** (local Docker Supabase):
+
+```bash
+.\scripts\start_e2e_supabase.ps1   # Windows — or scripts/start_e2e_supabase.sh
+cp dart_defines.e2e.example.json dart_defines.e2e.json
+# Android emulator: use dart_defines.e2e.android-emulator.example.json instead
+.\run_ui_e2e_test.ps1
+```
+
+See [TESTING.md → Local Supabase for E2E](TESTING.md#local-supabase-for-e2e) and [TESTING.md → Pipeline integration](TESTING.md#pipeline-integration--live-api-no-ui).
 
 ### Run
 

@@ -55,6 +55,7 @@ export const SUSPICIOUS_ENTRIES: KeywordEntry[] = [
   ['e472', 'Emulsifiers may be animal-derived',         'e472', 'e-472'],
   ['e473', 'Sucrose esters may be animal-derived',      'e473', 'e-473'],
   ['e927', 'Glycine may be animal-derived',             'e927', 'e-927'],
+  ['e422', 'Glycerol may be animal-derived',           'e422', 'e-422'],
   ['rennet', 'Rennet may be animal-derived',
    'rennet', 'lab', 'labferment', 'présure', 'caglio', 'cuajo',
    'peynir mayası', 'stremsel'],

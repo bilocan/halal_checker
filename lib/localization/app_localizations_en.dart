@@ -643,6 +643,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noDiscussionsHint => 'Be the first to start one!';
 
   @override
+  String get approvalsTab => 'Approvals';
+
+  @override
   String get analysisTab => 'Analysis';
 
   @override
@@ -653,6 +656,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get ingredientsTab => 'Ingredients';
+
+  @override
+  String get ingredientContributionsTab => 'Ingredient Contributions';
+
+  @override
+  String get aiIngredientsLookupTab => 'AI Ingredients Lookup';
 
   @override
   String get customRulesTab => 'Custom';
@@ -902,6 +911,38 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get batchImportAccessDenied => 'Access denied: superadmin only';
+
+  @override
+  String get systemSettingsTab => 'Settings';
+
+  @override
+  String get systemSettingsTitle => 'System settings';
+
+  @override
+  String get systemSettingsSubtitle =>
+      'Superadmin only. Changes apply to all users on the next product lookup.';
+
+  @override
+  String get geminiLookupEmptyOffTitle => 'Auto Gemini ingredient lookup';
+
+  @override
+  String get geminiLookupEmptyOffDescription =>
+      'When Open Food Facts has no ingredients, search the web with Gemini (requires GEMINI_API_KEY on the server).';
+
+  @override
+  String get geminiLookupEmptyOffEnabled =>
+      'Auto Gemini ingredient lookup enabled';
+
+  @override
+  String get geminiLookupEmptyOffDisabled =>
+      'Auto Gemini ingredient lookup disabled';
+
+  @override
+  String get systemSettingsLoadFailed => 'Could not load system settings';
+
+  @override
+  String get systemSettingsSaveFailed =>
+      'Could not save setting (superadmin only)';
 
   @override
   String get batchImportNoBarcodes => 'No valid barcodes found in file';

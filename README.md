@@ -59,7 +59,7 @@ If the Edge Function is unavailable or Claude fails, the app falls back to `Hala
 | E920, L-cysteine | May be animal-derived |
 | natural flavour, flavouring | Source unspecified |
 | enzymes | May be extracted from animal sources |
-| glycerol | May be animal-derived |
+| glycerol, E422 | May be animal-derived |
 
 Each canonical keyword has variants in `IngredientKeywords.haramVariants` or `IngredientKeywords.suspiciousVariants`. Variants cover multiple languages used by the app and product databases, and matching uses word-boundary regex to avoid false positives (for example, `porcelain` does not match `pork`).
 
@@ -333,19 +333,25 @@ Backend (Supabase)
 
 - Flutter SDK (stable channel)
 - A [Supabase](https://supabase.com) project with Edge Functions deployed
-- An [Anthropic](https://console.anthropic.com) API key set as a Supabase secret
 - Google OAuth configured in the Supabase dashboard (Authentication → Providers → Google)
+
+Claude / Anthropic is **optional** — scans work via Open Food Facts + keywords. Claude is **off** in this project for now (`CLAUDE_ENABLED=false`; no API key required).
 
 ### Supabase secrets
 
 ```bash
-supabase secrets set CLAUDE_API_KEY=sk-ant-...
+# Claude disabled by default (omit CLAUDE_API_KEY unless re-enabling)
+supabase secrets set CLAUDE_ENABLED=false
+# supabase secrets set CLAUDE_API_KEY=sk-ant-...
+
 supabase secrets set GEMINI_API_KEY=your_google_ai_studio_key
 # Optional — omit or set to false to disable Gemini (ingredient lookup + halal tier-1)
 supabase secrets set GEMINI_ENABLED=true
+# Optional dev override — same as superadmin toggle below (prefer Admin → Settings in app)
+# supabase secrets set GEMINI_LOOKUP_EMPTY_OFF=true
 ```
 
-Gemini ingredient lookup uses **Grounding with Google Search** (billable on the Gemini API). It runs only when a user requests AI ingredients on the result screen, an admin approves that request, and the app calls `lookup-product` with `fetchAiIngredients: true` — not on every scan. Use the same Google AI Studio project/key you test with in chat, with billing enabled if searches return no `groundingMetadata` in Edge Function logs.
+Gemini ingredient lookup uses **Grounding with Google Search** (billable on the Gemini API). By default it runs only when a user requests AI ingredients on the result screen, an admin approves that request, and the app calls `lookup-product` with `fetchAiIngredients: true`. **Superadmins** can enable automatic lookup for empty Open Food Facts rows in **Admin panel → Settings** (`app_config.gemini_lookup_empty_off`). Alternatively set **`GEMINI_LOOKUP_EMPTY_OFF=true`** in edge-function env for local dev. Still requires `GEMINI_ENABLED` and `GEMINI_API_KEY`. Use the same Google AI Studio project/key you test with in chat, with billing enabled if searches return no `groundingMetadata` in Edge Function logs.
 
 ### Database migrations
 

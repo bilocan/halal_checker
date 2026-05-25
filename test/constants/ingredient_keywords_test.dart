@@ -211,7 +211,15 @@ void main() {
   });
 
   group('IngredientKeywords — suspicious e-numbers include hyphenated form', () {
-    for (final key in ['e920', 'e322', 'e471', 'e472', 'e473', 'e927']) {
+    for (final key in [
+      'e920',
+      'e322',
+      'e471',
+      'e472',
+      'e473',
+      'e927',
+      'e422',
+    ]) {
       test(
         'suspiciousVariants["$key"] contains "${key.replaceFirst('e', 'e-')}"',
         () {

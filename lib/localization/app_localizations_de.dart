@@ -650,6 +650,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get noDiscussionsHint => 'Seien Sie der Erste!';
 
   @override
+  String get approvalsTab => 'Freigaben';
+
+  @override
   String get analysisTab => 'Analyse';
 
   @override
@@ -660,6 +663,12 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get ingredientsTab => 'Zutaten';
+
+  @override
+  String get ingredientContributionsTab => 'Zutatenbeiträge';
+
+  @override
+  String get aiIngredientsLookupTab => 'KI-Zutatensuche';
 
   @override
   String get customRulesTab => 'Benutzerdefiniert';
@@ -917,6 +926,39 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get batchImportAccessDenied => 'Zugriff verweigert: nur Superadmin';
+
+  @override
+  String get systemSettingsTab => 'Einstellungen';
+
+  @override
+  String get systemSettingsTitle => 'Systemeinstellungen';
+
+  @override
+  String get systemSettingsSubtitle =>
+      'Nur Superadmin. Gilt für alle Nutzer bei der nächsten Produktsuche.';
+
+  @override
+  String get geminiLookupEmptyOffTitle => 'Automatische KI-Zutatensuche';
+
+  @override
+  String get geminiLookupEmptyOffDescription =>
+      'Wenn Open Food Facts keine Zutaten hat, im Web mit Gemini suchen (erfordert GEMINI_API_KEY auf dem Server).';
+
+  @override
+  String get geminiLookupEmptyOffEnabled =>
+      'Automatische KI-Zutatensuche aktiviert';
+
+  @override
+  String get geminiLookupEmptyOffDisabled =>
+      'Automatische KI-Zutatensuche deaktiviert';
+
+  @override
+  String get systemSettingsLoadFailed =>
+      'Systemeinstellungen konnten nicht geladen werden';
+
+  @override
+  String get systemSettingsSaveFailed =>
+      'Einstellung konnte nicht gespeichert werden (nur Superadmin)';
 
   @override
   String get batchImportNoBarcodes =>
