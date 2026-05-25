@@ -46,7 +46,7 @@ Tests cover the keyword matching engine and halal verdict logic. All PRs must pa
 
 ### Code style
 
-- Follow standard Dart formatting: `dart format .`
+- Follow standard Dart formatting: `./scripts/linux/format_dart.sh` or `.\scripts\windows\format_dart.ps1` (`lib/` + `test/` only; avoids `dart format .` failing on Windows when `build/` is stale)
 - Follow Flutter lint rules: `flutter analyze`
 - CI enforces both — PRs with formatting or lint failures will not be merged
 
@@ -65,7 +65,7 @@ Do not add keywords directly to the codebase without discussion — incorrect ke
 
 ## Pull request checklist
 
-- [ ] `flutter format .` passes with no changes
+- [ ] `./scripts/linux/format_dart.sh --check` passes (or `.\scripts\windows\format_dart.ps1 -Check` on Windows)
 - [ ] `flutter analyze` passes with no warnings
 - [ ] `flutter test test/services/` passes
 - [ ] PR description explains *why* the change is needed, not just what it does

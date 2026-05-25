@@ -11,7 +11,7 @@ alwaysApply: false
 Run (same as CI):
 
 ```bash
-dart format .
+./scripts/linux/format_dart.sh   # or .\scripts\windows\format_dart.ps1 on Windows
 flutter analyze --no-fatal-infos
 ```
 

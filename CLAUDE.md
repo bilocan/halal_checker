@@ -55,5 +55,5 @@ All runtime secrets are injected via `--dart-define-from-file=dart_defines.json`
 
 ## Code style
 
-- `dart format .` and `flutter analyze` must pass — CI enforces both
+- `./scripts/linux/format_dart.sh` (or `.\scripts\windows\format_dart.ps1` on Windows) and `flutter analyze` must pass — CI enforces both
 - Post-write dart formatting is configured in `.claude/settings.json`

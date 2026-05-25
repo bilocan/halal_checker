@@ -9,7 +9,7 @@ alwaysApply: true
 
 After non-trivial code changes:
 
-1. `dart format .`
+1. `./scripts/linux/format_dart.sh` or `.\scripts\windows\format_dart.ps1` (not `dart format .` — breaks on Windows when `build/` has stale paths)
 2. `flutter analyze --no-fatal-infos`
 3. `flutter test test/services/ test/constants/ test/models/ test/config_test.dart`
 

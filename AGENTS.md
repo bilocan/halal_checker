@@ -5,7 +5,8 @@ Short checklist for Cursor/Claude agents. Full detail: [CLAUDE.md](CLAUDE.md). *
 ## Verify before done
 
 ```bash
-dart format .
+./scripts/linux/format_dart.sh          # Linux/macOS/Git Bash
+# .\scripts\windows\format_dart.ps1     # Windows PowerShell
 flutter analyze --no-fatal-infos
 flutter test test/services/ test/constants/ test/models/ test/config_test.dart
 ```

@@ -1,6 +1,24 @@
 # Scripts
 
-Helper scripts for releasing and maintaining HalalScan. Each script has a **Linux/macOS** (bash) and **Windows** (PowerShell) version.
+Helper scripts for releasing and maintaining HalalScan. Each script has a **Linux/macOS** (bash) and **Windows** (PowerShell) version where it matters.
+
+---
+
+## Format Dart: `format_dart`
+
+Format (or verify) all app and test Dart under `lib/` and `test/`. Use this instead of `dart format .`, which can fail on Windows when `build/` contains broken transform paths.
+
+```bash
+# Linux / macOS / Git Bash
+./scripts/linux/format_dart.sh           # apply formatting
+./scripts/linux/format_dart.sh --check   # CI check — exit 1 if not formatted
+
+# Windows (PowerShell)
+.\scripts\windows\format_dart.ps1          # apply formatting
+.\scripts\windows\format_dart.ps1 -Check   # CI check
+```
+
+CI runs `./scripts/linux/format_dart.sh --check` in `.github/workflows/test.yml`.
 
 ---
 

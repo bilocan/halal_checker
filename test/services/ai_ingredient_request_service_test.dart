@@ -237,8 +237,8 @@ void main() {
           'id': 8,
         };
         AiIngredientRequestService.fakeIsAdmin = () async => true;
-        AiIngredientRequestService.fakePerformStatusUpdate =
-            (_, _, _) async => [];
+        AiIngredientRequestService.fakePerformStatusUpdate = (_, _, _) async =>
+            [];
 
         expect(
           await AiIngredientRequestService.submitRequest('123'),

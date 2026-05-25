@@ -12,7 +12,7 @@
 
 ## Checklist
 
-- [ ] `dart format .` passes with no changes
+- [ ] `./scripts/linux/format_dart.sh --check` passes (or `.\scripts\windows\format_dart.ps1 -Check` on Windows)
 - [ ] `flutter analyze` passes with no warnings
 - [ ] `flutter test test/services/` passes
 - [ ] Relevant tests added or updated
