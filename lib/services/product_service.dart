@@ -9,6 +9,7 @@ import '../models/product.dart';
 import 'cache_service.dart';
 import 'halal_rules_engine.dart';
 import 'off_fetcher.dart';
+import 'product_verdict.dart';
 import 'keyword_normalization.dart';
 import 'keyword_service.dart';
 import 'test_product_repository.dart';
@@ -37,9 +38,13 @@ class ProductService {
   }
 
   @visibleForTesting
+  Future<Product?> Function(String barcode)? testFetchIngredientsByAI;
+
+  @visibleForTesting
   void resetForTesting() {
     _testSupabaseUrl = null;
     _testSupabaseKey = null;
+    testFetchIngredientsByAI = null;
     _customKeywordsFuture = null;
     _cachedCustomEngine = null;
     _customHaramKeywords.clear();
@@ -178,6 +183,9 @@ class ProductService {
   Product _applyKeywordSafety(Product product) {
     final kwCheck = analyzeWithKeywords(product.ingredients);
     final customCheck = _customKeywordAnalysis(product.ingredients);
+    final nameCheck = product.name.trim().isEmpty
+        ? null
+        : analyzeWithKeywords([product.name.toLowerCase()]);
 
     // Also analyze the already-flagged ingredients directly: their exact strings
     // (from AI) may differ in case/spacing from product.ingredients entries, so
@@ -195,37 +203,67 @@ class ProductService {
       ...product.haramIngredients,
       ...kwCheck.haram,
       ...customCheck.haram,
+      if (nameCheck != null) ...nameCheck.haram,
+    }.toList();
+    final allSuspicious = {
+      ...product.suspiciousIngredients,
+      ...kwCheck.suspicious,
+      ...customCheck.suspicious,
+      if (nameCheck != null) ...nameCheck.suspicious,
     }.toList();
     final allWarnings = {
       ...product.ingredientWarnings,
       ...kwCheck.warnings,
       ...customCheck.warnings,
+      if (nameCheck != null) ...nameCheck.warnings,
     };
     final allTranslations = {
       ...product.ingredientTranslations,
       ...kwCheck.translations,
       ...customCheck.translations,
+      if (nameCheck != null) ...nameCheck.translations,
     };
     final allCanonicals = {
       ...product.ingredientCanonicals,
       ...kwCheck.canonicals,
       if (flaggedCheck != null) ...flaggedCheck.canonicals,
+      if (nameCheck != null) ...nameCheck.canonicals,
     };
-    final isNowHaram = allHaram.isNotEmpty;
+    final isNowHalal = ProductVerdict.isHalalFromFlags(
+      haramIngredients: allHaram,
+      suspiciousIngredients: allSuspicious,
+      requiresHalalCert: product.requiresHalalCert,
+      isUnknown: product.isUnknown,
+    );
 
-    if (isNowHaram && product.isHalal) {
-      final explanation = kwCheck.haram.isNotEmpty
-          ? kwCheck.explanation
-          : 'This product contains ingredient(s) that are not permissible: '
-                '${customCheck.haram.join(', ')}. '
-                'Flagged by custom keyword.';
+    if (!isNowHalal && product.isHalal) {
+      final explanation = allHaram.isNotEmpty
+          ? (kwCheck.haram.isNotEmpty
+                ? kwCheck.explanation
+                : (nameCheck != null && nameCheck.haram.isNotEmpty)
+                ? nameCheck.explanation
+                : 'This product contains ingredient(s) that are not permissible: '
+                      '${customCheck.haram.join(', ')}. '
+                      'Flagged by custom keyword.')
+          : kwCheck.explanation;
       return product.copyWith(
         isHalal: false,
         haramIngredients: allHaram,
+        suspiciousIngredients: allSuspicious,
         ingredientWarnings: allWarnings,
         ingredientTranslations: allTranslations,
         ingredientCanonicals: allCanonicals,
-        explanation: explanation,
+        explanation: explanation.isNotEmpty ? explanation : product.explanation,
+      );
+    }
+    if (allSuspicious.isNotEmpty &&
+        product.suspiciousIngredients.length != allSuspicious.length) {
+      return product.copyWith(
+        isHalal: isNowHalal,
+        suspiciousIngredients: allSuspicious,
+        ingredientWarnings: allWarnings,
+        ingredientTranslations: allTranslations,
+        ingredientCanonicals: allCanonicals,
       );
     }
     if (allTranslations.isNotEmpty || allCanonicals.isNotEmpty) {
@@ -290,7 +328,11 @@ class ProductService {
         allHaram.isEmpty;
 
     return product.copyWith(
-      isHalal: allHaram.isEmpty && !requiresHalalCert,
+      isHalal: ProductVerdict.isHalalFromFlags(
+        haramIngredients: allHaram,
+        suspiciousIngredients: allSuspicious,
+        requiresHalalCert: requiresHalalCert,
+      ),
       isUnknown: false,
       haramIngredients: allHaram,
       suspiciousIngredients: allSuspicious,
@@ -421,7 +463,9 @@ class ProductService {
   }
 
   Future<Product?> fetchIngredientsByAI(String barcode) async {
-    final product = await _fetchFromBackend(barcode, fetchAiIngredients: true);
+    final product = testFetchIngredientsByAI != null
+        ? await testFetchIngredientsByAI!(barcode)
+        : await _fetchFromBackend(barcode, fetchAiIngredients: true);
     if (product != null) await _cache.saveProduct(barcode, product);
     return product;
   }

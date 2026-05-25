@@ -33,7 +33,7 @@ flutter test test/services/ test/constants/ test/models/ test/config_test.dart
 **Backend:**
 - Supabase Edge Function at `supabase/functions/lookup-product/` handles OpenFoodFacts fetching, Claude AI analysis, and shared caching
 - Claude API key lives as a Supabase secret (`CLAUDE_API_KEY`) — never in the app
-- Gemini (`GEMINI_API_KEY`, optional `GEMINI_ENABLED`) powers web-grounded ingredient lookup when Open Food Facts has no list, and tier-1 halal analysis
+- Gemini (`GEMINI_API_KEY`, optional `GEMINI_ENABLED`) powers web-grounded ingredient lookup only after an admin approves an `ai_ingredient_requests` row and the client calls `lookup-product` with `fetchAiIngredients: true`; tier-1 halal analysis still runs on existing ingredient lists
 
 ## Halal analysis layers
 
@@ -55,5 +55,5 @@ All runtime secrets are injected via `--dart-define-from-file=dart_defines.json`
 
 ## Code style
 
-- `dart format .` and `flutter analyze` must pass — CI enforces both
+- `./scripts/linux/format_dart.sh` (or `.\scripts\windows\format_dart.ps1` on Windows) and `flutter analyze` must pass — CI enforces both
 - Post-write dart formatting is configured in `.claude/settings.json`

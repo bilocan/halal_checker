@@ -44,6 +44,8 @@
   "vegan": "Vegan",
   "halal": "HALAL",
   "notHalal": "HARAM",
+  "suspiciousVerdict": "⚠️ PRÜFEN",
+  "suspiciousResult": "PRÜFEN",
   "lastScanned": "Zuletzt gescannt",
   "today": "Heute",
   "yesterday": "Gestern",

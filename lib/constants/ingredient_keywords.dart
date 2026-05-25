@@ -68,6 +68,7 @@ class IngredientKeywords {
     ],
     'beer': [
       'beer', 'bier', 'bière', 'birra', 'cerveza', 'bira', 'cerveja',
+      'budweiser', 'heineken', 'corona', 'stella artois', 'carlsberg',
       'pivo', // SR / CS
       'sör', // HU
     ],

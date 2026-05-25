@@ -370,6 +370,18 @@ abstract class AppLocalizations {
   /// **'HARAM'**
   String get notHalal;
 
+  /// No description provided for @suspiciousVerdict.
+  ///
+  /// In en, this message translates to:
+  /// **'⚠️ VERIFY'**
+  String get suspiciousVerdict;
+
+  /// No description provided for @suspiciousResult.
+  ///
+  /// In en, this message translates to:
+  /// **'VERIFY'**
+  String get suspiciousResult;
+
   /// No description provided for @lastScanned.
   ///
   /// In en, this message translates to:

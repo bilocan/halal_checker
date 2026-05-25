@@ -8,7 +8,8 @@ export const HARAM_ENTRIES: KeywordEntry[] = [
   ['wine',       'Contains alcohol or alcohol-derived ingredient',
    'wine', 'wein', 'vin', 'vino', 'şarap', 'wijn', 'vinho'],
   ['beer',       'Contains alcohol or alcohol-derived ingredient',
-   'beer', 'bier', 'bière', 'birra', 'cerveza', 'bira', 'cerveja'],
+   'beer', 'bier', 'bière', 'birra', 'cerveza', 'bira', 'cerveja',
+   'budweiser', 'heineken', 'corona', 'stella artois', 'carlsberg'],
   ['cognac',    'Contains cognac (alcoholic spirit)',   'cognac', 'kognak'],
   ['brandy',    'Contains brandy (alcoholic spirit)',   'brandy', 'branntwein', 'brandewijn'],
   ['whisky',    'Contains whisky (alcoholic spirit)',   'whisky', 'whiskey', 'whiskie', 'viski'],
@@ -173,5 +174,12 @@ export function keywordAnalysis(
         ? 'No ingredient data found. Halal status cannot be determined — check the packaging directly.'
         : 'No haram or suspicious ingredients detected. Assessed by keyword matching.'
 
-  return { isHalal: !isUnknown && haram.length === 0, isUnknown, haram, suspicious, warnings, explanation }
+  return {
+    isHalal: !isUnknown && haram.length === 0 && suspicious.length === 0,
+    isUnknown,
+    haram,
+    suspicious,
+    warnings,
+    explanation,
+  }
 }

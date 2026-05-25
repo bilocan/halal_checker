@@ -26,6 +26,15 @@ cp dart_defines.example.json dart_defines.json
 
 Edit `dart_defines.json` with your Supabase project credentials. This file is gitignored and must never be committed.
 
+**Pipeline integration** (optional, against a separate **test** Supabase project):
+
+```bash
+cp dart_defines.integration.example.json dart_defines.integration.json
+./run_all_integration_tests.sh
+```
+
+See [TESTING.md → Pipeline integration](TESTING.md#pipeline-integration--live-api-no-ui).
+
 ### Run
 
 ```bash
@@ -46,7 +55,7 @@ Tests cover the keyword matching engine and halal verdict logic. All PRs must pa
 
 ### Code style
 
-- Follow standard Dart formatting: `dart format .`
+- Follow standard Dart formatting: `./scripts/linux/format_dart.sh` or `.\scripts\windows\format_dart.ps1` (`lib/` + `test/` only; avoids `dart format .` failing on Windows when `build/` is stale)
 - Follow Flutter lint rules: `flutter analyze`
 - CI enforces both — PRs with formatting or lint failures will not be merged
 
@@ -65,7 +74,7 @@ Do not add keywords directly to the codebase without discussion — incorrect ke
 
 ## Pull request checklist
 
-- [ ] `flutter format .` passes with no changes
+- [ ] `./scripts/linux/format_dart.sh --check` passes (or `.\scripts\windows\format_dart.ps1 -Check` on Windows)
 - [ ] `flutter analyze` passes with no warnings
 - [ ] `flutter test test/services/` passes
 - [ ] PR description explains *why* the change is needed, not just what it does

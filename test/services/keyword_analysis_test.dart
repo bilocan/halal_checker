@@ -279,14 +279,14 @@ void main() {
         'whey powder',
         'vanillin',
       ]);
-      expect(r.isHalal, isTrue);
+      expect(r.isHalal, isFalse);
       expect(r.haram, isEmpty);
       expect(r.suspicious, contains('whey powder'));
     });
 
     test('product with e471 is suspicious', () {
       final r = ProductService.analyzeWithKeywords(['flour', 'e471', 'salt']);
-      expect(r.isHalal, isTrue);
+      expect(r.isHalal, isFalse);
       expect(r.suspicious, contains('e471'));
     });
 
@@ -296,7 +296,7 @@ void main() {
         'natural flavour',
         'water',
       ]);
-      expect(r.isHalal, isTrue);
+      expect(r.isHalal, isFalse);
       expect(r.suspicious, contains('natural flavour'));
     });
 
@@ -307,7 +307,7 @@ void main() {
         'yeast',
         'enzymes',
       ]);
-      expect(r.isHalal, isTrue);
+      expect(r.isHalal, isFalse);
       expect(r.suspicious, contains('enzymes'));
     });
   });

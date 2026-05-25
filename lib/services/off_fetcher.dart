@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import '../constants/food_categories.dart';
 import '../models/product.dart';
 import 'halal_rules_engine.dart';
+import 'product_verdict.dart';
 
 /// Fetches and parses products from OpenFoodFacts, OpenBeautyFacts, and
 /// OpenProductsFacts. Extracted from ProductService to isolate the OFF-specific
@@ -388,10 +389,13 @@ class OffFetcher {
         ingredients: ingredients,
         isHalal:
             isHalalByCategory ||
-            (!isUnknown &&
-                !haramByCategory &&
-                haramIngredients.isEmpty &&
-                !requiresHalalCert),
+            (!haramByCategory &&
+                ProductVerdict.isHalalFromFlags(
+                  haramIngredients: haramIngredients,
+                  suspiciousIngredients: suspiciousIngredients,
+                  requiresHalalCert: requiresHalalCert,
+                  isUnknown: isUnknown,
+                )),
         isUnknown: isUnknown,
         haramIngredients: haramIngredients,
         suspiciousIngredients: suspiciousIngredients,

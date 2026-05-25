@@ -8,6 +8,7 @@ import '../integration_test_keys.dart';
 import '../localization/app_localizations.dart';
 import '../services/database_service.dart';
 import '../services/product_service.dart';
+import '../services/product_verdict.dart';
 import 'admin_panel_screen.dart';
 import 'result_screen.dart';
 
@@ -154,6 +155,7 @@ class _HomeScreenState extends State<HomeScreen> {
           barcode: barcode,
           productName: product.name,
           isHalal: product.isHalal,
+          verdict: ProductVerdict.storageKey(product),
         );
       }
       if (!mounted) return;

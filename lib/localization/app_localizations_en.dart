@@ -149,6 +149,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notHalal => 'HARAM';
 
   @override
+  String get suspiciousVerdict => '⚠️ VERIFY';
+
+  @override
+  String get suspiciousResult => 'VERIFY';
+
+  @override
   String get lastScanned => 'Last scanned';
 
   @override

@@ -253,10 +253,11 @@ void main() {
       ingredients = IngredientSanitizer.sanitize(_soletiOcr);
     });
 
-    test('full pipeline: isHalal is true (no haram ingredients)', () {
+    test('full pipeline: not halal when suspicious ingredients present', () {
       final result = ProductService.analyzeWithKeywords(ingredients);
-      expect(result.isHalal, isTrue);
+      expect(result.isHalal, isFalse);
       expect(result.haram, isEmpty);
+      expect(result.suspicious, isNotEmpty);
     });
 
     test('flags whey / Molkenpulver as suspicious', () {

@@ -9,6 +9,7 @@ import '../services/database_service.dart';
 import '../services/ingredient_sanitizer.dart';
 import '../services/ocr_service.dart';
 import '../services/product_service.dart';
+import '../services/product_verdict.dart';
 import 'result_screen.dart';
 
 class IngredientOcrScreen extends StatefulWidget {
@@ -89,6 +90,7 @@ class _IngredientOcrScreenState extends State<IngredientOcrScreen> {
         barcode: barcode,
         productName: product.name,
         isHalal: product.isHalal,
+        verdict: ProductVerdict.storageKey(product),
       );
 
       if (!mounted) return;

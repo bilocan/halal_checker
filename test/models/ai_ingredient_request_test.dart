@@ -2,6 +2,21 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:halal_checker/models/ai_ingredient_request.dart';
 
 void main() {
+  group('AiIngredientSubmitResult', () {
+    test('has distinct values for each outcome', () {
+      expect(AiIngredientSubmitResult.values, hasLength(4));
+      expect(
+        AiIngredientSubmitResult.values,
+        containsAll([
+          AiIngredientSubmitResult.failed,
+          AiIngredientSubmitResult.alreadyPending,
+          AiIngredientSubmitResult.pending,
+          AiIngredientSubmitResult.approved,
+        ]),
+      );
+    });
+  });
+
   group('AiIngredientRequest.fromJson', () {
     test('parses int id and ISO created_at string', () {
       final item = AiIngredientRequest.fromJson({

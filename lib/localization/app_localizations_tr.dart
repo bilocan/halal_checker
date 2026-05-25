@@ -150,6 +150,12 @@ class AppLocalizationsTr extends AppLocalizations {
   String get notHalal => 'HARAM';
 
   @override
+  String get suspiciousVerdict => '⚠️ KONTROL';
+
+  @override
+  String get suspiciousResult => 'KONTROL';
+
+  @override
   String get lastScanned => 'Son tarama';
 
   @override

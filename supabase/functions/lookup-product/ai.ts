@@ -13,7 +13,7 @@ export const CLAUDE_SYSTEM =
 
 Respond with a raw JSON object only — no markdown, no prose outside the JSON:
 {
-  "isHalal": boolean,
+  "isHalal": boolean (true only when haramIngredients and suspiciousIngredients are both empty),
   "isUnknown": boolean,
   "haramIngredients": ["ingredient names that are definitively haram"],
   "suspiciousIngredients": ["ingredient names that may be non-halal"],
@@ -51,12 +51,18 @@ function toVerdict(
   ingredientsLength: number,
   unknownDefault = false,
 ): AiVerdict {
+  const haramIngredients = p.haramIngredients ?? [];
+  const suspiciousIngredients = p.suspiciousIngredients ?? [];
+  const isUnknown =
+    p.isUnknown ?? (ingredientsLength === 0 ? unknownDefault : false);
+  const isHalal = !isUnknown &&
+    haramIngredients.length === 0 &&
+    suspiciousIngredients.length === 0;
   return {
-    isHalal: p.isHalal ?? false,
-    isUnknown: p.isUnknown ??
-      (ingredientsLength === 0 ? unknownDefault : false),
-    haramIngredients: p.haramIngredients ?? [],
-    suspiciousIngredients: p.suspiciousIngredients ?? [],
+    isHalal,
+    isUnknown,
+    haramIngredients,
+    suspiciousIngredients,
     ingredientWarnings: p.ingredientWarnings ?? {},
     explanation: p.explanation ?? "",
   };

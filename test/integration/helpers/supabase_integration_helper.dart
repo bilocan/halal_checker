@@ -7,10 +7,10 @@ import 'package:halal_checker/services/product_image_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-/// Shared setup for live Supabase integration tests.
+/// Shared setup for live Supabase integration tests (test project only).
 ///
-/// Requires `--dart-define-from-file=dart_defines.json` (or equivalent
-/// `SUPABASE_URL` + `SUPABASE_ANON_KEY` defines).
+/// Requires `--dart-define-from-file=dart_defines.integration.json` (or
+/// equivalent `SUPABASE_URL` + `SUPABASE_ANON_KEY` defines).
 ///
 /// Optional defines for broader coverage:
 /// - `SUPABASE_TEST_EMAIL` / `SUPABASE_TEST_PASSWORD` — authenticated user
@@ -61,7 +61,30 @@ class SupabaseIntegrationHelper {
     if (!hasSupabase) {
       markTestSkipped(
         'Requires SUPABASE_URL and SUPABASE_ANON_KEY '
-        '(use --dart-define-from-file=dart_defines.json)',
+        '(use --dart-define-from-file=dart_defines.integration.json)',
+      );
+    }
+    assertIntegrationProjectOnly();
+  }
+
+  /// Fails fast when [dart_defines.json] / prod URL is used instead of integration defines.
+  static void assertIntegrationProjectOnly() {
+    if (!hasSupabase) return;
+
+    final ref = AppConfig.integrationProjectRef.trim();
+    if (ref.isEmpty) {
+      fail(
+        'INTEGRATION_PROJECT_REF must be set in dart_defines.integration.json '
+        '(test Supabase project ref from the dashboard URL).',
+      );
+    }
+
+    final host = Uri.tryParse(AppConfig.supabaseUrl)?.host ?? '';
+    if (!host.startsWith(ref)) {
+      fail(
+        'SUPABASE_URL ($host) does not match INTEGRATION_PROJECT_REF ($ref). '
+        'Pipeline tests must use dart_defines.integration.json for the test project, '
+        'not dart_defines.json / production.',
       );
     }
   }
@@ -111,6 +134,20 @@ class SupabaseIntegrationHelper {
 
   static Future<void> signInTestAdmin() async {
     await _signIn(_adminEmail, _adminPassword);
+    await _ensureProfileRole('admin');
+  }
+
+  /// Integration admin tests need RLS admin/superadmin; users cannot self-promote.
+  static Future<void> _ensureProfileRole(String role) async {
+    final client = _serviceClient;
+    final uid = AuthService.currentUser?.id;
+    if (client == null || uid == null) {
+      fail(
+        'SUPABASE_SERVICE_ROLE_KEY is required in dart_defines.integration.json '
+        'so integration tests can set profiles.role=$role for test accounts.',
+      );
+    }
+    await client.from('profiles').upsert({'id': uid, 'role': role});
   }
 
   static Future<void> _signIn(String email, String password) async {

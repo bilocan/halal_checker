@@ -7,6 +7,7 @@
 
 import { assertEquals, assertMatch } from 'https://deno.land/std@0.224.0/assert/mod.ts'
 import { withCommunitySource } from './community.ts'
+import { shouldRunGeminiIngredientLookup } from './ingredient_lookup_gate.ts'
 
 // ── inline copies of the pure functions under test ───────────────────────────
 // We copy them here rather than importing from index.ts to keep the test file
@@ -207,6 +208,13 @@ Deno.test('keywordAnalysis — pork → isHalal false', () => {
   assertEquals(r.haram, ['pork'])
 })
 
+Deno.test('keywordAnalysis — e471 → isHalal false, suspicious populated', () => {
+  const r = keywordAnalysis(['flour', 'e471', 'salt'])
+  assertEquals(r.isHalal, false)
+  assertEquals(r.suspicious.length, 1)
+  assertEquals(r.haram.length, 0)
+})
+
 Deno.test('keywordAnalysis — empty list → isUnknown true', () => {
   const r = keywordAnalysis([])
   assertEquals(r.isUnknown, true)
@@ -306,4 +314,60 @@ Deno.test('withCommunitySource — overrides OFF source when approved list exist
 Deno.test('withCommunitySource — leaves row unchanged when no approved list', () => {
   const row = { barcode: '123', ingredient_source: 'off', ingredients: ['water'] }
   assertEquals(withCommunitySource(row, null), row)
+})
+
+// ── Gemini ingredient lookup gate ───────────────────────────────────────────
+
+Deno.test('shouldRunGeminiIngredientLookup — runs only when approved + fetchAiIngredients', () => {
+  assertEquals(
+    shouldRunGeminiIngredientLookup({
+      fetchAiIngredients: true,
+      hasApprovedRequest: true,
+      offIngredientCount: 0,
+      productName: 'Cola Zero',
+    }),
+    true,
+  )
+  assertEquals(
+    shouldRunGeminiIngredientLookup({
+      fetchAiIngredients: false,
+      hasApprovedRequest: true,
+      offIngredientCount: 0,
+      productName: 'Cola Zero',
+    }),
+    false,
+  )
+  assertEquals(
+    shouldRunGeminiIngredientLookup({
+      fetchAiIngredients: true,
+      hasApprovedRequest: false,
+      offIngredientCount: 0,
+      productName: 'Cola Zero',
+    }),
+    false,
+  )
+})
+
+Deno.test('shouldRunGeminiIngredientLookup — skips when OFF already has ingredients', () => {
+  assertEquals(
+    shouldRunGeminiIngredientLookup({
+      fetchAiIngredients: true,
+      hasApprovedRequest: true,
+      offIngredientCount: 2,
+      productName: 'Cola Zero',
+    }),
+    false,
+  )
+})
+
+Deno.test('shouldRunGeminiIngredientLookup — skips unknown product name', () => {
+  assertEquals(
+    shouldRunGeminiIngredientLookup({
+      fetchAiIngredients: true,
+      hasApprovedRequest: true,
+      offIngredientCount: 0,
+      productName: 'Unknown Product',
+    }),
+    false,
+  )
 })

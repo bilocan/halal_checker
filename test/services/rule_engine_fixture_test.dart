@@ -27,15 +27,12 @@ void main() {
 
       final result = engine.analyzeIngredients(ingredients);
 
-      // HalalRulesResult.verdict is binary (haram | halal) — suspicious
-      // detections are only in result.matches, not the top-level verdict.
-      // Derive the three-way verdict from matches to align with the fixture.
-      final gotVerdict =
-          result.matches.any((m) => m.verdict == HalalRuleVerdict.haram)
-          ? 'haram'
-          : result.matches.any((m) => m.verdict == HalalRuleVerdict.suspicious)
-          ? 'suspicious'
-          : 'halal';
+      final gotVerdict = switch (result.verdict) {
+        HalalRuleVerdict.haram => 'haram',
+        HalalRuleVerdict.suspicious => 'suspicious',
+        HalalRuleVerdict.halal => 'halal',
+        HalalRuleVerdict.unknown => 'halal',
+      };
 
       expect(
         gotVerdict,

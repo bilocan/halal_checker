@@ -24,4 +24,23 @@ void main() {
     expect(status.explanation, loc.explanationNonFood);
     expect(status.resultLabel, loc.nonFood);
   });
+
+  test('suspicious-only product shows verify status', () {
+    final loc = AppLocalizationsEn();
+    final product = Product(
+      barcode: '9100000784175',
+      name: 'Test',
+      ingredients: const ['e471'],
+      isHalal: false,
+      haramIngredients: const [],
+      suspiciousIngredients: const ['e471'],
+      ingredientWarnings: const {},
+      labels: const [],
+    );
+
+    final status = ResultStatus.from(product, loc);
+
+    expect(status.resultLabel, loc.suspiciousResult);
+    expect(status.explanation, loc.explanationSuspiciousOnly('e471'));
+  });
 }

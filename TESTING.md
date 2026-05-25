@@ -4,7 +4,8 @@ How to run and extend tests at every layer: fast CI checks, live API integration
 
 **Prerequisites:**
 
-- **App / pipeline integration:** `dart_defines.example.json` → `dart_defines.json` (production or staging Supabase).
+- **App (dev / release):** `dart_defines.example.json` → `dart_defines.json` (your Supabase project for `flutter run`).
+- **Pipeline integration:** `dart_defines.integration.example.json` → `dart_defines.integration.json` (**dedicated test Supabase project** — never production).
 - **UI E2E:** `dart_defines.e2e.example.json` → `dart_defines.e2e.json` (local Docker Supabase) — see [Local Supabase for E2E](#local-supabase-for-e2e).
 
 ---
@@ -15,7 +16,7 @@ How to run and extend tests at every layer: fast CI checks, live API integration
 |-------|-------------------|---------|-----|----------|
 | **Unit / service** | Rules engine, keywords, cache, parsing, mocked HTTP | No | Yes | `test/services/`, `test/constants/`, `test/models/` |
 | **Widget** | Individual screens with stubs (`test/helpers/`) | No | Yes | `test/screens/` |
-| **Pipeline integration** | Real `ProductService` lookup (network) | No | No | `test/integration/` |
+| **Pipeline integration** | Real `ProductService` / Supabase services (test project) | No | Optional | `test/integration/` |
 | **UI E2E** | Full app: navigation + real lookup + result UI | Yes | No | `integration_test/ui_barcode_flow_test.dart` |
 | **OCR E2E** | ML Kit → sanitizer → keywords on a photo | Yes | No | `integration_test/ocr_pipeline_test.dart` |
 
@@ -26,7 +27,8 @@ Use **CI tests** on every change. Run **UI E2E** after refactors or features tha
 ## CI — fast tests (no device)
 
 ```bash
-dart format .
+./scripts/linux/format_dart.sh          # Linux/macOS/Git Bash
+# .\scripts\windows\format_dart.ps1     # Windows PowerShell
 flutter analyze --no-fatal-infos
 flutter test test/services/ test/constants/ test/models/ test/config_test.dart
 ```
@@ -267,21 +269,59 @@ Source: `integration_test/ui_barcode_flow_test.dart`, helpers in `integration_te
 
 ## Pipeline integration — live API (no UI)
 
-Exercises `ProductService` against real backends without launching the app. **Not in CI.**
+Exercises `ProductService` and Supabase-backed services against a **hosted test Supabase project** (not `dart_defines.json` / production).
+
+### Setup (once per machine)
+
+```bash
+cp dart_defines.integration.example.json dart_defines.integration.json
+```
+
+Edit `dart_defines.integration.json`:
+
+| Field | Purpose |
+|-------|---------|
+| `INTEGRATION_PROJECT_REF` | Test project ref (must match `SUPABASE_URL` host; blocks accidental prod URL) |
+| `SUPABASE_URL` / `SUPABASE_ANON_KEY` | **Test** Supabase project (apply the same migrations as prod) |
+| `SUPABASE_TEST_EMAIL` / `SUPABASE_TEST_PASSWORD` | User for authenticated flows |
+| `SUPABASE_TEST_ADMIN_EMAIL` / `SUPABASE_TEST_ADMIN_PASSWORD` | Admin for approve / RLS tests |
+| `SUPABASE_SERVICE_ROLE_KEY` | Required for admin integration tests (sets `profiles.role`) and tear-down cleanup (never ship in the app) |
+
+Create test users in the test project Auth dashboard (or seed script). Deploy `lookup-product` to the test project if you run barcode lookup integration.
 
 ### Helper scripts
 
+All scripts use `dart_defines.integration.json` by default (`-DefinesFile` / `DEFINES_FILE` to override).
+
 ```bash
-# Linux/macOS
+# Linux/macOS — single file
 ./run_integration_test.sh test/integration/barcode_lookup_test.dart
-./run_integration_test.sh test/integration/supabase_services_integration_test.dart
+./run_integration_test.sh test/integration/supabase_services_integration_test.dart 300
+
+# Both integration suites
+./run_all_integration_tests.sh
+./run_all_integration_tests.sh 300
 
 # Windows
 .\run_integration_test.ps1 -TestFile test/integration/barcode_lookup_test.dart
-.\run_integration_test.ps1 -TestFile test/integration/supabase_services_integration_test.dart
+.\run_all_integration_tests.ps1 -Timeout 300
 ```
 
-Optional timeout: second argument (bash) or `-Timeout` (PowerShell).
+### CI (GitHub Actions)
+
+Workflow [`.github/workflows/integration.yml`](.github/workflows/integration.yml) runs on `main` pushes (when integration paths change) and `workflow_dispatch`. It **skips** until repository secrets are set:
+
+| Secret | Maps to define |
+|--------|----------------|
+| `INTEGRATION_SUPABASE_URL` | `SUPABASE_URL` |
+| `INTEGRATION_SUPABASE_ANON_KEY` | `SUPABASE_ANON_KEY` |
+| `INTEGRATION_SUPABASE_TEST_EMAIL` | `SUPABASE_TEST_EMAIL` |
+| `INTEGRATION_SUPABASE_TEST_PASSWORD` | `SUPABASE_TEST_PASSWORD` |
+| `INTEGRATION_SUPABASE_TEST_ADMIN_EMAIL` | `SUPABASE_TEST_ADMIN_EMAIL` |
+| `INTEGRATION_SUPABASE_TEST_ADMIN_PASSWORD` | `SUPABASE_TEST_ADMIN_PASSWORD` |
+| `INTEGRATION_SUPABASE_SERVICE_ROLE_KEY` | `SUPABASE_SERVICE_ROLE_KEY` |
+
+Unit tests in [`.github/workflows/test.yml`](.github/workflows/test.yml) stay fast and do **not** call Supabase.
 
 ### Barcode lookup
 
@@ -301,20 +341,9 @@ flutter test test/integration/barcode_lookup_test.dart --timeout 120s
 
 `test/integration/supabase_services_integration_test.dart` — real PostgREST / storage for ingredient reports, AI requests, and product images (no fakes).
 
-Minimal run:
-
 ```bash
-flutter test test/integration/supabase_services_integration_test.dart \
-  --dart-define-from-file=dart_defines.json --concurrency 1
+./run_integration_test.sh test/integration/supabase_services_integration_test.dart
 ```
-
-Optional `dart_defines.json` keys:
-
-| Define | Purpose |
-|--------|---------|
-| `SUPABASE_TEST_EMAIL` / `SUPABASE_TEST_PASSWORD` | Authenticated flows |
-| `SUPABASE_TEST_ADMIN_EMAIL` / `SUPABASE_TEST_ADMIN_PASSWORD` | Admin flows |
-| `SUPABASE_SERVICE_ROLE_KEY` | Cleanup of test rows / storage |
 
 ---
 
@@ -452,8 +481,11 @@ Used for offline dev, not for UI E2E unless you intentionally test fixture barco
 | `scripts/preview_e2e_coverage.sh` | Print human-readable coverage report |
 | `tool/e2e_coverage_report.dart` | Same report (`dart run tool/...`) |
 | `scripts/validate_e2e_coverage.sh` | Validate registry vs keys/barcodes (no device) |
-| `run_integration_test.ps1` / `.sh` | Pipeline integration runner |
+| `run_integration_test.ps1` / `.sh` | Pipeline integration runner (`dart_defines.integration.json`) |
+| `run_all_integration_tests.ps1` / `.sh` | Barcode lookup + Supabase services |
+| `dart_defines.integration.example.json` | Integration defines template (test Supabase project) |
 | `dart_defines.e2e.example.json` | E2E defines template (local Supabase) |
+| `.github/workflows/integration.yml` | Optional CI against test Supabase secrets |
 | `scripts/start_e2e_supabase.ps1` / `.sh` | Start Docker Supabase + migrations |
 | `run_ui_e2e_test.ps1` / `.sh` | UI E2E runner (uses `dart_defines.e2e.json`) |
 | `lib/integration_test_keys.dart` | E2E widget keys |

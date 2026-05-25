@@ -1,0 +1,78 @@
+name: Integration tests
+
+# Optional pipeline: hosted test Supabase project (never production).
+# Add repository secrets (see TESTING.md) then run manually or on main pushes.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'lib/**'
+      - 'supabase/**'
+      - 'test/integration/**'
+      - '.github/workflows/integration.yml'
+
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Check integration secrets
+        id: secrets
+        env:
+          INTEGRATION_SUPABASE_URL: ${{ secrets.INTEGRATION_SUPABASE_URL }}
+        run: |
+          if [ -z "$INTEGRATION_SUPABASE_URL" ]; then
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "Skipping: set INTEGRATION_SUPABASE_URL (and related secrets) to enable this workflow."
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Write dart_defines.integration.json
+        if: steps.secrets.outputs.configured == 'true'
+        env:
+          INTEGRATION_SUPABASE_URL: ${{ secrets.INTEGRATION_SUPABASE_URL }}
+          INTEGRATION_SUPABASE_ANON_KEY: ${{ secrets.INTEGRATION_SUPABASE_ANON_KEY }}
+          INTEGRATION_SUPABASE_TEST_EMAIL: ${{ secrets.INTEGRATION_SUPABASE_TEST_EMAIL }}
+          INTEGRATION_SUPABASE_TEST_PASSWORD: ${{ secrets.INTEGRATION_SUPABASE_TEST_PASSWORD }}
+          INTEGRATION_SUPABASE_TEST_ADMIN_EMAIL: ${{ secrets.INTEGRATION_SUPABASE_TEST_ADMIN_EMAIL }}
+          INTEGRATION_SUPABASE_TEST_ADMIN_PASSWORD: ${{ secrets.INTEGRATION_SUPABASE_TEST_ADMIN_PASSWORD }}
+          INTEGRATION_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.INTEGRATION_SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          python3 << 'PY'
+          import json, os
+          from urllib.parse import urlparse
+          url = os.environ["INTEGRATION_SUPABASE_URL"]
+          ref = urlparse(url).hostname.split(".")[0]
+          data = {
+              "INTEGRATION_PROJECT_REF": ref,
+              "SUPABASE_URL": url,
+              "SUPABASE_ANON_KEY": os.environ["INTEGRATION_SUPABASE_ANON_KEY"],
+              "GOOGLE_WEB_CLIENT_ID": "",
+              "SUPABASE_TEST_EMAIL": os.environ.get("INTEGRATION_SUPABASE_TEST_EMAIL", ""),
+              "SUPABASE_TEST_PASSWORD": os.environ.get("INTEGRATION_SUPABASE_TEST_PASSWORD", ""),
+              "SUPABASE_TEST_ADMIN_EMAIL": os.environ.get("INTEGRATION_SUPABASE_TEST_ADMIN_EMAIL", ""),
+              "SUPABASE_TEST_ADMIN_PASSWORD": os.environ.get("INTEGRATION_SUPABASE_TEST_ADMIN_PASSWORD", ""),
+              "SUPABASE_SERVICE_ROLE_KEY": os.environ.get("INTEGRATION_SUPABASE_SERVICE_ROLE_KEY", ""),
+          }
+          with open("dart_defines.integration.json", "w") as f:
+              json.dump(data, f, indent=2)
+              f.write("\n")
+          PY
+
+      - name: Run integration tests
+        if: steps.secrets.outputs.configured == 'true'
+        run: |
+          chmod +x run_all_integration_tests.sh
+          ./run_all_integration_tests.sh 300

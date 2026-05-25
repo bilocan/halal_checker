@@ -1,21 +1,19 @@
-// Live Supabase integration tests for service-layer DB paths.
+// Live Supabase integration tests for service-layer DB paths (test project only).
 //
-// Run (mirrors the app credentials):
-//   flutter test test/integration/supabase_services_integration_test.dart \
-//     --dart-define-from-file=dart_defines.json --concurrency 1
+//   ./run_integration_test.sh test/integration/supabase_services_integration_test.dart
+//   ./run_all_integration_tests.sh
 //
-// Optional defines (add to dart_defines.json for full coverage):
+// Uses dart_defines.integration.json (copy from dart_defines.integration.example.json).
+// Optional defines in that file:
 //   SUPABASE_TEST_EMAIL, SUPABASE_TEST_PASSWORD
 //   SUPABASE_TEST_ADMIN_EMAIL, SUPABASE_TEST_ADMIN_PASSWORD
 //   SUPABASE_SERVICE_ROLE_KEY
-//
-// On Linux/macOS:
-//   ./run_integration_test.sh test/integration/supabase_services_integration_test.dart
 
 import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:halal_checker/models/ai_ingredient_request.dart';
 import 'package:halal_checker/services/ai_ingredient_request_service.dart';
 import 'package:halal_checker/services/auth_service.dart';
 import 'package:halal_checker/services/ingredient_report_service.dart';
@@ -117,11 +115,11 @@ void main() {
         () async {
           await SupabaseIntegrationHelper.signInTestUser();
 
-          final ok = await AiIngredientRequestService.submitRequest(
+          final result = await AiIngredientRequestService.submitRequest(
             barcode!,
             productName: 'Integration Chips',
           );
-          expect(ok, isTrue);
+          expect(result, AiIngredientSubmitResult.pending);
 
           final row = await AiIngredientRequestService.getRequestForBarcode(
             barcode!,
@@ -142,14 +140,14 @@ void main() {
               barcode!,
               productName: 'First',
             ),
-            isTrue,
+            AiIngredientSubmitResult.pending,
           );
           expect(
             await AiIngredientRequestService.submitRequest(
               barcode!,
               productName: 'Duplicate',
             ),
-            isFalse,
+            AiIngredientSubmitResult.alreadyPending,
           );
         },
       );
@@ -167,6 +165,21 @@ void main() {
       });
 
       if (SupabaseIntegrationHelper.hasTestAdmin) {
+        test('admin submitRequest is auto-approved', () async {
+          await SupabaseIntegrationHelper.signInTestAdmin();
+
+          final result = await AiIngredientRequestService.submitRequest(
+            barcode!,
+            productName: 'Admin Auto',
+          );
+          expect(result, AiIngredientSubmitResult.approved);
+
+          final row = await AiIngredientRequestService.getRequestForBarcode(
+            barcode!,
+          );
+          expect(row?['status'], 'approved');
+        });
+
         test('admin updateStatus approves a pending request', () async {
           await SupabaseIntegrationHelper.signInTestUser();
 

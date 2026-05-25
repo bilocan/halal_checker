@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../../models/ai_ingredient_request.dart';
 import '../../models/community.dart';
 import '../../models/feedback.dart';
 import '../../models/product.dart';
@@ -8,10 +9,12 @@ import '../../models/review_status.dart';
 import '../../services/ai_ingredient_request_service.dart';
 import '../../services/analysis_service.dart';
 import '../../services/auth_service.dart';
+import '../../services/cache_service.dart';
 import '../../services/community_service.dart';
 import '../../services/database_service.dart';
 import '../../services/feedback_service.dart';
 import '../../services/product_service.dart';
+import '../../services/product_verdict.dart';
 
 /// Async state and actions for [ResultScreen].
 class ResultController extends ChangeNotifier {
@@ -40,6 +43,9 @@ class ResultController extends ChangeNotifier {
   bool isRefreshing = false;
   bool isFetchingAiIngredients = false;
   ReviewStatus? aiRequestStatus;
+
+  /// Set after an admin auto-approved request and a successful AI fetch.
+  Product? aiRefreshedProduct;
   String note = '';
   bool isFlagged = false;
   List<Discussion> discussions = [];
@@ -169,6 +175,7 @@ class ResultController extends ChangeNotifier {
           barcode: barcode,
           productName: refreshed.name,
           isHalal: refreshed.isHalal,
+          verdict: ProductVerdict.storageKey(refreshed),
         );
       }
       return refreshed;
@@ -178,21 +185,35 @@ class ResultController extends ChangeNotifier {
     }
   }
 
-  /// True when a new request was submitted; false if already pending.
+  /// True when a new request was submitted (or admin auto-approved).
+  /// False if already pending (non-admin). Null on failure.
   Future<bool?> requestAiIngredients() async {
     if (isFetchingAiIngredients) return null;
     if (AuthService.currentUser == null) return null;
     isFetchingAiIngredients = true;
+    aiRefreshedProduct = null;
     notifyListeners();
     try {
-      final submitted = await AiIngredientRequestService.submitRequest(
+      final result = await AiIngredientRequestService.submitRequest(
         barcode,
         productName: product?.name,
       );
-      if (submitted) {
-        aiRequestStatus = ReviewStatus.pending;
+      switch (result) {
+        case AiIngredientSubmitResult.pending:
+          aiRequestStatus = ReviewStatus.pending;
+          return true;
+        case AiIngredientSubmitResult.approved:
+          aiRequestStatus = ReviewStatus.approved;
+          await CacheService().removeProduct(barcode);
+          aiRefreshedProduct = await _productService.fetchIngredientsByAI(
+            barcode,
+          );
+          return true;
+        case AiIngredientSubmitResult.alreadyPending:
+          return false;
+        case AiIngredientSubmitResult.failed:
+          return null;
       }
-      return submitted;
     } catch (_) {
       return null;
     } finally {

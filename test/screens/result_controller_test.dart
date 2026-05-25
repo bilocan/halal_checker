@@ -1,14 +1,20 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:halal_checker/models/feedback.dart';
 import 'package:halal_checker/models/product.dart';
 import 'package:halal_checker/models/product_analysis.dart';
+import 'package:halal_checker/models/review_status.dart';
 import 'package:halal_checker/screens/result/result_controller.dart';
+import 'package:halal_checker/services/ai_ingredient_request_service.dart';
+import 'package:halal_checker/services/auth_service.dart';
 import 'package:halal_checker/services/database_service.dart';
+import 'package:halal_checker/services/product_service.dart';
 import '../helpers/database_test_setup.dart';
 import '../helpers/stub_feedback_service.dart';
 import '../helpers/stub_result_analysis_service.dart';
+import '../helpers/test_product_fixture.dart';
 
 void main() {
   setUpAll(initTestDatabase);
@@ -132,5 +138,125 @@ void main() {
         expect(c.isRequestingAnalysis, isFalse);
       },
     );
+
+    group('requestAiIngredients', () {
+      const barcode = '1234567890123';
+      const fakeUser = User(
+        id: 'test-uid',
+        appMetadata: {},
+        userMetadata: {},
+        aud: 'authenticated',
+        createdAt: '2024-01-01T00:00:00',
+        isAnonymous: false,
+      );
+
+      setUp(() {
+        AiIngredientRequestService.enableForTesting();
+        AiIngredientRequestService.fakeEnsureReady = () async => true;
+        AiIngredientRequestService.fakeIsAdmin = () async => false;
+        AuthService.setCurrentUserForTesting(fakeUser);
+      });
+
+      tearDown(() {
+        AiIngredientRequestService.resetForTesting();
+        AuthService.resetForTesting();
+        ProductService().resetForTesting();
+      });
+
+      test('returns null when user is not signed in', () async {
+        AuthService.resetForTesting();
+        final c = controller(barcode: barcode);
+
+        expect(await c.requestAiIngredients(), isNull);
+        expect(c.isFetchingAiIngredients, isFalse);
+      });
+
+      test('sets pending and does not fetch for regular user', () async {
+        AiIngredientRequestService.fakeFindPendingByBarcode = (_) async => null;
+        AiIngredientRequestService.fakeInsertRequest =
+            ({required barcode, productName, required userId}) async {};
+        var fetchCalled = false;
+        ProductService().testFetchIngredientsByAI = (_) async {
+          fetchCalled = true;
+          return null;
+        };
+
+        final c = controller(barcode: barcode);
+        expect(await c.requestAiIngredients(), isTrue);
+        expect(c.aiRequestStatus, ReviewStatus.pending);
+        expect(c.aiRefreshedProduct, isNull);
+        expect(fetchCalled, isFalse);
+      });
+
+      test('admin auto-approve fetches and sets aiRefreshedProduct', () async {
+        final refreshed = testProduct(
+          barcode,
+          ingredients: ['sugar', 'cocoa'],
+          isUnknown: false,
+          ingredientSource: 'ai',
+        );
+        AiIngredientRequestService.fakeIsAdmin = () async => true;
+        AiIngredientRequestService.fakeFindPendingByBarcode = (_) async => null;
+        AiIngredientRequestService.fakeInsertRequest =
+            ({required barcode, productName, required userId}) async {};
+        ProductService().testFetchIngredientsByAI = (_) async => refreshed;
+
+        final c = controller(barcode: barcode);
+        expect(await c.requestAiIngredients(), isTrue);
+        expect(c.aiRequestStatus, ReviewStatus.approved);
+        expect(c.aiRefreshedProduct, refreshed);
+      });
+
+      test('admin promoting pending request fetches ingredients', () async {
+        final refreshed = testProduct(
+          barcode,
+          ingredients: ['milk'],
+          isUnknown: false,
+          ingredientSource: 'ai',
+        );
+        AiIngredientRequestService.fakeIsAdmin = () async => true;
+        AiIngredientRequestService.fakeFindPendingByBarcode = (_) async => {
+          'id': 3,
+        };
+        AiIngredientRequestService.fakePerformStatusUpdate =
+            (id, status, userId) async {
+              expect(id, 3);
+              expect(status, 'approved');
+              return [
+                {'id': 3},
+              ];
+            };
+        ProductService().testFetchIngredientsByAI = (_) async => refreshed;
+
+        final c = controller(barcode: barcode);
+        expect(await c.requestAiIngredients(), isTrue);
+        expect(c.aiRequestStatus, ReviewStatus.approved);
+        expect(c.aiRefreshedProduct, refreshed);
+      });
+
+      test(
+        'returns false when non-admin and request already pending',
+        () async {
+          AiIngredientRequestService.fakeFindPendingByBarcode = (_) async => {
+            'id': 1,
+          };
+
+          final c = controller(barcode: barcode);
+          expect(await c.requestAiIngredients(), isFalse);
+          expect(c.aiRefreshedProduct, isNull);
+        },
+      );
+
+      test('clears isFetchingAiIngredients after completion', () async {
+        AiIngredientRequestService.fakeFindPendingByBarcode = (_) async => null;
+        AiIngredientRequestService.fakeInsertRequest =
+            ({required barcode, productName, required userId}) async {};
+
+        final c = controller(barcode: barcode);
+        await c.requestAiIngredients();
+
+        expect(c.isFetchingAiIngredients, isFalse);
+      });
+    });
   });
 }

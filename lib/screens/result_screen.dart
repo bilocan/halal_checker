@@ -136,6 +136,23 @@ class _ResultScreenState extends State<ResultScreen> {
       ).showSnackBar(SnackBar(content: Text(loc.aiRequestSubmitFailed)));
       return;
     }
+    final refreshed = _controller.aiRefreshedProduct;
+    if (refreshed != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(loc.adminAiRefetching(widget.barcode)),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) =>
+              ResultScreen(product: refreshed, barcode: widget.barcode),
+        ),
+      );
+      return;
+    }
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(

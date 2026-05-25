@@ -46,7 +46,9 @@ If the Edge Function is unavailable or Claude fails, the app falls back to `Hala
 | Animal-derived | gelatin, carmine, cochineal |
 | E-numbers | E120, E441, E542, E904 |
 
-**Suspicious keywords** require source verification:
+**Verdict rules** (highest priority first): **haram** if any haram ingredient matches; **suspicious** if any suspicious ingredient matches (product is not halal until source is verified); **needs cert** for animal-derived foods without halal certification; **halal** only when none of the above apply.
+
+**Suspicious keywords** flag ingredients that need source verification (product is not marked halal):
 
 | Keyword | Reason |
 |---|---|
@@ -302,7 +304,8 @@ Backend (Supabase)
 ├── deep-analyze-product    Edge Function: per-ingredient Claude Sonnet analysis (auth required)
 ├── batch-analyze           Edge Function: process all pending analyses (admin only)
 ├── report-issue            Edge Function: submit wrong-result reports
-├── products                Shared product cache
+├── products                Shared product source data (ingredients, images, labels)
+├── product_analysis        Barcode scan verdict per product (see Development → Supabase)
 ├── product_analyses        Deep analysis pipeline records (status + AI result JSON)
 ├── ingredient_challenges   Community ingredient verdict challenges
 ├── discussions             Per-product discussion threads
@@ -342,7 +345,7 @@ supabase secrets set GEMINI_API_KEY=your_google_ai_studio_key
 supabase secrets set GEMINI_ENABLED=true
 ```
 
-Gemini ingredient lookup uses **Grounding with Google Search** (billable on the Gemini API). Use the same Google AI Studio project/key you test with in chat, with billing enabled if searches return no `groundingMetadata` in Edge Function logs.
+Gemini ingredient lookup uses **Grounding with Google Search** (billable on the Gemini API). It runs only when a user requests AI ingredients on the result screen, an admin approves that request, and the app calls `lookup-product` with `fetchAiIngredients: true` — not on every scan. Use the same Google AI Studio project/key you test with in chat, with billing enabled if searches return no `groundingMetadata` in Edge Function logs.
 
 ### Database migrations
 
@@ -388,6 +391,39 @@ flutter build apk --release --split-per-abi --dart-define-from-file=dart_defines
 ---
 
 ## Development
+
+### Supabase shared product cache
+
+Barcode lookup verdicts are stored in **`product_analysis`**. Source data (name, ingredient list, images, labels) lives in **`products`**. Reads use the **`products_full`** view (`products` LEFT JOIN `product_analysis`).
+
+**Written by:** `lookup-product` Edge Function (normal scan + stale re-analysis), and approved community ingredient contributions (keyword re-run → upsert).
+
+There is **no** separate `verdict = 'suspicious'` column. The app infers **suspicious** from `suspicious_ingredients` being non-empty while `haram_ingredients` is empty and `is_halal` is false.
+
+| Column | Type | Role |
+|--------|------|------|
+| `barcode` | `TEXT` PK | FK → `products.barcode` |
+| `is_halal` | `BOOLEAN` | `true` only when no haram, no suspicious, and not blocked by cert/unknown rules; `false` for haram, suspicious-only, or needs-cert |
+| `is_unknown` | `BOOLEAN` | No usable ingredient data to analyse |
+| `is_non_food` | `BOOLEAN` | Non-food product (dietary rules N/A) |
+| `haram_ingredients` | `JSONB` | Array of matched ingredient strings (definitively not permissible) |
+| `suspicious_ingredients` | `JSONB` | Array of matched ingredient strings (source must be verified, e.g. E471, whey) |
+| `ingredient_warnings` | `JSONB` | Object: ingredient text → reason string (shown on result screen) |
+| `explanation` | `TEXT` | Plain-language summary of the verdict |
+| `analyzed_by_ai` | `BOOLEAN` | `true` if Claude/Gemini set the lists; `false` if keyword-only |
+| `analyzed_at` | `TIMESTAMPTZ` | When this row was last written |
+
+**`products`** (not in `product_analysis`): `ingredients`, `ingredient_source` (`off` / `ai` / `community`), `requires_halal_cert`, images, `labels`, `is_managed`, `fetched_at`, `last_analysed_at`, `updated_at`.
+
+**Keyword safety override (edge function):** after AI, built-in keywords always win. If keywords find **haram** or **suspicious** that AI missed, lists are merged and **`is_halal` is forced to `false`**.
+
+**App-side only (not in Supabase):** `ingredientCanonicals` and `ingredientTranslations` on the `Product` model — stored in SharedPreferences cache, rebuilt from keywords when needed.
+
+**Local scan history** (`halal_scan.db` → `scans` table): stores `is_halal` and optional `verdict` (`halal`, `haram`, `suspicious`, `nocert`, …) for the recent-scans list; it does **not** store the full `suspicious_ingredients` array.
+
+**Related, separate table:** `product_analyses` (plural) holds **Deep Analysis** pipeline state and per-ingredient AI JSON — not the same as barcode scan cache above.
+
+Migration: `supabase/migrations/20260519000000_create_product_analysis.sql`.
 
 ### Testing
 

@@ -5,7 +5,8 @@ Short checklist for Cursor/Claude agents. Full detail: [CLAUDE.md](CLAUDE.md). *
 ## Verify before done
 
 ```bash
-dart format .
+./scripts/linux/format_dart.sh          # Linux/macOS/Git Bash
+# .\scripts\windows\format_dart.ps1     # Windows PowerShell
 flutter analyze --no-fatal-infos
 flutter test test/services/ test/constants/ test/models/ test/config_test.dart
 ```
@@ -14,6 +15,7 @@ flutter test test/services/ test/constants/ test/models/ test/config_test.dart
 
 - **Keyword safety override** after AI analysis (`product_service.dart` + `keyword_service.dart`).
 - **Secrets** only via `dart_defines.json` / `lib/config.dart` — never in source.
+- **Integration tests** use `dart_defines.integration.json` (test Supabase project), not `dart_defines.json`.
 
 ## Where to work
 
