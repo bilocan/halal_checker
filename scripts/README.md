@@ -18,7 +18,7 @@ Format (or verify) all app and test Dart under `lib/` and `test/`. Use this inst
 .\scripts\windows\format_dart.ps1 -Check   # CI check
 ```
 
-CI runs `./scripts/linux/format_dart.sh --check` in `.github/workflows/test.yml`.
+CI runs `bash ./scripts/linux/format_dart.sh --check` in `.github/workflows/test.yml`. Linux scripts in `scripts/linux/` are stored executable (`100755`); use `bash ./scripts/linux/…` if you see “Permission denied”.
 
 ---
 
