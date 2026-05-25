@@ -38,9 +38,13 @@ class ProductService {
   }
 
   @visibleForTesting
+  Future<Product?> Function(String barcode)? testFetchIngredientsByAI;
+
+  @visibleForTesting
   void resetForTesting() {
     _testSupabaseUrl = null;
     _testSupabaseKey = null;
+    testFetchIngredientsByAI = null;
     _customKeywordsFuture = null;
     _cachedCustomEngine = null;
     _customHaramKeywords.clear();
@@ -449,7 +453,9 @@ class ProductService {
   }
 
   Future<Product?> fetchIngredientsByAI(String barcode) async {
-    final product = await _fetchFromBackend(barcode, fetchAiIngredients: true);
+    final product = testFetchIngredientsByAI != null
+        ? await testFetchIngredientsByAI!(barcode)
+        : await _fetchFromBackend(barcode, fetchAiIngredients: true);
     if (product != null) await _cache.saveProduct(barcode, product);
     return product;
   }

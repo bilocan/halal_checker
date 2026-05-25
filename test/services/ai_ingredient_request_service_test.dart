@@ -230,6 +230,23 @@ void main() {
       },
     );
 
+    test(
+      'admin submitRequest returns failed when approve update affects no rows',
+      () async {
+        AiIngredientRequestService.fakeFindPendingByBarcode = (_) async => {
+          'id': 8,
+        };
+        AiIngredientRequestService.fakeIsAdmin = () async => true;
+        AiIngredientRequestService.fakePerformStatusUpdate =
+            (_, _, _) async => [];
+
+        expect(
+          await AiIngredientRequestService.submitRequest('123'),
+          AiIngredientSubmitResult.failed,
+        );
+      },
+    );
+
     test('submitRequest returns failed when user is not signed in', () async {
       AuthService.resetForTesting();
       AiIngredientRequestService.enableForTesting();
