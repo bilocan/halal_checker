@@ -508,92 +508,101 @@ class _StartHomeTabState extends State<StartHomeTab> {
   }
 
   Widget _buildActionButtons(AppLocalizations loc) {
-    return Row(
-      children: [
-        Expanded(
-          child: Container(
-            height: 100,
-            decoration: BoxDecoration(
-              color: kGreen,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: kGreen.withAlpha(80),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: ElevatedButton(
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            child: _homeActionButton(
               key: IntegrationTestKeys.startScan,
               onPressed: _openScan,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.transparent,
-                shadowColor: Colors.transparent,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(
-                    Icons.qr_code_scanner,
-                    color: Colors.white,
-                    size: 36,
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    loc.scanButton,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
+              filled: true,
+              icon: Icons.qr_code_scanner,
+              iconColor: Colors.white,
+              label: loc.scanButton,
+              labelStyle: const TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                height: 1.15,
               ),
             ),
           ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Container(
-            height: 100,
-            decoration: BoxDecoration(
-              border: Border.all(color: kGreenLight),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: ElevatedButton(
+          const SizedBox(width: 12),
+          Expanded(
+            child: _homeActionButton(
               onPressed: _analyzeIngredientsPhoto,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.transparent,
-                shadowColor: Colors.transparent,
-                foregroundColor: kGreen,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.camera_alt_outlined, size: 36),
-                  const SizedBox(height: 6),
-                  Text(
-                    loc.photoIngredientsButton,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
+              filled: false,
+              icon: Icons.camera_alt_outlined,
+              label: loc.photoIngredientsButton,
+              labelStyle: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                height: 1.15,
               ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _homeActionButton({
+    Key? key,
+    required VoidCallback onPressed,
+    required bool filled,
+    required IconData icon,
+    required String label,
+    required TextStyle labelStyle,
+    Color? iconColor,
+  }) {
+    const borderRadius = BorderRadius.all(Radius.circular(16));
+    final decoration = filled
+        ? BoxDecoration(
+            color: kGreen,
+            borderRadius: borderRadius,
+            boxShadow: [
+              BoxShadow(
+                color: kGreen.withAlpha(80),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          )
+        : BoxDecoration(
+            border: Border.all(color: kGreenLight),
+            borderRadius: borderRadius,
+          );
+
+    return Container(
+      decoration: decoration,
+      child: ElevatedButton(
+        key: key,
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.transparent,
+          shadowColor: Colors.transparent,
+          foregroundColor: filled ? Colors.white : kGreen,
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+          minimumSize: Size.zero,
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          shape: const RoundedRectangleBorder(borderRadius: borderRadius),
         ),
-      ],
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: iconColor, size: 32),
+            const SizedBox(height: 6),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              maxLines: 3,
+              style: labelStyle,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
