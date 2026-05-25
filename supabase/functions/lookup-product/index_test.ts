@@ -7,7 +7,12 @@
 
 import { assertEquals, assertMatch } from 'https://deno.land/std@0.224.0/assert/mod.ts'
 import { withCommunitySource } from './community.ts'
-import { shouldRunGeminiIngredientLookup } from './ingredient_lookup_gate.ts'
+import {
+  isGeminiLookupEmptyOffDbEnabled,
+  isGeminiLookupEmptyOffEnvEnabled,
+  shouldBypassCacheForGeminiAutoLookup,
+  shouldRunGeminiIngredientLookup,
+} from './ingredient_lookup_gate.ts'
 
 // ── inline copies of the pure functions under test ───────────────────────────
 // We copy them here rather than importing from index.ts to keep the test file
@@ -318,9 +323,10 @@ Deno.test('withCommunitySource — leaves row unchanged when no approved list', 
 
 // ── Gemini ingredient lookup gate ───────────────────────────────────────────
 
-Deno.test('shouldRunGeminiIngredientLookup — runs only when approved + fetchAiIngredients', () => {
+Deno.test('shouldRunGeminiIngredientLookup — runs when approved + fetchAiIngredients', () => {
   assertEquals(
     shouldRunGeminiIngredientLookup({
+      autoLookupEmptyOff: false,
       fetchAiIngredients: true,
       hasApprovedRequest: true,
       offIngredientCount: 0,
@@ -330,6 +336,7 @@ Deno.test('shouldRunGeminiIngredientLookup — runs only when approved + fetchAi
   )
   assertEquals(
     shouldRunGeminiIngredientLookup({
+      autoLookupEmptyOff: false,
       fetchAiIngredients: false,
       hasApprovedRequest: true,
       offIngredientCount: 0,
@@ -339,6 +346,7 @@ Deno.test('shouldRunGeminiIngredientLookup — runs only when approved + fetchAi
   )
   assertEquals(
     shouldRunGeminiIngredientLookup({
+      autoLookupEmptyOff: false,
       fetchAiIngredients: true,
       hasApprovedRequest: false,
       offIngredientCount: 0,
@@ -348,9 +356,44 @@ Deno.test('shouldRunGeminiIngredientLookup — runs only when approved + fetchAi
   )
 })
 
+Deno.test('shouldRunGeminiIngredientLookup — runs when GEMINI_LOOKUP_EMPTY_OFF (no app flag)', () => {
+  assertEquals(
+    shouldRunGeminiIngredientLookup({
+      autoLookupEmptyOff: true,
+      fetchAiIngredients: false,
+      hasApprovedRequest: false,
+      offIngredientCount: 0,
+      productName: 'Cola Zero',
+    }),
+    true,
+  )
+  assertEquals(isGeminiLookupEmptyOffEnvEnabled('true'), true)
+  assertEquals(isGeminiLookupEmptyOffEnvEnabled('false'), false)
+  assertEquals(isGeminiLookupEmptyOffDbEnabled('true'), true)
+  assertEquals(isGeminiLookupEmptyOffDbEnabled('false'), false)
+})
+
+Deno.test('shouldBypassCacheForGeminiAutoLookup — refetch when cached OFF row is empty', () => {
+  assertEquals(
+    shouldBypassCacheForGeminiAutoLookup(
+      { ingredients: [], ingredient_source: 'off' },
+      { autoLookupEmptyOff: true, fetchAiIngredients: false, force: false },
+    ),
+    true,
+  )
+  assertEquals(
+    shouldBypassCacheForGeminiAutoLookup(
+      { ingredients: [], ingredient_source: 'ai' },
+      { autoLookupEmptyOff: true, fetchAiIngredients: false, force: false },
+    ),
+    false,
+  )
+})
+
 Deno.test('shouldRunGeminiIngredientLookup — skips when OFF already has ingredients', () => {
   assertEquals(
     shouldRunGeminiIngredientLookup({
+      autoLookupEmptyOff: true,
       fetchAiIngredients: true,
       hasApprovedRequest: true,
       offIngredientCount: 2,
@@ -363,6 +406,7 @@ Deno.test('shouldRunGeminiIngredientLookup — skips when OFF already has ingred
 Deno.test('shouldRunGeminiIngredientLookup — skips unknown product name', () => {
   assertEquals(
     shouldRunGeminiIngredientLookup({
+      autoLookupEmptyOff: true,
       fetchAiIngredients: true,
       hasApprovedRequest: true,
       offIngredientCount: 0,

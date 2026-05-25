@@ -45,7 +45,7 @@ All three files are **gitignored**; copy from the matching `*.example.json` in t
 | App deploy & release builds | `SUPABASE_*` GitHub secrets | — | — |
 | Optional integration workflow | — | `INTEGRATION_*` secrets → writes `dart_defines.integration.json` in CI | — |
 | Edge function deploy & migrations | `.github/workflows/deploy-supabase.yml` → `SUPABASE_PROJECT_REF` | Apply same migrations to the test project | `supabase start` + [`scripts/start_e2e_supabase.ps1`](scripts/start_e2e_supabase.ps1) / `.sh` |
-| Edge function secrets (optional AI) | `CLAUDE_ENABLED=false` by default; optional `GEMINI_*` for admin-approved ingredient lookup | Same if needed on test project | `supabase/.env.local` (gitignored) for `supabase functions serve` during E2E — see [`supabase/.env.e2e.example`](supabase/.env.e2e.example) |
+| Edge function secrets (optional AI) | `CLAUDE_ENABLED=false` by default; optional `GEMINI_*`; `GEMINI_LOOKUP_EMPTY_OFF=true` skips admin approval for empty-OFF Gemini lookup | Same if needed on test project | `supabase/.env.local` (gitignored) for `supabase functions serve` during E2E — see [`supabase/.env.e2e.example`](supabase/.env.e2e.example) |
 
 **Debug-only offline fixtures** (`halal_test.db`, `test_data/`) are used in debug builds when not running E2E with `E2E_LIVE_LOOKUP=true`. They do not touch production data.
 

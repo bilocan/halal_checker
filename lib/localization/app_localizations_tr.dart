@@ -903,6 +903,38 @@ class AppLocalizationsTr extends AppLocalizations {
       'Erişim reddedildi: yalnızca süper yönetici';
 
   @override
+  String get systemSettingsTab => 'Ayarlar';
+
+  @override
+  String get systemSettingsTitle => 'Sistem ayarları';
+
+  @override
+  String get systemSettingsSubtitle =>
+      'Yalnızca süper yönetici. Sonraki ürün aramalarında tüm kullanıcılar için geçerlidir.';
+
+  @override
+  String get geminiLookupEmptyOffTitle => 'Otomatik Gemini içerik araması';
+
+  @override
+  String get geminiLookupEmptyOffDescription =>
+      'Open Food Facts içerik vermezse Gemini ile web araması (sunucuda GEMINI_API_KEY gerekir).';
+
+  @override
+  String get geminiLookupEmptyOffEnabled =>
+      'Otomatik Gemini içerik araması açık';
+
+  @override
+  String get geminiLookupEmptyOffDisabled =>
+      'Otomatik Gemini içerik araması kapalı';
+
+  @override
+  String get systemSettingsLoadFailed => 'Sistem ayarları yüklenemedi';
+
+  @override
+  String get systemSettingsSaveFailed =>
+      'Ayar kaydedilemedi (yalnızca süper yönetici)';
+
+  @override
   String get batchImportNoBarcodes => 'Dosyada geçerli barkod bulunamadı';
 
   @override

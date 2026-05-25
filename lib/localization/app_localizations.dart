@@ -1762,6 +1762,60 @@ abstract class AppLocalizations {
   /// **'Access denied: superadmin only'**
   String get batchImportAccessDenied;
 
+  /// No description provided for @systemSettingsTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get systemSettingsTab;
+
+  /// No description provided for @systemSettingsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'System settings'**
+  String get systemSettingsTitle;
+
+  /// No description provided for @systemSettingsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Superadmin only. Changes apply to all users on the next product lookup.'**
+  String get systemSettingsSubtitle;
+
+  /// No description provided for @geminiLookupEmptyOffTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto Gemini ingredient lookup'**
+  String get geminiLookupEmptyOffTitle;
+
+  /// No description provided for @geminiLookupEmptyOffDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'When Open Food Facts has no ingredients, search the web with Gemini (requires GEMINI_API_KEY on the server).'**
+  String get geminiLookupEmptyOffDescription;
+
+  /// No description provided for @geminiLookupEmptyOffEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto Gemini ingredient lookup enabled'**
+  String get geminiLookupEmptyOffEnabled;
+
+  /// No description provided for @geminiLookupEmptyOffDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto Gemini ingredient lookup disabled'**
+  String get geminiLookupEmptyOffDisabled;
+
+  /// No description provided for @systemSettingsLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load system settings'**
+  String get systemSettingsLoadFailed;
+
+  /// No description provided for @systemSettingsSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save setting (superadmin only)'**
+  String get systemSettingsSaveFailed;
+
   /// No description provided for @batchImportNoBarcodes.
   ///
   /// In en, this message translates to:

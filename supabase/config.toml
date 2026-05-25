@@ -35,3 +35,5 @@ enable_signup = true
 
 [functions.lookup-product]
 verify_jwt = false   # anon callers (your app) don't need a JWT
+# Env for `supabase functions serve` / hosted secrets (not keys in this file):
+#   GEMINI_LOOKUP_EMPTY_OFF=true — dev override; prod: superadmin Admin → Settings (app_config)

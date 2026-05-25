@@ -9,6 +9,7 @@ import 'admin/ai_approval_tab.dart';
 import 'admin/ingredient_contribution_tab.dart';
 import 'admin/ingredient_report_tab.dart';
 import 'admin/photo_approval_tab.dart';
+import 'admin/system_settings_tab.dart';
 import 'rules_management_screen.dart';
 
 class AdminPanelScreen extends StatefulWidget {
@@ -34,17 +35,33 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
   int _contributionBadge = 0;
   int _reportBadge = 0;
   int _aiRequestBadge = 0;
+  bool _isSuperAdmin = false;
 
   // ── GlobalKeys for imperative refresh from AppBar ─────────────────────────
   final _photosKey = GlobalKey<PhotoApprovalTabState>();
   final _ingredientsKey = GlobalKey<IngredientContributionTabState>();
   final _reportsKey = GlobalKey<IngredientReportTabState>();
   final _aiRequestsKey = GlobalKey<AiApprovalTabState>();
+  final _settingsKey = GlobalKey<SystemSettingsTabState>();
+
+  static const int _settingsTabIndex = 6;
 
   @override
   void initState() {
     super.initState();
     _load();
+    _loadSuperAdmin();
+  }
+
+  Future<void> _loadSuperAdmin() async {
+    final isSuper = await _service.isSuperAdmin();
+    if (!mounted) return;
+    setState(() {
+      _isSuperAdmin = isSuper;
+      if (!_isSuperAdmin && _tabIndex == _settingsTabIndex) {
+        _tabIndex = 0;
+      }
+    });
   }
 
   Future<void> _load() async {
@@ -181,6 +198,11 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
               icon: const Icon(Icons.refresh),
               onPressed: () => _aiRequestsKey.currentState?.refresh(),
             ),
+          if (_isSuperAdmin && _tabIndex == _settingsTabIndex)
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              onPressed: () => _settingsKey.currentState?.refresh(),
+            ),
         ],
       ),
       body: Column(
@@ -208,6 +230,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
                   key: _aiRequestsKey,
                   onCountChanged: (n) => setState(() => _aiRequestBadge = n),
                 ),
+                if (_isSuperAdmin) SystemSettingsTab(key: _settingsKey),
               ],
             ),
           ),
@@ -267,6 +290,14 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
               badge: _aiRequestBadge > 0 ? _aiRequestBadge : null,
             ),
           ),
+          if (_isSuperAdmin)
+            Expanded(
+              child: _tabButton(
+                label: loc.systemSettingsTab,
+                icon: Icons.settings_outlined,
+                index: _settingsTabIndex,
+              ),
+            ),
         ],
       ),
     );

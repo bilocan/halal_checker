@@ -10,6 +10,8 @@ import { toProduct, isStale } from './db.ts'
 import { getApprovedContribution, withCommunitySource } from './community.ts'
 import {
   hasApprovedAiIngredientRequest,
+  resolveGeminiLookupEmptyOffEnabled,
+  shouldBypassCacheForGeminiAutoLookup,
   shouldRunGeminiIngredientLookup,
 } from './ingredient_lookup_gate.ts'
 import {
@@ -41,7 +43,16 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
     )
 
-    console.log(`[${barcode}] request: force=${force} fetchAiIngredients=${fetchAiIngredients}`)
+    const geminiAutoEmptyOff = await resolveGeminiLookupEmptyOffEnabled(supabase)
+    const refetchForGeminiAuto = shouldBypassCacheForGeminiAutoLookup(cached, {
+      autoLookupEmptyOff: geminiAutoEmptyOff,
+      fetchAiIngredients,
+      force,
+    })
+    console.log(
+      `[${barcode}] request: force=${force} fetchAiIngredients=${fetchAiIngredients} ` +
+      `geminiAutoEmptyOff=${geminiAutoEmptyOff} refetchForGeminiAuto=${refetchForGeminiAuto}`,
+    )
 
     // 1. Cache hit?
     const { data: cached } = await supabase
@@ -68,7 +79,8 @@ Deno.serve(async (req) => {
     // OFF is only ever fetched on the very first scan (cached === null below).
     // Unknown products with force=true fall through so OFF can be retried.
     // fetchAiIngredients bypasses cache so admin-approved Gemini lookup can re-fetch OFF.
-    if (!fetchAiIngredients && cached && (isStale(cached) || (force && !cached.is_unknown))) {
+    if (!fetchAiIngredients && !refetchForGeminiAuto && cached &&
+        (isStale(cached) || (force && !cached.is_unknown))) {
       const reason = isStale(cached) ? 'stale (updated_at > last_analysed_at)' : 'force-refresh'
       console.log(`[${barcode}] ${reason} — re-running rules engine on stored data`)
 
@@ -173,7 +185,7 @@ Deno.serve(async (req) => {
       )
     }
 
-    if (!fetchAiIngredients && cached && !force) {
+    if (!fetchAiIngredients && !refetchForGeminiAuto && cached && !force) {
       const communityIngredients = await getApprovedContribution(supabase, barcode)
       return new Response(
         JSON.stringify({
@@ -239,20 +251,24 @@ Deno.serve(async (req) => {
 
     let ingredientSource: 'off' | 'ai' | 'community' = 'off'
 
-    // 4. Gemini + Google Search — only after admin approves an ai_ingredient_requests row
-    // and the client calls with fetchAiIngredients=true (see AiApprovalTab).
+    // 4. Gemini + Google Search when OFF has no ingredients:
+    //   • app_config.gemini_lookup_empty_off (superadmin) or GEMINI_LOOKUP_EMPTY_OFF env, or
+    //   • fetchAiIngredients + approved ai_ingredient_requests (app admin flow).
     const approvedAiRequest = fetchAiIngredients
       ? await hasApprovedAiIngredientRequest(supabase, barcode)
       : false
     if (!shouldRunGeminiIngredientLookup({
+      autoLookupEmptyOff: geminiAutoEmptyOff,
       fetchAiIngredients,
       hasApprovedRequest: approvedAiRequest,
       offIngredientCount: ingredients.length,
       productName: name,
     })) {
       if (ingredients.length === 0 && name !== 'Unknown Product') {
-        const skipReason = !fetchAiIngredients
-          ? 'requires fetchAiIngredients after admin approval'
+        const skipReason = geminiAutoEmptyOff
+          ? 'preconditions not met'
+          : !fetchAiIngredients
+          ? 'requires fetchAiIngredients after admin approval, or enable gemini_lookup_empty_off (superadmin / env)'
           : !approvedAiRequest
           ? 'no approved ai_ingredient_requests row'
           : 'preconditions not met'
