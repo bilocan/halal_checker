@@ -1,14 +1,7 @@
 import '../models/product.dart';
 
 /// Display / storage outcome for a product scan.
-enum ProductOutcome {
-  nonFood,
-  unknown,
-  haram,
-  suspicious,
-  noCert,
-  halal,
-}
+enum ProductOutcome { nonFood, unknown, haram, suspicious, noCert, halal }
 
 /// Shared rules for [Product.isHalal] and result-screen status.
 abstract final class ProductVerdict {

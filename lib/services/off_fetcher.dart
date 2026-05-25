@@ -387,7 +387,8 @@ class OffFetcher {
         barcode: barcode,
         name: name,
         ingredients: ingredients,
-        isHalal: isHalalByCategory ||
+        isHalal:
+            isHalalByCategory ||
             (!haramByCategory &&
                 ProductVerdict.isHalalFromFlags(
                   haramIngredients: haramIngredients,

@@ -16,18 +16,15 @@ void main() {
       expect(result.matches.single.category, HalalRuleCategory.ingredient);
     });
 
-    test(
-      'returns suspicious verdict for doubtful items such as e471',
-      () {
-        final result = engine.analyzeIngredients(['flour', 'e471', 'salt']);
+    test('returns suspicious verdict for doubtful items such as e471', () {
+      final result = engine.analyzeIngredients(['flour', 'e471', 'salt']);
 
-        expect(result.verdict, HalalRuleVerdict.suspicious);
-        expect(result.isHalal, isFalse);
-        expect(result.haram, isEmpty);
-        expect(result.suspicious, contains('e471'));
-        expect(result.explanation, contains('require verification'));
-      },
-    );
+      expect(result.verdict, HalalRuleVerdict.suspicious);
+      expect(result.isHalal, isFalse);
+      expect(result.haram, isEmpty);
+      expect(result.suspicious, contains('e471'));
+      expect(result.explanation, contains('require verification'));
+    });
 
     test('keeps alcohol-free and fatty alcohol out of haram matches', () {
       final result = engine.analyzeIngredients([

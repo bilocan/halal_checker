@@ -612,16 +612,19 @@ void main() {
       expect(result.warnings['pork'], isNotNull);
     });
 
-    test('suspicious ingredient → isHalal false, suspicious list populated', () {
-      final result = ProductService.analyzeWithKeywords([
-        'flour',
-        'enzymes',
-        'water',
-      ]);
-      expect(result.isHalal, isFalse);
-      expect(result.suspicious, contains('enzymes'));
-      expect(result.warnings['enzymes'], isNotNull);
-    });
+    test(
+      'suspicious ingredient → isHalal false, suspicious list populated',
+      () {
+        final result = ProductService.analyzeWithKeywords([
+          'flour',
+          'enzymes',
+          'water',
+        ]);
+        expect(result.isHalal, isFalse);
+        expect(result.suspicious, contains('enzymes'));
+        expect(result.warnings['enzymes'], isNotNull);
+      },
+    );
 
     test('haram takes priority over suspicious for same ingredient', () {
       // gelatin is haram; it should not also appear in suspicious
