@@ -42,6 +42,7 @@ class IngredientKeywords {
     'e472': 'Emulsifiers may be animal-derived',
     'e473': 'Sucrose esters may be animal-derived',
     'e927': 'Glycine may be animal-derived',
+    'e422': 'Glycerol may be animal-derived',
     'rennet': 'Rennet may be animal-derived',
     'whey': 'Whey is a dairy ingredient — source verification recommended.',
     'l-cysteine': 'L-cysteine may be animal-derived',
@@ -145,6 +146,7 @@ class IngredientKeywords {
     'e472': ['e472', 'e-472'],
     'e473': ['e473', 'e-473'],
     'e927': ['e927', 'e-927'],
+    'e422': ['e422', 'e-422'],
     'rennet': [
       'rennet', 'lab', 'labferment', 'présure', 'caglio', 'cuajo',
       'peynir mayası', 'stremsel',
@@ -415,6 +417,9 @@ class IngredientKeywords {
     },
     'e927': {
       'en': ['e927', 'e-927'],
+    },
+    'e422': {
+      'en': ['e422', 'e-422'],
     },
     'rennet': {
       'en': ['rennet'],

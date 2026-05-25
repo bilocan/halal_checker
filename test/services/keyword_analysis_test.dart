@@ -116,6 +116,12 @@ void main() {
     test('matches e-471 with hyphen', () {
       expect(ProductService.matchesKeyword('e-471', 'e471'), isTrue);
     });
+    test('matches e422', () {
+      expect(ProductService.matchesKeyword('e422', 'e422'), isTrue);
+    });
+    test('matches e-422 with hyphen', () {
+      expect(ProductService.matchesKeyword('e-422', 'e422'), isTrue);
+    });
     test('does not match e1200 as e120', () {
       expect(ProductService.matchesKeyword('e1200', 'e120'), isFalse);
     });
@@ -288,6 +294,12 @@ void main() {
       final r = ProductService.analyzeWithKeywords(['flour', 'e471', 'salt']);
       expect(r.isHalal, isFalse);
       expect(r.suspicious, contains('e471'));
+    });
+
+    test('product with e422 is suspicious', () {
+      final r = ProductService.analyzeWithKeywords(['flour', 'e422', 'salt']);
+      expect(r.isHalal, isFalse);
+      expect(r.suspicious, contains('e422'));
     });
 
     test('product with natural flavour is suspicious', () {

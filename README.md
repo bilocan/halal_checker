@@ -59,7 +59,7 @@ If the Edge Function is unavailable or Claude fails, the app falls back to `Hala
 | E920, L-cysteine | May be animal-derived |
 | natural flavour, flavouring | Source unspecified |
 | enzymes | May be extracted from animal sources |
-| glycerol | May be animal-derived |
+| glycerol, E422 | May be animal-derived |
 
 Each canonical keyword has variants in `IngredientKeywords.haramVariants` or `IngredientKeywords.suspiciousVariants`. Variants cover multiple languages used by the app and product databases, and matching uses word-boundary regex to avoid false positives (for example, `porcelain` does not match `pork`).
 
