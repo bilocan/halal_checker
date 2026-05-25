@@ -281,6 +281,7 @@ Edit `dart_defines.integration.json`:
 
 | Field | Purpose |
 |-------|---------|
+| `INTEGRATION_PROJECT_REF` | Test project ref (must match `SUPABASE_URL` host; blocks accidental prod URL) |
 | `SUPABASE_URL` / `SUPABASE_ANON_KEY` | **Test** Supabase project (apply the same migrations as prod) |
 | `SUPABASE_TEST_EMAIL` / `SUPABASE_TEST_PASSWORD` | User for authenticated flows |
 | `SUPABASE_TEST_ADMIN_EMAIL` / `SUPABASE_TEST_ADMIN_PASSWORD` | Admin for approve / RLS tests |

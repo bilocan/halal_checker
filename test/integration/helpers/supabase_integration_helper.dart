@@ -64,6 +64,29 @@ class SupabaseIntegrationHelper {
         '(use --dart-define-from-file=dart_defines.integration.json)',
       );
     }
+    assertIntegrationProjectOnly();
+  }
+
+  /// Fails fast when [dart_defines.json] / prod URL is used instead of integration defines.
+  static void assertIntegrationProjectOnly() {
+    if (!hasSupabase) return;
+
+    final ref = AppConfig.integrationProjectRef.trim();
+    if (ref.isEmpty) {
+      fail(
+        'INTEGRATION_PROJECT_REF must be set in dart_defines.integration.json '
+        '(test Supabase project ref from the dashboard URL).',
+      );
+    }
+
+    final host = Uri.tryParse(AppConfig.supabaseUrl)?.host ?? '';
+    if (!host.startsWith(ref)) {
+      fail(
+        'SUPABASE_URL ($host) does not match INTEGRATION_PROJECT_REF ($ref). '
+        'Pipeline tests must use dart_defines.integration.json for the test project, '
+        'not dart_defines.json / production.',
+      );
+    }
   }
 
   static void skipIfNoTestUser() {

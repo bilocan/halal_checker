@@ -52,8 +52,12 @@ jobs:
         run: |
           python3 << 'PY'
           import json, os
+          from urllib.parse import urlparse
+          url = os.environ["INTEGRATION_SUPABASE_URL"]
+          ref = urlparse(url).hostname.split(".")[0]
           data = {
-              "SUPABASE_URL": os.environ["INTEGRATION_SUPABASE_URL"],
+              "INTEGRATION_PROJECT_REF": ref,
+              "SUPABASE_URL": url,
               "SUPABASE_ANON_KEY": os.environ["INTEGRATION_SUPABASE_ANON_KEY"],
               "GOOGLE_WEB_CLIENT_ID": "",
               "SUPABASE_TEST_EMAIL": os.environ.get("INTEGRATION_SUPABASE_TEST_EMAIL", ""),

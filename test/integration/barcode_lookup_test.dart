@@ -18,11 +18,14 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:halal_checker/config.dart';
 import 'package:halal_checker/models/product.dart';
 import 'package:halal_checker/services/product_service.dart';
 import 'package:halal_checker/services/test_product_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+
+import 'helpers/supabase_integration_helper.dart';
 
 // A parsed entry from barcodes.txt
 typedef _Entry = ({String barcode, String? expected});
@@ -40,6 +43,10 @@ void main() {
     late List<_Entry> entries;
 
     setUpAll(() async {
+      if (AppConfig.hasSupabase) {
+        SupabaseIntegrationHelper.assertIntegrationProjectOnly();
+      }
+
       sqfliteFfiInit();
       databaseFactory = databaseFactoryFfi;
       TestProductRepository.dbPathOverride = inMemoryDatabasePath;

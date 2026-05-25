@@ -18,6 +18,12 @@ class AppConfig {
   static bool get hasSupabase =>
       supabaseUrl.isNotEmpty && supabaseAnonKey.isNotEmpty;
 
+  /// Test Supabase project ref; must match [supabaseUrl] host in integration tests.
+  static const String integrationProjectRef = String.fromEnvironment(
+    'INTEGRATION_PROJECT_REF',
+    defaultValue: '',
+  );
+
   static bool get hasGoogleAuth => googleWebClientId.isNotEmpty;
 
   /// When set (e.g. `en`), forces app locale during UI E2E runs.
