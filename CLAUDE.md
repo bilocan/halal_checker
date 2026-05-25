@@ -33,7 +33,7 @@ flutter test test/services/ test/constants/ test/models/ test/config_test.dart
 **Backend:**
 - Supabase Edge Function at `supabase/functions/lookup-product/` handles OpenFoodFacts fetching, Claude AI analysis, and shared caching
 - Claude API key lives as a Supabase secret (`CLAUDE_API_KEY`) — never in the app
-- Gemini (`GEMINI_API_KEY`, optional `GEMINI_ENABLED`) powers web-grounded ingredient lookup when Open Food Facts has no list, and tier-1 halal analysis
+- Gemini (`GEMINI_API_KEY`, optional `GEMINI_ENABLED`) powers web-grounded ingredient lookup only after an admin approves an `ai_ingredient_requests` row and the client calls `lookup-product` with `fetchAiIngredients: true`; tier-1 halal analysis still runs on existing ingredient lists
 
 ## Halal analysis layers
 

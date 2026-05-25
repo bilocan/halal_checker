@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../config.dart';
+import '../models/ai_ingredient_request.dart';
 import 'auth_service.dart';
 
 class AiIngredientRequestService {
@@ -23,8 +24,14 @@ class AiIngredientRequestService {
   fakeGetRequestForBarcode;
 
   @visibleForTesting
-  static Future<bool> Function(String barcode, {String? productName})?
+  static Future<AiIngredientSubmitResult> Function(
+    String barcode, {
+    String? productName,
+  })?
   fakeSubmitRequest;
+
+  @visibleForTesting
+  static Future<bool> Function()? fakeIsAdmin;
 
   @visibleForTesting
   static Future<bool> Function(int id, String status)? fakeUpdateStatus;
@@ -68,6 +75,7 @@ class AiIngredientRequestService {
     fakeGetApprovedRequests = null;
     fakeGetRequestForBarcode = null;
     fakeSubmitRequest = null;
+    fakeIsAdmin = null;
     fakeUpdateStatus = null;
     fakeEnsureReady = null;
     fakeFindPendingByBarcode = null;
@@ -111,20 +119,59 @@ class AiIngredientRequestService {
     }
   }
 
-  /// Submits a new AI ingredient request. Returns false if a pending request
-  /// for this barcode already exists (to avoid duplicates).
-  static Future<bool> submitRequest(
+  static Future<bool> _currentUserIsAdmin() async {
+    if (fakeIsAdmin != null) return fakeIsAdmin!();
+    final uid = AuthService.currentUser?.id;
+    if (uid == null) return false;
+    try {
+      final row = await _db
+          .from('profiles')
+          .select('role')
+          .eq('id', uid)
+          .maybeSingle()
+          .timeout(_queryTimeout);
+      final role = row?['role'] as String?;
+      return role == 'admin' || role == 'superadmin';
+    } on Object catch (e, stack) {
+      _logQueryError('_currentUserIsAdmin', e, stack);
+      return false;
+    }
+  }
+
+  static Future<bool> _approveRequestRow(int id, String userId) async {
+    final reviewedAt = DateTime.now().toUtc().toIso8601String();
+    final result = fakePerformStatusUpdate != null
+        ? await fakePerformStatusUpdate!(id, 'approved', userId)
+        : await _db
+              .from('ai_ingredient_requests')
+              .update({
+                'status': 'approved',
+                'reviewed_at': reviewedAt,
+                'reviewed_by': userId,
+              })
+              .eq('id', id)
+              .select()
+              .timeout(_queryTimeout);
+    return result.isNotEmpty;
+  }
+
+  /// Submits a new AI ingredient request.
+  ///
+  /// Admins are auto-approved ([AiIngredientSubmitResult.approved]) so the
+  /// caller can run [ProductService.fetchIngredientsByAI] immediately.
+  static Future<AiIngredientSubmitResult> submitRequest(
     String barcode, {
     String? productName,
   }) async {
     if (fakeSubmitRequest != null) {
       return fakeSubmitRequest!(barcode, productName: productName);
     }
-    if (!await _ensureReady()) return false;
+    if (!await _ensureReady()) return AiIngredientSubmitResult.failed;
     final userId = AuthService.currentUser?.id;
-    if (userId == null) return false;
+    if (userId == null) return AiIngredientSubmitResult.failed;
 
     try {
+      final isAdmin = await _currentUserIsAdmin();
       final existing = fakeFindPendingByBarcode != null
           ? await fakeFindPendingByBarcode!(barcode)
           : await _db
@@ -134,7 +181,27 @@ class AiIngredientRequestService {
                 .eq('status', 'pending')
                 .maybeSingle()
                 .timeout(_queryTimeout);
-      if (existing != null) return false;
+
+      if (existing != null) {
+        if (!isAdmin) return AiIngredientSubmitResult.alreadyPending;
+        final rawId = existing['id'];
+        final id = rawId is int ? rawId : (rawId as num).toInt();
+        return await _approveRequestRow(id, userId)
+            ? AiIngredientSubmitResult.approved
+            : AiIngredientSubmitResult.failed;
+      }
+
+      final reviewedAt = DateTime.now().toUtc().toIso8601String();
+      final insertRow = {
+        'barcode': barcode,
+        'product_name': productName,
+        'requested_by': userId,
+        if (isAdmin) ...{
+          'status': 'approved',
+          'reviewed_at': reviewedAt,
+          'reviewed_by': userId,
+        },
+      };
 
       if (fakeInsertRequest != null) {
         await fakeInsertRequest!(
@@ -145,17 +212,15 @@ class AiIngredientRequestService {
       } else {
         await _db
             .from('ai_ingredient_requests')
-            .insert({
-              'barcode': barcode,
-              'product_name': productName,
-              'requested_by': userId,
-            })
+            .insert(insertRow)
             .timeout(_queryTimeout);
       }
-      return true;
+      return isAdmin
+          ? AiIngredientSubmitResult.approved
+          : AiIngredientSubmitResult.pending;
     } on Object catch (e, stack) {
       _logQueryError('submitRequest', e, stack);
-      return false;
+      return AiIngredientSubmitResult.failed;
     }
   }
 

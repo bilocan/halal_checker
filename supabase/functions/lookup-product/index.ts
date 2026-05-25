@@ -9,6 +9,10 @@ import { fetchFromFoodApi, extractIngredientsText, resolveImg, OFF_BASE, OBF_BAS
 import { toProduct, isStale } from './db.ts'
 import { getApprovedContribution, withCommunitySource } from './community.ts'
 import {
+  hasApprovedAiIngredientRequest,
+  shouldRunGeminiIngredientLookup,
+} from './ingredient_lookup_gate.ts'
+import {
   geminiIngredientLookup, analyzeWithGemini, analyzeWithClaude, analyzeWithClaudeVision,
 } from './ai.ts'
 
@@ -63,7 +67,7 @@ Deno.serve(async (req) => {
     //   • caller requested a force refresh on an already-known product.
     // OFF is only ever fetched on the very first scan (cached === null below).
     // Unknown products with force=true fall through so OFF can be retried.
-    // fetchAiIngredients bypasses this path entirely so Gemini lookup can run.
+    // fetchAiIngredients bypasses cache so admin-approved Gemini lookup can re-fetch OFF.
     if (!fetchAiIngredients && cached && (isStale(cached) || (force && !cached.is_unknown))) {
       const reason = isStale(cached) ? 'stale (updated_at > last_analysed_at)' : 'force-refresh'
       console.log(`[${barcode}] ${reason} — re-running rules engine on stored data`)
@@ -235,8 +239,26 @@ Deno.serve(async (req) => {
 
     let ingredientSource: 'off' | 'ai' | 'community' = 'off'
 
-    // 4. Gemini + Google Search — when OFF has no ingredient text, search the web for the list.
-    if (ingredients.length === 0 && name !== 'Unknown Product') {
+    // 4. Gemini + Google Search — only after admin approves an ai_ingredient_requests row
+    // and the client calls with fetchAiIngredients=true (see AiApprovalTab).
+    const approvedAiRequest = fetchAiIngredients
+      ? await hasApprovedAiIngredientRequest(supabase, barcode)
+      : false
+    if (!shouldRunGeminiIngredientLookup({
+      fetchAiIngredients,
+      hasApprovedRequest: approvedAiRequest,
+      offIngredientCount: ingredients.length,
+      productName: name,
+    })) {
+      if (ingredients.length === 0 && name !== 'Unknown Product') {
+        const skipReason = !fetchAiIngredients
+          ? 'requires fetchAiIngredients after admin approval'
+          : !approvedAiRequest
+          ? 'no approved ai_ingredient_requests row'
+          : 'preconditions not met'
+        console.log(`[${barcode}] Gemini ingredient lookup: skipped — ${skipReason}`)
+      }
+    } else {
       const geminiEnabled = Deno.env.get('GEMINI_ENABLED') !== 'false'
       const geminiKey = Deno.env.get('GEMINI_API_KEY')
       if (!geminiEnabled) {

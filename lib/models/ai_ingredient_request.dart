@@ -1,3 +1,6 @@
+/// Outcome of [AiIngredientRequestService.submitRequest].
+enum AiIngredientSubmitResult { failed, alreadyPending, pending, approved }
+
 class AiIngredientRequest {
   final int id;
   final String barcode;

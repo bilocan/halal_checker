@@ -345,7 +345,7 @@ supabase secrets set GEMINI_API_KEY=your_google_ai_studio_key
 supabase secrets set GEMINI_ENABLED=true
 ```
 
-Gemini ingredient lookup uses **Grounding with Google Search** (billable on the Gemini API). Use the same Google AI Studio project/key you test with in chat, with billing enabled if searches return no `groundingMetadata` in Edge Function logs.
+Gemini ingredient lookup uses **Grounding with Google Search** (billable on the Gemini API). It runs only when a user requests AI ingredients on the result screen, an admin approves that request, and the app calls `lookup-product` with `fetchAiIngredients: true` — not on every scan. Use the same Google AI Studio project/key you test with in chat, with billing enabled if searches return no `groundingMetadata` in Edge Function logs.
 
 ### Database migrations
 

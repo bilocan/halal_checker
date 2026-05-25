@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:halal_checker/models/ai_ingredient_request.dart';
 import 'package:halal_checker/services/ai_ingredient_request_service.dart';
 import 'package:halal_checker/services/auth_service.dart';
 
@@ -15,13 +16,13 @@ void main() {
       );
     });
 
-    test('submitRequest returns false', () async {
+    test('submitRequest returns failed', () async {
       expect(
         await AiIngredientRequestService.submitRequest(
           '123',
           productName: 'Snack',
         ),
-        isFalse,
+        AiIngredientSubmitResult.failed,
       );
     });
 
@@ -96,15 +97,15 @@ void main() {
           (barcode, {productName}) async {
             capturedBarcode = barcode;
             capturedName = productName;
-            return true;
+            return AiIngredientSubmitResult.pending;
           };
 
-      final ok = await AiIngredientRequestService.submitRequest(
+      final result = await AiIngredientRequestService.submitRequest(
         '789',
         productName: 'Chips',
       );
 
-      expect(ok, isTrue);
+      expect(result, AiIngredientSubmitResult.pending);
       expect(capturedBarcode, '789');
       expect(capturedName, 'Chips');
     });
@@ -139,54 +140,110 @@ void main() {
     setUp(() {
       AiIngredientRequestService.enableForTesting();
       AiIngredientRequestService.fakeEnsureReady = () async => true;
+      AiIngredientRequestService.fakeIsAdmin = () async => false;
       AuthService.setCurrentUserForTesting(fakeUser);
     });
 
     tearDown(AuthService.resetForTesting);
 
-    test('submitRequest returns false when pending request exists', () async {
+    test(
+      'submitRequest returns alreadyPending when pending request exists',
+      () async {
+        AiIngredientRequestService.fakeFindPendingByBarcode = (_) async => {
+          'id': 1,
+        };
+        AiIngredientRequestService.fakeIsAdmin = () async => false;
+
+        expect(
+          await AiIngredientRequestService.submitRequest('123'),
+          AiIngredientSubmitResult.alreadyPending,
+        );
+      },
+    );
+
+    test('admin submitRequest approves existing pending request', () async {
       AiIngredientRequestService.fakeFindPendingByBarcode = (_) async => {
-        'id': 1,
+        'id': 7,
       };
-
-      expect(await AiIngredientRequestService.submitRequest('123'), isFalse);
-    });
-
-    test('submitRequest inserts when no pending request exists', () async {
-      String? capturedBarcode;
-      String? capturedUserId;
-      AiIngredientRequestService.fakeFindPendingByBarcode = (_) async => null;
-      AiIngredientRequestService.fakeInsertRequest =
-          ({
-            required String barcode,
-            productName,
-            required String userId,
-          }) async {
-            capturedBarcode = barcode;
-            capturedUserId = userId;
+      AiIngredientRequestService.fakeIsAdmin = () async => true;
+      AiIngredientRequestService.fakePerformStatusUpdate =
+          (id, status, userId) async {
+            expect(id, 7);
+            expect(status, 'approved');
+            expect(userId, 'test-uid');
+            return [
+              {'id': 7},
+            ];
           };
 
       expect(
-        await AiIngredientRequestService.submitRequest(
-          '456',
-          productName: 'Chips',
-        ),
-        isTrue,
+        await AiIngredientRequestService.submitRequest('123'),
+        AiIngredientSubmitResult.approved,
       );
-      expect(capturedBarcode, '456');
-      expect(capturedUserId, 'test-uid');
     });
 
-    test('submitRequest returns false when user is not signed in', () async {
+    test(
+      'submitRequest inserts pending when no pending request exists',
+      () async {
+        String? capturedBarcode;
+        String? capturedUserId;
+        AiIngredientRequestService.fakeFindPendingByBarcode = (_) async => null;
+        AiIngredientRequestService.fakeIsAdmin = () async => false;
+        AiIngredientRequestService.fakeInsertRequest =
+            ({
+              required String barcode,
+              productName,
+              required String userId,
+            }) async {
+              capturedBarcode = barcode;
+              capturedUserId = userId;
+            };
+
+        expect(
+          await AiIngredientRequestService.submitRequest(
+            '456',
+            productName: 'Chips',
+          ),
+          AiIngredientSubmitResult.pending,
+        );
+        expect(capturedBarcode, '456');
+        expect(capturedUserId, 'test-uid');
+      },
+    );
+
+    test(
+      'admin submitRequest inserts as approved when no pending exists',
+      () async {
+        AiIngredientRequestService.fakeFindPendingByBarcode = (_) async => null;
+        AiIngredientRequestService.fakeIsAdmin = () async => true;
+        AiIngredientRequestService.fakeInsertRequest =
+            ({
+              required String barcode,
+              productName,
+              required String userId,
+            }) async {};
+
+        expect(
+          await AiIngredientRequestService.submitRequest('456'),
+          AiIngredientSubmitResult.approved,
+        );
+      },
+    );
+
+    test('submitRequest returns failed when user is not signed in', () async {
       AuthService.resetForTesting();
       AiIngredientRequestService.enableForTesting();
       AiIngredientRequestService.fakeEnsureReady = () async => true;
 
-      expect(await AiIngredientRequestService.submitRequest('123'), isFalse);
+      expect(
+        await AiIngredientRequestService.submitRequest('123'),
+        AiIngredientSubmitResult.failed,
+      );
     });
 
-    test('submitRequest returns false on insert exception', () async {
+    test('submitRequest returns failed on insert exception', () async {
       AiIngredientRequestService.fakeFindPendingByBarcode = (_) async => null;
+      AiIngredientRequestService.fakeIsAdmin = () async => false;
       AiIngredientRequestService.fakeInsertRequest =
           ({
             required String barcode,
@@ -196,7 +253,10 @@ void main() {
             throw Exception('insert failed');
           };
 
-      expect(await AiIngredientRequestService.submitRequest('123'), isFalse);
+      expect(
+        await AiIngredientRequestService.submitRequest('123'),
+        AiIngredientSubmitResult.failed,
+      );
     });
 
     test('updateStatus returns true when rows are updated', () async {
@@ -296,7 +356,10 @@ void main() {
           throw PostgrestException(message: 'missing', code: 'PGRST205');
         };
 
-        expect(await AiIngredientRequestService.submitRequest('123'), isFalse);
+        expect(
+          await AiIngredientRequestService.submitRequest('123'),
+          AiIngredientSubmitResult.failed,
+        );
       },
     );
 
