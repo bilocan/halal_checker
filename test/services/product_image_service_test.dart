@@ -162,6 +162,7 @@ void main() {
         ),
         isFalse,
       );
+      expect(ProductImageService.debugLastUploadError, 'Not signed in');
     });
 
     test('uploadImage stores jpeg submission with product name', () async {

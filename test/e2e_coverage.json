@@ -33,7 +33,10 @@
       "id": "SCN-004",
       "flow": "Same path → product not found",
       "barcode_line": null,
-      "keys": ["e2e-product-not-found"],
+      "keys": [
+        "e2e-product-not-found",
+        "e2e-submit-pack-photos-not-found"
+      ],
       "notes": "Add a barcode with expected not_found when you have a reliable null lookup"
     }
   ],
@@ -43,6 +46,7 @@
     "e2e-barcode-field",
     "e2e-barcode-submit",
     "e2e-product-not-found",
+    "e2e-submit-pack-photos-not-found",
     "e2e-result-home",
     "e2e-scanner-back",
     "e2e-result-halal",

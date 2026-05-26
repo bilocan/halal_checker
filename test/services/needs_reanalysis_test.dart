@@ -26,7 +26,7 @@ const _kFresh = '2026-01-01T00:00:00.000Z'; // updated_at — older → fresh
 
 // ── fixture builders ──────────────────────────────────────────────────────────
 
-// Supabase REST row (snake_case) returned by _fetchFromSharedDb.
+// Supabase REST row (snake_case) from products_full, returned by _fetchFromSharedDb.
 Map<String, dynamic> _dbRow({
   String barcode = _kBarcode,
   String name = 'Test Product',
@@ -521,7 +521,34 @@ void main() {
       },
     );
 
-    // isUnknown=true in DB has same fall-through behaviour regardless of staleness.
+    test(
+      'DB unknown + approved pack photos + fresh → returned without EF',
+      () async {
+        var efCalled = false;
+        ProductService().setHttpClientForTesting(
+          _makeClient(
+            dbRow: _dbRow(
+              isHalal: false,
+              isUnknown: true,
+              isStale: false,
+              ingredients: const [],
+            )..['image_ingredients_url'] = 'https://example.com/ing.jpg',
+            efResponse: _efProduct(isHalal: true),
+            onRequest: (req) {
+              if (req.method == 'POST') efCalled = true;
+            },
+          ),
+        );
+
+        final p = await ProductService().getProduct(_kBarcode);
+
+        expect(p, isNotNull);
+        expect(p!.imageIngredientsUrl, 'https://example.com/ing.jpg');
+        expect(efCalled, isFalse);
+      },
+    );
+
+    // isUnknown=true without pack photos still re-tries via the Edge Function.
     test('DB has isUnknown=true + fresh → falls through (unchanged)', () async {
       var efCalled = false;
       ProductService().setHttpClientForTesting(
