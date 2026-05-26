@@ -118,4 +118,46 @@ void main() {
       expect(updated.isManaged, isTrue);
     });
   });
+
+  group('Product — Gemini web ingredient lookup dedupe flag', () {
+    test('explicit true from backend JSON', () {
+      final json = _baseJson();
+      json['geminiWebIngredientLookupAttemptedForName'] = true;
+      final p = Product.fromJson(json);
+      expect(p.geminiWebIngredientLookupAttemptedForName, isTrue);
+    });
+
+    test('computed true from lookup timestamp + name key', () {
+      final json = _baseJson(name: '  My   Candy  ');
+      json['geminiWebIngredientLookupAt'] = '2026-05-01T12:00:00Z';
+      json['geminiWebIngredientLookupNameKey'] = 'my candy';
+      final p = Product.fromJson(json);
+      expect(p.geminiWebIngredientLookupAttemptedForName, isTrue);
+    });
+
+    test('computed false when name key mismatches normalized name', () {
+      final json = _baseJson(name: 'Cola Zero');
+      json['geminiWebIngredientLookupAt'] = '2026-05-01T12:00:00Z';
+      json['geminiWebIngredientLookupNameKey'] = 'cola light';
+      final p = Product.fromJson(json);
+      expect(p.geminiWebIngredientLookupAttemptedForName, isFalse);
+    });
+
+    test(
+      'normalizeProductNameForGeminiKey matches edge function semantics',
+      () {
+        expect(
+          Product.normalizeProductNameForGeminiKey('  Foo   BAR  '),
+          'foo bar',
+        );
+      },
+    );
+
+    test('survives toJson/fromJson when true', () {
+      final json = _baseJson();
+      json['geminiWebIngredientLookupAttemptedForName'] = true;
+      final roundTripped = Product.fromJson(Product.fromJson(json).toJson());
+      expect(roundTripped.geminiWebIngredientLookupAttemptedForName, isTrue);
+    });
+  });
 }

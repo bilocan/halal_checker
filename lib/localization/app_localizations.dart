@@ -2404,6 +2404,18 @@ abstract class AppLocalizations {
   /// **'Ask AI to search the web for this product\'s ingredient list.'**
   String get aiLookupPromptHint;
 
+  /// No description provided for @aiWebIngredientLookupAlreadyRanTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'AI ingredient lookup already ran'**
+  String get aiWebIngredientLookupAlreadyRanTitle;
+
+  /// No description provided for @aiWebIngredientLookupAlreadyRanHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Gemini web search already ran for this product name but no usable ingredient list was found. You can still contribute ingredients or improve data on Open Food Facts.'**
+  String get aiWebIngredientLookupAlreadyRanHint;
+
   /// No description provided for @requestViaAi.
   ///
   /// In en, this message translates to:

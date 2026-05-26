@@ -1273,6 +1273,14 @@ class AppLocalizationsTr extends AppLocalizations {
       'Yapay zekadan bu ürünün içerik listesini webde aramasını isteyin.';
 
   @override
+  String get aiWebIngredientLookupAlreadyRanTitle =>
+      'Yapay zeka içerik araması zaten yapıldı';
+
+  @override
+  String get aiWebIngredientLookupAlreadyRanHint =>
+      'Gemini ile web araması bu ürün adı için zaten yapıldı; kullanılabilir bir içerik listesi bulunamadı. Yine de içerik ekleyebilir veya Open Food Facts verisini geliştirebilirsiniz.';
+
+  @override
   String get requestViaAi => 'Yapay zeka ile iste';
 
   @override

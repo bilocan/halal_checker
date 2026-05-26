@@ -378,6 +378,8 @@
   "aiLookupPendingHint": "KI-Suche angefordert — ein Admin prüft und genehmigt sie in Kürze.",
   "aiLookupRejectedHint": "Die KI-Anfrage wurde von einem Admin abgelehnt.",
   "aiLookupPromptHint": "KI bitten, im Web nach der Zutatenliste dieses Produkts zu suchen.",
+  "aiWebIngredientLookupAlreadyRanTitle": "KI-Zutatensuche bereits durchgeführt",
+  "aiWebIngredientLookupAlreadyRanHint": "Die Gemini-Websuche lief bereits für diesen Produktnamen, jedoch ohne verwertbare Zutatenliste. Sie können weiter Zutaten beitragen oder Open Food Facts verbessern.",
   "requestViaAi": "Per KI anfragen",
   "requestAgain": "Erneut anfragen"
 }

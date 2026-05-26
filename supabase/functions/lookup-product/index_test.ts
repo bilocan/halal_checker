@@ -12,6 +12,8 @@ import {
   isGeminiLookupEmptyOffEnvEnabled,
   shouldBypassCacheForGeminiAutoLookup,
   shouldRunGeminiIngredientLookup,
+  normalizeProductNameForGeminiKey,
+  isGeminiWebIngredientLookupDoneForProductName,
 } from './ingredient_lookup_gate.ts'
 
 // ── inline copies of the pure functions under test ───────────────────────────
@@ -412,6 +414,40 @@ Deno.test('shouldRunGeminiIngredientLookup — skips unknown product name', () =
       offIngredientCount: 0,
       productName: 'Unknown Product',
     }),
+    false,
+  )
+})
+
+// ── Gemini web lookup dedupe ─────────────────────────────────────────────────
+
+Deno.test('normalizeProductNameForGeminiKey — trims and collapses whitespace', () => {
+  assertEquals(normalizeProductNameForGeminiKey('  Foo   Bar  '), 'foo bar')
+  assertEquals(normalizeProductNameForGeminiKey('CAFÉ'), 'café')
+})
+
+Deno.test('isGeminiWebIngredientLookupDoneForProductName — matches normalized name', () => {
+  assertEquals(
+    isGeminiWebIngredientLookupDoneForProductName(
+      {
+        gemini_web_ingredient_lookup_at: '2026-01-01T00:00:00Z',
+        gemini_web_ingredient_lookup_name_key: 'cola zero',
+      },
+      '  Cola   Zero  ',
+    ),
+    true,
+  )
+  assertEquals(
+    isGeminiWebIngredientLookupDoneForProductName(
+      {
+        gemini_web_ingredient_lookup_at: '2026-01-01T00:00:00Z',
+        gemini_web_ingredient_lookup_name_key: 'cola zero',
+      },
+      'Cola Light',
+    ),
+    false,
+  )
+  assertEquals(
+    isGeminiWebIngredientLookupDoneForProductName(null, 'Cola Zero'),
     false,
   )
 })

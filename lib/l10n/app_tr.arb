@@ -378,6 +378,8 @@
   "aiLookupPendingHint": "Yapay zeka araması istendi — bir yönetici kısa süre içinde inceleyip onaylayacak.",
   "aiLookupRejectedHint": "Yapay zeka isteği bir yönetici tarafından reddedildi.",
   "aiLookupPromptHint": "Yapay zekadan bu ürünün içerik listesini webde aramasını isteyin.",
+  "aiWebIngredientLookupAlreadyRanTitle": "Yapay zeka içerik araması zaten yapıldı",
+  "aiWebIngredientLookupAlreadyRanHint": "Gemini ile web araması bu ürün adı için zaten yapıldı; kullanılabilir bir içerik listesi bulunamadı. Yine de içerik ekleyebilir veya Open Food Facts verisini geliştirebilirsiniz.",
   "requestViaAi": "Yapay zeka ile iste",
   "requestAgain": "Tekrar iste"
 }

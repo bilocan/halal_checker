@@ -503,6 +503,8 @@
   "aiLookupPendingHint": "AI lookup requested — an admin will review and approve it shortly.",
   "aiLookupRejectedHint": "The AI request was rejected by an admin.",
   "aiLookupPromptHint": "Ask AI to search the web for this product's ingredient list.",
+  "aiWebIngredientLookupAlreadyRanTitle": "AI ingredient lookup already ran",
+  "aiWebIngredientLookupAlreadyRanHint": "Gemini web search already ran for this product name but no usable ingredient list was found. You can still contribute ingredients or improve data on Open Food Facts.",
   "requestViaAi": "Request via AI",
   "requestAgain": "Request again"
 }

@@ -1272,6 +1272,14 @@ class AppLocalizationsEn extends AppLocalizations {
       'Ask AI to search the web for this product\'s ingredient list.';
 
   @override
+  String get aiWebIngredientLookupAlreadyRanTitle =>
+      'AI ingredient lookup already ran';
+
+  @override
+  String get aiWebIngredientLookupAlreadyRanHint =>
+      'Gemini web search already ran for this product name but no usable ingredient list was found. You can still contribute ingredients or improve data on Open Food Facts.';
+
+  @override
   String get requestViaAi => 'Request via AI';
 
   @override

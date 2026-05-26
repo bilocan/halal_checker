@@ -1293,6 +1293,14 @@ class AppLocalizationsDe extends AppLocalizations {
       'KI bitten, im Web nach der Zutatenliste dieses Produkts zu suchen.';
 
   @override
+  String get aiWebIngredientLookupAlreadyRanTitle =>
+      'KI-Zutatensuche bereits durchgeführt';
+
+  @override
+  String get aiWebIngredientLookupAlreadyRanHint =>
+      'Die Gemini-Websuche lief bereits für diesen Produktnamen, jedoch ohne verwertbare Zutatenliste. Sie können weiter Zutaten beitragen oder Open Food Facts verbessern.';
+
+  @override
   String get requestViaAi => 'Per KI anfragen';
 
   @override

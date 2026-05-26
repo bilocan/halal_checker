@@ -29,88 +29,131 @@ class ResultMissingIngredients extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Card(
-          color: const Color(0xFFF5F3FF),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      aiRequestStatus == ReviewStatus.pending
-                          ? Icons.hourglass_top
-                          : aiRequestStatus == ReviewStatus.rejected
-                          ? Icons.block
-                          : Icons.auto_awesome,
-                      color: aiRequestStatus == ReviewStatus.rejected
-                          ? Colors.red.shade400
-                          : const Color(0xFF7C3AED),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        loc.findIngredientsViaAi,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF5B21B6),
-                          fontSize: 15,
+        if (product.geminiWebIngredientLookupAttemptedForName) ...[
+          Card(
+            color: const Color(0xFFE8F5E9),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.check_circle_outline,
+                        color: Colors.green.shade700,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          loc.aiWebIngredientLookupAlreadyRanTitle,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green.shade900,
+                            fontSize: 15,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  aiRequestStatus == ReviewStatus.pending
-                      ? loc.aiLookupPendingHint
-                      : aiRequestStatus == ReviewStatus.rejected
-                      ? loc.aiLookupRejectedHint
-                      : loc.aiLookupPromptHint,
-                  style: TextStyle(
-                    color: aiRequestStatus == ReviewStatus.rejected
-                        ? Colors.red.shade700
-                        : const Color(0xFF6D28D9),
-                    fontSize: 13,
+                    ],
                   ),
-                ),
-                if (aiRequestStatus == null ||
-                    aiRequestStatus == ReviewStatus.rejected) ...[
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      icon: isFetchingAiIngredients
-                          ? const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            )
-                          : const Icon(Icons.auto_awesome, size: 18),
-                      label: Text(
-                        aiRequestStatus == ReviewStatus.rejected
-                            ? loc.requestAgain
-                            : loc.requestViaAi,
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF7C3AED),
-                        foregroundColor: Colors.white,
-                      ),
-                      onPressed: isFetchingAiIngredients
-                          ? null
-                          : onRequestAiIngredients,
+                  const SizedBox(height: 8),
+                  Text(
+                    loc.aiWebIngredientLookupAlreadyRanHint,
+                    style: TextStyle(
+                      color: Colors.green.shade900,
+                      fontSize: 13,
                     ),
                   ),
                 ],
-              ],
+              ),
             ),
           ),
-        ),
-        const SizedBox(height: 8),
+          const SizedBox(height: 8),
+        ],
+        if (!product.geminiWebIngredientLookupAttemptedForName) ...[
+          Card(
+            color: const Color(0xFFF5F3FF),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        aiRequestStatus == ReviewStatus.pending
+                            ? Icons.hourglass_top
+                            : aiRequestStatus == ReviewStatus.rejected
+                            ? Icons.block
+                            : Icons.auto_awesome,
+                        color: aiRequestStatus == ReviewStatus.rejected
+                            ? Colors.red.shade400
+                            : const Color(0xFF7C3AED),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          loc.findIngredientsViaAi,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF5B21B6),
+                            fontSize: 15,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    aiRequestStatus == ReviewStatus.pending
+                        ? loc.aiLookupPendingHint
+                        : aiRequestStatus == ReviewStatus.rejected
+                        ? loc.aiLookupRejectedHint
+                        : loc.aiLookupPromptHint,
+                    style: TextStyle(
+                      color: aiRequestStatus == ReviewStatus.rejected
+                          ? Colors.red.shade700
+                          : const Color(0xFF6D28D9),
+                      fontSize: 13,
+                    ),
+                  ),
+                  if (aiRequestStatus == null ||
+                      aiRequestStatus == ReviewStatus.rejected) ...[
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        icon: isFetchingAiIngredients
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Icon(Icons.auto_awesome, size: 18),
+                        label: Text(
+                          aiRequestStatus == ReviewStatus.rejected
+                              ? loc.requestAgain
+                              : loc.requestViaAi,
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF7C3AED),
+                          foregroundColor: Colors.white,
+                        ),
+                        onPressed: isFetchingAiIngredients
+                            ? null
+                            : onRequestAiIngredients,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+        ],
         Card(
           color: Colors.orange.shade50,
           child: Padding(

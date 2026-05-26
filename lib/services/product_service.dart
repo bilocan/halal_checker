@@ -459,6 +459,13 @@ class ProductService {
       'isManaged': row['is_managed'] as bool? ?? false,
       'updatedAt': row['updated_at'] as String?,
       'lastAnalysedAt': row['last_analysed_at'] as String?,
+      'geminiWebIngredientLookupAttemptedForName':
+          Product.computeGeminiWebLookupAttemptedForName(
+            productName: row['name'] as String? ?? 'Unknown Product',
+            lookupAt: row['gemini_web_ingredient_lookup_at'],
+            lookupNameKey: row['gemini_web_ingredient_lookup_name_key'],
+            explicitFromApi: null,
+          ),
     });
   }
 

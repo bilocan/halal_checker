@@ -1,3 +1,5 @@
+import { isGeminiWebIngredientLookupDoneForProductName } from './ingredient_lookup_gate.ts'
+
 // deno-lint-ignore no-explicit-any
 export function toProduct(row: Record<string, any>) {
   return {
@@ -23,6 +25,10 @@ export function toProduct(row: Record<string, any>) {
     isManaged:             row.is_managed ?? false,
     updatedAt:             row.updated_at ?? null,
     lastAnalysedAt:        row.last_analysed_at ?? null,
+    geminiWebIngredientLookupAttemptedForName: isGeminiWebIngredientLookupDoneForProductName(
+      row,
+      String(row.name ?? ''),
+    ),
   }
 }
 

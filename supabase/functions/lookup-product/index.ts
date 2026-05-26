@@ -13,6 +13,8 @@ import {
   resolveGeminiLookupEmptyOffEnabled,
   shouldBypassCacheForGeminiAutoLookup,
   shouldRunGeminiIngredientLookup,
+  isGeminiWebIngredientLookupDoneForProductName,
+  normalizeProductNameForGeminiKey,
 } from './ingredient_lookup_gate.ts'
 import {
   geminiIngredientLookup, analyzeWithGemini, analyzeWithClaude, analyzeWithClaudeVision,
@@ -147,6 +149,10 @@ Deno.serve(async (req) => {
         last_analysed_at:      new Date().toISOString(),
         fetched_at:            cached.fetched_at,
         ingredient_source:     resolvedSource,
+        gemini_web_ingredient_lookup_at:
+          cached.gemini_web_ingredient_lookup_at ?? null,
+        gemini_web_ingredient_lookup_name_key:
+          cached.gemini_web_ingredient_lookup_name_key ?? null,
       }
 
       await supabase.from('products').upsert({
@@ -164,6 +170,13 @@ Deno.serve(async (req) => {
         last_analysed_at:      new Date().toISOString(),
         fetched_at:            cached.fetched_at,
         ingredient_source:     resolvedSource,
+        ...(cached.gemini_web_ingredient_lookup_name_key
+          ? {
+            gemini_web_ingredient_lookup_at: cached.gemini_web_ingredient_lookup_at,
+            gemini_web_ingredient_lookup_name_key:
+              cached.gemini_web_ingredient_lookup_name_key,
+          }
+          : {}),
       })
 
       await supabase.from('product_analysis').upsert({
@@ -254,6 +267,11 @@ Deno.serve(async (req) => {
         `[${barcode}] OFF miss — analysing from Supabase cache (approved pack-photo stub or curated row)`,
       )
 
+      let geminiAtOut =
+        cached.gemini_web_ingredient_lookup_at as string | undefined
+      let geminiKeyOut =
+        cached.gemini_web_ingredient_lookup_name_key as string | undefined
+
       let name =
         typeof cached.name === 'string' &&
           cached.name.trim().length > 0
@@ -282,13 +300,28 @@ Deno.serve(async (req) => {
           productName: name,
         })
       ) {
-        const geminiEnabled = Deno.env.get('GEMINI_ENABLED') !== 'false'
-        const geminiKey = Deno.env.get('GEMINI_API_KEY')
-        if (geminiEnabled && geminiKey) {
-          const found = await geminiIngredientLookup(name, barcode, geminiKey, brand)
-          if (found.length > 0) {
-            ingredients = found
-            ingredientSource = 'ai'
+        if (isGeminiWebIngredientLookupDoneForProductName(cached, name)) {
+          console.log(
+            `[${barcode}] Gemini web ingredient lookup: skipped — already attempted for this product name`,
+          )
+        } else {
+          const geminiEnabled = Deno.env.get('GEMINI_ENABLED') !== 'false'
+          const geminiKey = Deno.env.get('GEMINI_API_KEY')
+          if (!geminiEnabled) {
+            console.log(`[${barcode}] Gemini ingredient lookup: skipped — disabled by GEMINI_ENABLED=false`)
+          } else if (!geminiKey) {
+            console.log(`[${barcode}] Gemini ingredient lookup: skipped — GEMINI_API_KEY not set`)
+          } else {
+            try {
+              const found = await geminiIngredientLookup(name, barcode, geminiKey, brand)
+              if (found.length > 0) {
+                ingredients = found
+                ingredientSource = 'ai'
+              }
+            } finally {
+              geminiAtOut = new Date().toISOString()
+              geminiKeyOut = normalizeProductNameForGeminiKey(name)
+            }
           }
         }
       }
@@ -485,6 +518,12 @@ Deno.serve(async (req) => {
         is_managed: (cached.is_managed ?? false) as boolean,
         last_analysed_at: new Date().toISOString(),
         fetched_at: (cached.fetched_at as string) ?? new Date().toISOString(),
+        ...(geminiKeyOut
+          ? {
+            gemini_web_ingredient_lookup_at: geminiAtOut,
+            gemini_web_ingredient_lookup_name_key: geminiKeyOut,
+          }
+          : {}),
       })
       if (upsertStubErr) console.error('stub upsert error', upsertStubErr)
 
@@ -524,6 +563,11 @@ Deno.serve(async (req) => {
 
     console.log(`[${barcode}] OFF: name="${name}" brand="${brand}" ingredients=${ingredients.length}`)
 
+    let geminiAtOut =
+      cached?.gemini_web_ingredient_lookup_at as string | undefined
+    let geminiKeyOut =
+      cached?.gemini_web_ingredient_lookup_name_key as string | undefined
+
     let ingredientSource: 'off' | 'ai' | 'community' = 'off'
 
     // 4. Gemini + Google Search when OFF has no ingredients:
@@ -550,15 +594,26 @@ Deno.serve(async (req) => {
         console.log(`[${barcode}] Gemini ingredient lookup: skipped — ${skipReason}`)
       }
     } else {
-      const geminiEnabled = Deno.env.get('GEMINI_ENABLED') !== 'false'
-      const geminiKey = Deno.env.get('GEMINI_API_KEY')
-      if (!geminiEnabled) {
-        console.log(`[${barcode}] Gemini ingredient lookup: skipped — disabled by GEMINI_ENABLED=false`)
-      } else if (!geminiKey) {
-        console.log(`[${barcode}] Gemini ingredient lookup: skipped — GEMINI_API_KEY not set`)
+      if (isGeminiWebIngredientLookupDoneForProductName(cached, name)) {
+        console.log(
+          `[${barcode}] Gemini web ingredient lookup: skipped — already attempted for this product name`,
+        )
       } else {
-        const found = await geminiIngredientLookup(name, barcode, geminiKey, brand)
-        if (found.length > 0) { ingredients = found; ingredientSource = 'ai' }
+        const geminiEnabled = Deno.env.get('GEMINI_ENABLED') !== 'false'
+        const geminiKey = Deno.env.get('GEMINI_API_KEY')
+        if (!geminiEnabled) {
+          console.log(`[${barcode}] Gemini ingredient lookup: skipped — disabled by GEMINI_ENABLED=false`)
+        } else if (!geminiKey) {
+          console.log(`[${barcode}] Gemini ingredient lookup: skipped — GEMINI_API_KEY not set`)
+        } else {
+          try {
+            const found = await geminiIngredientLookup(name, barcode, geminiKey, brand)
+            if (found.length > 0) { ingredients = found; ingredientSource = 'ai' }
+          } finally {
+            geminiAtOut = new Date().toISOString()
+            geminiKeyOut = normalizeProductNameForGeminiKey(name)
+          }
+        }
       }
     }
 
@@ -790,6 +845,12 @@ Deno.serve(async (req) => {
       requires_halal_cert:    requiresHalalCert,
       last_analysed_at:       new Date().toISOString(),
       fetched_at:             cached?.fetched_at ?? new Date().toISOString(),
+      ...(geminiKeyOut
+        ? {
+          gemini_web_ingredient_lookup_at: geminiAtOut,
+          gemini_web_ingredient_lookup_name_key: geminiKeyOut,
+        }
+        : {}),
     })
 
     if (upsertErr) {

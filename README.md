@@ -351,7 +351,8 @@ supabase secrets set GEMINI_ENABLED=true
 # supabase secrets set GEMINI_LOOKUP_EMPTY_OFF=true
 ```
 
-Gemini ingredient lookup uses **Grounding with Google Search** (billable on the Gemini API). By default it runs only when a user requests AI ingredients on the result screen, an admin approves that request, and the app calls `lookup-product` with `fetchAiIngredients: true`. **Superadmins** can enable automatic lookup for empty Open Food Facts rows in **Admin panel → Settings** (`app_config.gemini_lookup_empty_off`). Alternatively set **`GEMINI_LOOKUP_EMPTY_OFF=true`** in edge-function env for local dev. Still requires `GEMINI_ENABLED` and `GEMINI_API_KEY`. Use the same Google AI Studio project/key you test with in chat, with billing enabled if searches return no `groundingMetadata` in Edge Function logs.
+Gemini ingredient lookup uses **Grounding with Google Search** (billable on the Gemini API). By default it runs only when a user requests AI ingredients on the result screen, an admin approves that request, and the app calls `lookup-product` with `fetchAiIngredients: true`. **Superadmins** can enable automatic lookup for empty Open Food Facts rows in **Admin panel → Settings** (`app_config.gemini_lookup_empty_off`). Alternatively set **`GEMINI_LOOKUP_EMPTY_OFF=true`** in edge-function env for local dev. Still requires `GEMINI_ENABLED` and `GEMINI_API_KEY`. Use the same Google AI Studio project/key you test with in chat, with billing enabled if searches return no `groundingMetadata` in Edge Function logs. After a successful API attempt for a given barcode plus normalized product name, the edge function **does not call Gemini again** until the name changes (migration `20260527130100_gemini_web_ingredient_lookup_attempt.sql`); the app hides the request button and shows a short confirmation.
+
 
 ### Database migrations
 
