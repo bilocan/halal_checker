@@ -79,6 +79,98 @@ class AppLocalizationsTr extends AppLocalizations {
   String get productNotFound => 'Ürün bulunamadı';
 
   @override
+  String get missingProductFlowTitle => 'Ürünü ekle';
+
+  @override
+  String get missingProductFlowIntro =>
+      'Bu barkod henüz veritabanlarımızda yok. Ambalajın net fotoğraflarını gönderin — ekibimiz bunları kullanarak daha sonra ürünü herkes için işleyecek.';
+
+  @override
+  String get missingProductFlowHelpHint =>
+      'Yüklemeden önce boyut ve keskinliği kontrol ediyoruz. Çok küçük veya bulanık görseller işlenemez.';
+
+  @override
+  String get missingProductStepBarcodeTitle => 'Adım 1 — Barkod';
+
+  @override
+  String get missingProductStepBarcodeSubtitle =>
+      'Fotoğraflarınız şu kod ile ilişkilendirilecek:';
+
+  @override
+  String get missingProductStepFrontTitle => 'Adım 2 — Ürünün önü';
+
+  @override
+  String get missingProductStepFrontSubtitle =>
+      'Marka, ürün adı ve barkod görünürse bu yüzünde düz bir fotoğraf çekin.';
+
+  @override
+  String get missingProductStepIngredientsTitle => 'Adım 3 — İçindekiler';
+
+  @override
+  String get missingProductStepIngredientsSubtitle =>
+      'Sadece içindekiler bölümü. Yansıma olmasın, yazı okunaklı olsun.';
+
+  @override
+  String get missingProductExampleLayout => 'İyi bir kadraj böyle görünür';
+
+  @override
+  String get missingProductPickCamera => 'Fotoğraf çek';
+
+  @override
+  String get missingProductPickGallery => 'Galeriden seç';
+
+  @override
+  String get missingProductRetake => 'Fotoğrafı değiştir';
+
+  @override
+  String get missingProductContinue => 'Devam';
+
+  @override
+  String get missingProductBack => 'Geri';
+
+  @override
+  String get missingProductSubmit => 'Fotoğrafları gönder';
+
+  @override
+  String get missingProductSubmitting => 'Yükleniyor…';
+
+  @override
+  String get missingProductThankYou =>
+      'Teşekkürler. Fotoğraflarınız inceleme sırasına alındı.';
+
+  @override
+  String get missingProductUploadFailed =>
+      'Yükleme başarısız oldu. İnternetinizi kontrol edip yeniden deneyin.';
+
+  @override
+  String missingProductPhotoTooLarge(int maxMb) {
+    return 'Dosya çok büyük — en fazla $maxMb MB.';
+  }
+
+  @override
+  String get missingProductPhotoUnreadable =>
+      'Bu dosya görüntü olarak açılamıyor.';
+
+  @override
+  String get missingProductPhotoTooSmall =>
+      'Çözünürlük yetersiz — etiketi kadrajın büyük kısmını dolduracak kadar yaklaşın.';
+
+  @override
+  String get missingProductNeedBoth =>
+      'Göndermeden önce her iki fotoğrafı ekleyin.';
+
+  @override
+  String get missingProductOpenFlow => 'Ambalaj fotoğrafları gönder';
+
+  @override
+  String get missingProductOneOfTwoFailed =>
+      'Bir fotoğraf yüklenemedi. Bu ekranı yeniden açıp tekrar deneyebilirsiniz.';
+
+  @override
+  String get missingProductReviewHint =>
+      'Önizlemeleri kontrol edin; net ve okunaklıysa gönder’e dokunun.';
+
+  @override
   String get noProductImageAvailable => 'Ürün resmi yok';
 
   @override
@@ -1179,6 +1271,14 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get aiLookupPromptHint =>
       'Yapay zekadan bu ürünün içerik listesini webde aramasını isteyin.';
+
+  @override
+  String get aiWebIngredientLookupAlreadyRanTitle =>
+      'Yapay zeka içerik araması zaten yapıldı';
+
+  @override
+  String get aiWebIngredientLookupAlreadyRanHint =>
+      'Gemini ile web araması bu ürün adı için zaten yapıldı; kullanılabilir bir içerik listesi bulunamadı. Yine de içerik ekleyebilir veya Open Food Facts verisini geliştirebilirsiniz.';
 
   @override
   String get requestViaAi => 'Yapay zeka ile iste';

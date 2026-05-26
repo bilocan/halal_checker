@@ -80,6 +80,98 @@ class AppLocalizationsDe extends AppLocalizations {
   String get productNotFound => 'Produkt nicht gefunden';
 
   @override
+  String get missingProductFlowTitle => 'Produkt hinzufügen';
+
+  @override
+  String get missingProductFlowIntro =>
+      'Dieser Barcode ist noch nicht in unseren Datenbanken. Schicken Sie gut lesbare Fotos der Verpackung — unser Team nutzt sie, damit der Artikel später für alle geprüft werden kann.';
+
+  @override
+  String get missingProductFlowHelpHint =>
+      'Wir prüfen Dateigröße und Schärfe vor dem Hochladen. Zu kleine oder unscharfe Bilder können nicht weiterverarbeitet werden.';
+
+  @override
+  String get missingProductStepBarcodeTitle => 'Schritt 1 — Barcode';
+
+  @override
+  String get missingProductStepBarcodeSubtitle =>
+      'Die Fotos werden mit diesem Code verknüpft:';
+
+  @override
+  String get missingProductStepFrontTitle => 'Schritt 2 — Vorderseite';
+
+  @override
+  String get missingProductStepFrontSubtitle =>
+      'Gerades Foto von vorne mit Marke, Produktnamen und Barcode falls auf dieser Seite.';
+
+  @override
+  String get missingProductStepIngredientsTitle => 'Schritt 3 — Zutatenliste';
+
+  @override
+  String get missingProductStepIngredientsSubtitle =>
+      'Nur der Zutatenbereich. Keine starken Spiegelungen, Text soll lesbar sein.';
+
+  @override
+  String get missingProductExampleLayout => 'So sollte das Foto aussehen';
+
+  @override
+  String get missingProductPickCamera => 'Foto aufnehmen';
+
+  @override
+  String get missingProductPickGallery => 'Aus Galerie wählen';
+
+  @override
+  String get missingProductRetake => 'Foto ändern';
+
+  @override
+  String get missingProductContinue => 'Weiter';
+
+  @override
+  String get missingProductBack => 'Zurück';
+
+  @override
+  String get missingProductSubmit => 'Fotos senden';
+
+  @override
+  String get missingProductSubmitting => 'Wird hochgeladen…';
+
+  @override
+  String get missingProductThankYou =>
+      'Danke. Ihre Fotos stehen zur Prüfung an.';
+
+  @override
+  String get missingProductUploadFailed =>
+      'Upload fehlgeschlagen. Bitte Verbindung prüfen und erneut versuchen.';
+
+  @override
+  String missingProductPhotoTooLarge(int maxMb) {
+    return 'Datei zu groß — höchstens $maxMb MB.';
+  }
+
+  @override
+  String get missingProductPhotoUnreadable =>
+      'Diese Datei kann nicht als Bild geöffnet werden.';
+
+  @override
+  String get missingProductPhotoTooSmall =>
+      'Auflösung zu gering — näher ranzoomen, bis die Aufschrift gut gefüllt ist.';
+
+  @override
+  String get missingProductNeedBoth =>
+      'Bitte beide Fotos hinzufügen, bevor Sie senden.';
+
+  @override
+  String get missingProductOpenFlow => 'Verpackungsfotos senden';
+
+  @override
+  String get missingProductOneOfTwoFailed =>
+      'Ein Foto konnte nicht hochgeladen werden. Öffnen Sie den Vorgang erneut.';
+
+  @override
+  String get missingProductReviewHint =>
+      'Prüfen Sie die Vorschau. Ist alles scharf und gut lesbar, tippen Sie auf Senden.';
+
+  @override
   String get noProductImageAvailable => 'Kein Produktbild verfügbar';
 
   @override
@@ -1199,6 +1291,14 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get aiLookupPromptHint =>
       'KI bitten, im Web nach der Zutatenliste dieses Produkts zu suchen.';
+
+  @override
+  String get aiWebIngredientLookupAlreadyRanTitle =>
+      'KI-Zutatensuche bereits durchgeführt';
+
+  @override
+  String get aiWebIngredientLookupAlreadyRanHint =>
+      'Die Gemini-Websuche lief bereits für diesen Produktnamen, jedoch ohne verwertbare Zutatenliste. Sie können weiter Zutaten beitragen oder Open Food Facts verbessern.';
 
   @override
   String get requestViaAi => 'Per KI anfragen';

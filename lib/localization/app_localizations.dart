@@ -232,6 +232,162 @@ abstract class AppLocalizations {
   /// **'Product not found'**
   String get productNotFound;
 
+  /// No description provided for @missingProductFlowTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add this product'**
+  String get missingProductFlowTitle;
+
+  /// No description provided for @missingProductFlowIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'This barcode is not in our databases yet. Submit clear pack photos — our team uses them so everyone can analyse this item later.'**
+  String get missingProductFlowIntro;
+
+  /// No description provided for @missingProductFlowHelpHint.
+  ///
+  /// In en, this message translates to:
+  /// **'We check photo size and sharpness before upload. Blurry or very small images cannot be processed.'**
+  String get missingProductFlowHelpHint;
+
+  /// No description provided for @missingProductStepBarcodeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Step 1 — Barcode'**
+  String get missingProductStepBarcodeTitle;
+
+  /// No description provided for @missingProductStepBarcodeSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your photos will be linked to:'**
+  String get missingProductStepBarcodeSubtitle;
+
+  /// No description provided for @missingProductStepFrontTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Step 2 — Front of pack'**
+  String get missingProductStepFrontTitle;
+
+  /// No description provided for @missingProductStepFrontSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Straight photo showing brand, product name, and barcode if it is printed on this side.'**
+  String get missingProductStepFrontSubtitle;
+
+  /// No description provided for @missingProductStepIngredientsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Step 3 — Ingredients list'**
+  String get missingProductStepIngredientsTitle;
+
+  /// No description provided for @missingProductStepIngredientsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Only the ingredient list panel. Avoid glare and keep text readable.'**
+  String get missingProductStepIngredientsSubtitle;
+
+  /// No description provided for @missingProductExampleLayout.
+  ///
+  /// In en, this message translates to:
+  /// **'What a good shot looks like'**
+  String get missingProductExampleLayout;
+
+  /// No description provided for @missingProductPickCamera.
+  ///
+  /// In en, this message translates to:
+  /// **'Take photo'**
+  String get missingProductPickCamera;
+
+  /// No description provided for @missingProductPickGallery.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose from gallery'**
+  String get missingProductPickGallery;
+
+  /// No description provided for @missingProductRetake.
+  ///
+  /// In en, this message translates to:
+  /// **'Change photo'**
+  String get missingProductRetake;
+
+  /// No description provided for @missingProductContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get missingProductContinue;
+
+  /// No description provided for @missingProductBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get missingProductBack;
+
+  /// No description provided for @missingProductSubmit.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit photos'**
+  String get missingProductSubmit;
+
+  /// No description provided for @missingProductSubmitting.
+  ///
+  /// In en, this message translates to:
+  /// **'Uploading…'**
+  String get missingProductSubmitting;
+
+  /// No description provided for @missingProductThankYou.
+  ///
+  /// In en, this message translates to:
+  /// **'Thank you. Your photos are in the review queue.'**
+  String get missingProductThankYou;
+
+  /// No description provided for @missingProductUploadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload failed. Check your connection and try again.'**
+  String get missingProductUploadFailed;
+
+  /// No description provided for @missingProductPhotoTooLarge.
+  ///
+  /// In en, this message translates to:
+  /// **'File too large — maximum {maxMb} MB.'**
+  String missingProductPhotoTooLarge(int maxMb);
+
+  /// No description provided for @missingProductPhotoUnreadable.
+  ///
+  /// In en, this message translates to:
+  /// **'This file cannot be opened as an image.'**
+  String get missingProductPhotoUnreadable;
+
+  /// No description provided for @missingProductPhotoTooSmall.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo is too low resolution — move closer so the label fills the frame.'**
+  String get missingProductPhotoTooSmall;
+
+  /// No description provided for @missingProductNeedBoth.
+  ///
+  /// In en, this message translates to:
+  /// **'Add both photos before submitting.'**
+  String get missingProductNeedBoth;
+
+  /// No description provided for @missingProductOpenFlow.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit pack photos'**
+  String get missingProductOpenFlow;
+
+  /// No description provided for @missingProductOneOfTwoFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'One photo did not upload. You can reopen this screen and try again.'**
+  String get missingProductOneOfTwoFailed;
+
+  /// No description provided for @missingProductReviewHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Check that both previews are sharp and readable, then tap submit.'**
+  String get missingProductReviewHint;
+
   /// No description provided for @noProductImageAvailable.
   ///
   /// In en, this message translates to:
@@ -2247,6 +2403,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Ask AI to search the web for this product\'s ingredient list.'**
   String get aiLookupPromptHint;
+
+  /// No description provided for @aiWebIngredientLookupAlreadyRanTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'AI ingredient lookup already ran'**
+  String get aiWebIngredientLookupAlreadyRanTitle;
+
+  /// No description provided for @aiWebIngredientLookupAlreadyRanHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Gemini web search already ran for this product name but no usable ingredient list was found. You can still contribute ingredients or improve data on Open Food Facts.'**
+  String get aiWebIngredientLookupAlreadyRanHint;
 
   /// No description provided for @requestViaAi.
   ///

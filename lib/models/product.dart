@@ -53,6 +53,26 @@ class Product {
   /// Distinct from fetched_at, which tracks the Open Food Facts fetch time.
   final DateTime? lastAnalysedAt;
 
+  /// Whether Gemini **web ingredient lookup** already ran server-side for this
+  /// barcode with the same normalized [name] as now. Controls the AI lookup CTA.
+  final bool geminiWebIngredientLookupAttemptedForName;
+
+  /// Normalizes a product title the same way the edge function does for dedupe.
+  static String normalizeProductNameForGeminiKey(String name) {
+    return name.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
+  }
+
+  static bool computeGeminiWebLookupAttemptedForName({
+    required String productName,
+    Object? lookupAt,
+    Object? lookupNameKey,
+    bool? explicitFromApi,
+  }) {
+    if (explicitFromApi != null) return explicitFromApi;
+    if (lookupAt == null || lookupNameKey is! String) return false;
+    return normalizeProductNameForGeminiKey(productName) == lookupNameKey;
+  }
+
   Product({
     required this.barcode,
     required this.name,
@@ -78,6 +98,7 @@ class Product {
     this.isManaged = false,
     this.updatedAt,
     this.lastAnalysedAt,
+    this.geminiWebIngredientLookupAttemptedForName = false,
   });
 
   Product copyWith({
@@ -105,6 +126,7 @@ class Product {
     bool? isManaged,
     DateTime? updatedAt,
     DateTime? lastAnalysedAt,
+    bool? geminiWebIngredientLookupAttemptedForName,
   }) => Product(
     barcode: barcode ?? this.barcode,
     name: name ?? this.name,
@@ -131,6 +153,9 @@ class Product {
     isManaged: isManaged ?? this.isManaged,
     updatedAt: updatedAt ?? this.updatedAt,
     lastAnalysedAt: lastAnalysedAt ?? this.lastAnalysedAt,
+    geminiWebIngredientLookupAttemptedForName:
+        geminiWebIngredientLookupAttemptedForName ??
+        this.geminiWebIngredientLookupAttemptedForName,
   );
 
   Map<String, dynamic> toJson() => {
@@ -160,6 +185,8 @@ class Product {
     if (updatedAt != null) 'updatedAt': updatedAt!.toIso8601String(),
     if (lastAnalysedAt != null)
       'lastAnalysedAt': lastAnalysedAt!.toIso8601String(),
+    'geminiWebIngredientLookupAttemptedForName':
+        geminiWebIngredientLookupAttemptedForName,
   };
 
   factory Product.fromJson(Map<String, dynamic> json) => Product(
@@ -199,5 +226,13 @@ class Product {
     lastAnalysedAt: json['lastAnalysedAt'] != null
         ? DateTime.tryParse(json['lastAnalysedAt'] as String)
         : null,
+    geminiWebIngredientLookupAttemptedForName:
+        computeGeminiWebLookupAttemptedForName(
+          productName: json['name'] as String,
+          lookupAt: json['geminiWebIngredientLookupAt'],
+          lookupNameKey: json['geminiWebIngredientLookupNameKey'],
+          explicitFromApi:
+              json['geminiWebIngredientLookupAttemptedForName'] as bool?,
+        ),
   );
 }

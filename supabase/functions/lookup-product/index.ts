@@ -13,6 +13,8 @@ import {
   resolveGeminiLookupEmptyOffEnabled,
   shouldBypassCacheForGeminiAutoLookup,
   shouldRunGeminiIngredientLookup,
+  isGeminiWebIngredientLookupDoneForProductName,
+  normalizeProductNameForGeminiKey,
 } from './ingredient_lookup_gate.ts'
 import {
   geminiIngredientLookup, analyzeWithGemini, analyzeWithClaude, analyzeWithClaudeVision,
@@ -43,6 +45,13 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
     )
 
+    // 1. Cache hit?
+    const { data: cached } = await supabase
+      .from('products_full')
+      .select('*')
+      .eq('barcode', barcode)
+      .maybeSingle()
+
     const geminiAutoEmptyOff = await resolveGeminiLookupEmptyOffEnabled(supabase)
     const refetchForGeminiAuto = shouldBypassCacheForGeminiAutoLookup(cached, {
       autoLookupEmptyOff: geminiAutoEmptyOff,
@@ -53,13 +62,6 @@ Deno.serve(async (req) => {
       `[${barcode}] request: force=${force} fetchAiIngredients=${fetchAiIngredients} ` +
       `geminiAutoEmptyOff=${geminiAutoEmptyOff} refetchForGeminiAuto=${refetchForGeminiAuto}`,
     )
-
-    // 1. Cache hit?
-    const { data: cached } = await supabase
-      .from('products_full')
-      .select('*')
-      .eq('barcode', barcode)
-      .maybeSingle()
 
     console.log(`[${barcode}] cache: ${cached ? `hit (is_managed=${cached.is_managed} is_unknown=${cached.is_unknown} ingredient_source=${cached.ingredient_source} ingredients=${Array.isArray(cached.ingredients) ? cached.ingredients.length : 0})` : 'miss'}`)
 
@@ -147,6 +149,10 @@ Deno.serve(async (req) => {
         last_analysed_at:      new Date().toISOString(),
         fetched_at:            cached.fetched_at,
         ingredient_source:     resolvedSource,
+        gemini_web_ingredient_lookup_at:
+          cached.gemini_web_ingredient_lookup_at ?? null,
+        gemini_web_ingredient_lookup_name_key:
+          cached.gemini_web_ingredient_lookup_name_key ?? null,
       }
 
       await supabase.from('products').upsert({
@@ -164,6 +170,13 @@ Deno.serve(async (req) => {
         last_analysed_at:      new Date().toISOString(),
         fetched_at:            cached.fetched_at,
         ingredient_source:     resolvedSource,
+        ...(cached.gemini_web_ingredient_lookup_name_key
+          ? {
+            gemini_web_ingredient_lookup_at: cached.gemini_web_ingredient_lookup_at,
+            gemini_web_ingredient_lookup_name_key:
+              cached.gemini_web_ingredient_lookup_name_key,
+          }
+          : {}),
       })
 
       await supabase.from('product_analysis').upsert({
@@ -187,15 +200,25 @@ Deno.serve(async (req) => {
 
     if (!fetchAiIngredients && !refetchForGeminiAuto && cached && !force) {
       const communityIngredients = await getApprovedContribution(supabase, barcode)
-      return new Response(
-        JSON.stringify({
-          product: toProduct(withCommunitySource(cached, communityIngredients)),
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
-      )
+      const storedIngredients: string[] = communityIngredients
+        ?? (Array.isArray(cached.ingredients) ? cached.ingredients : [])
+      const visionUrlRaw = cached.image_ingredients_url as string | null | undefined
+      const visionUrl = typeof visionUrlRaw === 'string' ? visionUrlRaw.trim() : ''
+      const needsVisionIngredients = storedIngredients.length === 0 && visionUrl !== ''
+      // Approved pack-photo stubs often have URLs but no text ingredients yet —
+      // fall through to Tier-3 vision + analysis instead of freezing as unknown forever.
+      if (!needsVisionIngredients) {
+        return new Response(
+          JSON.stringify({
+            product: toProduct(withCommunitySource(cached, communityIngredients)),
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        )
+      }
+      console.log(`[${barcode}] DB cache stub has ingredient image — running vision/analysis path`)
     }
 
-    // 2. Load custom approved keywords from DB
+    // 2. Load custom approved keywords (OFF path + DB stub after OFF miss)
     const customHaramEntries: KeywordEntry[] = []
     const customSuspiciousEntries: KeywordEntry[] = []
     const { data: customKeywords } = await supabase
@@ -232,8 +255,299 @@ Deno.serve(async (req) => {
     }
 
     if (!pd) {
+      const canAnalyzeFromDbStub = cached && !fetchAiIngredients
+      if (!canAnalyzeFromDbStub) {
+        return new Response(
+          JSON.stringify({ product: null }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        )
+      }
+
+      console.log(
+        `[${barcode}] OFF miss — analysing from Supabase cache (approved pack-photo stub or curated row)`,
+      )
+
+      let geminiAtOut =
+        cached.gemini_web_ingredient_lookup_at as string | undefined
+      let geminiKeyOut =
+        cached.gemini_web_ingredient_lookup_name_key as string | undefined
+
+      let name =
+        typeof cached.name === 'string' &&
+          cached.name.trim().length > 0
+          ? cached.name.trim()
+          : 'Unknown Product'
+      const brand = ''
+      const communityDb = await getApprovedContribution(supabase, barcode)
+      let ingredientSource: 'off' | 'ai' | 'community' = 'off'
+      let ingredients: string[] =
+        communityDb ?? (Array.isArray(cached.ingredients) ? cached.ingredients as string[] : [])
+      if (communityDb) {
+        ingredientSource = 'community'
+      } else if (cached.ingredient_source === 'ai' || cached.ingredient_source === 'community') {
+        ingredientSource = cached.ingredient_source as 'community' | 'ai'
+      }
+
+      const approvedAiRequestStub = fetchAiIngredients
+        ? await hasApprovedAiIngredientRequest(supabase, barcode)
+        : false
+      if (
+        shouldRunGeminiIngredientLookup({
+          autoLookupEmptyOff: geminiAutoEmptyOff,
+          fetchAiIngredients,
+          hasApprovedRequest: approvedAiRequestStub,
+          offIngredientCount: ingredients.length,
+          productName: name,
+        })
+      ) {
+        if (isGeminiWebIngredientLookupDoneForProductName(cached, name)) {
+          console.log(
+            `[${barcode}] Gemini web ingredient lookup: skipped — already attempted for this product name`,
+          )
+        } else {
+          const geminiEnabled = Deno.env.get('GEMINI_ENABLED') !== 'false'
+          const geminiKey = Deno.env.get('GEMINI_API_KEY')
+          if (!geminiEnabled) {
+            console.log(`[${barcode}] Gemini ingredient lookup: skipped — disabled by GEMINI_ENABLED=false`)
+          } else if (!geminiKey) {
+            console.log(`[${barcode}] Gemini ingredient lookup: skipped — GEMINI_API_KEY not set`)
+          } else {
+            try {
+              const found = await geminiIngredientLookup(name, barcode, geminiKey, brand)
+              if (found.length > 0) {
+                ingredients = found
+                ingredientSource = 'ai'
+              }
+            } finally {
+              geminiAtOut = new Date().toISOString()
+              geminiKeyOut = normalizeProductNameForGeminiKey(name)
+            }
+          }
+        }
+      }
+
+      if (communityDb) {
+        ingredients = communityDb
+        ingredientSource = 'community'
+      }
+
+      const labelsRaw = cached.labels
+      const labels: string[] = Array.isArray(labelsRaw)
+        ? (labelsRaw as unknown[]).map((x: unknown) => String(x).trim().toLowerCase()).filter((s) => s.length > 0)
+        : []
+      const rawCategories: string[] = []
+      let isNonFood = !!(cached.is_non_food ?? false)
+
+      console.log(`[${barcode}] DB stub name="${name}" ingredients=${ingredients.length}`)
+
+      const haramCategory: string | null = null
+      const isHalalByCategory = false
+
+      console.log(
+        `[${barcode}] ingredients: source=${ingredientSource} count=${ingredients.length} list=[${ingredients.slice(0, 10).join(' | ')}${ingredients.length > 10 ? '…' : ''}]`,
+      )
+
+      const kwFirst = keywordAnalysis(ingredients, customHaramEntries, customSuspiciousEntries)
+      let isHalal = isNonFood ? false : kwFirst.isHalal
+      let isUnknown = isNonFood ? false : kwFirst.isUnknown
+      let haramIngredients = kwFirst.haram
+      let suspiciousIngredients = kwFirst.suspicious
+      let ingredientWarnings = kwFirst.warnings
+      let explanation = isNonFood
+        ? 'This is a non-food product. Islamic dietary rules do not apply.'
+        : kwFirst.explanation
+      let analyzedByAI = false
+
+      const geminiEnabled = Deno.env.get('GEMINI_ENABLED') !== 'false'
+      const claudeEnabled = Deno.env.get('CLAUDE_ENABLED') !== 'false'
+
+      const skipAI = isNonFood || isHalalByCategory ||
+        kwFirst.haram.length > 0 ||
+        haramCategory !== null ||
+        ingredients.length === 0 ||
+        ingredientSource === 'ai'
+      if (!skipAI) {
+        const geminiKey = Deno.env.get('GEMINI_API_KEY')
+        if (geminiEnabled && geminiKey) {
+          const verdict = await analyzeWithGemini(ingredients, barcode, geminiKey)
+          if (verdict) {
+            ;({ isHalal, isUnknown, haramIngredients, suspiciousIngredients, ingredientWarnings, explanation } =
+              verdict)
+            analyzedByAI = true
+          }
+        }
+        if (!analyzedByAI && claudeEnabled) {
+          const claudeKey = Deno.env.get('CLAUDE_API_KEY')
+          if (claudeKey) {
+            const verdict = await analyzeWithClaude(ingredients, barcode, claudeKey)
+            if (verdict) {
+              ;({ isHalal, isUnknown, haramIngredients, suspiciousIngredients, ingredientWarnings, explanation } =
+                verdict)
+              analyzedByAI = true
+            }
+          }
+        }
+      }
+
+      // Vision on approved pack-photo URL (same semantics as Tier 3 OFF path).
+      if (!analyzedByAI && ingredients.length === 0 && !isNonFood && !isHalalByCategory &&
+        haramCategory === null) {
+        const imgUrl = typeof cached.image_ingredients_url === 'string'
+          ? cached.image_ingredients_url.trim()
+          : ''
+        const claudeKey = Deno.env.get('CLAUDE_API_KEY')
+        if (claudeEnabled && imgUrl && claudeKey) {
+          const visionIngredients = await analyzeWithClaudeVision(imgUrl, barcode, claudeKey)
+          if (visionIngredients && visionIngredients.length > 0) {
+            ingredients = visionIngredients
+            const kwVision = keywordAnalysis(ingredients, customHaramEntries, customSuspiciousEntries)
+            isHalal = kwVision.isHalal
+            isUnknown = kwVision.isUnknown
+            haramIngredients = kwVision.haram
+            suspiciousIngredients = kwVision.suspicious
+            ingredientWarnings = kwVision.warnings
+            explanation = kwVision.explanation
+            if (kwVision.haram.length === 0) {
+              const gKey = Deno.env.get('GEMINI_API_KEY')
+              if (geminiEnabled && gKey) {
+                const verdict = await analyzeWithGemini(ingredients, barcode, gKey)
+                if (verdict) {
+                  ;({ isHalal, isUnknown, haramIngredients, suspiciousIngredients, ingredientWarnings, explanation } =
+                    verdict)
+                  analyzedByAI = true
+                }
+              }
+              if (!analyzedByAI && claudeKey) {
+                const verdict = await analyzeWithClaude(ingredients, barcode, claudeKey)
+                if (verdict) {
+                  ;({ isHalal, isUnknown, haramIngredients, suspiciousIngredients, ingredientWarnings, explanation } =
+                    verdict)
+                  analyzedByAI = true
+                }
+              }
+            }
+          }
+        } else if (!imgUrl) {
+          console.log(`[${barcode}] stub Claude vision skipped — no ingredients image URL`)
+        }
+      }
+
+      if (kwFirst.haram.length > 0 && isHalal) {
+        isHalal = false
+        isUnknown = false
+        haramIngredients = [...new Set([...haramIngredients, ...kwFirst.haram])]
+        ingredientWarnings = { ...ingredientWarnings, ...kwFirst.warnings }
+        explanation = kwFirst.explanation
+      }
+      if (kwFirst.suspicious.length > 0 && isHalal) {
+        isHalal = false
+        isUnknown = false
+        suspiciousIngredients = [...new Set([...suspiciousIngredients, ...kwFirst.suspicious])]
+        ingredientWarnings = { ...ingredientWarnings, ...kwFirst.warnings }
+        if (kwFirst.haram.length === 0) explanation = kwFirst.explanation
+      }
+
+      if (isUnknown) {
+        const nameCheck = keywordAnalysis([name.toLowerCase()], customHaramEntries, customSuspiciousEntries)
+        if (!nameCheck.isHalal) {
+          isHalal = false
+          isUnknown = false
+          haramIngredients = nameCheck.haram
+          ingredientWarnings = nameCheck.warnings
+          explanation =
+            `No ingredient list found, but the product name contains a haram indicator: ${nameCheck.haram.join(', ')}.`
+        }
+      }
+
+      const categoryIsAnimalProduct = rawCategories.some((c) =>
+        ANIMAL_PRODUCT_CATEGORIES.has(c.toLowerCase())
+      )
+      const nameIsAnimalProduct = [...ANIMAL_PRODUCT_NAME_TERMS].some((term) =>
+        name.toLowerCase().includes(term)
+      )
+      const isAnimalProduct = categoryIsAnimalProduct || nameIsAnimalProduct
+      const hasHalalCert = labels.some((l) => HALAL_CERT_LABELS.has(l.toLowerCase()))
+      let requiresHalalCert = isAnimalProduct && !hasHalalCert && !isNonFood && !isHalalByCategory &&
+        haramIngredients.length === 0
+
+      if (requiresHalalCert) {
+        isHalal = false
+        isUnknown = false
+      }
+
+      if (!isUnknown && !isHalalByCategory && haramIngredients.length === 0 &&
+        suspiciousIngredients.length > 0) {
+        isHalal = false
+      }
+
+      const row = {
+        barcode,
+        name,
+        ingredients,
+        ingredient_source: ingredientSource,
+        is_halal: isHalal,
+        is_unknown: isUnknown,
+        is_non_food: isNonFood,
+        haram_ingredients: haramIngredients,
+        suspicious_ingredients: suspiciousIngredients,
+        ingredient_warnings: ingredientWarnings,
+        labels,
+        image_url: cached.image_url as string | undefined,
+        image_front_url: cached.image_front_url as string | undefined,
+        image_ingredients_url: cached.image_ingredients_url as string | undefined,
+        image_nutrition_url: cached.image_nutrition_url as string | undefined,
+        explanation,
+        analyzed_by_ai: analyzedByAI,
+        requires_halal_cert: requiresHalalCert,
+        last_analysed_at: new Date().toISOString(),
+        fetched_at: cached.fetched_at as string ?? new Date().toISOString(),
+      }
+
+      const { error: upsertStubErr } = await supabase.from('products').upsert({
+        barcode,
+        name,
+        ingredients,
+        ingredient_source: ingredientSource,
+        is_non_food: isNonFood,
+        labels,
+        image_url: cached.image_url ?? null,
+        image_front_url: cached.image_front_url ?? null,
+        image_ingredients_url: cached.image_ingredients_url ?? null,
+        image_nutrition_url: cached.image_nutrition_url ?? null,
+        requires_halal_cert: requiresHalalCert,
+        is_managed: (cached.is_managed ?? false) as boolean,
+        last_analysed_at: new Date().toISOString(),
+        fetched_at: (cached.fetched_at as string) ?? new Date().toISOString(),
+        ...(geminiKeyOut
+          ? {
+            gemini_web_ingredient_lookup_at: geminiAtOut,
+            gemini_web_ingredient_lookup_name_key: geminiKeyOut,
+          }
+          : {}),
+      })
+      if (upsertStubErr) console.error('stub upsert error', upsertStubErr)
+
+      await supabase.from('product_analysis').upsert({
+        barcode,
+        is_halal: isHalal,
+        is_unknown: isUnknown,
+        is_non_food: isNonFood,
+        haram_ingredients: haramIngredients,
+        suspicious_ingredients: suspiciousIngredients,
+        ingredient_warnings: ingredientWarnings,
+        explanation,
+        analyzed_by_ai: analyzedByAI,
+        analyzed_at: new Date().toISOString(),
+      })
+
+      const { data: savedStub } = await supabase
+        .from('products_full')
+        .select('*')
+        .eq('barcode', barcode)
+        .maybeSingle()
+
       return new Response(
-        JSON.stringify({ product: null }),
+        JSON.stringify({ product: toProduct(savedStub ?? row) }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       )
     }
@@ -248,6 +562,11 @@ Deno.serve(async (req) => {
       .filter((s: string) => s.length > 0)
 
     console.log(`[${barcode}] OFF: name="${name}" brand="${brand}" ingredients=${ingredients.length}`)
+
+    let geminiAtOut =
+      cached?.gemini_web_ingredient_lookup_at as string | undefined
+    let geminiKeyOut =
+      cached?.gemini_web_ingredient_lookup_name_key as string | undefined
 
     let ingredientSource: 'off' | 'ai' | 'community' = 'off'
 
@@ -275,15 +594,26 @@ Deno.serve(async (req) => {
         console.log(`[${barcode}] Gemini ingredient lookup: skipped — ${skipReason}`)
       }
     } else {
-      const geminiEnabled = Deno.env.get('GEMINI_ENABLED') !== 'false'
-      const geminiKey = Deno.env.get('GEMINI_API_KEY')
-      if (!geminiEnabled) {
-        console.log(`[${barcode}] Gemini ingredient lookup: skipped — disabled by GEMINI_ENABLED=false`)
-      } else if (!geminiKey) {
-        console.log(`[${barcode}] Gemini ingredient lookup: skipped — GEMINI_API_KEY not set`)
+      if (isGeminiWebIngredientLookupDoneForProductName(cached, name)) {
+        console.log(
+          `[${barcode}] Gemini web ingredient lookup: skipped — already attempted for this product name`,
+        )
       } else {
-        const found = await geminiIngredientLookup(name, barcode, geminiKey, brand)
-        if (found.length > 0) { ingredients = found; ingredientSource = 'ai' }
+        const geminiEnabled = Deno.env.get('GEMINI_ENABLED') !== 'false'
+        const geminiKey = Deno.env.get('GEMINI_API_KEY')
+        if (!geminiEnabled) {
+          console.log(`[${barcode}] Gemini ingredient lookup: skipped — disabled by GEMINI_ENABLED=false`)
+        } else if (!geminiKey) {
+          console.log(`[${barcode}] Gemini ingredient lookup: skipped — GEMINI_API_KEY not set`)
+        } else {
+          try {
+            const found = await geminiIngredientLookup(name, barcode, geminiKey, brand)
+            if (found.length > 0) { ingredients = found; ingredientSource = 'ai' }
+          } finally {
+            geminiAtOut = new Date().toISOString()
+            geminiKeyOut = normalizeProductNameForGeminiKey(name)
+          }
+        }
       }
     }
 
@@ -515,6 +845,12 @@ Deno.serve(async (req) => {
       requires_halal_cert:    requiresHalalCert,
       last_analysed_at:       new Date().toISOString(),
       fetched_at:             cached?.fetched_at ?? new Date().toISOString(),
+      ...(geminiKeyOut
+        ? {
+          gemini_web_ingredient_lookup_at: geminiAtOut,
+          gemini_web_ingredient_lookup_name_key: geminiKeyOut,
+        }
+        : {}),
     })
 
     if (upsertErr) {

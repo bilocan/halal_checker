@@ -19,6 +19,7 @@ import '../widgets/sign_in_sheet.dart';
 import 'admin_panel_screen.dart';
 import 'deep_analysis_screen.dart';
 import 'discussion_screen.dart';
+import 'missing_product_photo_contribution_screen.dart';
 import 'result/debug/local_db_debug_dialog.dart';
 import 'result/result_controller.dart';
 import 'result/widgets/result_analysis_card.dart';
@@ -233,6 +234,30 @@ class _ResultScreenState extends State<ResultScreen> {
     );
   }
 
+  Future<void> _openMissingProductPhotoFlow() async {
+    if (!AppConfig.hasSupabase) return;
+    if (AuthService.currentUser == null) {
+      await showSignInRequiredSheet(context);
+      if (!mounted) return;
+      await AuthService.ensureInitialized();
+      if (AuthService.currentUser == null) return;
+    }
+    if (!mounted) return;
+    final ok = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute<bool>(
+        builder: (_) =>
+            MissingProductPhotoContributionScreen(barcode: widget.barcode),
+      ),
+    );
+    if (!mounted || ok != true) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(AppLocalizations.of(context).missingProductThankYou),
+      ),
+    );
+  }
+
   Future<void> _uploadProductImage(ProductImageType type) async {
     if (AuthService.currentUser == null) {
       await showSignInRequiredSheet(context);
@@ -341,6 +366,9 @@ class _ResultScreenState extends State<ResultScreen> {
           loc: loc,
           onCopyBarcode: () => _copyToClipboard(barcode, loc.barcodeLabel),
           onScanAgain: () => Navigator.pop(context),
+          onSubmitPackPhotos: AppConfig.hasSupabase
+              ? _openMissingProductPhotoFlow
+              : null,
         ),
         bottomNavigationBar: _buildBottomNav(loc),
       );

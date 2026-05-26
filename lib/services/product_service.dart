@@ -386,16 +386,23 @@ class ProductService {
     } catch (_) {}
   }
 
-  // Read from the shared products table directly, bypassing the Edge Function.
-  // This saves an invocation (Supabase free tier: 500K/month) for barcodes that
-  // are already cached in the shared DB — no OFf fetch, no AI call needed.
+  /// Approved pack-photo rows may only have image URLs and empty ingredients.
+  static bool _hasPackPhotoUrls(Product p) {
+    final ing = p.imageIngredientsUrl?.trim();
+    final front = p.imageFrontUrl?.trim();
+    return (ing != null && ing.isNotEmpty) ||
+        (front != null && front.isNotEmpty);
+  }
+
+  // Read from [products_full] (products + product_analysis), bypassing the Edge
+  // Function. Verdict columns live on product_analysis, not products.
   Future<Product?> _fetchFromSharedDb(String barcode) async {
     if (!_hasSupabase) return null;
     try {
       final response = await _httpClient
           .get(
             Uri.parse(
-              '$_supabaseUrl/rest/v1/products'
+              '$_supabaseUrl/rest/v1/products_full'
               '?barcode=eq.${Uri.encodeComponent(barcode)}&select=*&limit=1',
             ),
             headers: {
@@ -404,41 +411,62 @@ class ProductService {
             },
           )
           .timeout(const Duration(seconds: 10));
-      if (response.statusCode != 200) return null;
+      if (response.statusCode != 200) {
+        debugPrint(
+          '[SharedDB $barcode] HTTP ${response.statusCode}: ${response.body}',
+        );
+        return null;
+      }
       final list = json.decode(response.body) as List<dynamic>;
       if (list.isEmpty) return null;
       final row = list.first as Map<String, dynamic>;
-      final fetchedAt = DateTime.tryParse(row['fetched_at'] as String? ?? '');
-      if (fetchedAt == null) return null;
-      return Product.fromJson({
-        'barcode': row['barcode'],
-        'name': row['name'],
-        'ingredients': row['ingredients'],
-        'isHalal': row['is_halal'],
-        'isUnknown': row['is_unknown'] ?? false,
-        'isNonFood': row['is_non_food'] ?? false,
-        'haramIngredients': row['haram_ingredients'],
-        'suspiciousIngredients': row['suspicious_ingredients'],
-        'ingredientWarnings': row['ingredient_warnings'],
-        'labels': row['labels'],
-        'imageUrl': row['image_url'],
-        'imageFrontUrl': row['image_front_url'],
-        'imageIngredientsUrl': row['image_ingredients_url'],
-        'imageNutritionUrl': row['image_nutrition_url'],
-        'explanation': row['explanation'] ?? '',
-        'analyzedByAI': row['analyzed_by_ai'] ?? false,
-        'analysisMethod': (row['analyzed_by_ai'] as bool? ?? false)
-            ? 'ai'
-            : 'keyword',
-        'ingredientSource': row['ingredient_source'],
-        'requiresHalalCert': row['requires_halal_cert'] ?? false,
-        'isManaged': row['is_managed'] ?? false,
-        'updatedAt': row['updated_at'],
-        'lastAnalysedAt': row['last_analysed_at'],
-      });
-    } catch (_) {
+      return _productFromSupabaseRow(row);
+    } catch (e, st) {
+      debugPrint('[SharedDB $barcode] parse error: $e\n$st');
       return null;
     }
+  }
+
+  static Product _productFromSupabaseRow(Map<String, dynamic> row) {
+    return Product.fromJson({
+      'barcode': row['barcode'] as String,
+      'name': row['name'] as String? ?? 'Unknown Product',
+      'ingredients': List<String>.from(row['ingredients'] as List? ?? []),
+      'isHalal': row['is_halal'] as bool? ?? false,
+      'isUnknown': row['is_unknown'] as bool? ?? true,
+      'isNonFood': row['is_non_food'] as bool? ?? false,
+      'haramIngredients': List<String>.from(
+        row['haram_ingredients'] as List? ?? [],
+      ),
+      'suspiciousIngredients': List<String>.from(
+        row['suspicious_ingredients'] as List? ?? [],
+      ),
+      'ingredientWarnings': Map<String, String>.from(
+        row['ingredient_warnings'] as Map? ?? {},
+      ),
+      'labels': List<String>.from(row['labels'] as List? ?? []),
+      'imageUrl': row['image_url'] as String?,
+      'imageFrontUrl': row['image_front_url'] as String?,
+      'imageIngredientsUrl': row['image_ingredients_url'] as String?,
+      'imageNutritionUrl': row['image_nutrition_url'] as String?,
+      'explanation': row['explanation'] as String? ?? '',
+      'analyzedByAI': row['analyzed_by_ai'] as bool? ?? false,
+      'analysisMethod': (row['analyzed_by_ai'] as bool? ?? false)
+          ? 'ai'
+          : 'keyword',
+      'ingredientSource': row['ingredient_source'] as String?,
+      'requiresHalalCert': row['requires_halal_cert'] as bool? ?? false,
+      'isManaged': row['is_managed'] as bool? ?? false,
+      'updatedAt': row['updated_at'] as String?,
+      'lastAnalysedAt': row['last_analysed_at'] as String?,
+      'geminiWebIngredientLookupAttemptedForName':
+          Product.computeGeminiWebLookupAttemptedForName(
+            productName: row['name'] as String? ?? 'Unknown Product',
+            lookupAt: row['gemini_web_ingredient_lookup_at'],
+            lookupNameKey: row['gemini_web_ingredient_lookup_name_key'],
+            explicitFromApi: null,
+          ),
+    });
   }
 
   // Try the Supabase Edge Function. Retries once on failure before returning
@@ -597,9 +625,13 @@ class ProductService {
     if (!forceBackendRefresh && dbProduct != null) {
       debugPrint(
         '[Lookup $barcode] Step 2 (sharedDB): '
-        'isUnknown=${dbProduct.isUnknown} isNonFood=${dbProduct.isNonFood}',
+        'isUnknown=${dbProduct.isUnknown} isNonFood=${dbProduct.isNonFood} '
+        'packPhotos=${_hasPackPhotoUrls(dbProduct)}',
       );
-      if (!dbProduct.isUnknown && !_isStale(dbProduct)) {
+      final canServeFromDb =
+          !_isStale(dbProduct) &&
+          (!dbProduct.isUnknown || _hasPackPhotoUrls(dbProduct));
+      if (canServeFromDb) {
         final safe = _applyKeywordSafety(dbProduct);
         await _cache.saveProduct(barcode, safe);
         return safe;
@@ -633,7 +665,9 @@ class ProductService {
       // no ingredients — OBF/OPF cross-check may confirm the product is non-food.
       // If the backend already found ingredients (e.g. via Gemini lookup), keep
       // that result even if the verdict is still unknown.
-      if (!safe.isUnknown || safe.ingredients.isNotEmpty) {
+      if (!safe.isUnknown ||
+          safe.ingredients.isNotEmpty ||
+          _hasPackPhotoUrls(safe)) {
         await _cache.saveProduct(barcode, safe);
         if (kDebugMode && hadStaleTestFixture) {
           await TestProductRepository.instance.upsert(safe);
@@ -641,7 +675,7 @@ class ProductService {
         return safe;
       }
       debugPrint(
-        '[Lookup $barcode] Step 3 returned unknown with no ingredients — falling to Step 4',
+        '[Lookup $barcode] Step 3 returned unknown with no ingredients or photos — falling to Step 4',
       );
     }
 

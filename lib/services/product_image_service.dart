@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:path/path.dart' as p;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../config.dart';
@@ -21,6 +22,13 @@ class ProductImageService {
 
   static SupabaseClient get _db => Supabase.instance.client;
   static bool _supabaseAvailable = AppConfig.hasSupabase;
+
+  /// Last upload failure message (debug / support). Cleared on success.
+  static String? debugLastUploadError;
+
+  /// Shown in debug UI when [uploadImage] fails.
+  static String? get uploadFailureDetail =>
+      kDebugMode ? debugLastUploadError : null;
 
   @visibleForTesting
   static Future<List<Map<String, dynamic>>> Function(String)?
@@ -71,6 +79,7 @@ class ProductImageService {
   @visibleForTesting
   static void resetForTesting() {
     _supabaseAvailable = AppConfig.hasSupabase;
+    debugLastUploadError = null;
     fakeGetSubmissions = null;
     fakeFetchSubmissionsForStatus = null;
     fakeUpdateSubmissionStatus = null;
@@ -99,18 +108,31 @@ class ProductImageService {
         productName: productName,
       );
     }
-    if (!_supabaseAvailable) return false;
+    if (!_supabaseAvailable) {
+      debugLastUploadError = 'Supabase not configured';
+      return false;
+    }
+    await AuthService.ensureInitialized();
     final uid = AuthService.currentUser?.id;
-    if (uid == null) return false;
+    if (uid == null) {
+      debugLastUploadError = 'Not signed in';
+      return false;
+    }
 
     try {
+      debugLastUploadError = null;
       final bytes = fakeReadImageBytes != null
           ? await fakeReadImageBytes!(imageFile)
           : await imageFile.readAsBytes();
-      final ext = imageFile.path.split('.').last.toLowerCase();
-      final mimeType = ext == 'png' ? 'image/png' : 'image/jpeg';
+      if (bytes.isEmpty) {
+        debugLastUploadError = 'Image file is empty';
+        return false;
+      }
+      final ext = _imageExtension(imageFile.path);
+      final mimeType = _mimeTypeForExtension(ext);
       final ts = DateTime.now().millisecondsSinceEpoch;
-      final path = '$barcode/${type.value}_$ts.$ext';
+      final safeBarcode = barcode.replaceAll(RegExp(r'[^\w\-.]'), '_');
+      final path = '$safeBarcode/${type.value}_$ts.$ext';
 
       if (fakeUploadBinary != null) {
         await fakeUploadBinary!(path, bytes, mimeType);
@@ -120,7 +142,7 @@ class ProductImageService {
             .uploadBinary(
               path,
               bytes,
-              fileOptions: FileOptions(contentType: mimeType),
+              fileOptions: FileOptions(contentType: mimeType, upsert: true),
             );
       }
 
@@ -145,11 +167,29 @@ class ProductImageService {
       }
 
       return true;
-    } catch (e) {
-      debugPrint('Image upload error: $e');
+    } catch (e, st) {
+      debugLastUploadError = e.toString();
+      debugPrint('Image upload error: $e\n$st');
       return false;
     }
   }
+
+  static String _imageExtension(String filePath) {
+    final ext = p.extension(filePath).toLowerCase();
+    if (ext.isEmpty) return 'jpg';
+    final bare = ext.substring(1);
+    const allowed = {'jpg', 'jpeg', 'png', 'webp', 'heic', 'heif'};
+    if (!allowed.contains(bare)) return 'jpg';
+    return bare == 'jpeg' ? 'jpg' : bare;
+  }
+
+  static String _mimeTypeForExtension(String ext) => switch (ext) {
+    'png' => 'image/png',
+    'webp' => 'image/webp',
+    'heic' => 'image/heic',
+    'heif' => 'image/heif',
+    _ => 'image/jpeg',
+  };
 
   /// Returns all submissions with [status] (default: 'pending'), newest first.
   /// Each row includes a `current_image_url` key carrying the image URL

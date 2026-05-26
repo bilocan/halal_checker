@@ -23,6 +23,11 @@ class IntegrationTestKeys {
   /// SCN-004 — Result screen not-found body (`expected: not_found` in barcodes file).
   static const productNotFound = Key('e2e-product-not-found');
 
+  /// SCN-004 — Product not found → open missing-product photo contribution flow.
+  static const submitPackPhotosNotFound = Key(
+    'e2e-submit-pack-photos-not-found',
+  );
+
   /// SCN-001 — Result bottom nav → pop to scanner (then back to start).
   static const resultHome = Key('e2e-result-home');
 

@@ -78,3 +78,21 @@ export async function hasApprovedAiIngredientRequest(
     .maybeSingle()
   return data != null
 }
+
+/** Stable key for “same product name” when deciding Gemini web lookup dedupe. */
+export function normalizeProductNameForGeminiKey(name: string): string {
+  return name.trim().toLowerCase().replace(/\s+/g, ' ')
+}
+
+export function isGeminiWebIngredientLookupDoneForProductName(
+  cached: {
+    gemini_web_ingredient_lookup_at?: unknown
+    gemini_web_ingredient_lookup_name_key?: unknown
+  } | null,
+  productName: string,
+): boolean {
+  const at = cached?.gemini_web_ingredient_lookup_at
+  const key = cached?.gemini_web_ingredient_lookup_name_key
+  if (at == null || key == null || typeof key !== 'string') return false
+  return key === normalizeProductNameForGeminiKey(productName)
+}
