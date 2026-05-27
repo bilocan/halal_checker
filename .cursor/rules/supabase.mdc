@@ -10,7 +10,7 @@ Architecture: [CLAUDE.md](../../CLAUDE.md). App mirror: `lib/services/product_se
 
 ## Edge function (`lookup-product`)
 
-- Entry: [`supabase/functions/lookup-product/index.ts`](../../supabase/functions/lookup-product/index.ts)
+- Entry: [`index.ts`](../../supabase/functions/lookup-product/index.ts) → orchestration: [`handler.ts`](../../supabase/functions/lookup-product/handler.ts)
 - **Verdict pipeline (source of truth):** [`VERDICT_PIPELINE.md`](../../supabase/functions/lookup-product/VERDICT_PIPELINE.md) — update when changing step order, skip logic, or post-rules in [`verdictRules.ts`](../../supabase/functions/lookup-product/verdictRules.ts) or request flow in `index.ts`.
 - **Keyword safety override** after AI must stay intact (same invariant as the Flutter app).
 - Built-in keyword lists: [`keyword.ts`](../../supabase/functions/lookup-product/keyword.ts) — keep aligned with app constants when changing haram/suspicious terms.

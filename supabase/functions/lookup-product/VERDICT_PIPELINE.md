@@ -9,7 +9,7 @@ deno test --allow-env supabase/functions/lookup-product/
 
 | If you change… | Update in code | Update in this doc |
 |----------------|----------------|-------------------|
-| HTTP / cache / OFF / Gemini ingredients | `index.ts`, helpers below | [Request orchestration](#request-orchestration-indexts) |
+| HTTP / cache / OFF / Gemini ingredients | `handler.ts`, `index.ts`, helpers below | [Request orchestration](#request-orchestration-handlerts) |
 | Halal verdict steps (AI, keywords, overrides) | `verdictRules.ts` | [Verdict pipeline](#verdict-pipeline-verdictrulests) |
 | Stale DB re-analysis only | `reanalysis.ts` | [Stored re-analysis](#stored-re-analysis) |
 | Empty-OFF Gemini ingredient fetch | `ingredientResolver.ts` | [Ingredient resolution](#ingredient-resolution-before-verdict) |
@@ -20,7 +20,7 @@ App-side mirror: `lib/services/product_service.dart` + `lib/services/keyword_ser
 
 ---
 
-## Request orchestration (`index.ts`)
+## Request orchestration (`handler.ts`)
 
 High-level flow for each `lookup-product` POST:
 
@@ -185,6 +185,8 @@ Production default: **Open Food Facts + keywords + post-rules**; AI tiers option
 | `reanalysis_test.ts` | `runStoredProductReanalysis`, `jsonManagedProduct` |
 | `ai_test.ts` | `parseIngredientList` |
 | `ai_api_test.ts` | `analyzeWithGemini/Claude/Vision`, `geminiIngredientLookup` (mocked HTTP) |
+| `persistence_test.ts` | `persistLookupAndRespond` (`products_full` vs fallback) |
+| `handler_test.ts` | `handleLookup` / `handleLookupRequest` (mocked Supabase + OFF) |
 
 Flutter: `test/services/product_service_test.dart`, `needs_reanalysis_test.dart` (keyword override after edge function).
 
@@ -194,7 +196,8 @@ Flutter: `test/services/product_service_test.dart`, `needs_reanalysis_test.dart`
 
 ```
 lookup-product/
-  index.ts              Request orchestration
+  index.ts              Deno.serve entry
+  handler.ts            Request orchestration (injectable deps for tests)
   verdictRules.ts       computeVerdict + post-rules  ← pipeline source of truth
   reanalysis.ts         Stale / force stored re-analysis
   ingredientResolver.ts Gemini ingredients (empty OFF)

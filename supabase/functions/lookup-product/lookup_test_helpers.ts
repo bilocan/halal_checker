@@ -65,6 +65,18 @@ export interface MockSupabaseOpts {
 }
 
 /** Minimal Supabase client for reanalysis / persistence tests. */
+function productsFullChain(
+  getData: () => Record<string, unknown> | null,
+) {
+  return {
+    select: () => ({
+      eq: () => ({
+        maybeSingle: async () => ({ data: getData(), error: null }),
+      }),
+    }),
+  }
+}
+
 export function mockSupabase(opts: MockSupabaseOpts = {}): SupabaseClient {
   const from = (table: string) => {
     if (table === 'ingredient_contributions') {
@@ -93,20 +105,113 @@ export function mockSupabase(opts: MockSupabaseOpts = {}): SupabaseClient {
       }
     }
     if (table === 'products_full') {
+      return productsFullChain(() => opts.productsFullRow ?? null)
+    }
+    throw new Error(`mockSupabase: unexpected table ${table}`)
+  }
+  return { from } as unknown as SupabaseClient
+}
+
+export interface HandlerMockSupabaseOpts {
+  /** First (and usually only) products_full read for cache lookup. */
+  cacheProduct?: Record<string, unknown> | null
+  /** Row returned after persistLookupAndRespond re-reads products_full. */
+  savedProduct?: Record<string, unknown> | null
+  geminiLookupEmptyOff?: boolean
+  approvedContribution?: string[] | null
+  approvedAiRequest?: boolean
+}
+
+/** Supabase mock for handleLookup / handler tests (app_config, keywords, etc.). */
+export function mockHandlerSupabase(opts: HandlerMockSupabaseOpts = {}): SupabaseClient {
+  let productsFullReads = 0
+  let upsertCount = 0
+
+  const from = (table: string) => {
+    if (table === 'products_full') {
+      return {
+        select: () => ({
+          eq: () => ({
+            maybeSingle: async () => {
+              productsFullReads++
+              if (productsFullReads === 1) {
+                return { data: opts.cacheProduct ?? null, error: null }
+              }
+              return {
+                data: opts.savedProduct ?? opts.cacheProduct ?? null,
+                error: null,
+              }
+            },
+          }),
+        }),
+      }
+    }
+    if (table === 'app_config') {
       return {
         select: () => ({
           eq: () => ({
             maybeSingle: async () => ({
-              data: opts.productsFullRow ?? null,
+              data: { value: opts.geminiLookupEmptyOff ? 'true' : 'false' },
               error: null,
             }),
           }),
         }),
       }
     }
-    throw new Error(`mockSupabase: unexpected table ${table}`)
+    if (table === 'keywords') {
+      return {
+        select: () => Promise.resolve({ data: [], error: null }),
+      }
+    }
+    if (table === 'ingredient_contributions') {
+      return {
+        select: () => ({
+          eq: () => ({
+            eq: () => ({
+              order: () => ({
+                limit: () => ({
+                  maybeSingle: async () => ({
+                    data: opts.approvedContribution?.length
+                      ? { ingredient_text: opts.approvedContribution.join(', ') }
+                      : null,
+                    error: null,
+                  }),
+                }),
+              }),
+            }),
+          }),
+        }),
+      }
+    }
+    if (table === 'ai_ingredient_requests') {
+      return {
+        select: () => ({
+          eq: () => ({
+            eq: () => ({
+              limit: () => ({
+                maybeSingle: async () => ({
+                  data: opts.approvedAiRequest ? { id: '1' } : null,
+                  error: null,
+                }),
+              }),
+            }),
+          }),
+        }),
+      }
+    }
+    if (table === 'products' || table === 'product_analysis') {
+      return {
+        upsert: async () => {
+          upsertCount++
+          return { error: null }
+        },
+      }
+    }
+    throw new Error(`mockHandlerSupabase: unexpected table ${table}`)
   }
-  return { from } as unknown as SupabaseClient
+
+  const client = { from, upsertCount: () => upsertCount } as unknown as SupabaseClient
+  return client
 }
 
 const TEST_ENV_KEYS = [
