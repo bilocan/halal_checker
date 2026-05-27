@@ -1,4 +1,5 @@
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { toProduct } from './db.ts'
 
 export interface ProductRow {
   barcode: string
@@ -68,4 +69,34 @@ export async function upsertAnalysis(supabase: SupabaseClient, row: AnalysisRow)
     analyzed_at:            new Date().toISOString(),
   })
   if (error) console.error(`[${row.barcode}] product_analysis upsert error`, error)
+}
+
+export function jsonResponse(
+  body: unknown,
+  status: number,
+  corsHeaders: Record<string, string>,
+): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  })
+}
+
+/** Upsert product + analysis, re-read view, return JSON lookup response. */
+export async function persistLookupAndRespond(
+  supabase: SupabaseClient,
+  corsHeaders: Record<string, string>,
+  product: ProductRow,
+  analysis: AnalysisRow,
+  // deno-lint-ignore no-explicit-any
+  fallbackRow: Record<string, any>,
+): Promise<Response> {
+  await upsertProduct(supabase, product)
+  await upsertAnalysis(supabase, analysis)
+  const { data: saved } = await supabase
+    .from('products_full')
+    .select('*')
+    .eq('barcode', product.barcode)
+    .maybeSingle()
+  return jsonResponse({ product: toProduct(saved ?? fallbackRow) }, 200, corsHeaders)
 }

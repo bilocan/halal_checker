@@ -35,6 +35,7 @@ flutter test test/services/ test/constants/ test/models/ test/config_test.dart
 | Lookup pipeline | `lib/services/product_service.dart` |
 | Keywords | `lib/services/keyword_service.dart` |
 | Edge function | `supabase/functions/lookup-product/` |
+| Edge verdict steps | `supabase/functions/lookup-product/VERDICT_PIPELINE.md` |
 | Tests | `test/services/`, `test_data/`, [TESTING.md](TESTING.md) |
 | UI E2E registry | `test/e2e_coverage.json`, `lib/integration_test_keys.dart` |
 

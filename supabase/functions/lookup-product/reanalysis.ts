@@ -1,0 +1,131 @@
+import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { toProduct } from './db.ts'
+import { getApprovedContribution } from './community.ts'
+import { computeVerdict } from './verdictRules.ts'
+import type { KeywordEntry } from './keyword.ts'
+import { normalizeStoredLabels } from './lookupHelpers.ts'
+import type { HalalScanProduct } from './productQueries.ts'
+import {
+  jsonResponse,
+  persistLookupAndRespond,
+  type AnalysisRow,
+  type ProductRow,
+} from './persistence.ts'
+
+/**
+ * Re-run keyword + post rules on stored product data (no OFF refetch, no AI).
+ * Used when source data is stale or caller requested force refresh.
+ */
+export async function runStoredProductReanalysis(
+  supabase: SupabaseClient,
+  existing: HalalScanProduct,
+  barcode: string,
+  customHaramEntries: KeywordEntry[],
+  customSuspiciousEntries: KeywordEntry[],
+  corsHeaders: Record<string, string>,
+): Promise<Response> {
+  const communityIngredients = await getApprovedContribution(supabase, barcode)
+  const storedIngredients: string[] = communityIngredients
+    ?? (Array.isArray(existing.ingredients) ? existing.ingredients as string[] : [])
+  const ingredientSource: 'off' | 'ai' | 'community' = communityIngredients
+    ? 'community'
+    : ((existing.ingredient_source === 'ai' || existing.ingredient_source === 'community')
+        ? existing.ingredient_source as 'ai' | 'community'
+        : 'off')
+
+  const name = typeof existing.name === 'string' && existing.name.trim().length > 0
+    ? existing.name.trim()
+    : 'Unknown Product'
+  const labels = normalizeStoredLabels(existing.labels)
+  const isNonFood = !!(existing.is_non_food ?? false)
+  const imageIngredientsUrl = typeof existing.image_ingredients_url === 'string'
+    ? existing.image_ingredients_url.trim()
+    : ''
+
+  const verdict = await computeVerdict({
+    barcode,
+    ingredients: storedIngredients,
+    name,
+    labels,
+    rawCategories: [],
+    isNonFood,
+    ingredientSource,
+    haramCategory: null,
+    isHalalByCategory: false,
+    customHaramEntries,
+    customSuspiciousEntries,
+    imageIngredientsUrl,
+    skipAi: true,
+  })
+
+  const {
+    isHalal, isUnknown, haramIngredients, suspiciousIngredients,
+    ingredientWarnings, explanation, requiresHalalCert,
+  } = verdict
+
+  const productRow: ProductRow = {
+    barcode,
+    name,
+    ingredients: verdict.ingredients,
+    ingredientSource,
+    isNonFood,
+    labels,
+    imageUrl: existing.image_url as string | undefined,
+    imageFrontUrl: existing.image_front_url as string | undefined,
+    imageIngredientsUrl: existing.image_ingredients_url as string | undefined,
+    imageNutritionUrl: existing.image_nutrition_url as string | undefined,
+    requiresHalalCert,
+    isManaged: existing.is_managed as boolean | undefined,
+    fetchedAt: (existing.fetched_at as string) ?? new Date().toISOString(),
+    geminiAt: existing.gemini_web_ingredient_lookup_at as string | undefined,
+    geminiNameKey: existing.gemini_web_ingredient_lookup_name_key as string | undefined,
+  }
+
+  const analysisRow: AnalysisRow = {
+    barcode,
+    isHalal,
+    isUnknown,
+    isNonFood,
+    haramIngredients,
+    suspiciousIngredients,
+    ingredientWarnings,
+    explanation,
+    analyzedByAI: false,
+  }
+
+  const responseRow = {
+    barcode,
+    name,
+    ingredients: verdict.ingredients,
+    ingredient_source: ingredientSource,
+    is_halal: isHalal,
+    is_unknown: isUnknown,
+    is_non_food: isNonFood,
+    haram_ingredients: haramIngredients,
+    suspicious_ingredients: suspiciousIngredients,
+    ingredient_warnings: ingredientWarnings,
+    labels,
+    image_url: existing.image_url,
+    image_front_url: existing.image_front_url,
+    image_ingredients_url: existing.image_ingredients_url,
+    image_nutrition_url: existing.image_nutrition_url,
+    explanation,
+    analyzed_by_ai: false,
+    requires_halal_cert: requiresHalalCert,
+    is_managed: existing.is_managed,
+    last_analysed_at: new Date().toISOString(),
+    fetched_at: productRow.fetchedAt,
+    gemini_web_ingredient_lookup_at: productRow.geminiAt ?? null,
+    gemini_web_ingredient_lookup_name_key: productRow.geminiNameKey ?? null,
+  }
+
+  return persistLookupAndRespond(supabase, corsHeaders, productRow, analysisRow, responseRow)
+}
+
+/** Managed rows are returned unchanged. */
+export function jsonManagedProduct(
+  existing: HalalScanProduct,
+  corsHeaders: Record<string, string>,
+): Response {
+  return jsonResponse({ product: toProduct(existing) }, 200, corsHeaders)
+}

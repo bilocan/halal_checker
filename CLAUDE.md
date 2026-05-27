@@ -48,13 +48,17 @@ flutter test test/services/ test/constants/ test/models/ test/config_test.dart
 
 ## Halal analysis layers
 
-Three layers run in order; highest-confidence result wins, but keyword safety override always has final say:
+Edge function detail (step order, skip conditions, post-rules): **[supabase/functions/lookup-product/VERDICT_PIPELINE.md](supabase/functions/lookup-product/VERDICT_PIPELINE.md)** — update it when changing `verdictRules.ts` or lookup flow.
 
-1. **AI (Claude Haiku / Gemini when enabled)** — server-side structured JSON verdict; skipped when `CLAUDE_ENABLED=false` and no Gemini path applies
-2. **Keyword matching** — deterministic; 19 haram + 13 suspicious keywords across 7 languages
-3. **Safety override** — keyword matching reruns after AI; if it detects haram or suspicious that AI missed, product is overridden to not halal
+Summary (server `computeVerdict`):
 
-Keyword lists live in [lib/services/product_service.dart](lib/services/product_service.dart) as constants.
+1. **Keyword bootstrap** — `keywordAnalysis` on ingredient list (+ custom DB keywords)
+2. **AI (optional)** — Gemini Flash → Claude Haiku; then vision OCR + AI when no text ingredients; skipped when `CLAUDE_ENABLED=false` / no keys / `skipAi` (stale re-analysis)
+3. **Post-rules (fixed order)** — keyword safety override → category → name fallback → halal cert → suspicious-only
+
+Keyword safety override uses the **initial** keyword pass (`kwFirst`) after AI, so haram/suspicious keywords AI missed still force not halal.
+
+App mirror: [lib/services/product_service.dart](lib/services/product_service.dart), [lib/services/keyword_service.dart](lib/services/keyword_service.dart). Built-in lists: edge `keyword.ts` + app constants (keep aligned).
 
 ## Adding test fixtures
 
