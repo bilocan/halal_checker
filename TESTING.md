@@ -454,6 +454,8 @@ For sub-ingredient parents (`raising agents (…)`), also assert the token still
 
 Run on device with `flutter test integration_test/screenshots_test.dart` and `test_driver/integration_test.dart` for screenshot capture.
 
+**GitHub Actions:** workflow [`.github/workflows/ios_screenshots.yml`](.github/workflows/ios_screenshots.yml) builds `lib/main_screenshots.dart` on the iOS simulator and captures PNGs with `simctl io`. It pins **Xcode 16** and **Flutter 3.38.5** because `google_mlkit_*` excludes arm64 for the simulator; **Flutter 3.41+ on Xcode 26** (arm-only simulators) often fails with `Framework 'Pods_Runner' not found` ([flutter#182748](https://github.com/flutter/flutter/issues/182748)). Requires repo secrets `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `GOOGLE_WEB_CLIENT_ID`.
+
 ---
 
 ## Offline fixtures (debug app)
