@@ -31,9 +31,10 @@ Use **CI tests** on every change. Run **UI E2E** after refactors or features tha
 # .\scripts\windows\format_dart.ps1     # Windows PowerShell
 flutter analyze --no-fatal-infos
 flutter test test/services/ test/constants/ test/models/ test/config_test.dart
+deno test --allow-env supabase/functions/lookup-product/
 ```
 
-GitHub Actions runs the same `flutter test` command on every push and pull request.
+GitHub Actions (`.github/workflows/test.yml`) runs the same Flutter and Deno commands on every push and pull request.
 
 **Widget tests** (`test/screens/`) use `wrapWithTestApp()` and optional service stubs — they catch layout and tab logic quickly but **do not** replace UI E2E.
 

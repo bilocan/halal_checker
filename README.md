@@ -399,6 +399,8 @@ flutter build apk --release --split-per-abi --dart-define-from-file=dart_defines
 
 ## Development
 
+**AI coding agents:** start with [AGENTS.md](AGENTS.md) and [CLAUDE.md](CLAUDE.md). Cursor rules live in `.cursor/rules/`.
+
 ### Supabase shared product cache
 
 Barcode lookup verdicts are stored in **`product_analysis`**. Source data (name, ingredient list, images, labels) lives in **`products`**. Reads use the **`products_full`** view (`products` LEFT JOIN `product_analysis`).

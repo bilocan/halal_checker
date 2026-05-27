@@ -2,6 +2,17 @@
 
 Short checklist for Cursor/Claude agents. Full detail: [CLAUDE.md](CLAUDE.md). **Testing:** [TESTING.md](TESTING.md).
 
+## Cursor rules (auto-attached by file type)
+
+| Rule | When |
+|------|------|
+| `agent-checklist` | Always |
+| `dart-quality` | `**/*.dart` |
+| `testing` | `test/**` |
+| `ui-e2e` | `lib/screens/**`, `lib/widgets/**`, `integration_test/**`, `integration_test_keys.dart` |
+| `supabase` | `supabase/**` |
+| `indexing` | Request when using `@codebase` — see `.cursor/rules/indexing.mdc` |
+
 ## Verify before done
 
 ```bash
@@ -24,6 +35,7 @@ flutter test test/services/ test/constants/ test/models/ test/config_test.dart
 | Lookup pipeline | `lib/services/product_service.dart` |
 | Keywords | `lib/services/keyword_service.dart` |
 | Edge function | `supabase/functions/lookup-product/` |
+| Edge verdict steps | `supabase/functions/lookup-product/VERDICT_PIPELINE.md` |
 | Tests | `test/services/`, `test_data/`, [TESTING.md](TESTING.md) |
 | UI E2E registry | `test/e2e_coverage.json`, `lib/integration_test_keys.dart` |
 

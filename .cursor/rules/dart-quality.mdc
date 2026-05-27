@@ -8,14 +8,7 @@ alwaysApply: false
 
 ## Before finishing non-trivial Dart work
 
-Run (same as CI):
-
-```bash
-./scripts/linux/format_dart.sh   # or .\scripts\windows\format_dart.ps1 on Windows
-flutter analyze --no-fatal-infos
-```
-
-Fix all analyzer errors and warnings you introduced.
+Run the **definition of done** in `agent-checklist` (format script, `flutter analyze --no-fatal-infos`, CI test command). Fix all analyzer issues you introduced.
 
 ## Conventions
 

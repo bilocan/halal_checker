@@ -22,9 +22,10 @@ If search is weak: **Ctrl+Shift+P → Reindex** (after large merges or branch sw
 | Lookup pipeline | `lib/services/product_service.dart` |
 | Keywords / override | `lib/services/keyword_service.dart`, constants in `product_service.dart` |
 | Community | `lib/services/community_service.dart` |
-| Edge Function | `supabase/functions/lookup-product/` |
+| Edge Function | `supabase/functions/lookup-product/` (rule: `supabase`) |
 | Schema | `supabase/migrations/` |
 | Fixtures | `test_data/` |
+| UI E2E registry | `test/e2e_coverage.json`, `lib/integration_test_keys.dart` (rule: `ui-e2e`) |
 
 Platform folders (`android/`, `ios/`, etc.) are mostly native boilerplate — prefer `lib/` and `supabase/` for halal logic.
 

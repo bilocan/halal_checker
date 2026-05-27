@@ -57,3 +57,74 @@ export function extractIngredientsText(pd: any): string {
   }
   return text.toLowerCase()
 }
+
+// deno-lint-ignore no-explicit-any
+export async function fetchOpenFactsProduct(
+  barcode: string,
+): Promise<{ pd: any; isNonFood: boolean } | null> {
+  let pd = await fetchFromFoodApi(barcode, OFF_BASE)
+  let isNonFood = false
+  if (!pd) {
+    pd = await fetchFromFoodApi(barcode, OBF_BASE)
+    if (pd) isNonFood = true
+  }
+  if (!pd) {
+    pd = await fetchFromFoodApi(barcode, OPF_BASE)
+    if (pd) isNonFood = true
+  }
+  if (!pd) return null
+
+  if (!isNonFood && !extractIngredientsText(pd)) {
+    const obfPd = await fetchFromFoodApi(barcode, OBF_BASE)
+    if (obfPd) {
+      isNonFood = true
+      pd = obfPd
+    } else {
+      const opfPd = await fetchFromFoodApi(barcode, OPF_BASE)
+      if (opfPd) {
+        isNonFood = true
+        pd = opfPd
+      }
+    }
+  }
+  return { pd, isNonFood }
+}
+
+// deno-lint-ignore no-explicit-any
+export function parseOffProductName(pd: any): string {
+  return (pd.product_name?.trim() || pd.product_name_en?.trim() ||
+    pd.abbreviated_product_name?.trim() || 'Unknown Product')
+}
+
+// deno-lint-ignore no-explicit-any
+export function parseOffBrand(pd: any): string {
+  return (pd.brands?.trim() || pd.brand_owner?.trim() || '')
+    .split(',')[0]?.trim() ?? ''
+}
+
+// deno-lint-ignore no-explicit-any
+export function parseOffIngredientList(pd: any): string[] {
+  const text = extractIngredientsText(pd)
+  return text
+    .split(/[,;]/)
+    .map((s: string) => s.trim())
+    .filter((s: string) => s.length > 0)
+}
+
+// deno-lint-ignore no-explicit-any
+export function parseOffLabels(pd: any): string[] {
+  const labelSet = new Set<string>()
+  const addLabels = (v: unknown) => {
+    if (!v) return
+    const parts = typeof v === 'string' ? v.split(/[,;]/) : (v as string[])
+    parts.forEach((p: string) => {
+      const n = p.trim().toLowerCase()
+      if (n) labelSet.add(n)
+    })
+  }
+  addLabels(pd.labels)
+  addLabels(pd.labels_tags)
+  addLabels(pd.labels_hierarchy)
+  addLabels(pd.labels_en)
+  return [...labelSet]
+}
