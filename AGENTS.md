@@ -2,6 +2,17 @@
 
 Short checklist for Cursor/Claude agents. Full detail: [CLAUDE.md](CLAUDE.md). **Testing:** [TESTING.md](TESTING.md).
 
+## Cursor rules (auto-attached by file type)
+
+| Rule | When |
+|------|------|
+| `agent-checklist` | Always |
+| `dart-quality` | `**/*.dart` |
+| `testing` | `test/**` |
+| `ui-e2e` | `lib/screens/**`, `lib/widgets/**`, `integration_test/**`, `integration_test_keys.dart` |
+| `supabase` | `supabase/**` |
+| `indexing` | Request when using `@codebase` — see `.cursor/rules/indexing.mdc` |
+
 ## Verify before done
 
 ```bash

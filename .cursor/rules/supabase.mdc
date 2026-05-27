@@ -1,0 +1,33 @@
+---
+description: Supabase migrations and edge functions — halal logic and deploy
+globs: "supabase/**"
+alwaysApply: false
+---
+
+# Supabase (HalalScan)
+
+Architecture: [CLAUDE.md](../../CLAUDE.md). App mirror: `lib/services/product_service.dart`, `lib/services/keyword_service.dart`.
+
+## Edge function (`lookup-product`)
+
+- Entry: [`supabase/functions/lookup-product/index.ts`](../../supabase/functions/lookup-product/index.ts)
+- **Keyword safety override** after AI must stay intact (same invariant as the Flutter app).
+- Built-in keyword lists: [`keyword.ts`](../../supabase/functions/lookup-product/keyword.ts) — keep aligned with app constants when changing haram/suspicious terms.
+- After function changes: redeploy `lookup-product` (see `.github/workflows/deploy-supabase.yml`).
+
+## AI defaults (production)
+
+This repo keeps **Claude off** by default (`CLAUDE_ENABLED=false`; no `CLAUDE_API_KEY` required). Lookup must still work via Open Food Facts + keywords. Gemini is optional (`GEMINI_*`). Details: [CONTRIBUTING.md](../../CONTRIBUTING.md).
+
+When testing AI paths locally: `supabase/.env.local` from `supabase/.env.e2e.example` — **gitignored**, never commit secrets.
+
+## Migrations
+
+- Add SQL under [`supabase/migrations/`](../../supabase/migrations/) with timestamp prefix `YYYYMMDDHHMMSS_description.sql`.
+- Apply to test project and local E2E (`supabase db reset`) before relying on new columns/RLS.
+- Schema for barcode cache: `products`, `product_analysis`, view `products_full` (see README → Development).
+
+## Deno / TypeScript
+
+- Use existing modules (`fetch.ts`, `db.ts`, `ai.ts`, `community.ts`) — match patterns in `lookup-product/`.
+- CORS and JSON error responses follow `index.ts` conventions.

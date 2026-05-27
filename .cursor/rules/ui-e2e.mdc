@@ -1,0 +1,56 @@
+---
+description: UI and integration_test changes — E2E registry and device tests
+globs:
+  - "lib/screens/**"
+  - "lib/widgets/**"
+  - "integration_test/**"
+  - "lib/integration_test_keys.dart"
+alwaysApply: false
+---
+
+# UI & E2E (HalalScan)
+
+Full guide: [TESTING.md](../../TESTING.md) (local Supabase, barcodes, coverage registry).
+
+## When this rule applies
+
+Navigation, scan flow, result screen, shared widgets used on those flows, `integration_test/`, or stable test keys in `lib/integration_test_keys.dart`.
+
+## E2E registry (keep in sync)
+
+After behavior-visible UI changes, update **together**:
+
+1. [`test/e2e_coverage.json`](../../test/e2e_coverage.json)
+2. [`test/barcodes_e2e.txt`](../../test/barcodes_e2e.txt)
+3. [`lib/integration_test_keys.dart`](../../lib/integration_test_keys.dart)
+
+Then:
+
+```bash
+./scripts/validate_e2e_coverage.sh    # also: flutter test test/constants/
+./scripts/preview_e2e_coverage.sh     # optional: read registry
+```
+
+## Run on device when behavior changed
+
+Local stack + UI E2E (not widget mocks):
+
+```powershell
+.\scripts\start_e2e_supabase.ps1
+.\run_ui_e2e_test.ps1                 # dart_defines.e2e.json — never dart_defines.json
+```
+
+```bash
+./scripts/start_e2e_supabase.sh
+./run_ui_e2e_test.sh
+```
+
+See [TESTING.md → Local Supabase for E2E](../../TESTING.md#local-supabase-for-e2e).
+
+## CI unit tests still required
+
+UI work does not replace:
+
+```bash
+flutter test test/services/ test/constants/ test/models/ test/config_test.dart
+```

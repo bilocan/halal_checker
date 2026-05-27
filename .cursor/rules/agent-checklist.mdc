@@ -18,8 +18,9 @@ Do not claim work is complete until these pass or you report the failures.
 ## Architecture (read `CLAUDE.md` for detail)
 
 - Lookup: test DB → local cache → Supabase edge function → OpenFoodFacts + keywords.
-- Halal layers: AI → keywords → **keyword safety override** (must not be weakened).
+- Halal layers: optional AI (Claude/Gemini when enabled) → keywords → **keyword safety override** (must not be weakened). **Claude is off by default** in this repo (`CLAUDE_ENABLED=false`).
 - Halal logic: `lib/` and `supabase/`; avoid `android/`/`ios/` unless platform task.
+- UI/scan/result changes: see `ui-e2e` rule. Supabase edits: see `supabase` rule.
 
 ## Scope
 
