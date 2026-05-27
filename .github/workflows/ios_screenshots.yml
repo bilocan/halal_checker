@@ -1,17 +1,17 @@
 name: iOS App Store Screenshots
 
 # Simulator builds need CocoaPods + x86_64 sim (Rosetta). google_mlkit_* pods exclude
-# arm64 for iphonesimulator; Flutter 3.41+ on Xcode 26 (arm-only sims) then fails with
-# "Framework 'Pods_Runner' not found". Pin Xcode 16 + Flutter 3.38.x unless you know
-# your deps support arm64 simulator (see flutter/flutter#182748).
+# arm64 for iphonesimulator; building on Xcode 26 (arm-only sims) fails with
+# "Framework 'Pods_Runner' not found". Pin Xcode 16 on the runner (see flutter/flutter#182748).
+# Flutter must match pubspec SDK (^3.11.5 → 3.44.x); do not pin 3.38.x (Dart 3.10).
 
 on:
   workflow_dispatch:
     inputs:
       flutter_version:
-        description: 'Flutter version (default 3.38.5 — required for ML Kit + simulator CI)'
+        description: 'Flutter version (default 3.44.0 — matches pubspec SDK ^3.11.5)'
         required: false
-        default: '3.38.5'
+        default: '3.44.0'
 
 jobs:
   screenshots:
