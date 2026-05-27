@@ -1,6 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { keywordAnalysis } from './keyword.ts'
-import type { KeywordEntry } from './keyword.ts'
 import {
   HARAM_CATEGORIES, HALAL_CATEGORIES, NON_FOOD_CATEGORIES,
   ANIMAL_PRODUCT_CATEGORIES, HALAL_CERT_LABELS, ANIMAL_PRODUCT_NAME_TERMS,
@@ -19,6 +18,7 @@ import {
 import {
   geminiIngredientLookup, analyzeWithGemini, analyzeWithClaude, analyzeWithClaudeVision,
 } from './ai.ts'
+import { getHalalScanProduct, loadCustomKeywords } from './productQueries.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -45,15 +45,11 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
     )
 
-    // 1. Cache hit?
-    const { data: cached } = await supabase
-      .from('products_full')
-      .select('*')
-      .eq('barcode', barcode)
-      .maybeSingle()
+    // 1. Supabase product lookup
+    const existing = await getHalalScanProduct(supabase, barcode)
 
     const geminiAutoEmptyOff = await resolveGeminiLookupEmptyOffEnabled(supabase)
-    const refetchForGeminiAuto = shouldBypassCacheForGeminiAutoLookup(cached, {
+    const refetchForGeminiAuto = shouldBypassCacheForGeminiAutoLookup(existing, {
       autoLookupEmptyOff: geminiAutoEmptyOff,
       fetchAiIngredients,
       force,
@@ -63,14 +59,14 @@ Deno.serve(async (req) => {
       `geminiAutoEmptyOff=${geminiAutoEmptyOff} refetchForGeminiAuto=${refetchForGeminiAuto}`,
     )
 
-    console.log(`[${barcode}] cache: ${cached ? `hit (is_managed=${cached.is_managed} is_unknown=${cached.is_unknown} ingredient_source=${cached.ingredient_source} ingredients=${Array.isArray(cached.ingredients) ? cached.ingredients.length : 0})` : 'miss'}`)
+    console.log(`[${barcode}] db: ${existing ? `found (is_managed=${existing.is_managed} is_unknown=${existing.is_unknown} ingredient_source=${existing.ingredient_source} ingredients=${Array.isArray(existing.ingredients) ? existing.ingredients.length : 0})` : 'not found'}`)
 
     // Managed products are never overwritten by OFF data.
     // Return the DB row as-is regardless of the force flag.
-    if (cached?.is_managed) {
+    if (existing?.is_managed) {
       console.log(`[${barcode}] managed product — returning DB row as-is`)
       return new Response(
-        JSON.stringify({ product: toProduct(cached) }),
+        JSON.stringify({ product: toProduct(existing) }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       )
     }
@@ -78,36 +74,22 @@ Deno.serve(async (req) => {
     // Re-run keyword analysis on stored data when either:
     //   • source data changed since last analysis (updated_at > last_analysed_at), OR
     //   • caller requested a force refresh on an already-known product.
-    // OFF is only ever fetched on the very first scan (cached === null below).
+    // OFF is only ever fetched on the very first scan (existing === null below).
     // Unknown products with force=true fall through so OFF can be retried.
-    // fetchAiIngredients bypasses cache so admin-approved Gemini lookup can re-fetch OFF.
-    if (!fetchAiIngredients && !refetchForGeminiAuto && cached &&
-        (isStale(cached) || (force && !cached.is_unknown))) {
-      const reason = isStale(cached) ? 'stale (updated_at > last_analysed_at)' : 'force-refresh'
+    // fetchAiIngredients bypasses the DB lookup so admin-approved Gemini lookup can re-fetch OFF.
+    if (!fetchAiIngredients && !refetchForGeminiAuto && existing &&
+        (isStale(existing) || (force && !existing.is_unknown))) {
+      const reason = isStale(existing) ? 'stale (updated_at > last_analysed_at)' : 'force-refresh'
       console.log(`[${barcode}] ${reason} — re-running rules engine on stored data`)
 
-      const { data: kwRows } = await supabase
-        .from('keywords')
-        .select('canonical, category, reason, variants')
-      const reHaramEntries: KeywordEntry[] = []
-      const reSuspiciousEntries: KeywordEntry[] = []
-      if (kwRows) {
-        for (const kw of kwRows) {
-          const variants = Array.isArray(kw.variants) && kw.variants.length > 0
-            ? kw.variants as string[]
-            : [kw.canonical as string]
-          const entry: KeywordEntry = [kw.canonical as string, kw.reason as string, ...variants]
-          if (kw.category === 'haram') reHaramEntries.push(entry)
-          else reSuspiciousEntries.push(entry)
-        }
-      }
+      const { haram: reHaramEntries, suspicious: reSuspiciousEntries } = await loadCustomKeywords(supabase)
 
       const communityIngredients = await getApprovedContribution(supabase, barcode)
       const storedIngredients: string[] = communityIngredients
-        ?? (Array.isArray(cached.ingredients) ? cached.ingredients : [])
+        ?? (Array.isArray(existing.ingredients) ? existing.ingredients : [])
       const resolvedSource = communityIngredients
         ? 'community'
-        : (cached.ingredient_source ?? 'off')
+        : (existing.ingredient_source ?? 'off')
       const kw = keywordAnalysis(storedIngredients, reHaramEntries, reSuspiciousEntries)
       console.log(`[${barcode}] re-analysis result: isHalal=${kw.isHalal} isUnknown=${kw.isUnknown} haram=[${kw.haram.join(', ')}] suspicious=[${kw.suspicious.join(', ')}] ingredients=${storedIngredients.length}`)
 
@@ -119,7 +101,7 @@ Deno.serve(async (req) => {
       let reExplanation = kw.explanation
 
       if (reUnknown) {
-        const nameKw = keywordAnalysis([(cached.name ?? '').toLowerCase()], reHaramEntries, reSuspiciousEntries)
+        const nameKw = keywordAnalysis([(existing.name ?? '').toLowerCase()], reHaramEntries, reSuspiciousEntries)
         if (!nameKw.isHalal) {
           reHalal = false; reUnknown = false
           reHaram = nameKw.haram; reWarnings = nameKw.warnings
@@ -128,62 +110,62 @@ Deno.serve(async (req) => {
       }
 
       const reRow = {
-        barcode:               cached.barcode,
-        name:                  cached.name,
+        barcode:               existing.barcode,
+        name:                  existing.name,
         ingredients:           storedIngredients,
         is_halal:              reHalal,
         is_unknown:            reUnknown,
-        is_non_food:           cached.is_non_food,
+        is_non_food:           existing.is_non_food,
         haram_ingredients:     reHaram,
         suspicious_ingredients: reSuspicious,
         ingredient_warnings:   reWarnings,
-        labels:                cached.labels,
-        image_url:             cached.image_url,
-        image_front_url:       cached.image_front_url,
-        image_ingredients_url: cached.image_ingredients_url,
-        image_nutrition_url:   cached.image_nutrition_url,
+        labels:                existing.labels,
+        image_url:             existing.image_url,
+        image_front_url:       existing.image_front_url,
+        image_ingredients_url: existing.image_ingredients_url,
+        image_nutrition_url:   existing.image_nutrition_url,
         explanation:           reExplanation,
         analyzed_by_ai:        false,
-        requires_halal_cert:   cached.requires_halal_cert,
-        is_managed:            cached.is_managed,
+        requires_halal_cert:   existing.requires_halal_cert,
+        is_managed:            existing.is_managed,
         last_analysed_at:      new Date().toISOString(),
-        fetched_at:            cached.fetched_at,
+        fetched_at:            existing.fetched_at,
         ingredient_source:     resolvedSource,
         gemini_web_ingredient_lookup_at:
-          cached.gemini_web_ingredient_lookup_at ?? null,
+          existing.gemini_web_ingredient_lookup_at ?? null,
         gemini_web_ingredient_lookup_name_key:
-          cached.gemini_web_ingredient_lookup_name_key ?? null,
+          existing.gemini_web_ingredient_lookup_name_key ?? null,
       }
 
       await supabase.from('products').upsert({
-        barcode:               cached.barcode,
-        name:                  cached.name,
+        barcode:               existing.barcode,
+        name:                  existing.name,
         ingredients:           storedIngredients,
-        is_non_food:           cached.is_non_food,
-        labels:                cached.labels,
-        image_url:             cached.image_url,
-        image_front_url:       cached.image_front_url,
-        image_ingredients_url: cached.image_ingredients_url,
-        image_nutrition_url:   cached.image_nutrition_url,
-        requires_halal_cert:   cached.requires_halal_cert,
-        is_managed:            cached.is_managed,
+        is_non_food:           existing.is_non_food,
+        labels:                existing.labels,
+        image_url:             existing.image_url,
+        image_front_url:       existing.image_front_url,
+        image_ingredients_url: existing.image_ingredients_url,
+        image_nutrition_url:   existing.image_nutrition_url,
+        requires_halal_cert:   existing.requires_halal_cert,
+        is_managed:            existing.is_managed,
         last_analysed_at:      new Date().toISOString(),
-        fetched_at:            cached.fetched_at,
+        fetched_at:            existing.fetched_at,
         ingredient_source:     resolvedSource,
-        ...(cached.gemini_web_ingredient_lookup_name_key
+        ...(existing.gemini_web_ingredient_lookup_name_key
           ? {
-            gemini_web_ingredient_lookup_at: cached.gemini_web_ingredient_lookup_at,
+            gemini_web_ingredient_lookup_at: existing.gemini_web_ingredient_lookup_at,
             gemini_web_ingredient_lookup_name_key:
-              cached.gemini_web_ingredient_lookup_name_key,
+              existing.gemini_web_ingredient_lookup_name_key,
           }
           : {}),
       })
 
       await supabase.from('product_analysis').upsert({
-        barcode:               cached.barcode,
+        barcode:               existing.barcode,
         is_halal:              reHalal,
         is_unknown:            reUnknown,
-        is_non_food:           cached.is_non_food,
+        is_non_food:           existing.is_non_food,
         haram_ingredients:     reHaram,
         suspicious_ingredients: reSuspicious,
         ingredient_warnings:   reWarnings,
@@ -198,11 +180,11 @@ Deno.serve(async (req) => {
       )
     }
 
-    if (!fetchAiIngredients && !refetchForGeminiAuto && cached && !force) {
+    if (!fetchAiIngredients && !refetchForGeminiAuto && existing && !force) {
       const communityIngredients = await getApprovedContribution(supabase, barcode)
       const storedIngredients: string[] = communityIngredients
-        ?? (Array.isArray(cached.ingredients) ? cached.ingredients : [])
-      const visionUrlRaw = cached.image_ingredients_url as string | null | undefined
+        ?? (Array.isArray(existing.ingredients) ? existing.ingredients : [])
+      const visionUrlRaw = existing.image_ingredients_url as string | null | undefined
       const visionUrl = typeof visionUrlRaw === 'string' ? visionUrlRaw.trim() : ''
       const needsVisionIngredients = storedIngredients.length === 0 && visionUrl !== ''
       // Approved pack-photo stubs often have URLs but no text ingredients yet —
@@ -210,52 +192,41 @@ Deno.serve(async (req) => {
       if (!needsVisionIngredients) {
         return new Response(
           JSON.stringify({
-            product: toProduct(withCommunitySource(cached, communityIngredients)),
+            product: toProduct(withCommunitySource(existing, communityIngredients)),
           }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
         )
       }
-      console.log(`[${barcode}] DB cache stub has ingredient image — running vision/analysis path`)
+      console.log(`[${barcode}] DB stub has ingredient image — running vision/analysis path`)
     }
 
-    // 2. Load custom approved keywords (OFF path + DB stub after OFF miss)
-    const customHaramEntries: KeywordEntry[] = []
-    const customSuspiciousEntries: KeywordEntry[] = []
-    const { data: customKeywords } = await supabase
-      .from('keywords')
-      .select('canonical, category, reason, variants')
-    if (customKeywords) {
-      for (const kw of customKeywords) {
-        const variants: string[] = Array.isArray(kw.variants) && kw.variants.length > 0
-          ? kw.variants as string[]
-          : [kw.canonical as string]
-        const entry: KeywordEntry = [kw.canonical as string, kw.reason as string, ...variants]
-        if (kw.category === 'haram') customHaramEntries.push(entry)
-        else customSuspiciousEntries.push(entry)
-      }
-    }
+    // 2. Load custom approved keywords
+    const { haram: customHaramEntries, suspicious: customSuspiciousEntries } = await loadCustomKeywords(supabase)
 
-    // 3. Fetch product from Open*Facts databases in order.
-    // Products found via OBF (beauty) or OPF (general products) are non-food.
-    let pd = await fetchFromFoodApi(barcode, OFF_BASE)
+    // 3. Fetch product from Open*Facts — only for products not yet in Supabase.
+    // Existing HalalScanProducts are never re-fetched from OFF; Supabase is the source of truth.
+    let pd = null
     let isNonFood = false
-    if (!pd) { pd = await fetchFromFoodApi(barcode, OBF_BASE); if (pd) isNonFood = true }
-    if (!pd) { pd = await fetchFromFoodApi(barcode, OPF_BASE); if (pd) isNonFood = true }
+    if (!existing) {
+      pd = await fetchFromFoodApi(barcode, OFF_BASE)
+      if (!pd) { pd = await fetchFromFoodApi(barcode, OBF_BASE); if (pd) isNonFood = true }
+      if (!pd) { pd = await fetchFromFoodApi(barcode, OPF_BASE); if (pd) isNonFood = true }
 
-    // If OFF found the product but has no ingredient data, also probe OBF/OPF.
-    // A cross-listing there confirms the product is non-food (e.g. a cleaning
-    // spray or cosmetic that was also submitted to OpenFoodFacts by mistake).
-    if (pd && !isNonFood && !extractIngredientsText(pd)) {
-      const obfPd = await fetchFromFoodApi(barcode, OBF_BASE)
-      if (obfPd) { isNonFood = true; pd = obfPd }
-      else {
-        const opfPd = await fetchFromFoodApi(barcode, OPF_BASE)
-        if (opfPd) { isNonFood = true; pd = opfPd }
+      // If OFF found the product but has no ingredient data, also probe OBF/OPF.
+      // A cross-listing there confirms the product is non-food (e.g. a cleaning
+      // spray or cosmetic that was also submitted to OpenFoodFacts by mistake).
+      if (pd && !isNonFood && !extractIngredientsText(pd)) {
+        const obfPd = await fetchFromFoodApi(barcode, OBF_BASE)
+        if (obfPd) { isNonFood = true; pd = obfPd }
+        else {
+          const opfPd = await fetchFromFoodApi(barcode, OPF_BASE)
+          if (opfPd) { isNonFood = true; pd = opfPd }
+        }
       }
     }
 
     if (!pd) {
-      const canAnalyzeFromDbStub = cached && !fetchAiIngredients
+      const canAnalyzeFromDbStub = existing !== null
       if (!canAnalyzeFromDbStub) {
         return new Response(
           JSON.stringify({ product: null }),
@@ -264,28 +235,28 @@ Deno.serve(async (req) => {
       }
 
       console.log(
-        `[${barcode}] OFF miss — analysing from Supabase cache (approved pack-photo stub or curated row)`,
+        `[${barcode}] OFF miss — analysing from Supabase DB (approved pack-photo stub or curated row)`,
       )
 
       let geminiAtOut =
-        cached.gemini_web_ingredient_lookup_at as string | undefined
+        existing.gemini_web_ingredient_lookup_at as string | undefined
       let geminiKeyOut =
-        cached.gemini_web_ingredient_lookup_name_key as string | undefined
+        existing.gemini_web_ingredient_lookup_name_key as string | undefined
 
       let name =
-        typeof cached.name === 'string' &&
-          cached.name.trim().length > 0
-          ? cached.name.trim()
+        typeof existing.name === 'string' &&
+          existing.name.trim().length > 0
+          ? existing.name.trim()
           : 'Unknown Product'
       const brand = ''
       const communityDb = await getApprovedContribution(supabase, barcode)
       let ingredientSource: 'off' | 'ai' | 'community' = 'off'
       let ingredients: string[] =
-        communityDb ?? (Array.isArray(cached.ingredients) ? cached.ingredients as string[] : [])
+        communityDb ?? (Array.isArray(existing.ingredients) ? existing.ingredients as string[] : [])
       if (communityDb) {
         ingredientSource = 'community'
-      } else if (cached.ingredient_source === 'ai' || cached.ingredient_source === 'community') {
-        ingredientSource = cached.ingredient_source as 'community' | 'ai'
+      } else if (existing.ingredient_source === 'ai' || existing.ingredient_source === 'community') {
+        ingredientSource = existing.ingredient_source as 'community' | 'ai'
       }
 
       const approvedAiRequestStub = fetchAiIngredients
@@ -300,7 +271,7 @@ Deno.serve(async (req) => {
           productName: name,
         })
       ) {
-        if (isGeminiWebIngredientLookupDoneForProductName(cached, name)) {
+        if (isGeminiWebIngredientLookupDoneForProductName(existing, name)) {
           console.log(
             `[${barcode}] Gemini web ingredient lookup: skipped — already attempted for this product name`,
           )
@@ -331,12 +302,12 @@ Deno.serve(async (req) => {
         ingredientSource = 'community'
       }
 
-      const labelsRaw = cached.labels
+      const labelsRaw = existing.labels
       const labels: string[] = Array.isArray(labelsRaw)
         ? (labelsRaw as unknown[]).map((x: unknown) => String(x).trim().toLowerCase()).filter((s) => s.length > 0)
         : []
       const rawCategories: string[] = []
-      let isNonFood = !!(cached.is_non_food ?? false)
+      let isNonFood = !!(existing.is_non_food ?? false)
 
       console.log(`[${barcode}] DB stub name="${name}" ingredients=${ingredients.length}`)
 
@@ -392,8 +363,8 @@ Deno.serve(async (req) => {
       // Vision on approved pack-photo URL (same semantics as Tier 3 OFF path).
       if (!analyzedByAI && ingredients.length === 0 && !isNonFood && !isHalalByCategory &&
         haramCategory === null) {
-        const imgUrl = typeof cached.image_ingredients_url === 'string'
-          ? cached.image_ingredients_url.trim()
+        const imgUrl = typeof existing.image_ingredients_url === 'string'
+          ? existing.image_ingredients_url.trim()
           : ''
         const claudeKey = Deno.env.get('CLAUDE_API_KEY')
         if (claudeEnabled && imgUrl && claudeKey) {
@@ -492,15 +463,15 @@ Deno.serve(async (req) => {
         suspicious_ingredients: suspiciousIngredients,
         ingredient_warnings: ingredientWarnings,
         labels,
-        image_url: cached.image_url as string | undefined,
-        image_front_url: cached.image_front_url as string | undefined,
-        image_ingredients_url: cached.image_ingredients_url as string | undefined,
-        image_nutrition_url: cached.image_nutrition_url as string | undefined,
+        image_url: existing.image_url as string | undefined,
+        image_front_url: existing.image_front_url as string | undefined,
+        image_ingredients_url: existing.image_ingredients_url as string | undefined,
+        image_nutrition_url: existing.image_nutrition_url as string | undefined,
         explanation,
         analyzed_by_ai: analyzedByAI,
         requires_halal_cert: requiresHalalCert,
         last_analysed_at: new Date().toISOString(),
-        fetched_at: cached.fetched_at as string ?? new Date().toISOString(),
+        fetched_at: existing.fetched_at as string ?? new Date().toISOString(),
       }
 
       const { error: upsertStubErr } = await supabase.from('products').upsert({
@@ -510,14 +481,14 @@ Deno.serve(async (req) => {
         ingredient_source: ingredientSource,
         is_non_food: isNonFood,
         labels,
-        image_url: cached.image_url ?? null,
-        image_front_url: cached.image_front_url ?? null,
-        image_ingredients_url: cached.image_ingredients_url ?? null,
-        image_nutrition_url: cached.image_nutrition_url ?? null,
+        image_url: existing.image_url ?? null,
+        image_front_url: existing.image_front_url ?? null,
+        image_ingredients_url: existing.image_ingredients_url ?? null,
+        image_nutrition_url: existing.image_nutrition_url ?? null,
         requires_halal_cert: requiresHalalCert,
-        is_managed: (cached.is_managed ?? false) as boolean,
+        is_managed: (existing.is_managed ?? false) as boolean,
         last_analysed_at: new Date().toISOString(),
-        fetched_at: (cached.fetched_at as string) ?? new Date().toISOString(),
+        fetched_at: (existing.fetched_at as string) ?? new Date().toISOString(),
         ...(geminiKeyOut
           ? {
             gemini_web_ingredient_lookup_at: geminiAtOut,
@@ -564,9 +535,9 @@ Deno.serve(async (req) => {
     console.log(`[${barcode}] OFF: name="${name}" brand="${brand}" ingredients=${ingredients.length}`)
 
     let geminiAtOut =
-      cached?.gemini_web_ingredient_lookup_at as string | undefined
+      existing?.gemini_web_ingredient_lookup_at as string | undefined
     let geminiKeyOut =
-      cached?.gemini_web_ingredient_lookup_name_key as string | undefined
+      existing?.gemini_web_ingredient_lookup_name_key as string | undefined
 
     let ingredientSource: 'off' | 'ai' | 'community' = 'off'
 
@@ -594,7 +565,7 @@ Deno.serve(async (req) => {
         console.log(`[${barcode}] Gemini ingredient lookup: skipped — ${skipReason}`)
       }
     } else {
-      if (isGeminiWebIngredientLookupDoneForProductName(cached, name)) {
+      if (isGeminiWebIngredientLookupDoneForProductName(existing, name)) {
         console.log(
           `[${barcode}] Gemini web ingredient lookup: skipped — already attempted for this product name`,
         )
@@ -819,15 +790,15 @@ Deno.serve(async (req) => {
       suspicious_ingredients: suspiciousIngredients,
       ingredient_warnings:    ingredientWarnings,
       labels,
-      image_url:              cached?.image_url              ?? resolveImg(pd, 'image_url', 'front'),
-      image_front_url:        cached?.image_front_url        ?? resolveImg(pd, 'image_front_url', 'front'),
-      image_ingredients_url:  cached?.image_ingredients_url  ?? resolveImg(pd, 'image_ingredients_url', 'ingredients'),
-      image_nutrition_url:    cached?.image_nutrition_url    ?? resolveImg(pd, 'image_nutrition_url', 'nutrition'),
+      image_url:              existing?.image_url              ?? resolveImg(pd, 'image_url', 'front'),
+      image_front_url:        existing?.image_front_url        ?? resolveImg(pd, 'image_front_url', 'front'),
+      image_ingredients_url:  existing?.image_ingredients_url  ?? resolveImg(pd, 'image_ingredients_url', 'ingredients'),
+      image_nutrition_url:    existing?.image_nutrition_url    ?? resolveImg(pd, 'image_nutrition_url', 'nutrition'),
       explanation,
       analyzed_by_ai:         analyzedByAI,
       requires_halal_cert:    requiresHalalCert,
       last_analysed_at:       new Date().toISOString(),
-      fetched_at:             cached?.fetched_at ?? new Date().toISOString(),
+      fetched_at:             existing?.fetched_at ?? new Date().toISOString(),
     }
 
     const { error: upsertErr } = await supabase.from('products').upsert({
@@ -838,13 +809,13 @@ Deno.serve(async (req) => {
       is_non_food:            isNonFood,
       labels,
       // Preserve community-approved image URLs — never overwrite them with OFF URLs.
-      image_url:              cached?.image_url              ?? resolveImg(pd, 'image_url', 'front'),
-      image_front_url:        cached?.image_front_url        ?? resolveImg(pd, 'image_front_url', 'front'),
-      image_ingredients_url:  cached?.image_ingredients_url  ?? resolveImg(pd, 'image_ingredients_url', 'ingredients'),
-      image_nutrition_url:    cached?.image_nutrition_url    ?? resolveImg(pd, 'image_nutrition_url', 'nutrition'),
+      image_url:              existing?.image_url              ?? resolveImg(pd, 'image_url', 'front'),
+      image_front_url:        existing?.image_front_url        ?? resolveImg(pd, 'image_front_url', 'front'),
+      image_ingredients_url:  existing?.image_ingredients_url  ?? resolveImg(pd, 'image_ingredients_url', 'ingredients'),
+      image_nutrition_url:    existing?.image_nutrition_url    ?? resolveImg(pd, 'image_nutrition_url', 'nutrition'),
       requires_halal_cert:    requiresHalalCert,
       last_analysed_at:       new Date().toISOString(),
-      fetched_at:             cached?.fetched_at ?? new Date().toISOString(),
+      fetched_at:             existing?.fetched_at ?? new Date().toISOString(),
       ...(geminiKeyOut
         ? {
           gemini_web_ingredient_lookup_at: geminiAtOut,
