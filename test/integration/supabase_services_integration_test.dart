@@ -48,49 +48,57 @@ void main() {
       await SupabaseIntegrationHelper.signOut();
     });
 
-    test('submitReport inserts via real PostgREST (anonymous OK)', () async {
-      final ok = await IngredientReportService.submitReport(
-        barcode: barcode!,
-        productName: 'Integration Snack',
-        ingredients: ['water', 'salt', 'sugar'],
-        explanation: 'integration test row',
-      );
+    test(
+      'submitReport inserts via real PostgREST (anonymous OK)',
+      () async {
+        final ok = await IngredientReportService.submitReport(
+          barcode: barcode!,
+          productName: 'Integration Snack',
+          ingredients: ['water', 'salt', 'sugar'],
+          explanation: 'integration test row',
+        );
 
-      expect(ok, isTrue);
-    });
+        expect(ok, isTrue);
+      },
+      skip: SupabaseIntegrationHelper.skipReasonNoSupabase,
+    );
 
     if (SupabaseIntegrationHelper.hasTestAdmin) {
-      test('getReports and updateStatus work for admin', () async {
-        await SupabaseIntegrationHelper.signInTestAdmin();
+      test(
+        'getReports and updateStatus work for admin',
+        () async {
+          await SupabaseIntegrationHelper.signInTestAdmin();
 
-        final submitted = await IngredientReportService.submitReport(
-          barcode: barcode!,
-          productName: 'Admin Review Snack',
-          ingredients: ['water'],
-        );
-        expect(submitted, isTrue);
+          final submitted = await IngredientReportService.submitReport(
+            barcode: barcode!,
+            productName: 'Admin Review Snack',
+            ingredients: ['water'],
+          );
+          expect(submitted, isTrue);
 
-        final pending = await IngredientReportService.getReports();
-        expect(
-          pending.any((row) => row['barcode'] == barcode),
-          isTrue,
-          reason: 'Admin should see the submitted report',
-        );
+          final pending = await IngredientReportService.getReports();
+          expect(
+            pending.any((row) => row['barcode'] == barcode),
+            isTrue,
+            reason: 'Admin should see the submitted report',
+          );
 
-        final row = pending.firstWhere((r) => r['barcode'] == barcode);
-        final id = row['id'] as int;
+          final row = pending.firstWhere((r) => r['barcode'] == barcode);
+          final id = row['id'] as int;
 
-        final updated = await IngredientReportService.updateStatus(
-          id,
-          'approved',
-        );
-        expect(updated, isTrue);
+          final updated = await IngredientReportService.updateStatus(
+            id,
+            'approved',
+          );
+          expect(updated, isTrue);
 
-        final approved = await IngredientReportService.getReports(
-          status: 'approved',
-        );
-        expect(approved.any((r) => r['id'] == id), isTrue);
-      });
+          final approved = await IngredientReportService.getReports(
+            status: 'approved',
+          );
+          expect(approved.any((r) => r['id'] == id), isTrue);
+        },
+        skip: SupabaseIntegrationHelper.skipReasonNoSupabase,
+      );
     }
   });
 

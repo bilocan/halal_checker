@@ -146,15 +146,17 @@ export async function handleLookup(
   const { haram: customHaramEntries, suspicious: customSuspiciousEntries } =
     await deps.loadCustomKeywords(supabase)
 
-  let pd: Record<string, unknown> | null = null
-  let isNonFood = false
-  if (!existing) {
-    const off = await deps.fetchOpenFactsProduct(barcode)
-    if (off) {
-      pd = off.pd
-      isNonFood = off.isNonFood
+    let pd: Record<string, unknown> | null = null
+    let isNonFood = false
+    // Refetch OFF when there is no DB row, or on force refresh (even if a stale
+    // unknown row exists — otherwise we only run analyzeFromDbStub with no categories).
+    if (!existing || force) {
+      const off = await deps.fetchOpenFactsProduct(barcode)
+      if (off) {
+        pd = off.pd
+        isNonFood = off.isNonFood
+      }
     }
-  }
 
   if (!pd) {
     if (!existing) {

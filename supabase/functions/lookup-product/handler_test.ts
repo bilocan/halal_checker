@@ -101,6 +101,42 @@ Deno.test('handleLookup — unknown barcode and OFF miss returns null product', 
   assertEquals(body.product, null)
 })
 
+Deno.test('handleLookup — force refetches OFF when cached row is unknown', async () => {
+  const row = cachedProduct({
+    is_unknown: true,
+    is_halal: false,
+    ingredients: [],
+    explanation: 'stale unknown',
+  })
+  const supabase = mockHandlerSupabase({
+    cacheProduct: row,
+    savedProduct: {
+      ...row,
+      name: 'Mineral Water',
+      is_halal: true,
+      is_unknown: false,
+      explanation: 'This product is in an inherently halal category (e.g. water, salt). No harmful ingredients expected.',
+    },
+  })
+  const deps = createLookupDeps(supabase)
+  deps.fetchOpenFactsProduct = async () => ({
+    pd: {
+      product_name: 'Mineral Water',
+      ingredients_text: '',
+      categories_tags: ['en:waters', 'en:mineral-waters'],
+    },
+    isNonFood: false,
+  })
+
+  const res = await handleLookup(
+    { barcode: '1234567890', force: true, fetchAiIngredients: false },
+    deps,
+  )
+  const body = await res.json()
+  assertEquals(body.product.isHalal, true)
+  assertEquals(body.product.isUnknown, false)
+})
+
 Deno.test('handleLookup — stale row triggers reanalysis', async () => {
   const row = cachedProduct({
     updated_at: '2026-05-03T00:00:00Z',
