@@ -1,12 +1,9 @@
-// Deno unit tests for lookup-product edge function helpers.
+// Deno unit tests for lookup-product gates, community, and keyword regressions.
 // Run with: deno test supabase/functions/lookup-product/index_test.ts
-//
-// These tests cover the two requirements from issue #2:
-//   1. analysisMethod field in the response payload
-//   2. Server-side error logging when AI calls fail
 
 import { assertEquals, assertMatch } from 'https://deno.land/std@0.224.0/assert/mod.ts'
 import { withCommunitySource } from './community.ts'
+import { toProduct } from './db.ts'
 import {
   isGeminiLookupEmptyOffDbEnabled,
   isGeminiLookupEmptyOffEnvEnabled,
@@ -15,112 +12,10 @@ import {
   normalizeProductNameForGeminiKey,
   isGeminiWebIngredientLookupDoneForProductName,
 } from './ingredient_lookup_gate.ts'
+import { keywordAnalysis } from './keyword.ts'
 
-// ── inline copies of the pure functions under test ───────────────────────────
-// We copy them here rather than importing from index.ts to keep the test file
-// self-contained (index.ts uses Deno.serve which can't be tested directly).
-
-const HARAM_ENTRIES: [string, string, ...string[]][] = [
-  ['alcohol', 'Contains alcohol', 'alcohol', 'alkohol'],
-  ['pork', 'Contains pork', 'pork', 'schwein'],
-  ['gelatin', 'Gelatin is animal-derived', 'gelatin', 'gelatine'],
-]
-
-const SUSPICIOUS_ENTRIES: [string, string, ...string[]][] = [
-  ['enzymes', 'Enzymes may be animal-derived', 'enzymes', 'enzyme'],
-]
-
-const ALCOHOL_FAMILY = new Set(['alcohol', 'alkohol'])
-const FATTY_ALCOHOL_PREFIX = /\b(cetyl|stearyl|behenyl|lauryl)\s+/i
-const NEGATION_WORDS = /\b(?:keine?|nicht|ohne|frei\s+von|sans|pas|geen|zonder|vrij\s+van|no|not|without|free\s+from|free\s+of|senza|sin|içermez|içermemektedir|neobsahuje|bez|nema|nem|mentes)\b/i
-
-function escape(s: string) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') }
-
-const wPre = '(?<![a-zA-Z\\dÀ-ɏß])'
-const wPost = '(?![a-zA-Z\\dÀ-ɏß])'
-
-function isZeroPercentAlcoholDeclaration(text: string, variant: string): boolean {
-  const v = escape(variant)
-  return new RegExp(
-    `\\b0(?:[.,]0+)?\\s*%\\s*${v}(?:\\b|(?![a-zA-Z\\dÀ-ɏß]))|\\b${v}(?:\\b|(?![a-zA-Z\\dÀ-ɏß]))\\s*(?:\\(?\\s*)?0(?:[.,]0+)?\\s*%`,
-    'i',
-  ).test(text)
-}
-
-function matchesVariant(ingredient: string, variant: string): boolean {
-  if (variant.includes(' ')) return ingredient.includes(variant)
-  if (ALCOHOL_FAMILY.has(variant)) {
-    if (FATTY_ALCOHOL_PREFIX.test(ingredient)) return false
-    if (isZeroPercentAlcoholDeclaration(ingredient, variant)) return false
-    return new RegExp(`${wPre}${escape(variant)}${wPost}(?![-\\s]*free)`, 'i').test(ingredient)
-  }
-  return new RegExp(`${wPre}${escape(variant)}${wPost}`, 'i').test(ingredient)
-}
-
-function isNegated(chunk: string, variant: string): boolean {
-  const lower = chunk.toLowerCase()
-  let idx: number
-  if (variant.includes(' ')) {
-    idx = lower.indexOf(variant.toLowerCase())
-  } else {
-    const m = new RegExp(`${wPre}${escape(variant)}${wPost}`, 'i').exec(lower)
-    idx = m ? m.index : -1
-  }
-  if (idx < 0) return false
-  return NEGATION_WORDS.test(lower.substring(0, idx))
-}
-
-function keywordAnalysis(ingredients: string[]) {
-  const warnings: Record<string, string> = {}
-  const haram: string[] = []
-  const suspicious: string[] = []
-  for (const ing of ingredients) {
-    const lower = ing.toLowerCase()
-    let foundHaram = false
-    for (const entry of HARAM_ENTRIES) {
-      const matchedVariant = (entry.slice(2) as string[]).find(v => matchesVariant(lower, v))
-      if (matchedVariant && !isNegated(lower, matchedVariant)) {
-        warnings[ing] = entry[1]; haram.push(ing); foundHaram = true; break
-      }
-    }
-    if (foundHaram) continue
-    for (const entry of SUSPICIOUS_ENTRIES) {
-      const matchedVariant = (entry.slice(2) as string[]).find(v => matchesVariant(lower, v))
-      if (matchedVariant && !isNegated(lower, matchedVariant)) {
-        warnings[ing] = entry[1]; suspicious.push(ing); break
-      }
-    }
-  }
-  const isUnknown = ingredients.length === 0
-  return { isHalal: !isUnknown && haram.length === 0, isUnknown, haram, suspicious, warnings }
-}
-
-// toProduct mirrors the function in index.ts; analysisMethod is the new field.
 // deno-lint-ignore no-explicit-any
-function toProduct(row: Record<string, any>) {
-  return {
-    barcode:               row.barcode,
-    name:                  row.name,
-    ingredients:           row.ingredients,
-    isHalal:               row.is_halal,
-    isUnknown:             row.is_unknown ?? false,
-    isNonFood:             row.is_non_food ?? false,
-    haramIngredients:      row.haram_ingredients,
-    suspiciousIngredients: row.suspicious_ingredients,
-    ingredientWarnings:    row.ingredient_warnings,
-    labels:                row.labels,
-    imageUrl:              row.image_url,
-    imageFrontUrl:         row.image_front_url,
-    imageIngredientsUrl:   row.image_ingredients_url,
-    imageNutritionUrl:     row.image_nutrition_url,
-    explanation:           row.explanation,
-    analyzedByAI:          row.analyzed_by_ai,
-    analysisMethod:        row.analyzed_by_ai ? 'ai' : 'keyword',
-  }
-}
-
-// Minimal DB-row fixture.
-function makeRow(overrides: Record<string, unknown> = {}) {
+function makeRow(overrides: Record<string, any> = {}) {
   return {
     barcode: '1234567890',
     name: 'Test Product',
@@ -162,6 +57,15 @@ Deno.test('toProduct — analysisMethod is always ai or keyword (never undefined
   assertEquals(['ai', 'keyword'].includes(p.analysisMethod), true)
 })
 
+Deno.test('toProduct — geminiWebIngredientLookupAttemptedForName when name matches key', () => {
+  const p = toProduct(makeRow({
+    gemini_web_ingredient_lookup_at: '2026-01-01T00:00:00Z',
+    gemini_web_ingredient_lookup_name_key: 'test product',
+    name: 'Test Product',
+  }))
+  assertEquals(p.geminiWebIngredientLookupAttemptedForName, true)
+})
+
 // ── tests: server-side error logging ─────────────────────────────────────────
 
 Deno.test('console.error is called when AI JSON parse fails', () => {
@@ -170,7 +74,6 @@ Deno.test('console.error is called when AI JSON parse fails', () => {
   console.error = (...args: unknown[]) => { logged.push(args.map(String).join(' ')) }
 
   try {
-    // Simulate the Gemini JSON-parse failure path.
     try {
       JSON.parse('not-valid-json')
     } catch (e) {
@@ -201,7 +104,7 @@ Deno.test('console.error is called when Claude JSON parse fails', () => {
   }
 })
 
-// ── tests: keywordAnalysis ────────────────────────────────────────────────────
+// ── tests: keywordAnalysis (production keyword.ts) ───────────────────────────
 
 Deno.test('keywordAnalysis — clean ingredients → isHalal true', () => {
   const r = keywordAnalysis(['water', 'salt', 'sugar'])
@@ -244,8 +147,6 @@ Deno.test('keywordAnalysis — 0% alcohol declaration not flagged as haram', () 
   assertEquals(r.isHalal, true)
 })
 
-// ── negation detection ────────────────────────────────────────────────────────
-
 Deno.test('negation — DE keine: enthält keine zutaten vom schwein → halal', () => {
   const r = keywordAnalysis(['enthält keine zutaten vom schwein'])
   assertEquals(r.isHalal, true)
@@ -277,8 +178,8 @@ Deno.test('negation — ES sin: sin alcohol → halal', () => {
   assertEquals(r.isHalal, true)
 })
 
-Deno.test('negation — TR içermez: schwein içermez → halal', () => {
-  const r = keywordAnalysis(['pork içermez'])
+Deno.test('negation — TR içermez: içermez pork → halal', () => {
+  const r = keywordAnalysis(['içermez pork'])
   assertEquals(r.isHalal, true)
 })
 
@@ -292,8 +193,6 @@ Deno.test('negation — actual pork still flagged', () => {
   assertEquals(r.isHalal, false)
   assertEquals(r.haram, ['pork fat'])
 })
-
-// ── Unicode word-boundary regressions ────────────────────────────────────────
 
 Deno.test('unicode boundary — lactosérum does not false-positive on "rum"', () => {
   const r = keywordAnalysis(['poudre de lactosérum (lait)'])
@@ -417,8 +316,6 @@ Deno.test('shouldRunGeminiIngredientLookup — skips unknown product name', () =
     false,
   )
 })
-
-// ── Gemini web lookup dedupe ─────────────────────────────────────────────────
 
 Deno.test('normalizeProductNameForGeminiKey — trims and collapses whitespace', () => {
   assertEquals(normalizeProductNameForGeminiKey('  Foo   Bar  '), 'foo bar')

@@ -176,7 +176,11 @@ Production default: **Open Food Facts + keywords + post-rules**; AI tiers option
 | File | Covers |
 |------|--------|
 | `verdictRules_test.ts` | `computeVerdict`, `applyPostAnalysisRules`, `skipAi` |
-| `index_test.ts` | Keyword helpers (inline copy), gates, `toProduct` |
+| `index_test.ts` | `keyword.ts`, gates, `toProduct` (via `db.ts`) |
+| `db_test.ts` | `isStale`, `toProduct` field mapping |
+| `lookupHelpers_test.ts` | `normalizeStoredLabels`, `classifyOffCategories` |
+| `fetch_test.ts` | OFF parse helpers (`extractIngredientsText`, labels, etc.) |
+| `requestParser_test.ts` | `parseRequest` validation |
 | `ai_test.ts` | `parseIngredientList` |
 
 Flutter: `test/services/product_service_test.dart`, `needs_reanalysis_test.dart` (keyword override after edge function).
