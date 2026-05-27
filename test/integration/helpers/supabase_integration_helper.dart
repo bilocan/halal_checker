@@ -52,18 +52,29 @@ class SupabaseIntegrationHelper {
 
   static bool get hasServiceRole => hasSupabase && _serviceRoleKey.isNotEmpty;
 
+  /// Use as [test] `skip:` so missing dart-defines skip cleanly (not fail).
+  static String? get skipReasonNoSupabase => hasSupabase
+      ? null
+      : 'Requires SUPABASE_URL and SUPABASE_ANON_KEY '
+            '(use --dart-define-from-file=dart_defines.integration.json)';
+
+  static String? get skipReasonNoTestUser => hasTestUser
+      ? null
+      : 'Requires SUPABASE_TEST_EMAIL and SUPABASE_TEST_PASSWORD dart-defines';
+
+  static String? get skipReasonNoTestAdmin => hasTestAdmin
+      ? null
+      : 'Requires SUPABASE_TEST_ADMIN_EMAIL and '
+            'SUPABASE_TEST_ADMIN_PASSWORD dart-defines';
+
   static String uniqueBarcode({String prefix = '9999999'}) {
     final suffix = DateTime.now().millisecondsSinceEpoch % 100000;
     return '$prefix${suffix.toString().padLeft(5, '0')}';
   }
 
+  /// Prefer [skipReasonNoSupabase] on each [test]; [markTestSkipped] in setUp
+  /// does not always prevent the test body from running.
   static void skipIfNoSupabase() {
-    if (!hasSupabase) {
-      markTestSkipped(
-        'Requires SUPABASE_URL and SUPABASE_ANON_KEY '
-        '(use --dart-define-from-file=dart_defines.integration.json)',
-      );
-    }
     assertIntegrationProjectOnly();
   }
 
@@ -108,15 +119,19 @@ class SupabaseIntegrationHelper {
 
   /// One-time Supabase init for the whole test file.
   static Future<void> initOnce() async {
-    skipIfNoSupabase();
+    if (!hasSupabase) return;
     if (_initialized) return;
+
+    assertIntegrationProjectOnly();
 
     SharedPreferences.setMockInitialValues({});
     resetServiceFakes();
 
     final ready = await AuthService.ensureInitialized();
     if (!ready) {
-      markTestSkipped('Supabase initialization failed — check dart_defines');
+      fail(
+        'Supabase initialization failed — check dart_defines.integration.json',
+      );
     }
     _initialized = true;
   }

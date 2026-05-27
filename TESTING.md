@@ -310,17 +310,23 @@ All scripts use `dart_defines.integration.json` by default (`-DefinesFile` / `DE
 
 ### CI (GitHub Actions)
 
-Workflow [`.github/workflows/integration.yml`](.github/workflows/integration.yml) runs on `main` pushes (when integration paths change) and `workflow_dispatch`. It **skips** until repository secrets are set:
+Workflow [`.github/workflows/integration.yml`](.github/workflows/integration.yml) runs on `main` pushes (when integration paths change) and `workflow_dispatch`.
 
-| Secret | Maps to define |
-|--------|----------------|
-| `INTEGRATION_SUPABASE_URL` | `SUPABASE_URL` |
+**Why local works but CI skips:** `run_integration_test.ps1` reads `dart_defines.integration.json` on your machine. That file is **gitignored** and is never uploaded to GitHub. CI has no credentials until you add **repository secrets** (same values, `INTEGRATION_` names below). Until `INTEGRATION_SUPABASE_URL` is set, the job succeeds but **does not run** tests (by design).
+
+**One-time setup** (repo → **Settings** → **Secrets and variables** → **Actions** → **New repository secret**). Copy from your local `dart_defines.integration.json` — use a **dedicated test Supabase project**, never production:
+
+| GitHub secret (required name) | Same value as in `dart_defines.integration.json` |
+|-------------------------------|--------------------------------------------------|
+| `INTEGRATION_SUPABASE_URL` | `SUPABASE_URL` — **must be set** or CI skips |
 | `INTEGRATION_SUPABASE_ANON_KEY` | `SUPABASE_ANON_KEY` |
 | `INTEGRATION_SUPABASE_TEST_EMAIL` | `SUPABASE_TEST_EMAIL` |
 | `INTEGRATION_SUPABASE_TEST_PASSWORD` | `SUPABASE_TEST_PASSWORD` |
 | `INTEGRATION_SUPABASE_TEST_ADMIN_EMAIL` | `SUPABASE_TEST_ADMIN_EMAIL` |
 | `INTEGRATION_SUPABASE_TEST_ADMIN_PASSWORD` | `SUPABASE_TEST_ADMIN_PASSWORD` |
 | `INTEGRATION_SUPABASE_SERVICE_ROLE_KEY` | `SUPABASE_SERVICE_ROLE_KEY` |
+
+`INTEGRATION_PROJECT_REF` is derived from the URL host in CI (no separate secret). After secrets exist, re-run the workflow (**Actions** → **Integration tests** → **Run workflow**) or push to `main` on a matching path.
 
 Unit tests in [`.github/workflows/test.yml`](.github/workflows/test.yml) stay fast and do **not** call Supabase.
 

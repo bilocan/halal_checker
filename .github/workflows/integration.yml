@@ -1,7 +1,15 @@
 name: Integration tests
 
 # Optional pipeline: hosted test Supabase project (never production).
-# Add repository secrets (see TESTING.md) then run manually or on main pushes.
+# Local: dart_defines.integration.json (gitignored) + run_integration_test.ps1
+# CI: copy the same values into GitHub → Settings → Secrets → Actions:
+#   INTEGRATION_SUPABASE_URL (required — workflow skips if unset)
+#   INTEGRATION_SUPABASE_ANON_KEY
+#   INTEGRATION_SUPABASE_TEST_EMAIL / INTEGRATION_SUPABASE_TEST_PASSWORD
+#   INTEGRATION_SUPABASE_TEST_ADMIN_EMAIL / INTEGRATION_SUPABASE_TEST_ADMIN_PASSWORD
+#   INTEGRATION_SUPABASE_SERVICE_ROLE_KEY
+# CI writes dart_defines.integration.json (INTEGRATION_PROJECT_REF derived from URL).
+# See TESTING.md → CI (GitHub Actions).
 
 on:
   workflow_dispatch:
