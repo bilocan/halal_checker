@@ -101,12 +101,14 @@ Deno.test('handleLookup — unknown barcode and OFF miss returns null product', 
   assertEquals(body.product, null)
 })
 
-Deno.test('handleLookup — force refetches OFF when cached row is unknown', async () => {
+Deno.test('handleLookup — force refetches OFF when cached row is unknown (stale)', async () => {
   const row = cachedProduct({
     is_unknown: true,
     is_halal: false,
     ingredients: [],
     explanation: 'stale unknown',
+    updated_at: '2026-05-03T00:00:00Z',
+    last_analysed_at: '2026-05-01T00:00:00Z',
   })
   const supabase = mockHandlerSupabase({
     cacheProduct: row,
@@ -135,6 +137,30 @@ Deno.test('handleLookup — force refetches OFF when cached row is unknown', asy
   const body = await res.json()
   assertEquals(body.product.isHalal, true)
   assertEquals(body.product.isUnknown, false)
+})
+
+Deno.test('handleLookup — stale unknown without force returns cached row', async () => {
+  const row = cachedProduct({
+    is_unknown: true,
+    is_halal: false,
+    ingredients: [],
+    explanation: 'frozen unknown',
+    updated_at: '2026-05-03T00:00:00Z',
+    last_analysed_at: '2026-05-01T00:00:00Z',
+  })
+  const supabase = mockHandlerSupabase({ cacheProduct: row })
+  const deps = createLookupDeps(supabase)
+  deps.fetchOpenFactsProduct = () => {
+    throw new Error('fetchOpenFactsProduct should not run when serving frozen unknown')
+  }
+
+  const res = await handleLookup(
+    { barcode: '1234567890', force: false, fetchAiIngredients: false },
+    deps,
+  )
+  const body = await res.json()
+  assertEquals(body.product.isUnknown, true)
+  assertEquals(body.product.explanation, 'frozen unknown')
 })
 
 Deno.test('handleLookup — stale row triggers reanalysis', async () => {
