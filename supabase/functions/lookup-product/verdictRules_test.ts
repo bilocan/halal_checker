@@ -3,6 +3,15 @@
 import { assertEquals, assertFalse, assertMatch } from 'https://deno.land/std@0.224.0/assert/mod.ts'
 import { keywordAnalysis } from './keyword.ts'
 import {
+  aiVerdictJson,
+  claudeTextContent,
+  geminiGenerateText,
+  restoreTestEnv,
+  saveTestEnv,
+  setAiEnvEnabled,
+  withMockedFetch,
+} from './lookup_test_helpers.ts'
+import {
   applyPostAnalysisRules,
   computeVerdict,
   type VerdictContext,
@@ -205,4 +214,63 @@ Deno.test('postRules — no override when AI halal matches clean keyword pass', 
 
   assertEquals(snapshot.isHalal, true)
   assertEquals(snapshot.haramIngredients.length, 0)
+})
+
+// ── computeVerdict — vision + mocked AI tiers ─────────────────────────────────
+
+Deno.test('computeVerdict — vision OCR then Gemini text AI on pack photo path', async () => {
+  const env = saveTestEnv()
+  setAiEnvEnabled()
+  try {
+    const result = await withMockedFetch((req) => {
+      const url = req.url
+      if (url.includes('api.anthropic.com')) {
+        return claudeTextContent('water, salt')
+      }
+      if (url.includes('generativelanguage.googleapis.com')) {
+        return geminiGenerateText(aiVerdictJson({ isHalal: true, explanation: 'Vision+AI halal.' }))
+      }
+      return new Response('not found', { status: 404 })
+    }, async () =>
+      computeVerdict(baseCtx({
+        ingredients: [],
+        imageIngredientsUrl: 'https://example.com/pack-ingredients.jpg',
+      })))
+
+    assertEquals(result.ingredients, ['water', 'salt'])
+    assertEquals(result.analyzedByAI, true)
+    assertEquals(result.isHalal, true)
+    assertEquals(result.isUnknown, false)
+  } finally {
+    restoreTestEnv(env)
+  }
+})
+
+Deno.test('computeVerdict — vision finds pork, skips Gemini (keyword-haram)', async () => {
+  const env = saveTestEnv()
+  setAiEnvEnabled()
+  let geminiCalls = 0
+  try {
+    const result = await withMockedFetch((req) => {
+      if (req.url.includes('api.anthropic.com')) {
+        return claudeTextContent('pork, salt')
+      }
+      if (req.url.includes('generativelanguage.googleapis.com')) {
+        geminiCalls++
+        return geminiGenerateText(aiVerdictJson())
+      }
+      return new Response('not found', { status: 404 })
+    }, async () =>
+      computeVerdict(baseCtx({
+        ingredients: [],
+        imageIngredientsUrl: 'https://example.com/pack.jpg',
+      })))
+
+    assertEquals(result.isHalal, false)
+    assertEquals(result.analyzedByAI, false)
+    assertEquals(result.haramIngredients.includes('pork'), true)
+    assertEquals(geminiCalls, 0)
+  } finally {
+    restoreTestEnv(env)
+  }
 })

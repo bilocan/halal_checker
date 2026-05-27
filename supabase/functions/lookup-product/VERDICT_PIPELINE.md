@@ -179,9 +179,12 @@ Production default: **Open Food Facts + keywords + post-rules**; AI tiers option
 | `index_test.ts` | `keyword.ts`, gates, `toProduct` (via `db.ts`) |
 | `db_test.ts` | `isStale`, `toProduct` field mapping |
 | `lookupHelpers_test.ts` | `normalizeStoredLabels`, `classifyOffCategories` |
-| `fetch_test.ts` | OFF parse helpers (`extractIngredientsText`, labels, etc.) |
+| `fetch_test.ts` | OFF parsers + `fetchOpenFactsProduct` (mocked HTTP) |
 | `requestParser_test.ts` | `parseRequest` validation |
+| `ingredientResolver_test.ts` | `resolveGeminiIngredients` (mocked Gemini HTTP) |
+| `reanalysis_test.ts` | `runStoredProductReanalysis`, `jsonManagedProduct` |
 | `ai_test.ts` | `parseIngredientList` |
+| `ai_api_test.ts` | `analyzeWithGemini/Claude/Vision`, `geminiIngredientLookup` (mocked HTTP) |
 
 Flutter: `test/services/product_service_test.dart`, `needs_reanalysis_test.dart` (keyword override after edge function).
 
