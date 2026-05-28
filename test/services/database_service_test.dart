@@ -143,6 +143,23 @@ void main() {
     });
   });
 
+  group('DatabaseService.scanRowFromDb', () {
+    test('coerces bool and num integer columns from SQLite', () {
+      final row = DatabaseService.scanRowFromDb({
+        'barcode': '123',
+        'product_name': 'Snack',
+        'is_halal': true,
+        'verdict': 'halal',
+        'timestamp': 1.0,
+        'notes': null,
+        'is_flagged': 0,
+      });
+      expect(row['isHalal'], isTrue);
+      expect(row['timestamp'], 1);
+      expect(row['isFlagged'], isFalse);
+    });
+  });
+
   group('DatabaseService.getRecentScans', () {
     test('returns records ordered by timestamp descending', () async {
       await DatabaseService.instance.insertScan(

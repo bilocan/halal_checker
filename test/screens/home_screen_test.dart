@@ -59,4 +59,46 @@ void main() {
     expect(find.text('Product $barcode'), findsWidgets);
     expect(find.text('Could not refresh product data'), findsNothing);
   });
+
+  testWidgets('persists unknown product to history when lookup returns null', (
+    WidgetTester tester,
+  ) async {
+    const barcode = '4006381333931';
+    var persistCalled = false;
+
+    await tester.pumpWidget(
+      wrapWithTestApp(
+        HomeScreen(
+          skipScannerInit: true,
+          lookupProduct: (_) async => null,
+          persistScan:
+              ({
+                required String barcode,
+                required String productName,
+                required bool isHalal,
+                String? verdict,
+              }) async {
+                persistCalled = true;
+                expect(barcode, '4006381333931');
+                expect(productName, 'Unknown product');
+                expect(isHalal, isFalse);
+                expect(verdict, 'unknown');
+              },
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(IntegrationTestKeys.homeManualEntry));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(IntegrationTestKeys.barcodeField),
+      barcode,
+    );
+    await tester.tap(find.byKey(IntegrationTestKeys.barcodeSubmit));
+    await tester.pump();
+    await pumpUntilFound(tester, find.byType(ResultScreen));
+
+    expect(persistCalled, isTrue);
+  });
 }

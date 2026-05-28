@@ -9,7 +9,7 @@ import '../localization/app_localizations.dart';
 import '../models/product.dart';
 import '../services/database_service.dart';
 import '../services/product_service.dart';
-import '../services/product_verdict.dart';
+import '../services/product_verdict.dart' show ProductOutcome, ProductVerdict;
 import 'admin_panel_screen.dart';
 import 'result_screen.dart';
 
@@ -208,17 +208,21 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       final product = await _lookupProduct(barcode);
       if (!mounted) return;
-      if (product != null) {
-        try {
-          await _persistScan(
-            barcode: barcode,
-            productName: product.name,
-            isHalal: product.isHalal,
-            verdict: ProductVerdict.storageKey(product),
-          );
-        } catch (e, stack) {
-          debugPrint('[HomeScreen] Failed to save scan history: $e\n$stack');
-        }
+      try {
+        final loc = AppLocalizations.of(context);
+        final name = product?.name.trim();
+        await _persistScan(
+          barcode: barcode,
+          productName: (name != null && name.isNotEmpty)
+              ? name
+              : loc.unknownProduct,
+          isHalal: product?.isHalal ?? false,
+          verdict: product != null
+              ? ProductVerdict.storageKey(product)
+              : ProductOutcome.unknown.name,
+        );
+      } catch (e, stack) {
+        debugPrint('[HomeScreen] Failed to save scan history: $e\n$stack');
       }
       if (!mounted) return;
       await Navigator.push(

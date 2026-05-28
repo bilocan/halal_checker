@@ -1,5 +1,8 @@
-import 'package:sqflite/sqflite.dart';
+import 'dart:io';
+
+import 'package:flutter/foundation.dart';
 import 'package:path/path.dart';
+import 'package:sqflite/sqflite.dart';
 
 class DatabaseService {
   static final DatabaseService instance = DatabaseService._();
@@ -37,14 +40,45 @@ class DatabaseService {
     }
   }
 
+  Future<String> _databaseFilePath() async {
+    if (testDatabasePath != null) return testDatabasePath!;
+
+    final databasesPath = await getDatabasesPath();
+    final legacyPath = join(databasesPath, 'halal_scan.db');
+
+    if (!Platform.isIOS) return legacyPath;
+
+    // iOS file protection can block writes in the default folder (empty history).
+    const folder = 'unprotected';
+    final protectedDir = join(databasesPath, folder);
+    if (!await Directory(protectedDir).exists()) {
+      await SqfliteDarwin.createUnprotectedFolder(databasesPath, folder);
+    }
+    final path = join(protectedDir, 'halal_scan.db');
+
+    final legacyFile = File(legacyPath);
+    final migratedFile = File(path);
+    if (await legacyFile.exists() && !await migratedFile.exists()) {
+      try {
+        await legacyFile.copy(path);
+      } catch (e, stack) {
+        debugPrint('[DatabaseService] legacy DB migrate failed: $e\n$stack');
+      }
+    }
+    return path;
+  }
+
   Future<Database> _open() async {
-    final dir = await getDatabasesPath();
-    final path = testDatabasePath ?? join(dir, 'halal_scan.db');
+    final path = await _databaseFilePath();
     return openDatabase(
       path,
       version: 3,
       onConfigure: (db) async {
-        await db.execute('PRAGMA journal_mode=WAL');
+        try {
+          await db.execute('PRAGMA journal_mode=WAL');
+        } catch (e) {
+          debugPrint('[DatabaseService] WAL not enabled: $e');
+        }
       },
       onCreate: (db, _) async {
         await db.execute('''
@@ -97,25 +131,53 @@ class DatabaseService {
       );
       if (existing.isNotEmpty) {
         existingNotes = existing.first['notes'] as String?;
-        existingFlagged = (existing.first['is_flagged'] as int?) ?? 0;
+        existingFlagged = _readIntColumn(existing.first['is_flagged']);
       }
     }
-    await db.delete('scans', where: 'barcode = ?', whereArgs: [barcode]);
-    await db.insert('scans', {
-      'barcode': barcode,
-      'product_name': productName,
-      'is_halal': isHalal ? 1 : 0,
-      'verdict': verdict,
-      'timestamp': DateTime.now().millisecondsSinceEpoch,
-      'notes': existingNotes,
-      'is_flagged': existingFlagged,
+    await db.transaction((txn) async {
+      await txn.delete('scans', where: 'barcode = ?', whereArgs: [barcode]);
+      await txn.insert('scans', {
+        'barcode': barcode,
+        'product_name': productName,
+        'is_halal': isHalal ? 1 : 0,
+        'verdict': verdict,
+        'timestamp': DateTime.now().millisecondsSinceEpoch,
+        'notes': existingNotes,
+        'is_flagged': existingFlagged,
+      });
+      final countRow = await txn.rawQuery('SELECT COUNT(*) AS cnt FROM scans');
+      final count = _readIntColumn(countRow.first['cnt']);
+      if (count > 50) {
+        await txn.rawDelete(
+          'DELETE FROM scans WHERE id IN ('
+          'SELECT id FROM scans ORDER BY timestamp ASC LIMIT ?'
+          ')',
+          [count - 50],
+        );
+      }
     });
-    // Keep only the 50 most recent scans
-    await db.execute('''
-      DELETE FROM scans WHERE id NOT IN (
-        SELECT id FROM scans ORDER BY timestamp DESC LIMIT 50
-      )
-    ''');
+  }
+
+  /// Maps a SQLite row to the scan map used by the UI (tolerant of platform types).
+  @visibleForTesting
+  static Map<String, dynamic> scanRowFromDb(Map<String, Object?> row) {
+    return {
+      'barcode': row['barcode'] as String,
+      'productName': row['product_name'] as String,
+      'isHalal': _readIntColumn(row['is_halal']) == 1,
+      'verdict': row['verdict'] as String?,
+      'timestamp': _readIntColumn(row['timestamp']),
+      'notes': row['notes'] as String?,
+      'isFlagged': _readIntColumn(row['is_flagged']) == 1,
+    };
+  }
+
+  static int _readIntColumn(Object? value) {
+    if (value == null) return 0;
+    if (value is int) return value;
+    if (value is bool) return value ? 1 : 0;
+    if (value is num) return value.toInt();
+    return int.tryParse(value.toString()) ?? 0;
   }
 
   Future<void> updateScanNote(
@@ -163,18 +225,6 @@ class DatabaseService {
       orderBy: 'timestamp DESC',
       limit: limit,
     );
-    return rows
-        .map(
-          (row) => {
-            'barcode': row['barcode'] as String,
-            'productName': row['product_name'] as String,
-            'isHalal': (row['is_halal'] as int) == 1,
-            'verdict': row['verdict'] as String?,
-            'timestamp': row['timestamp'] as int,
-            'notes': row['notes'] as String?,
-            'isFlagged': (row['is_flagged'] as int?) == 1,
-          },
-        )
-        .toList();
+    return rows.map(scanRowFromDb).toList();
   }
 }
