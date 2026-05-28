@@ -68,29 +68,29 @@ void main() {
     expect(scans, isEmpty);
   });
 
-  test('opens default filesystem path when test override is null on non-iOS', () async {
-    if (Platform.isIOS) return;
+  test(
+    'opens default filesystem path when test override is null on non-iOS',
+    () async {
+      if (Platform.isIOS) return;
 
-    final savedPath = DatabaseService.testDatabasePath;
-    DatabaseService.testDatabasePath = null;
-    addTearDown(() async {
-      DatabaseService.testDatabasePath = savedPath;
+      final savedPath = DatabaseService.testDatabasePath;
+      DatabaseService.testDatabasePath = null;
+      addTearDown(() async {
+        DatabaseService.testDatabasePath = savedPath;
+        await DatabaseService.resetForTesting();
+      });
       await DatabaseService.resetForTesting();
-    });
-    await DatabaseService.resetForTesting();
 
-    await DatabaseService.instance.insertScan(
-      barcode: 'default_path_bc',
-      productName: 'Default path',
-      isHalal: true,
-    );
-    final scans = await DatabaseService.instance.getRecentScans();
-    expect(
-      scans.any((s) => s['barcode'] == 'default_path_bc'),
-      isTrue,
-    );
-    await DatabaseService.instance.deleteScan('default_path_bc');
-  });
+      await DatabaseService.instance.insertScan(
+        barcode: 'default_path_bc',
+        productName: 'Default path',
+        isHalal: true,
+      );
+      final scans = await DatabaseService.instance.getRecentScans();
+      expect(scans.any((s) => s['barcode'] == 'default_path_bc'), isTrue);
+      await DatabaseService.instance.deleteScan('default_path_bc');
+    },
+  );
 
   test('concurrent access reuses a single in-flight open', () async {
     final results = await Future.wait([
