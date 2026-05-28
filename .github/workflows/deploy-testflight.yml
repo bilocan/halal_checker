@@ -89,7 +89,8 @@ jobs:
             echo "No pubspec change to commit."
             exit 0
           fi
-          git commit -m "chore(ios): bump build to ${{ steps.version.outputs.full }} [skip ci]"
+          # Do not use [skip ci] — it leaves open PRs with no reported checks (branch protection).
+          git commit -m "chore(ios): bump build to ${{ steps.version.outputs.full }}"
           git push
 
       - name: Select latest Xcode
