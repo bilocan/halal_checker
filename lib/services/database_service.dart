@@ -135,6 +135,12 @@ class DatabaseService {
     }
   }
 
+  /// Row count on an already-open connection (avoids a second open on iOS).
+  static Future<int> _scanCount(Database db) async {
+    final rows = await db.rawQuery('SELECT COUNT(*) AS cnt FROM scans');
+    return _readIntColumn(rows.first['cnt']);
+  }
+
   @visibleForTesting
   static Future<int> scanCountAtPath(String path) async {
     final file = File(path);
@@ -163,7 +169,7 @@ class DatabaseService {
     _openedPath = path;
 
     if (testDatabasePath == null && Platform.isIOS) {
-      var count = await scanCountAtPath(path);
+      var count = await _scanCount(db);
       if (count == 0) {
         final databasesPath = await getDatabasesPath();
         final sources = [
@@ -183,7 +189,7 @@ class DatabaseService {
           await db.close();
           db = await _openDatabaseAt(path);
           _openedPath = path;
-          count = await scanCountAtPath(path);
+          count = await _scanCount(db);
         }
       }
     }
@@ -329,7 +335,7 @@ class DatabaseService {
     if (rows.isEmpty) return null;
     return {
       'notes': rows.first['notes'] as String?,
-      'isFlagged': (rows.first['is_flagged'] as int?) == 1,
+      'isFlagged': _readIntColumn(rows.first['is_flagged']) == 1,
     };
   }
 

@@ -29,3 +29,5 @@ Do not merge the diagnostic commit into `dev`. Drop the cherry-pick branch or re
 ## Keep on `dev`
 
 iOS DB fixes (`history_db`, WAL-safe migration, `DELETE` journal) are separate commits (`0ebd650`, follow-ups) and must stay on `dev`.
+
+When removing diagnostics (`b8da463`), keep counting rows on the **open** DB connection in `_open()` — do not call `scanCountAtPath` while the file is already open (iOS can report 0 and skip migration). Home tab still shows Retry on load failure without the About/diagnostics UI.

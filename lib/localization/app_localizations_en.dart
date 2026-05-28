@@ -294,6 +294,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get german => 'Deutsch';
 
   @override
+  String get scanHistoryLoadFailed => 'Could not load scan history.';
+
+  @override
+  String get scanHistoryRetry => 'Retry';
+
+  @override
   String get scanHistoryTitle => 'Recent scans';
 
   @override

@@ -91,6 +91,8 @@
   "english": "English",
   "turkish": "Türkçe",
   "german": "Deutsch",
+  "scanHistoryLoadFailed": "Tarama geçmişi yüklenemedi.",
+  "scanHistoryRetry": "Yeniden dene",
   "scanHistoryTitle": "Son taramalar",
   "filterScan": "Ürünü tara veya barkodu gir",
   "openResult": "Sonucu aç",

@@ -296,6 +296,12 @@ class AppLocalizationsTr extends AppLocalizations {
   String get german => 'Deutsch';
 
   @override
+  String get scanHistoryLoadFailed => 'Tarama geçmişi yüklenemedi.';
+
+  @override
+  String get scanHistoryRetry => 'Yeniden dene';
+
+  @override
   String get scanHistoryTitle => 'Son taramalar';
 
   @override

@@ -298,6 +298,13 @@ class AppLocalizationsDe extends AppLocalizations {
   String get german => 'Deutsch';
 
   @override
+  String get scanHistoryLoadFailed =>
+      'Scan-History konnte nicht geladen werden.';
+
+  @override
+  String get scanHistoryRetry => 'Erneut versuchen';
+
+  @override
   String get scanHistoryTitle => 'Zuletzt gescannt';
 
   @override

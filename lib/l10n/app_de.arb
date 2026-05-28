@@ -91,6 +91,8 @@
   "english": "English",
   "turkish": "Türkçe",
   "german": "Deutsch",
+  "scanHistoryLoadFailed": "Scan-History konnte nicht geladen werden.",
+  "scanHistoryRetry": "Erneut versuchen",
   "scanHistoryTitle": "Zuletzt gescannt",
   "filterScan": "Produkt scannen oder Barcode eingeben",
   "openResult": "Ergebnis öffnen",
