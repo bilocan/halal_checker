@@ -9,16 +9,32 @@ class DatabaseService {
   static String? testDatabasePath;
 
   Database? _db;
+  Future<Database>? _opening;
 
   /// Closes the open database so the next access uses [testDatabasePath] again.
   static Future<void> resetForTesting() async {
     await instance._db?.close();
     instance._db = null;
+    instance._opening = null;
+  }
+
+  /// Opens the DB once at startup so the home tab does not race on first access.
+  Future<void> ensureInitialized() async {
+    await database;
   }
 
   Future<Database> get database async {
-    _db ??= await _open();
-    return _db!;
+    if (_db != null) return _db!;
+    _opening ??= _open().then((db) {
+      _db = db;
+      return db;
+    });
+    try {
+      return await _opening!;
+    } catch (e) {
+      _opening = null;
+      rethrow;
+    }
   }
 
   Future<Database> _open() async {
@@ -27,6 +43,9 @@ class DatabaseService {
     return openDatabase(
       path,
       version: 3,
+      onConfigure: (db) async {
+        await db.execute('PRAGMA journal_mode=WAL');
+      },
       onCreate: (db, _) async {
         await db.execute('''
           CREATE TABLE scans (

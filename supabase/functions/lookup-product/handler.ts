@@ -115,8 +115,10 @@ export async function handleLookup(
     return deps.jsonManagedProduct(existing, corsHeaders)
   }
 
-  if (!fetchAiIngredients && !refetchForGeminiAuto && existing &&
-      (isStale(existing) || (force && !existing.is_unknown))) {
+  // Unknown rows must refetch OFF (or vision) so halal-by-category can apply; stored
+  // reanalysis has no categories_tags and would stay unknown.
+  if (!fetchAiIngredients && !refetchForGeminiAuto && existing && !existing.is_unknown &&
+      (isStale(existing) || force)) {
     const reason = isStale(existing) ? 'stale (updated_at > last_analysed_at)' : 'force-refresh'
     console.log(`[${barcode}] ${reason} — re-running rules engine on stored data`)
     const { haram: customHaramEntries, suspicious: customSuspiciousEntries } =

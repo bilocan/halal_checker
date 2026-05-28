@@ -87,6 +87,11 @@ flutter_launcher_icons:
 flutter:
   generate: true
 
+  # sign_in_with_apple, google_mlkit_* still use CocoaPods on iOS (no SPM). Avoids
+  # hybrid SPM+CocoaPods builds that break simulator CI (Pods_Runner not found).
+  config:
+    enable-swift-package-manager: false
+
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
   # the material Icons class.

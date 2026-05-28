@@ -7,6 +7,7 @@ import 'config.dart';
 import 'localization/app_localizations.dart';
 import 'screens/start_screen.dart';
 import 'services/auth_service.dart';
+import 'services/database_service.dart';
 import 'services/seed_data_service.dart';
 
 void main() async {
@@ -50,6 +51,11 @@ void main() async {
   }
 
   await AuthService.initializeIfSessionExists();
+  try {
+    await DatabaseService.instance.ensureInitialized();
+  } catch (e, stack) {
+    debugPrint('Scan history database init failed: $e\n$stack');
+  }
   await SeedDataService.seedIfNeeded(); // fast: JSON fixtures only
   if (!AppConfig.isE2e) {
     unawaited(

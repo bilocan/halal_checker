@@ -1,17 +1,22 @@
 name: iOS App Store Screenshots
 
+# Simulator builds need CocoaPods + x86_64 sim (Rosetta). google_mlkit_* pods exclude
+# arm64 for iphonesimulator; building on Xcode 26 (arm-only sims) fails with
+# "Framework 'Pods_Runner' not found". Pin Xcode 16 on the runner (see flutter/flutter#182748).
+# Flutter must match pubspec SDK (^3.11.5 → 3.44.x); do not pin 3.38.x (Dart 3.10).
+
 on:
   workflow_dispatch:
     inputs:
       flutter_version:
-        description: 'Flutter version (leave blank for latest stable)'
+        description: 'Flutter version (default 3.44.0 — matches pubspec SDK ^3.11.5)'
         required: false
-        default: ''
+        default: '3.44.0'
 
 jobs:
   screenshots:
     runs-on: macos-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
 
     strategy:
       matrix:
@@ -33,12 +38,29 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # Do not use "latest" Xcode on GHA: Xcode 26 simulators are arm64-only while ML Kit
+      # forces EXCLUDED_ARCHS=arm64 for simulator, breaking the Pods_Runner link step.
+      - name: Select Xcode 16
+        run: |
+          set -euo pipefail
+          XCODE_16=$(ls -d /Applications/Xcode_16*.app 2>/dev/null | sort -V | tail -1 || true)
+          if [ -z "$XCODE_16" ]; then
+            echo "::error::Xcode 16 not found on runner. google_mlkit_* cannot build for Xcode 26 arm-only simulators."
+            ls -d /Applications/Xcode*.app 2>/dev/null || true
+            exit 1
+          fi
+          sudo xcode-select -s "$XCODE_16/Contents/Developer"
+          xcodebuild -version
+
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: ${{ inputs.flutter_version }}
           channel: 'stable'
           cache: true
+
+      - name: Disable Swift Package Manager (iOS plugins use CocoaPods)
+        run: flutter config --no-enable-swift-package-manager
 
       - name: Create dart defines
         run: |
@@ -53,8 +75,16 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Get available simulators
-        run: xcrun simctl list devices available
+      - name: Install CocoaPods
+        run: |
+          cd ios
+          pod install --repo-update
+
+      - name: Build app for simulator
+        run: |
+          flutter build ios --simulator --no-codesign \
+            --target=lib/main_screenshots.dart \
+            --dart-define-from-file=dart_defines.json
 
       - name: Boot simulator
         run: |
@@ -73,13 +103,7 @@ jobs:
           xcrun simctl bootstatus "$UDID" -b
           echo "Booted: ${{ matrix.device.name }} ($UDID)"
           echo "Waiting for simulator to settle..."
-          sleep 120
-
-      - name: Build app for simulator
-        run: |
-          flutter build ios --simulator --no-codesign \
-            --target=lib/main_screenshots.dart \
-            --dart-define-from-file=dart_defines.json
+          sleep 30
 
       - name: Take screenshots
         run: |

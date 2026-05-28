@@ -24,6 +24,23 @@ void main() {
     expect(identical(first, second), isFalse);
   });
 
+  test('ensureInitialized opens the database', () async {
+    await DatabaseService.resetForTesting();
+    await DatabaseService.instance.ensureInitialized();
+    final scans = await DatabaseService.instance.getRecentScans();
+    expect(scans, isEmpty);
+  });
+
+  test('concurrent access reuses a single in-flight open', () async {
+    final results = await Future.wait([
+      DatabaseService.instance.database,
+      DatabaseService.instance.database,
+      DatabaseService.instance.getRecentScans(),
+    ]);
+    expect(identical(results[0], results[1]), isTrue);
+    expect(results[2], isEmpty);
+  });
+
   group('DatabaseService.insertScan', () {
     test('inserted record is returned by getRecentScans', () async {
       await DatabaseService.instance.insertScan(

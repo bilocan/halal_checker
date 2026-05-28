@@ -5,14 +5,56 @@ on:
   pull_request:
     branches: [main]
 
+env:
+  # Pinned — avoid setup-deno resolving 2.x at runtime (flaky + anonymous GH 403s).
+  DENO_VERSION: '2.7.11'
+
 jobs:
   # ── Tests ────────────────────────────────────────────────────────────────────
   test:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
 
-      - uses: denoland/setup-deno@v2
+      # setup-deno@v2 often 403s on github.com/releases (unauthenticated rate limits).
+      # Install with gh + GITHUB_TOKEN and cache the binary between runs.
+      - name: Cache Deno binary
+        id: deno-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.deno/bin/deno
+          key: deno-${{ env.DENO_VERSION }}-${{ runner.os }}-${{ runner.arch }}
+
+      - name: Install Deno
+        if: steps.deno-cache.outputs.cache-hit != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/.deno/bin"
+          zip="/tmp/deno-${{ env.DENO_VERSION }}.zip"
+          for attempt in 1 2 3; do
+            if gh release download "v${{ env.DENO_VERSION }}" \
+              --repo denoland/deno \
+              --pattern 'deno-x86_64-unknown-linux-gnu.zip' \
+              --output "$zip"; then
+              break
+            fi
+            if [ "$attempt" -eq 3 ]; then
+              echo "::error::Failed to download Deno after 3 attempts"
+              exit 1
+            fi
+            echo "Download failed (attempt ${attempt}), retrying in 15s..."
+            sleep 15
+          done
+          unzip -o "$zip" -d "$HOME/.deno/bin"
+          chmod +x "$HOME/.deno/bin/deno"
+          "$HOME/.deno/bin/deno" --version
+
+      - name: Add Deno to PATH
+        run: echo "$HOME/.deno/bin" >> "$GITHUB_PATH"
 
       - name: Edge function unit tests (lookup-product)
         run: deno test --allow-env supabase/functions/lookup-product/

@@ -79,7 +79,13 @@ class ProductService {
   }
 
   Future<void> _doLoadCustomKeywords() async {
-    final entries = await _keywordService.fetchCustomKeywords();
+    List<Map<String, dynamic>> entries;
+    try {
+      entries = await _keywordService.fetchCustomKeywords();
+    } catch (e, st) {
+      debugPrint('[ProductService] custom keywords fetch failed: $e\n$st');
+      return;
+    }
     for (final e in entries) {
       final canonical = e['canonical'] as String;
       final reason = e['reason'] as String;
