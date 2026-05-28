@@ -62,6 +62,16 @@ Bump the app version, commit, tag, and push — triggering the store deploy work
 The tag push triggers `deploy-android.yml` and `deploy-ios.yml` automatically.
 Merge the PR to keep `pubspec.yaml` in sync on `main`.
 
+### TestFlight only (manual, build bump)
+
+For iOS betas without a new marketing version or App Store gates:
+
+1. Ensure `pubspec.yaml` has the intended version name (e.g. `1.3.3+16`).
+2. **Actions** → **Deploy TestFlight (manual)** → **Run workflow** (pick your branch).
+3. Each run increments only the build number (`1.3.3+16` → `1.3.3+17`), commits `pubspec.yaml` (unless disabled), builds, and uploads to TestFlight.
+
+Same iOS secrets as `deploy-ios.yml`. Optional input: submit external beta review after upload.
+
 **Preview with `--dry-run`:** pass `--dry-run` (Linux) or `-DryRun` (Windows) to see what the next version would be without making any changes.
 
 **Safety checks:** refuses to run with uncommitted changes, validates version format, checks the tag doesn't already exist, and asks for confirmation.
