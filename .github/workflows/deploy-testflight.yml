@@ -1,0 +1,311 @@
+name: Deploy TestFlight (manual)
+
+# Manual TestFlight uploads only — no App Store review/release gates.
+# Marketing version (1.3.3) comes from pubspec.yaml; each run bumps the build (+17, +18, …).
+#
+# Run: Actions → Deploy TestFlight (manual) → Run workflow → pick branch.
+#
+# Secrets: same as deploy-ios.yml (IOS_*, APPLE_*, APP_STORE_CONNECT_*, SUPABASE_*, GOOGLE_WEB_CLIENT_ID).
+
+on:
+  workflow_dispatch:
+    inputs:
+      submit_beta_review:
+        description: 'Submit for external TestFlight beta review after upload (optional)'
+        required: false
+        type: boolean
+        default: false
+      commit_pubspec:
+        description: 'Commit pubspec build bump back to the branch'
+        required: false
+        type: boolean
+        default: true
+
+concurrency:
+  group: testflight-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  testflight:
+    runs-on: macos-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Validate required secrets
+        env:
+          IOS_DISTRIBUTION_CERT_BASE64: ${{ secrets.IOS_DISTRIBUTION_CERT_BASE64 }}
+          IOS_PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APP_STORE_CONNECT_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_KEY_BASE64 }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          GOOGLE_WEB_CLIENT_ID: ${{ secrets.GOOGLE_WEB_CLIENT_ID }}
+        run: |
+          missing=()
+          for secret in \
+            IOS_DISTRIBUTION_CERT_BASE64 \
+            IOS_PROVISIONING_PROFILE_BASE64 \
+            APPLE_TEAM_ID \
+            APP_STORE_CONNECT_KEY_ID \
+            APP_STORE_CONNECT_ISSUER_ID \
+            APP_STORE_CONNECT_KEY_BASE64 \
+            SUPABASE_URL \
+            SUPABASE_ANON_KEY \
+            GOOGLE_WEB_CLIENT_ID; do
+            if [ -z "${!secret}" ]; then
+              missing+=("$secret")
+            fi
+          done
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::error::Missing required secrets: ${missing[*]}"
+            exit 1
+          fi
+
+      - name: Bump build number in pubspec.yaml
+        id: version
+        run: |
+          set -euo pipefail
+          python3 <<'PY' >> "$GITHUB_OUTPUT"
+          import os
+          import re
+          from pathlib import Path
+
+          text = Path("pubspec.yaml").read_text(encoding="utf-8")
+          m = re.search(r"^version:\s*(\d+\.\d+\.\d+)\+(\d+)\s*$", text, re.M)
+          if not m:
+              raise SystemExit(
+                  "pubspec.yaml must contain version: major.minor.patch+build (e.g. 1.3.3+16)"
+              )
+          name, build = m.group(1), int(m.group(2))
+          new_build = build + 1
+          new_full = f"{name}+{new_build}"
+          text = re.sub(
+              r"^version:.*$",
+              f"version: {new_full}",
+              text,
+              count=1,
+              flags=re.M,
+          )
+          Path("pubspec.yaml").write_text(text, encoding="utf-8")
+          out = os.environ["GITHUB_OUTPUT"]
+          with open(out, "a", encoding="utf-8") as f:
+              f.write(f"name={name}\n")
+              f.write(f"code={new_build}\n")
+              f.write(f"full={new_full}\n")
+          print(f"Bumped pubspec.yaml → {new_full} (version name unchanged)")
+          PY
+
+      - name: Commit pubspec build bump
+        if: inputs.commit_pubspec
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add pubspec.yaml
+          if git diff --staged --quiet; then
+            echo "No pubspec change to commit."
+            exit 0
+          fi
+          git commit -m "chore(ios): bump build to ${{ steps.version.outputs.full }} [skip ci]"
+          git push
+
+      - name: Select latest Xcode
+        run: |
+          LATEST_XCODE=$(ls -d /Applications/Xcode*.app 2>/dev/null | sort -V | tail -1)
+          echo "Selecting: $LATEST_XCODE"
+          sudo xcode-select -s "$LATEST_XCODE/Contents/Developer"
+          xcodebuild -version
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Import distribution certificate
+        env:
+          CERT_BASE64: ${{ secrets.IOS_DISTRIBUTION_CERT_BASE64 }}
+          CERT_PASSWORD: ${{ secrets.IOS_DISTRIBUTION_CERT_PASSWORD }}
+        run: |
+          set -euo pipefail
+          KEYCHAIN_PATH="$RUNNER_TEMP/ios-build.keychain"
+          CERT_PATH="$RUNNER_TEMP/dist.p12"
+          printf '%s' "$CERT_BASE64" | base64 --decode > "$CERT_PATH"
+          security create-keychain -p "" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "" "$KEYCHAIN_PATH"
+          if ! security import "$CERT_PATH" -k "$KEYCHAIN_PATH" \
+               -P "${CERT_PASSWORD:-}" -T /usr/bin/codesign 2>/dev/null; then
+            OPENSSL_BIN=$(/usr/bin/find /opt/homebrew/opt/openssl*/bin \
+                          /usr/local/opt/openssl*/bin -name openssl 2>/dev/null | head -1 || true)
+            OPENSSL_BIN="${OPENSSL_BIN:-openssl}"
+            "$OPENSSL_BIN" pkcs12 -in "$CERT_PATH" -out "$RUNNER_TEMP/cert.pem" \
+              -nodes -passin "pass:${CERT_PASSWORD:-}" -legacy 2>/dev/null || \
+            "$OPENSSL_BIN" pkcs12 -in "$CERT_PATH" -out "$RUNNER_TEMP/cert.pem" \
+              -nodes -passin "pass:${CERT_PASSWORD:-}"
+            "$OPENSSL_BIN" pkcs12 -export -in "$RUNNER_TEMP/cert.pem" \
+              -out "$CERT_PATH" -passout "pass:${CERT_PASSWORD:-}" \
+              -legacy 2>/dev/null || \
+            "$OPENSSL_BIN" pkcs12 -export -in "$RUNNER_TEMP/cert.pem" \
+              -out "$CERT_PATH" -passout "pass:${CERT_PASSWORD:-}"
+            rm -f "$RUNNER_TEMP/cert.pem"
+            security import "$CERT_PATH" -k "$KEYCHAIN_PATH" \
+              -P "${CERT_PASSWORD:-}" -T /usr/bin/codesign
+          fi
+          security list-keychain -d user -s "$KEYCHAIN_PATH"
+          security set-key-partition-list -S apple-tool:,apple: -k "" "$KEYCHAIN_PATH"
+
+      - name: Install provisioning profile
+        env:
+          PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
+        run: |
+          PROFILE_PATH="$RUNNER_TEMP/profile.mobileprovision"
+          echo "$PROFILE_BASE64" | base64 --decode > "$PROFILE_PATH"
+          UUID=$(security cms -D -i "$PROFILE_PATH" | plutil -extract UUID xml1 -o - - | sed -n 's/.*<string>\(.*\)<\/string>.*/\1/p')
+          echo "Profile UUID: $UUID"
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          cp "$PROFILE_PATH" ~/Library/MobileDevice/Provisioning\ Profiles/"$UUID".mobileprovision
+          echo "PROFILE_UUID=$UUID" >> "$GITHUB_ENV"
+
+      - name: Create ExportOptions.plist
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          cat > ExportOptions.plist <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>method</key>
+              <string>app-store</string>
+              <key>teamID</key>
+              <string>${APPLE_TEAM_ID}</string>
+              <key>stripSwiftSymbols</key>
+              <true/>
+              <key>provisioningProfiles</key>
+              <dict>
+                  <key>app.halalscan</key>
+                  <string>${PROFILE_UUID}</string>
+              </dict>
+          </dict>
+          </plist>
+          PLIST
+
+      - name: Configure code signing
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          cat >> ios/Flutter/Release.xcconfig <<EOF
+          CODE_SIGN_STYLE=Manual
+          CODE_SIGN_IDENTITY=Apple Distribution
+          DEVELOPMENT_TEAM=${APPLE_TEAM_ID}
+          PROVISIONING_PROFILE_SPECIFIER=${PROFILE_UUID}
+          EOF
+
+      - name: Build IPA
+        run: |
+          flutter build ipa --release \
+            --build-name=${{ steps.version.outputs.name }} \
+            --build-number=${{ steps.version.outputs.code }} \
+            --export-options-plist=ExportOptions.plist \
+            --dart-define=SUPABASE_URL=${{ secrets.SUPABASE_URL }} \
+            --dart-define=SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }} \
+            --dart-define=GOOGLE_WEB_CLIENT_ID=${{ secrets.GOOGLE_WEB_CLIENT_ID }}
+
+      - name: Upload to TestFlight
+        env:
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APP_STORE_CONNECT_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_KEY_BASE64 }}
+        run: |
+          mkdir -p ~/.appstoreconnect/private_keys
+          echo "$APP_STORE_CONNECT_KEY_BASE64" | base64 --decode \
+            > ~/.appstoreconnect/private_keys/AuthKey_${APP_STORE_CONNECT_KEY_ID}.p8
+          IPA_PATH=$(find build/ios/ipa -name "*.ipa" | head -1)
+          echo "Uploading $IPA_PATH (v${{ steps.version.outputs.full }})"
+          xcrun altool --upload-app \
+            --type ios \
+            --file "$IPA_PATH" \
+            --apiKey "$APP_STORE_CONNECT_KEY_ID" \
+            --apiIssuer "$APP_STORE_CONNECT_ISSUER_ID" \
+            --output-format json
+
+      - name: Submit for beta review (external testers)
+        if: inputs.submit_beta_review
+        env:
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APP_STORE_CONNECT_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_KEY_BASE64 }}
+          VERSION_NAME: ${{ steps.version.outputs.name }}
+        run: |
+          set -euo pipefail
+          pip install cryptography --quiet 2>/dev/null
+          KEY_FILE=$(mktemp /tmp/authkey.XXXXXX.p8)
+          echo "$APP_STORE_CONNECT_KEY_BASE64" | base64 --decode > "$KEY_FILE"
+          JWT=$(KEY_FILE="$KEY_FILE" python3 - <<'PYEOF'
+          import json, time, base64, os
+          from cryptography.hazmat.primitives import hashes, serialization
+          from cryptography.hazmat.primitives.asymmetric import ec
+          from cryptography.hazmat.primitives.asymmetric.utils import decode_dss_signature
+          key_id = os.environ['APP_STORE_CONNECT_KEY_ID']
+          issuer_id = os.environ['APP_STORE_CONNECT_ISSUER_ID']
+          with open(os.environ['KEY_FILE'], 'rb') as f:
+              pk = serialization.load_pem_private_key(f.read(), password=None)
+          now = int(time.time())
+          def b64u(d): return base64.urlsafe_b64encode(d if isinstance(d, bytes) else d.encode()).rstrip(b'=').decode()
+          h = b64u(json.dumps({'alg':'ES256','kid':key_id,'typ':'JWT'}, separators=(',',':')))
+          p = b64u(json.dumps({'iss':issuer_id,'iat':now,'exp':now+1200,'aud':'appstoreconnect-v1'}, separators=(',',':')))
+          msg = f'{h}.{p}'
+          r, s = decode_dss_signature(pk.sign(msg.encode(), ec.ECDSA(hashes.SHA256())))
+          print(f'{msg}.{b64u(r.to_bytes(32,"big")+s.to_bytes(32,"big"))}')
+          PYEOF
+          )
+          rm -f "$KEY_FILE"
+          APP_ID=$(curl -gsS --fail-with-body \
+            -H "Authorization: Bearer $JWT" \
+            "https://api.appstoreconnect.apple.com/v1/apps?filter[bundleId]=app.halalscan" \
+            | jq -r '.data[0].id')
+          BUILD_ID=""
+          for i in $(seq 1 30); do
+            BUILD_ID=$(curl -gsS \
+              -H "Authorization: Bearer $JWT" \
+              "https://api.appstoreconnect.apple.com/v1/builds?filter[app]=$APP_ID&filter[preReleaseVersion.version]=$VERSION_NAME&filter[processingState]=VALID&sort=-uploadedDate&limit=1" \
+              | jq -r '.data[0].id // empty')
+            if [ -n "$BUILD_ID" ]; then break; fi
+            echo "Waiting for build processing... ($i/30)"
+            sleep 10
+          done
+          if [ -z "$BUILD_ID" ]; then
+            echo "::warning::Build not VALID yet; beta review skipped."
+            exit 0
+          fi
+          curl -gsS -X POST \
+            -H "Authorization: Bearer $JWT" \
+            -H "Content-Type: application/json" \
+            -d "{\"data\":{\"type\":\"betaAppReviewSubmissions\",\"relationships\":{\"build\":{\"data\":{\"type\":\"builds\",\"id\":\"$BUILD_ID\"}}}}}" \
+            "https://api.appstoreconnect.apple.com/v1/betaAppReviewSubmissions" \
+            || echo "::warning::Beta review submission failed (non-fatal)"
+
+      - name: Save IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: testflight-ipa-${{ steps.version.outputs.full }}
+          path: build/ios/ipa/*.ipa
+          retention-days: 14
+
+      - name: Summary
+        run: |
+          echo "## TestFlight upload" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Version: **${{ steps.version.outputs.name }}** (unchanged)" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Build: **${{ steps.version.outputs.code }}** (\`${{ steps.version.outputs.full }}\`)" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Branch: \`${{ github.ref_name }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Install from the TestFlight app once Apple finishes processing (often 10–30 minutes)." >> "$GITHUB_STEP_SUMMARY"
