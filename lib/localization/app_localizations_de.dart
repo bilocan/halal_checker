@@ -38,6 +38,26 @@ class AppLocalizationsDe extends AppLocalizations {
       'Tippen Sie auf die Schaltfläche oben, um loszulegen.';
 
   @override
+  String get scanHistoryLoadFailed =>
+      'Scan-Verlauf konnte nicht geladen werden.';
+
+  @override
+  String get scanHistoryRetry => 'Erneut versuchen';
+
+  @override
+  String get scanHistorySupportHint =>
+      'Tippen Sie auf Details, machen Sie einen Screenshot und senden Sie ihn an den Support. Unter Über → Versionsnummer 5× tippen.';
+
+  @override
+  String get scanHistoryShowDetails => 'Details';
+
+  @override
+  String get scanHistoryCopy => 'Kopieren';
+
+  @override
+  String get scanHistoryCopied => 'In die Zwischenablage kopiert';
+
+  @override
   String get scanButton => 'Scan starten';
 
   @override

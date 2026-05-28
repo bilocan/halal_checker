@@ -10,6 +10,7 @@ import '../../../integration_test_keys.dart';
 import '../../../localization/app_localizations.dart';
 import '../../../models/product.dart';
 import '../../../services/database_service.dart';
+import '../../../widgets/scan_history_support_dialog.dart';
 import '../../../services/product_verdict.dart';
 import '../../../services/ingredient_sanitizer.dart';
 import '../../../services/ocr_service.dart';
@@ -56,12 +57,13 @@ class _StartHomeTabState extends State<StartHomeTab>
   bool _isLoading = true;
   bool _isLoadingProduct = false;
   bool _showFlaggedOnly = false;
+  String? _loadError;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _loadRecentScans();
+    _loadRecentScans(initial: true);
   }
 
   @override
@@ -77,7 +79,13 @@ class _StartHomeTabState extends State<StartHomeTab>
     }
   }
 
-  Future<void> _loadRecentScans() async {
+  Future<void> _loadRecentScans({bool initial = false}) async {
+    if (!initial && mounted) {
+      setState(() {
+        _isLoading = true;
+        _loadError = null;
+      });
+    }
     try {
       if (widget.loadRecentScans == null) {
         await DatabaseService.instance.ensureInitialized();
@@ -89,11 +97,15 @@ class _StartHomeTabState extends State<StartHomeTab>
       setState(() {
         _recentScans = scans;
         _isLoading = false;
+        _loadError = null;
       });
     } catch (e, stack) {
       debugPrint('[StartHomeTab] loadRecentScans failed: $e\n$stack');
       if (mounted) {
-        setState(() => _isLoading = false);
+        setState(() {
+          _isLoading = false;
+          _loadError = e.toString();
+        });
       }
     }
   }
@@ -399,6 +411,47 @@ class _StartHomeTabState extends State<StartHomeTab>
   Widget _buildScanList(AppLocalizations loc) {
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
+    }
+    if (_loadError != null) {
+      final diagnostics = DatabaseService.instance.diagnostics;
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.error_outline, size: 48, color: Colors.red.shade400),
+              const SizedBox(height: 12),
+              Text(
+                loc.scanHistoryLoadFailed,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                loc.scanHistorySupportHint,
+                style: const TextStyle(fontSize: 13, color: Colors.grey),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              FilledButton(
+                onPressed: _loadRecentScans,
+                style: FilledButton.styleFrom(backgroundColor: kGreen),
+                child: Text(loc.scanHistoryRetry),
+              ),
+              TextButton(
+                onPressed: () =>
+                    showScanHistorySupportDialog(context, diagnostics),
+                child: Text(loc.scanHistoryShowDetails),
+              ),
+            ],
+          ),
+        ),
+      );
     }
     if (_recentScans.isEmpty) {
       return Center(

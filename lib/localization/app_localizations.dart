@@ -154,6 +154,42 @@ abstract class AppLocalizations {
   /// **'Tap the scan button above to get started.'**
   String get noRecentResultsHint;
 
+  /// No description provided for @scanHistoryLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load scan history.'**
+  String get scanHistoryLoadFailed;
+
+  /// No description provided for @scanHistoryRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get scanHistoryRetry;
+
+  /// No description provided for @scanHistorySupportHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap Details, screenshot it, and send to support. On About, tap the version number 5 times for the same info.'**
+  String get scanHistorySupportHint;
+
+  /// No description provided for @scanHistoryShowDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Details'**
+  String get scanHistoryShowDetails;
+
+  /// No description provided for @scanHistoryCopy.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy'**
+  String get scanHistoryCopy;
+
+  /// No description provided for @scanHistoryCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Copied to clipboard'**
+  String get scanHistoryCopied;
+
   /// No description provided for @scanButton.
   ///
   /// In en, this message translates to:

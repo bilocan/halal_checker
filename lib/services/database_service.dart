@@ -1,8 +1,11 @@
 import 'dart:io';
+import 'dart:math' show max;
 
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
+
+import 'scan_history_diagnostics.dart';
 
 class DatabaseService {
   static final DatabaseService instance = DatabaseService._();
@@ -13,17 +16,61 @@ class DatabaseService {
 
   Database? _db;
   Future<Database>? _opening;
+  String? _openedPath;
+  String? _lastError;
+  DateTime? _lastSuccessAt;
+
+  /// Last error from open/load/save (shown in About → version tap).
+  ScanHistoryDiagnostics get diagnostics => ScanHistoryDiagnostics(
+    databasePath: _openedPath ?? testDatabasePath,
+    scanCount: _lastScanCount,
+    lastError: _lastError,
+    lastSuccessAt: _lastSuccessAt,
+  );
+
+  int _lastScanCount = 0;
+
+  void _recordSuccess(String path, {int? scanCount}) {
+    _openedPath = path;
+    _lastError = null;
+    _lastSuccessAt = DateTime.now();
+    if (scanCount != null) _lastScanCount = scanCount;
+  }
+
+  void _recordError(Object error, [StackTrace? stack]) {
+    _lastError = stack != null ? '$error\n$stack' : error.toString();
+    debugPrint('[DatabaseService] $error');
+    if (stack != null) debugPrint(stack.toString());
+  }
 
   /// Closes the open database so the next access uses [testDatabasePath] again.
   static Future<void> resetForTesting() async {
     await instance._db?.close();
     instance._db = null;
     instance._opening = null;
+    instance._openedPath = null;
+  }
+
+  /// Closes and reopens (e.g. after iOS migration copied a richer file).
+  Future<void> resetConnection() async {
+    await _db?.close();
+    _db = null;
+    _opening = null;
+    _openedPath = null;
   }
 
   /// Opens the DB once at startup so the home tab does not race on first access.
   Future<void> ensureInitialized() async {
     await database;
+    await _refreshScanCount();
+  }
+
+  Future<void> _refreshScanCount() async {
+    try {
+      if (_db == null) return;
+      final rows = await _db!.rawQuery('SELECT COUNT(*) AS cnt FROM scans');
+      _lastScanCount = _readIntColumn(rows.first['cnt']);
+    } catch (_) {}
   }
 
   Future<Database> get database async {
@@ -34,8 +81,9 @@ class DatabaseService {
     });
     try {
       return await _opening!;
-    } catch (e) {
+    } catch (e, stack) {
       _opening = null;
+      _recordError(e, stack);
       rethrow;
     }
   }
@@ -88,17 +136,42 @@ class DatabaseService {
     }
     if (bestSourcePath == null) return;
 
-    final target = File(targetPath);
     try {
-      if (await target.exists()) {
-        await target.delete();
-      }
-      await File(bestSourcePath).copy(targetPath);
+      await copySqliteDatabaseFiles(bestSourcePath, targetPath);
       debugPrint(
         '[DatabaseService] migrated $bestCount scans from $bestSourcePath',
       );
     } catch (e, stack) {
       debugPrint('[DatabaseService] iOS DB migrate failed: $e\n$stack');
+    }
+  }
+
+  /// Copies main DB plus WAL sidecars after checkpoint (WAL-only data is common).
+  @visibleForTesting
+  static Future<void> copySqliteDatabaseFiles(
+    String sourcePath,
+    String targetPath,
+  ) async {
+    await checkpointWal(sourcePath);
+    final target = File(targetPath);
+    if (await target.exists()) {
+      await target.delete();
+    }
+    for (final suffix in ['', '-wal', '-shm']) {
+      final sidecar = File('$sourcePath$suffix');
+      if (!await sidecar.exists()) continue;
+      await sidecar.copy('$targetPath$suffix');
+    }
+  }
+
+  @visibleForTesting
+  static Future<void> checkpointWal(String path) async {
+    if (!await File(path).exists()) return;
+    final db = await openDatabase(path);
+    try {
+      await db.rawQuery('PRAGMA wal_checkpoint(TRUNCATE)');
+    } finally {
+      await db.close();
     }
   }
 
@@ -123,14 +196,49 @@ class DatabaseService {
 
   Future<Database> _open() async {
     final path = await _databaseFilePath();
+    if (_db != null && _openedPath != null && _openedPath != path) {
+      await resetConnection();
+    }
+    var db = await _openDatabaseAt(path);
+    _recordSuccess(path);
+    await _refreshScanCount();
+
+    if (testDatabasePath == null && Platform.isIOS && _lastScanCount == 0) {
+      final databasesPath = await getDatabasesPath();
+      final sources = [
+        join(databasesPath, 'unprotected', 'halal_scan.db'),
+        join(databasesPath, 'halal_scan.db'),
+      ];
+      var bestCount = 0;
+      for (final source in sources) {
+        if (source == path) continue;
+        bestCount = max(bestCount, await scanCountAtPath(source));
+      }
+      if (bestCount > 0) {
+        await migrateBestIosDatabaseCopy(
+          targetPath: path,
+          sourcePaths: sources,
+        );
+        await db.close();
+        db = await _openDatabaseAt(path);
+        _recordSuccess(path);
+        await _refreshScanCount();
+      }
+    }
+    return db;
+  }
+
+  Future<Database> _openDatabaseAt(String path) async {
     return openDatabase(
       path,
       version: 3,
       onConfigure: (db) async {
         try {
-          await db.execute('PRAGMA journal_mode=WAL');
+          // WAL + file copy breaks iOS migration; DELETE is reliable for small DBs.
+          final mode = Platform.isIOS ? 'DELETE' : 'WAL';
+          await db.execute('PRAGMA journal_mode=$mode');
         } catch (e) {
-          debugPrint('[DatabaseService] WAL not enabled: $e');
+          debugPrint('[DatabaseService] journal_mode not set: $e');
         }
       },
       onCreate: (db, _) async {
@@ -187,28 +295,38 @@ class DatabaseService {
         existingFlagged = _readIntColumn(existing.first['is_flagged']);
       }
     }
-    await db.transaction((txn) async {
-      await txn.delete('scans', where: 'barcode = ?', whereArgs: [barcode]);
-      await txn.insert('scans', {
-        'barcode': barcode,
-        'product_name': productName,
-        'is_halal': isHalal ? 1 : 0,
-        'verdict': verdict,
-        'timestamp': DateTime.now().millisecondsSinceEpoch,
-        'notes': existingNotes,
-        'is_flagged': existingFlagged,
-      });
-      final countRow = await txn.rawQuery('SELECT COUNT(*) AS cnt FROM scans');
-      final count = _readIntColumn(countRow.first['cnt']);
-      if (count > 50) {
-        await txn.rawDelete(
-          'DELETE FROM scans WHERE id IN ('
-          'SELECT id FROM scans ORDER BY timestamp ASC LIMIT ?'
-          ')',
-          [count - 50],
+    try {
+      await db.transaction((txn) async {
+        await txn.delete('scans', where: 'barcode = ?', whereArgs: [barcode]);
+        await txn.insert('scans', {
+          'barcode': barcode,
+          'product_name': productName,
+          'is_halal': isHalal ? 1 : 0,
+          'verdict': verdict,
+          'timestamp': DateTime.now().millisecondsSinceEpoch,
+          'notes': existingNotes,
+          'is_flagged': existingFlagged,
+        });
+        final countRow = await txn.rawQuery(
+          'SELECT COUNT(*) AS cnt FROM scans',
         );
-      }
-    });
+        final count = _readIntColumn(countRow.first['cnt']);
+        if (count > 50) {
+          await txn.rawDelete(
+            'DELETE FROM scans WHERE id IN ('
+            'SELECT id FROM scans ORDER BY timestamp ASC LIMIT ?'
+            ')',
+            [count - 50],
+          );
+        }
+      });
+      await _refreshScanCount();
+      if (_openedPath != null)
+        _recordSuccess(_openedPath!, scanCount: _lastScanCount);
+    } catch (e, stack) {
+      _recordError(e, stack);
+      rethrow;
+    }
   }
 
   /// Maps a SQLite row to the scan map used by the UI (tolerant of platform types).
@@ -272,12 +390,22 @@ class DatabaseService {
   }
 
   Future<List<Map<String, dynamic>>> getRecentScans({int limit = 50}) async {
-    final db = await database;
-    final rows = await db.query(
-      'scans',
-      orderBy: 'timestamp DESC',
-      limit: limit,
-    );
-    return rows.map(scanRowFromDb).toList();
+    try {
+      final db = await database;
+      final rows = await db.query(
+        'scans',
+        orderBy: 'timestamp DESC',
+        limit: limit,
+      );
+      final scans = rows.map(scanRowFromDb).toList();
+      _lastScanCount = scans.length;
+      if (_openedPath != null) {
+        _recordSuccess(_openedPath!, scanCount: _lastScanCount);
+      }
+      return scans;
+    } catch (e, stack) {
+      _recordError(e, stack);
+      rethrow;
+    }
   }
 }
