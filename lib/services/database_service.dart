@@ -5,8 +5,6 @@ import 'package:flutter/foundation.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
-import 'scan_history_diagnostics.dart';
-
 class DatabaseService {
   static final DatabaseService instance = DatabaseService._();
   DatabaseService._();
@@ -17,31 +15,6 @@ class DatabaseService {
   Database? _db;
   Future<Database>? _opening;
   String? _openedPath;
-  String? _lastError;
-  DateTime? _lastSuccessAt;
-
-  /// Last error from open/load/save (shown in About → version tap).
-  ScanHistoryDiagnostics get diagnostics => ScanHistoryDiagnostics(
-    databasePath: _openedPath ?? testDatabasePath,
-    scanCount: _lastScanCount,
-    lastError: _lastError,
-    lastSuccessAt: _lastSuccessAt,
-  );
-
-  int _lastScanCount = 0;
-
-  void _recordSuccess(String path, {int? scanCount}) {
-    _openedPath = path;
-    _lastError = null;
-    _lastSuccessAt = DateTime.now();
-    if (scanCount != null) _lastScanCount = scanCount;
-  }
-
-  void _recordError(Object error, [StackTrace? stack]) {
-    _lastError = stack != null ? '$error\n$stack' : error.toString();
-    debugPrint('[DatabaseService] $error');
-    if (stack != null) debugPrint(stack.toString());
-  }
 
   /// Closes the open database so the next access uses [testDatabasePath] again.
   static Future<void> resetForTesting() async {
@@ -51,7 +24,6 @@ class DatabaseService {
     instance._openedPath = null;
   }
 
-  /// Closes and reopens (e.g. after iOS migration copied a richer file).
   Future<void> resetConnection() async {
     await _db?.close();
     _db = null;
@@ -62,15 +34,6 @@ class DatabaseService {
   /// Opens the DB once at startup so the home tab does not race on first access.
   Future<void> ensureInitialized() async {
     await database;
-    await _refreshScanCount();
-  }
-
-  Future<void> _refreshScanCount() async {
-    try {
-      if (_db == null) return;
-      final rows = await _db!.rawQuery('SELECT COUNT(*) AS cnt FROM scans');
-      _lastScanCount = _readIntColumn(rows.first['cnt']);
-    } catch (_) {}
   }
 
   Future<Database> get database async {
@@ -83,7 +46,7 @@ class DatabaseService {
       return await _opening!;
     } catch (e, stack) {
       _opening = null;
-      _recordError(e, stack);
+      debugPrint('[DatabaseService] open failed: $e\n$stack');
       rethrow;
     }
   }
@@ -99,9 +62,6 @@ class DatabaseService {
 
     if (!Platform.isIOS) return legacyPath;
 
-    // iOS file protection can block writes in the default Documents folder.
-    // Always call the native helper so the folder gets NSFileProtectionNone.
-    // (A prior build may have created `unprotected/` without that attribute.)
     await SqfliteDarwin.createUnprotectedFolder(
       databasesPath,
       iosDatabaseFolder,
@@ -200,29 +160,31 @@ class DatabaseService {
       await resetConnection();
     }
     var db = await _openDatabaseAt(path);
-    _recordSuccess(path);
-    await _refreshScanCount();
+    _openedPath = path;
 
-    if (testDatabasePath == null && Platform.isIOS && _lastScanCount == 0) {
-      final databasesPath = await getDatabasesPath();
-      final sources = [
-        join(databasesPath, 'unprotected', 'halal_scan.db'),
-        join(databasesPath, 'halal_scan.db'),
-      ];
-      var bestCount = 0;
-      for (final source in sources) {
-        if (source == path) continue;
-        bestCount = max(bestCount, await scanCountAtPath(source));
-      }
-      if (bestCount > 0) {
-        await migrateBestIosDatabaseCopy(
-          targetPath: path,
-          sourcePaths: sources,
-        );
-        await db.close();
-        db = await _openDatabaseAt(path);
-        _recordSuccess(path);
-        await _refreshScanCount();
+    if (testDatabasePath == null && Platform.isIOS) {
+      var count = await scanCountAtPath(path);
+      if (count == 0) {
+        final databasesPath = await getDatabasesPath();
+        final sources = [
+          join(databasesPath, 'unprotected', 'halal_scan.db'),
+          join(databasesPath, 'halal_scan.db'),
+        ];
+        var bestCount = 0;
+        for (final source in sources) {
+          if (source == path) continue;
+          bestCount = max(bestCount, await scanCountAtPath(source));
+        }
+        if (bestCount > 0) {
+          await migrateBestIosDatabaseCopy(
+            targetPath: path,
+            sourcePaths: sources,
+          );
+          await db.close();
+          db = await _openDatabaseAt(path);
+          _openedPath = path;
+          count = await scanCountAtPath(path);
+        }
       }
     }
     return db;
@@ -234,7 +196,6 @@ class DatabaseService {
       version: 3,
       onConfigure: (db) async {
         try {
-          // WAL + file copy breaks iOS migration; DELETE is reliable for small DBs.
           final mode = Platform.isIOS ? 'DELETE' : 'WAL';
           await db.execute('PRAGMA journal_mode=$mode');
         } catch (e) {
@@ -281,7 +242,6 @@ class DatabaseService {
     bool? isFlagged,
   }) async {
     final db = await database;
-    // Preserve existing notes/flag unless explicitly provided
     String? existingNotes = notes;
     int existingFlagged = isFlagged != null ? (isFlagged ? 1 : 0) : 0;
     if (notes == null && isFlagged == null) {
@@ -295,41 +255,30 @@ class DatabaseService {
         existingFlagged = _readIntColumn(existing.first['is_flagged']);
       }
     }
-    try {
-      await db.transaction((txn) async {
-        await txn.delete('scans', where: 'barcode = ?', whereArgs: [barcode]);
-        await txn.insert('scans', {
-          'barcode': barcode,
-          'product_name': productName,
-          'is_halal': isHalal ? 1 : 0,
-          'verdict': verdict,
-          'timestamp': DateTime.now().millisecondsSinceEpoch,
-          'notes': existingNotes,
-          'is_flagged': existingFlagged,
-        });
-        final countRow = await txn.rawQuery(
-          'SELECT COUNT(*) AS cnt FROM scans',
-        );
-        final count = _readIntColumn(countRow.first['cnt']);
-        if (count > 50) {
-          await txn.rawDelete(
-            'DELETE FROM scans WHERE id IN ('
-            'SELECT id FROM scans ORDER BY timestamp ASC LIMIT ?'
-            ')',
-            [count - 50],
-          );
-        }
+    await db.transaction((txn) async {
+      await txn.delete('scans', where: 'barcode = ?', whereArgs: [barcode]);
+      await txn.insert('scans', {
+        'barcode': barcode,
+        'product_name': productName,
+        'is_halal': isHalal ? 1 : 0,
+        'verdict': verdict,
+        'timestamp': DateTime.now().millisecondsSinceEpoch,
+        'notes': existingNotes,
+        'is_flagged': existingFlagged,
       });
-      await _refreshScanCount();
-      if (_openedPath != null)
-        _recordSuccess(_openedPath!, scanCount: _lastScanCount);
-    } catch (e, stack) {
-      _recordError(e, stack);
-      rethrow;
-    }
+      final countRow = await txn.rawQuery('SELECT COUNT(*) AS cnt FROM scans');
+      final count = _readIntColumn(countRow.first['cnt']);
+      if (count > 50) {
+        await txn.rawDelete(
+          'DELETE FROM scans WHERE id IN ('
+          'SELECT id FROM scans ORDER BY timestamp ASC LIMIT ?'
+          ')',
+          [count - 50],
+        );
+      }
+    });
   }
 
-  /// Maps a SQLite row to the scan map used by the UI (tolerant of platform types).
   @visibleForTesting
   static Map<String, dynamic> scanRowFromDb(Map<String, Object?> row) {
     return {
@@ -390,22 +339,12 @@ class DatabaseService {
   }
 
   Future<List<Map<String, dynamic>>> getRecentScans({int limit = 50}) async {
-    try {
-      final db = await database;
-      final rows = await db.query(
-        'scans',
-        orderBy: 'timestamp DESC',
-        limit: limit,
-      );
-      final scans = rows.map(scanRowFromDb).toList();
-      _lastScanCount = scans.length;
-      if (_openedPath != null) {
-        _recordSuccess(_openedPath!, scanCount: _lastScanCount);
-      }
-      return scans;
-    } catch (e, stack) {
-      _recordError(e, stack);
-      rethrow;
-    }
+    final db = await database;
+    final rows = await db.query(
+      'scans',
+      orderBy: 'timestamp DESC',
+      limit: limit,
+    );
+    return rows.map(scanRowFromDb).toList();
   }
 }

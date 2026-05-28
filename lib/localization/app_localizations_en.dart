@@ -37,25 +37,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noRecentResultsHint => 'Tap the scan button above to get started.';
 
   @override
-  String get scanHistoryLoadFailed => 'Could not load scan history.';
-
-  @override
-  String get scanHistoryRetry => 'Retry';
-
-  @override
-  String get scanHistorySupportHint =>
-      'Tap Details, screenshot it, and send to support. On About, tap the version number 5 times for the same info.';
-
-  @override
-  String get scanHistoryShowDetails => 'Details';
-
-  @override
-  String get scanHistoryCopy => 'Copy';
-
-  @override
-  String get scanHistoryCopied => 'Copied to clipboard';
-
-  @override
   String get scanButton => 'Start Scan';
 
   @override

@@ -38,25 +38,6 @@ class AppLocalizationsTr extends AppLocalizations {
       'Başlamak için yukarıdaki tarama düğmesine dokunun.';
 
   @override
-  String get scanHistoryLoadFailed => 'Tarama geçmişi yüklenemedi.';
-
-  @override
-  String get scanHistoryRetry => 'Yeniden dene';
-
-  @override
-  String get scanHistorySupportHint =>
-      'Ayrıntılar\'a dokunun, ekran görüntüsü alıp desteğe gönderin. Hakkında → sürüm numarasına 5 kez dokunun.';
-
-  @override
-  String get scanHistoryShowDetails => 'Ayrıntılar';
-
-  @override
-  String get scanHistoryCopy => 'Kopyala';
-
-  @override
-  String get scanHistoryCopied => 'Panoya kopyalandı';
-
-  @override
   String get scanButton => 'Taramayı Başlat';
 
   @override

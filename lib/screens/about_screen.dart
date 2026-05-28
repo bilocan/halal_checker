@@ -7,9 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../app_colors.dart';
 import '../localization/app_localizations.dart';
 import '../services/version_service.dart';
-import '../services/database_service.dart';
 import '../widgets/halal_scan_logo.dart';
-import '../widgets/scan_history_support_dialog.dart';
 
 class AboutScreen extends StatefulWidget {
   const AboutScreen({super.key});
@@ -24,7 +22,6 @@ class _AboutScreenState extends State<AboutScreen> {
   bool _checkingUpdate = false;
   StoreVersionInfo? _storeInfo;
   bool _checked = false;
-  int _versionTapCount = 0;
 
   @override
   void initState() {
@@ -201,13 +198,6 @@ class _AboutScreenState extends State<AboutScreen> {
     );
   }
 
-  void _onVersionTap() {
-    _versionTapCount++;
-    if (_versionTapCount < 5) return;
-    _versionTapCount = 0;
-    showScanHistorySupportDialog(context, DatabaseService.instance.diagnostics);
-  }
-
   Widget _buildVersionTable(AppLocalizations loc, bool updateAvailable) {
     return DefaultTextStyle(
       style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
@@ -220,17 +210,11 @@ class _AboutScreenState extends State<AboutScreen> {
                 padding: const EdgeInsets.only(right: 16, bottom: 4),
                 child: Text('${loc.installed}:'),
               ),
-              GestureDetector(
-                onTap: _onVersionTap,
-                behavior: HitTestBehavior.opaque,
-                child: Text(
-                  _version.isNotEmpty
-                      ? 'v$_version (build $_buildNumber)'
-                      : '—',
-                  style: TextStyle(
-                    color: Colors.grey.shade700,
-                    fontWeight: FontWeight.w600,
-                  ),
+              Text(
+                _version.isNotEmpty ? 'v$_version (build $_buildNumber)' : '—',
+                style: TextStyle(
+                  color: Colors.grey.shade700,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ],
