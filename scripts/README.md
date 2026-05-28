@@ -68,7 +68,7 @@ For iOS betas without a new marketing version or App Store gates:
 
 1. Ensure `pubspec.yaml` has the intended version name (e.g. `1.3.3+16`).
 2. **Actions** → **Deploy TestFlight (manual)** → **Run workflow** (pick your branch).
-3. Each run increments only the build number (`1.3.3+16` → `1.3.3+17`), commits `pubspec.yaml` (unless disabled), builds, and uploads to TestFlight.
+3. Each run sets the build number to **max TestFlight build for that marketing version + 1** (e.g. ASC `1.3.4 (160)` → build `161`, even if pubspec still says `+18`), updates `pubspec.yaml` (unless disabled), builds, and uploads.
 
 Same iOS secrets as `deploy-ios.yml`. Optional input: submit external beta review after upload.
 

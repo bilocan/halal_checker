@@ -500,3 +500,4 @@ Used for offline dev, not for UI E2E unless you intentionally test fixture barco
 | `lib/integration_test_keys.dart` | E2E widget keys |
 | `dart_test.yaml` | Tags: `manual`, `e2e` (skipped unless explicit) |
 | `.github/workflows/test.yml` | CI unit tests |
+| `docs/DEBUG_SCAN_HISTORY.md` | iOS scan-history in-app diagnostics (`debug/scan-history-diagnostics` branch only) |

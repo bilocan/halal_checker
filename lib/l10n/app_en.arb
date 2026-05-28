@@ -108,6 +108,8 @@
   "english": "English",
   "turkish": "Türkçe",
   "german": "Deutsch",
+  "scanHistoryLoadFailed": "Could not load scan history.",
+  "scanHistoryRetry": "Retry",
   "scanHistoryTitle": "Recent scans",
   "filterScan": "Scan product or enter barcode",
   "openResult": "Open result",

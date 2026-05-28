@@ -35,10 +35,11 @@ Future<void> pumpStartHomeTab(
     if (homeTab.loadRecentScans != null) {
       await homeTab.loadRecentScans!();
     } else {
-      await DatabaseService.instance.getRecentScans();
+      await DatabaseService.instance.ensureInitialized();
     }
   });
   await tester.pump();
+  await tester.pump(const Duration(milliseconds: 50));
 }
 
 /// Lightweight [StartHomeTab] tests without [StartScreen] (no lazy tabs/map).
@@ -56,7 +57,10 @@ void main() {
   ) async {
     await pumpStartHomeTab(
       tester,
-      homeTab: const StartHomeTab(canBatchImport: false),
+      homeTab: StartHomeTab(
+        canBatchImport: false,
+        loadRecentScans: () async => <Map<String, dynamic>>[],
+      ),
     );
 
     expect(find.text('No recent scans saved yet.'), findsOneWidget);
@@ -81,7 +85,7 @@ void main() {
     expect(find.byType(Dismissible), findsNothing);
   });
 
-  testWidgets('shows empty state when loadRecentScans throws', (
+  testWidgets('shows retry UI when loadRecentScans throws', (
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(
@@ -99,7 +103,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(CircularProgressIndicator), findsNothing);
-    expect(find.text('No recent scans saved yet.'), findsOneWidget);
+    expect(find.text('Could not load scan history.'), findsOneWidget);
+    expect(find.text('Retry'), findsOneWidget);
   });
 
   testWidgets('flagged filter hides non-flagged scans', (

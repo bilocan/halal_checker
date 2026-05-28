@@ -11,6 +11,7 @@ void main() {
   });
 
   setUp(() async {
+    await DatabaseService.resetForTesting();
     final db = await DatabaseService.instance.database;
     await db.delete('scans');
   });
@@ -40,6 +41,23 @@ void main() {
       final noteData = await DatabaseService.instance.getScanNote('flag_bc');
       expect(noteData, isNotNull);
       expect(noteData!['isFlagged'], isTrue);
+    });
+
+    test('clears flag when re-insert passes isFlagged false', () async {
+      await DatabaseService.instance.insertScan(
+        barcode: 'unflag_bc',
+        productName: 'Was flagged',
+        isHalal: true,
+        isFlagged: true,
+      );
+      await DatabaseService.instance.insertScan(
+        barcode: 'unflag_bc',
+        productName: 'Was flagged',
+        isHalal: true,
+        isFlagged: false,
+      );
+      final noteData = await DatabaseService.instance.getScanNote('unflag_bc');
+      expect(noteData!['isFlagged'], isFalse);
     });
 
     test('preserves existing note on re-insert without note param', () async {

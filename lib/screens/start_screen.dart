@@ -107,6 +107,7 @@ class _StartScreenState extends State<StartScreen> {
     switch (index) {
       case 0:
         return StartHomeTab(
+          key: const ValueKey('start_home_tab'),
           canBatchImport: _canBatchImport,
           onLocaleChanged: (locale) =>
               HalalCheckerApp.of(context)?.setLocale(locale),
@@ -132,7 +133,6 @@ class _StartScreenState extends State<StartScreen> {
     final loc = AppLocalizations.of(context);
     return Scaffold(
       body: LazyIndexedStack(
-        key: ValueKey(_isAdmin),
         index: _selectedIndex,
         itemCount: _tabCount,
         itemBuilder: _tabBody,

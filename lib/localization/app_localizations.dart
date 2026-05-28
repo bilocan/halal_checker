@@ -622,6 +622,18 @@ abstract class AppLocalizations {
   /// **'Deutsch'**
   String get german;
 
+  /// No description provided for @scanHistoryLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load scan history.'**
+  String get scanHistoryLoadFailed;
+
+  /// No description provided for @scanHistoryRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get scanHistoryRetry;
+
   /// No description provided for @scanHistoryTitle.
   ///
   /// In en, this message translates to:

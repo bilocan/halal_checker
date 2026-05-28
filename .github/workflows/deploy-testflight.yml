@@ -1,7 +1,7 @@
 name: Deploy TestFlight (manual)
 
 # Manual TestFlight uploads only — no App Store review/release gates.
-# Marketing version (1.3.3) comes from pubspec.yaml; each run bumps the build (+17, +18, …).
+# Marketing version from pubspec.yaml; build number = max App Store Connect build + 1.
 #
 # Run: Actions → Deploy TestFlight (manual) → Run workflow → pick branch.
 #
@@ -67,39 +67,16 @@ jobs:
             exit 1
           fi
 
-      - name: Bump build number in pubspec.yaml
+      - name: Resolve version and build number (App Store Connect)
         id: version
+        env:
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APP_STORE_CONNECT_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_KEY_BASE64 }}
         run: |
           set -euo pipefail
-          python3 <<'PY' >> "$GITHUB_OUTPUT"
-          import os
-          import re
-          from pathlib import Path
-
-          text = Path("pubspec.yaml").read_text(encoding="utf-8")
-          m = re.search(r"^version:\s*(\d+\.\d+\.\d+)\+(\d+)\s*$", text, re.M)
-          if not m:
-              raise SystemExit(
-                  "pubspec.yaml must contain version: major.minor.patch+build (e.g. 1.3.3+16)"
-              )
-          name, build = m.group(1), int(m.group(2))
-          new_build = build + 1
-          new_full = f"{name}+{new_build}"
-          text = re.sub(
-              r"^version:.*$",
-              f"version: {new_full}",
-              text,
-              count=1,
-              flags=re.M,
-          )
-          Path("pubspec.yaml").write_text(text, encoding="utf-8")
-          out = os.environ["GITHUB_OUTPUT"]
-          with open(out, "a", encoding="utf-8") as f:
-              f.write(f"name={name}\n")
-              f.write(f"code={new_build}\n")
-              f.write(f"full={new_full}\n")
-          print(f"Bumped pubspec.yaml → {new_full} (version name unchanged)")
-          PY
+          pip install cryptography --quiet
+          python3 scripts/ci/ios_resolve_build_version.py --update-pubspec
 
       - name: Commit pubspec build bump
         if: inputs.commit_pubspec
@@ -112,7 +89,8 @@ jobs:
             echo "No pubspec change to commit."
             exit 0
           fi
-          git commit -m "chore(ios): bump build to ${{ steps.version.outputs.full }} [skip ci]"
+          # Do not use [skip ci] — it leaves open PRs with no reported checks (branch protection).
+          git commit -m "chore(ios): bump build to ${{ steps.version.outputs.full }}"
           git push
 
       - name: Select latest Xcode
@@ -306,6 +284,9 @@ jobs:
           echo "## TestFlight upload" >> "$GITHUB_STEP_SUMMARY"
           echo "- Version: **${{ steps.version.outputs.name }}** (unchanged)" >> "$GITHUB_STEP_SUMMARY"
           echo "- Build: **${{ steps.version.outputs.code }}** (\`${{ steps.version.outputs.full }}\`)" >> "$GITHUB_STEP_SUMMARY"
+          if [ -n "${{ steps.version.outputs.asc_max_build }}" ]; then
+            echo "- Previous ASC build: **${{ steps.version.outputs.asc_max_build }}**" >> "$GITHUB_STEP_SUMMARY"
+          fi
           echo "- Branch: \`${{ github.ref_name }}\`" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "Install from the TestFlight app once Apple finishes processing (often 10–30 minutes)." >> "$GITHUB_STEP_SUMMARY"

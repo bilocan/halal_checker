@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math' show max;
 
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart';
@@ -13,12 +14,21 @@ class DatabaseService {
 
   Database? _db;
   Future<Database>? _opening;
+  String? _openedPath;
 
   /// Closes the open database so the next access uses [testDatabasePath] again.
   static Future<void> resetForTesting() async {
     await instance._db?.close();
     instance._db = null;
     instance._opening = null;
+    instance._openedPath = null;
+  }
+
+  Future<void> resetConnection() async {
+    await _db?.close();
+    _db = null;
+    _opening = null;
+    _openedPath = null;
   }
 
   /// Opens the DB once at startup so the home tab does not race on first access.
@@ -34,11 +44,15 @@ class DatabaseService {
     });
     try {
       return await _opening!;
-    } catch (e) {
+    } catch (e, stack) {
       _opening = null;
+      debugPrint('[DatabaseService] open failed: $e\n$stack');
       rethrow;
     }
   }
+
+  /// iOS subfolder with [NSFileProtectionNone] (see sqflite Darwin troubleshooting).
+  static const String iosDatabaseFolder = 'history_db';
 
   Future<String> _databaseFilePath() async {
     if (testDatabasePath != null) return testDatabasePath!;
@@ -48,36 +62,150 @@ class DatabaseService {
 
     if (!Platform.isIOS) return legacyPath;
 
-    // iOS file protection can block writes in the default folder (empty history).
-    const folder = 'unprotected';
-    final protectedDir = join(databasesPath, folder);
-    if (!await Directory(protectedDir).exists()) {
-      await SqfliteDarwin.createUnprotectedFolder(databasesPath, folder);
-    }
-    final path = join(protectedDir, 'halal_scan.db');
+    await SqfliteDarwin.createUnprotectedFolder(
+      databasesPath,
+      iosDatabaseFolder,
+    );
+    final path = join(databasesPath, iosDatabaseFolder, 'halal_scan.db');
 
-    final legacyFile = File(legacyPath);
-    final migratedFile = File(path);
-    if (await legacyFile.exists() && !await migratedFile.exists()) {
-      try {
-        await legacyFile.copy(path);
-      } catch (e, stack) {
-        debugPrint('[DatabaseService] legacy DB migrate failed: $e\n$stack');
+    await migrateBestIosDatabaseCopy(
+      targetPath: path,
+      sourcePaths: [
+        join(databasesPath, 'unprotected', 'halal_scan.db'),
+        legacyPath,
+      ],
+    );
+    return path;
+  }
+
+  /// Copies the richest existing iOS scan DB into [targetPath].
+  @visibleForTesting
+  static Future<void> migrateBestIosDatabaseCopy({
+    required String targetPath,
+    required List<String> sourcePaths,
+  }) async {
+    var bestCount = await scanCountAtPath(targetPath);
+    String? bestSourcePath;
+    for (final sourcePath in sourcePaths) {
+      if (sourcePath == targetPath) continue;
+      final count = await scanCountAtPath(sourcePath);
+      if (count > bestCount) {
+        bestCount = count;
+        bestSourcePath = sourcePath;
       }
     }
-    return path;
+    if (bestSourcePath == null) return;
+
+    try {
+      await copySqliteDatabaseFiles(bestSourcePath, targetPath);
+      debugPrint(
+        '[DatabaseService] migrated $bestCount scans from $bestSourcePath',
+      );
+    } catch (e, stack) {
+      debugPrint('[DatabaseService] iOS DB migrate failed: $e\n$stack');
+    }
+  }
+
+  /// Copies main DB plus WAL sidecars after checkpoint (WAL-only data is common).
+  @visibleForTesting
+  static Future<void> copySqliteDatabaseFiles(
+    String sourcePath,
+    String targetPath,
+  ) async {
+    await checkpointWal(sourcePath);
+    final target = File(targetPath);
+    if (await target.exists()) {
+      await target.delete();
+    }
+    for (final suffix in ['', '-wal', '-shm']) {
+      final sidecar = File('$sourcePath$suffix');
+      if (!await sidecar.exists()) continue;
+      await sidecar.copy('$targetPath$suffix');
+    }
+  }
+
+  @visibleForTesting
+  static Future<void> checkpointWal(String path) async {
+    if (!await File(path).exists()) return;
+    final db = await openDatabase(path);
+    try {
+      await db.rawQuery('PRAGMA wal_checkpoint(TRUNCATE)');
+    } finally {
+      await db.close();
+    }
+  }
+
+  /// Row count on an already-open connection (avoids a second open on iOS).
+  static Future<int> _scanCount(Database db) async {
+    final rows = await db.rawQuery('SELECT COUNT(*) AS cnt FROM scans');
+    return _readIntColumn(rows.first['cnt']);
+  }
+
+  @visibleForTesting
+  static Future<int> scanCountAtPath(String path) async {
+    final file = File(path);
+    if (!await file.exists()) return 0;
+    try {
+      final db = await openDatabase(path, readOnly: true);
+      try {
+        final rows = await db.rawQuery('SELECT COUNT(*) AS cnt FROM scans');
+        return _readIntColumn(rows.first['cnt']);
+      } on DatabaseException {
+        return 0;
+      } finally {
+        await db.close();
+      }
+    } catch (_) {
+      return 0;
+    }
   }
 
   Future<Database> _open() async {
     final path = await _databaseFilePath();
+    if (_db != null && _openedPath != null && _openedPath != path) {
+      await resetConnection();
+    }
+    var db = await _openDatabaseAt(path);
+    _openedPath = path;
+
+    if (testDatabasePath == null && Platform.isIOS) {
+      var count = await _scanCount(db);
+      if (count == 0) {
+        final databasesPath = await getDatabasesPath();
+        final sources = [
+          join(databasesPath, 'unprotected', 'halal_scan.db'),
+          join(databasesPath, 'halal_scan.db'),
+        ];
+        var bestCount = 0;
+        for (final source in sources) {
+          if (source == path) continue;
+          bestCount = max(bestCount, await scanCountAtPath(source));
+        }
+        if (bestCount > 0) {
+          await migrateBestIosDatabaseCopy(
+            targetPath: path,
+            sourcePaths: sources,
+          );
+          await db.close();
+          db = await _openDatabaseAt(path);
+          _openedPath = path;
+          count = await _scanCount(db);
+        }
+      }
+    }
+    return db;
+  }
+
+  Future<Database> _openDatabaseAt(String path) async {
     return openDatabase(
       path,
       version: 3,
       onConfigure: (db) async {
         try {
-          await db.execute('PRAGMA journal_mode=WAL');
+          final mode = Platform.isIOS ? 'DELETE' : 'WAL';
+          await db.execute('PRAGMA journal_mode=$mode');
         } catch (e) {
-          debugPrint('[DatabaseService] WAL not enabled: $e');
+          debugPrint('[DatabaseService] journal_mode not set: $e');
         }
       },
       onCreate: (db, _) async {
@@ -120,7 +248,6 @@ class DatabaseService {
     bool? isFlagged,
   }) async {
     final db = await database;
-    // Preserve existing notes/flag unless explicitly provided
     String? existingNotes = notes;
     int existingFlagged = isFlagged != null ? (isFlagged ? 1 : 0) : 0;
     if (notes == null && isFlagged == null) {
@@ -158,7 +285,6 @@ class DatabaseService {
     });
   }
 
-  /// Maps a SQLite row to the scan map used by the UI (tolerant of platform types).
   @visibleForTesting
   static Map<String, dynamic> scanRowFromDb(Map<String, Object?> row) {
     return {
@@ -209,7 +335,7 @@ class DatabaseService {
     if (rows.isEmpty) return null;
     return {
       'notes': rows.first['notes'] as String?,
-      'isFlagged': (rows.first['is_flagged'] as int?) == 1,
+      'isFlagged': _readIntColumn(rows.first['is_flagged']) == 1,
     };
   }
 
