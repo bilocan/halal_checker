@@ -62,8 +62,9 @@ class AppConfigAdminService {
   }
 
   static Future<bool> setGeminiLookupEmptyOff(bool enabled) async {
-    if (!_supabaseAvailable && fakeSetGeminiLookupEmptyOff == null)
+    if (!_supabaseAvailable && fakeSetGeminiLookupEmptyOff == null) {
       return false;
+    }
     if (!await _isSuperAdmin()) return false;
     if (fakeSetGeminiLookupEmptyOff != null) {
       return fakeSetGeminiLookupEmptyOff!(enabled);
