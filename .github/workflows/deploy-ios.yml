@@ -7,8 +7,8 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version number (e.g. 1.2.3) — used when testing without a tag'
-        required: true
+        description: 'Optional — verify tag matches pubspec marketing version (pubspec is source of truth)'
+        required: false
         type: string
       skip_testflight:
         description: 'Build only — skip TestFlight upload and Supabase version update'
@@ -20,7 +20,8 @@ on:
 # Triggers:
 #   • Tag push (v*.*.*)  — full pipeline: build → TestFlight → review → release
 #   • workflow_dispatch   — manual run from Actions tab for testing without a tag
-#       version:          required, e.g. "1.2.3"
+#       version:          optional check only; marketing version always from pubspec.yaml
+#       build number:     max App Store Connect build for that version + 1
 #       skip_testflight:  optional, skip upload/review/release gates (build only)
 #
 # Gate structure (each environment requires a manual approval in GitHub Actions):
@@ -204,20 +205,24 @@ jobs:
           cp "$PROFILE_PATH" ~/Library/MobileDevice/Provisioning\ Profiles/"$UUID".mobileprovision
           echo "PROFILE_UUID=$UUID" >> "$GITHUB_ENV"
 
-      - name: Extract version
+      - name: Resolve version and build number
         id: version
+        env:
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APP_STORE_CONNECT_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_KEY_BASE64 }}
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            TAG_NAME="${{ inputs.version }}"
-          else
-            TAG_NAME="${GITHUB_REF_NAME#v}"
+          set -euo pipefail
+          pip install cryptography --quiet
+          ARGS=""
+          if [ "${{ github.event_name }}" = "push" ]; then
+            TAG="${GITHUB_REF_NAME#refs/tags/}"
+            TAG="${TAG#v}"
+            ARGS="--tag-version $TAG"
+          elif [ -n "${{ inputs.version }}" ]; then
+            ARGS="--tag-version ${{ inputs.version }}"
           fi
-          if [ -z "$TAG_NAME" ]; then
-            echo "ERROR: version could not be determined — push a version tag or provide the version input" >&2
-            exit 1
-          fi
-          echo "name=$TAG_NAME" >> "$GITHUB_OUTPUT"
-          echo "code=$((100 + ${{ github.run_number }}))" >> "$GITHUB_OUTPUT"
+          python3 scripts/ci/ios_resolve_build_version.py $ARGS
 
       - name: Create ExportOptions.plist
         env:
