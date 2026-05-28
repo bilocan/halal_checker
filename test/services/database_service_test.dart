@@ -24,6 +24,13 @@ void main() {
     expect(identical(first, second), isFalse);
   });
 
+  test('ensureInitialized opens the database', () async {
+    await DatabaseService.resetForTesting();
+    await DatabaseService.instance.ensureInitialized();
+    final scans = await DatabaseService.instance.getRecentScans();
+    expect(scans, isEmpty);
+  });
+
   test('concurrent access reuses a single in-flight open', () async {
     final results = await Future.wait([
       DatabaseService.instance.database,

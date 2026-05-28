@@ -6,14 +6,42 @@ import '../app_colors.dart';
 import '../config.dart';
 import '../integration_test_keys.dart';
 import '../localization/app_localizations.dart';
+import '../models/product.dart';
 import '../services/database_service.dart';
 import '../services/product_service.dart';
 import '../services/product_verdict.dart';
 import 'admin_panel_screen.dart';
 import 'result_screen.dart';
 
+/// Resolves a barcode to a product (widget tests inject a fake).
+typedef LookupProduct = Future<Product?> Function(String barcode);
+
+/// Persists a scan to local history (widget tests can simulate failures).
+typedef PersistScan =
+    Future<void> Function({
+      required String barcode,
+      required String productName,
+      required bool isHalal,
+      String? verdict,
+    });
+
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({
+    super.key,
+    @visibleForTesting this.skipScannerInit = false,
+    @visibleForTesting this.lookupProduct,
+    @visibleForTesting this.persistScan,
+  });
+
+  /// Skips [MobileScanner] init (widget tests use manual entry only).
+  @visibleForTesting
+  final bool skipScannerInit;
+
+  @visibleForTesting
+  final LookupProduct? lookupProduct;
+
+  @visibleForTesting
+  final PersistScan? persistScan;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -30,11 +58,41 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    if (AppConfig.e2eSkipCamera) {
+    if (AppConfig.e2eSkipCamera || widget.skipScannerInit) {
       _scannerInitialized = false;
       return;
     }
     _initializeScanner();
+  }
+
+  Future<Product?> _lookupProduct(String barcode) {
+    final lookup = widget.lookupProduct;
+    if (lookup != null) return lookup(barcode);
+    return _productService.getProduct(barcode);
+  }
+
+  Future<void> _persistScan({
+    required String barcode,
+    required String productName,
+    required bool isHalal,
+    String? verdict,
+  }) async {
+    final persist = widget.persistScan;
+    if (persist != null) {
+      await persist(
+        barcode: barcode,
+        productName: productName,
+        isHalal: isHalal,
+        verdict: verdict,
+      );
+      return;
+    }
+    await DatabaseService.instance.insertScan(
+      barcode: barcode,
+      productName: productName,
+      isHalal: isHalal,
+      verdict: verdict,
+    );
   }
 
   Future<void> _initializeScanner() async {
@@ -148,11 +206,11 @@ class _HomeScreenState extends State<HomeScreen> {
     HapticFeedback.mediumImpact();
 
     try {
-      final product = await _productService.getProduct(barcode);
+      final product = await _lookupProduct(barcode);
       if (!mounted) return;
       if (product != null) {
         try {
-          await DatabaseService.instance.insertScan(
+          await _persistScan(
             barcode: barcode,
             productName: product.name,
             isHalal: product.isHalal,

@@ -81,6 +81,27 @@ void main() {
     expect(find.byType(Dismissible), findsNothing);
   });
 
+  testWidgets('shows empty state when loadRecentScans throws', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      wrapWithTestApp(
+        StartHomeTab(
+          canBatchImport: false,
+          loadRecentScans: () async {
+            throw Exception('db failed');
+          },
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+    expect(find.text('No recent scans saved yet.'), findsOneWidget);
+  });
+
   testWidgets('flagged filter hides non-flagged scans', (
     WidgetTester tester,
   ) async {
