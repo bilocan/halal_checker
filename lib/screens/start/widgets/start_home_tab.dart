@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -46,7 +47,8 @@ class StartHomeTab extends StatefulWidget {
   State<StartHomeTab> createState() => _StartHomeTabState();
 }
 
-class _StartHomeTabState extends State<StartHomeTab> {
+class _StartHomeTabState extends State<StartHomeTab>
+    with WidgetsBindingObserver {
   ProductService get _productService =>
       widget._productService ?? ProductService();
 
@@ -58,11 +60,28 @@ class _StartHomeTabState extends State<StartHomeTab> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadRecentScans();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      unawaited(_loadRecentScans());
+    }
   }
 
   Future<void> _loadRecentScans() async {
     try {
+      if (widget.loadRecentScans == null) {
+        await DatabaseService.instance.ensureInitialized();
+      }
       final scans = widget.loadRecentScans != null
           ? await widget.loadRecentScans!()
           : await DatabaseService.instance.getRecentScans();

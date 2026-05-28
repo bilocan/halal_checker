@@ -40,6 +40,9 @@ class DatabaseService {
     }
   }
 
+  /// iOS subfolder with [NSFileProtectionNone] (see sqflite Darwin troubleshooting).
+  static const String iosDatabaseFolder = 'history_db';
+
   Future<String> _databaseFilePath() async {
     if (testDatabasePath != null) return testDatabasePath!;
 
@@ -48,24 +51,74 @@ class DatabaseService {
 
     if (!Platform.isIOS) return legacyPath;
 
-    // iOS file protection can block writes in the default folder (empty history).
-    const folder = 'unprotected';
-    final protectedDir = join(databasesPath, folder);
-    if (!await Directory(protectedDir).exists()) {
-      await SqfliteDarwin.createUnprotectedFolder(databasesPath, folder);
-    }
-    final path = join(protectedDir, 'halal_scan.db');
+    // iOS file protection can block writes in the default Documents folder.
+    // Always call the native helper so the folder gets NSFileProtectionNone.
+    // (A prior build may have created `unprotected/` without that attribute.)
+    await SqfliteDarwin.createUnprotectedFolder(
+      databasesPath,
+      iosDatabaseFolder,
+    );
+    final path = join(databasesPath, iosDatabaseFolder, 'halal_scan.db');
 
-    final legacyFile = File(legacyPath);
-    final migratedFile = File(path);
-    if (await legacyFile.exists() && !await migratedFile.exists()) {
-      try {
-        await legacyFile.copy(path);
-      } catch (e, stack) {
-        debugPrint('[DatabaseService] legacy DB migrate failed: $e\n$stack');
+    await migrateBestIosDatabaseCopy(
+      targetPath: path,
+      sourcePaths: [
+        join(databasesPath, 'unprotected', 'halal_scan.db'),
+        legacyPath,
+      ],
+    );
+    return path;
+  }
+
+  /// Copies the richest existing iOS scan DB into [targetPath].
+  @visibleForTesting
+  static Future<void> migrateBestIosDatabaseCopy({
+    required String targetPath,
+    required List<String> sourcePaths,
+  }) async {
+    var bestCount = await scanCountAtPath(targetPath);
+    String? bestSourcePath;
+    for (final sourcePath in sourcePaths) {
+      if (sourcePath == targetPath) continue;
+      final count = await scanCountAtPath(sourcePath);
+      if (count > bestCount) {
+        bestCount = count;
+        bestSourcePath = sourcePath;
       }
     }
-    return path;
+    if (bestSourcePath == null) return;
+
+    final target = File(targetPath);
+    try {
+      if (await target.exists()) {
+        await target.delete();
+      }
+      await File(bestSourcePath).copy(targetPath);
+      debugPrint(
+        '[DatabaseService] migrated $bestCount scans from $bestSourcePath',
+      );
+    } catch (e, stack) {
+      debugPrint('[DatabaseService] iOS DB migrate failed: $e\n$stack');
+    }
+  }
+
+  @visibleForTesting
+  static Future<int> scanCountAtPath(String path) async {
+    final file = File(path);
+    if (!await file.exists()) return 0;
+    try {
+      final db = await openDatabase(path, readOnly: true);
+      try {
+        final rows = await db.rawQuery('SELECT COUNT(*) AS cnt FROM scans');
+        return _readIntColumn(rows.first['cnt']);
+      } on DatabaseException {
+        return 0;
+      } finally {
+        await db.close();
+      }
+    } catch (_) {
+      return 0;
+    }
   }
 
   Future<Database> _open() async {

@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
@@ -204,6 +206,92 @@ void main() {
       final scans = await DatabaseService.instance.getRecentScans();
       expect(scans.first['timestamp'], isA<int>());
       expect(scans.first['timestamp'] as int, greaterThan(0));
+    });
+  });
+
+  group('DatabaseService.migrateBestIosDatabaseCopy', () {
+    Future<String> _createScanDb(String path, {required String barcode}) async {
+      final db = await openDatabase(
+        path,
+        version: 3,
+        onCreate: (db, _) async {
+          await db.execute('''
+            CREATE TABLE scans (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              barcode TEXT NOT NULL,
+              product_name TEXT NOT NULL,
+              is_halal INTEGER NOT NULL DEFAULT 0,
+              verdict TEXT,
+              timestamp INTEGER NOT NULL,
+              notes TEXT,
+              is_flagged INTEGER NOT NULL DEFAULT 0
+            )
+          ''');
+        },
+      );
+      await db.insert('scans', {
+        'barcode': barcode,
+        'product_name': 'Product $barcode',
+        'is_halal': 1,
+        'timestamp': DateTime.now().millisecondsSinceEpoch,
+        'is_flagged': 0,
+      });
+      await db.close();
+      return path;
+    }
+
+    test('copies legacy file when target is missing', () async {
+      final dir = await Directory.systemTemp.createTemp('halal_ios_migrate');
+      final legacy = p.join(dir.path, 'legacy.db');
+      final target = p.join(dir.path, 'target.db');
+      await _createScanDb(legacy, barcode: 'legacy_bc');
+
+      await DatabaseService.migrateBestIosDatabaseCopy(
+        targetPath: target,
+        sourcePaths: [legacy],
+      );
+
+      expect(await DatabaseService.scanCountAtPath(target), 1);
+      expect(await DatabaseService.scanCountAtPath(legacy), 1);
+      await deleteDatabase(target);
+      await deleteDatabase(legacy);
+      await dir.delete(recursive: true);
+    });
+
+    test('replaces empty target with richer source', () async {
+      final dir = await Directory.systemTemp.createTemp('halal_ios_migrate');
+      final source = p.join(dir.path, 'source.db');
+      final target = p.join(dir.path, 'target.db');
+      await _createScanDb(source, barcode: 'rich_bc');
+      final empty = await openDatabase(
+        target,
+        version: 3,
+        onCreate: (db, _) async {
+          await db.execute('''
+            CREATE TABLE scans (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              barcode TEXT NOT NULL,
+              product_name TEXT NOT NULL,
+              is_halal INTEGER NOT NULL DEFAULT 0,
+              verdict TEXT,
+              timestamp INTEGER NOT NULL,
+              notes TEXT,
+              is_flagged INTEGER NOT NULL DEFAULT 0
+            )
+          ''');
+        },
+      );
+      await empty.close();
+
+      await DatabaseService.migrateBestIosDatabaseCopy(
+        targetPath: target,
+        sourcePaths: [source],
+      );
+
+      expect(await DatabaseService.scanCountAtPath(target), 1);
+      await deleteDatabase(target);
+      await deleteDatabase(source);
+      await dir.delete(recursive: true);
     });
   });
 
