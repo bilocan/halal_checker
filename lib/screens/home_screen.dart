@@ -151,12 +151,16 @@ class _HomeScreenState extends State<HomeScreen> {
       final product = await _productService.getProduct(barcode);
       if (!mounted) return;
       if (product != null) {
-        await DatabaseService.instance.insertScan(
-          barcode: barcode,
-          productName: product.name,
-          isHalal: product.isHalal,
-          verdict: ProductVerdict.storageKey(product),
-        );
+        try {
+          await DatabaseService.instance.insertScan(
+            barcode: barcode,
+            productName: product.name,
+            isHalal: product.isHalal,
+            verdict: ProductVerdict.storageKey(product),
+          );
+        } catch (e, stack) {
+          debugPrint('[HomeScreen] Failed to save scan history: $e\n$stack');
+        }
       }
       if (!mounted) return;
       await Navigator.push(

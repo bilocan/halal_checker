@@ -62,14 +62,20 @@ class _StartHomeTabState extends State<StartHomeTab> {
   }
 
   Future<void> _loadRecentScans() async {
-    final scans = widget.loadRecentScans != null
-        ? await widget.loadRecentScans!()
-        : await DatabaseService.instance.getRecentScans();
-    if (mounted) {
+    try {
+      final scans = widget.loadRecentScans != null
+          ? await widget.loadRecentScans!()
+          : await DatabaseService.instance.getRecentScans();
+      if (!mounted) return;
       setState(() {
         _recentScans = scans;
         _isLoading = false;
       });
+    } catch (e, stack) {
+      debugPrint('[StartHomeTab] loadRecentScans failed: $e\n$stack');
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 

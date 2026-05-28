@@ -8,10 +8,20 @@ class TestProductRepository {
   TestProductRepository._();
 
   Database? _db;
+  Future<Database>? _opening;
 
   Future<Database> get _database async {
-    _db ??= await _open();
-    return _db!;
+    if (_db != null) return _db!;
+    _opening ??= _open().then((db) {
+      _db = db;
+      return db;
+    });
+    try {
+      return await _opening!;
+    } catch (e) {
+      _opening = null;
+      rethrow;
+    }
   }
 
   // Set to inMemoryDatabasePath in tests to avoid touching the real filesystem.
@@ -81,6 +91,7 @@ class TestProductRepository {
   Future<void> closeForTesting() async {
     await _db?.close();
     _db = null;
+    _opening = null;
   }
 
   Future<List<Product>> getAll() async {
