@@ -13,6 +13,8 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+. (Join-Path $PSScriptRoot "_utf8_helpers.ps1")
+
 $Root = if ($env:RELEASE_NOTES_ROOT) { $env:RELEASE_NOTES_ROOT } else { "release_notes/unreleased" }
 
 function Format-Bullet {
@@ -36,14 +38,13 @@ function Add-BulletToFile {
         New-Item -ItemType File -Path $FilePath -Force | Out-Null
     }
 
-    $existing = Get-Content $FilePath -Encoding UTF8 -ErrorAction SilentlyContinue
+    $existing = Read-Utf8Lines $FilePath
     if ($existing -contains $Bullet) {
         Write-Host "Already in $(Split-Path -Leaf $FilePath): $Bullet"
         return
     }
 
-    $utf8 = New-Object System.Text.UTF8Encoding $false
-    [System.IO.File]::AppendAllText($FilePath, "`n$Bullet`n", $utf8)
+    Append-Utf8Text -Path $FilePath -Text "`n$Bullet`n"
     Write-Host "Added to $(Split-Path -Leaf $FilePath): $Bullet"
 }
 

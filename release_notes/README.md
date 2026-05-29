@@ -29,6 +29,31 @@ When a PR includes **user-visible** changes, add bullets under `release_notes/un
 
 Use `-` markdown bullets. Remove HTML comment placeholders before merging.
 
+### Encoding (required)
+
+Two rules - do not swap them:
+
+| Files | Encoding | Why |
+|-------|----------|-----|
+| **`release_notes/**/*.md`** | **UTF-8 without BOM** | Store copy, GitHub Release, Linux CI |
+| **`scripts/windows/*.ps1`** | **ASCII-only** (or UTF-8 **with BOM** if you must use Unicode) | PS 5.1 reads `.ps1` without BOM as system ANSI; a UTF-8 em dash (`—`) breaks string parsing |
+
+**Markdown (release notes)**
+
+| Editor | Setting |
+|--------|---------|
+| **Cursor / VS Code** | Status bar -> **UTF-8** (not "UTF-8 with BOM") |
+| **Windows Notepad** | Save as **UTF-8** |
+
+**PowerShell scripts**
+
+- Read/write `release_notes` via [`scripts/windows/_utf8_helpers.ps1`](../scripts/windows/_utf8_helpers.ps1) - never `Get-Content -Encoding UTF8` / `Set-Content -Encoding UTF8` on those `.md` files.
+- In `.ps1` source, use `-` not `—` in strings and messages (see helpers file header).
+
+**Linux / CI:** default UTF-8 (`ubuntu-latest`); `prepare_store_whatsnew.sh` sets `LC_ALL=C.UTF-8` when available.
+
+If store text shows `Ã¶` or `` instead of `ö`, the `.md` file encoding is wrong. If a `.ps1` script misbehaves after adding `—` or other Unicode punctuation, save the script as UTF-8 with BOM or switch to ASCII `-`.
+
 Agents run `add_release_note` at **task done** per `DEFINITION_OF_DONE.md`. Script details below; exact duplicate lines are skipped.
 
 ```bash
@@ -68,9 +93,27 @@ Preview without changes:
 ./scripts/linux/bump_version.sh --dry-run patch
 ```
 
-## Store metadata (manual today)
+## Store metadata
 
-Copy from `release_notes/<version>/de.md` (etc.) into App Store Connect and Google Play Console “What’s New” fields. Deploy workflows do not upload this text yet.
+### Google Play (automated)
+
+On tag deploy, `deploy-android.yml` runs `prepare_store_whatsnew.sh` and uploads localized “What’s New” from `release_notes/<version>/` via `whatsNewDirectory`. Markdown bullets are stripped to plain text; Play’s **500 character** limit per locale is enforced (truncates with a workflow warning).
+
+If no frozen notes exist for the tag version, the upload continues without release notes (non-breaking).
+
+Local preview:
+
+```bash
+./scripts/linux/prepare_store_whatsnew.sh 1.3.6
+# or
+.\scripts\windows\prepare_store_whatsnew.ps1 1.3.6
+```
+
+Output: `build/play-whatsnew/whatsnew-de-DE`, `whatsnew-tr-TR`, `whatsnew-ar`, `whatsnew-en-US`.
+
+### App Store Connect (manual today)
+
+Copy from `release_notes/<version>/de.md` (etc.) into App Store Connect “What’s New” fields. iOS deploy does not upload this text yet.
 
 ## Backfill
 

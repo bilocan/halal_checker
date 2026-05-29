@@ -2,6 +2,15 @@
 
 Helper scripts for releasing and maintaining HalalScan. Each script has a **Linux/macOS** (bash) and **Windows** (PowerShell) version where it matters.
 
+### Release-notes encoding (Windows)
+
+| Files | Encoding |
+|-------|----------|
+| `release_notes/**/*.md` | UTF-8 **without BOM** |
+| `scripts/windows/*.ps1` | **ASCII-only** in strings (PS 5.1 parses `.ps1` without BOM as system ANSI; UTF-8 `—` breaks scripts) |
+
+Read/write `.md` via [`scripts/windows/_utf8_helpers.ps1`](windows/_utf8_helpers.ps1), not `Get-Content -Encoding UTF8`. Full table: [release_notes/README.md](../release_notes/README.md#encoding-required).
+
 ---
 
 ## Format Dart: `format_dart`

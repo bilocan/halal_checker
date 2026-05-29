@@ -91,7 +91,32 @@ jobs:
           service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
           token_format: access_token
 
+      - name: Prepare Play Store What's New
+        id: whatsnew
+        run: |
+          VERSION="${{ steps.version.outputs.name }}"
+          DIR=$(bash ./scripts/linux/prepare_store_whatsnew.sh "$VERSION" || true)
+          if [ -n "$DIR" ] && [ -d "$DIR" ]; then
+            echo "directory=$DIR" >> "$GITHUB_OUTPUT"
+            echo "Prepared What's New files:"
+            ls -la "$DIR"
+          else
+            echo "::warning::No Play Store release notes for v$VERSION — upload continues without whatsNewDirectory."
+          fi
+
+      - name: Upload draft to internal track (with release notes)
+        if: steps.whatsnew.outputs.directory != ''
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJson: ${{ steps.auth.outputs.credentials_file_path }}
+          packageName: app.halalscan
+          releaseFiles: build/app/outputs/bundle/release/*.aab
+          track: internal
+          status: draft
+          whatsNewDirectory: ${{ steps.whatsnew.outputs.directory }}
+
       - name: Upload draft to internal track
+        if: steps.whatsnew.outputs.directory == ''
         uses: r0adkll/upload-google-play@v1
         with:
           serviceAccountJson: ${{ steps.auth.outputs.credentials_file_path }}
