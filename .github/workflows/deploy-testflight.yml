@@ -5,7 +5,7 @@ name: Deploy TestFlight (manual)
 #
 # Run: Actions → Deploy TestFlight (manual) → Run workflow → pick branch.
 #
-# Secrets: same as deploy-ios.yml (IOS_*, APPLE_*, APP_STORE_CONNECT_*, SUPABASE_*, GOOGLE_WEB_CLIENT_ID).
+# Secrets: same as deploy-ios.yml (IOS_*, APPLE_*, APP_STORE_CONNECT_*, SUPABASE_*, GOOGLE_WEB_CLIENT_ID, GOOGLE_IOS_CLIENT_ID).
 
 on:
   workflow_dispatch:
@@ -46,6 +46,7 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
           GOOGLE_WEB_CLIENT_ID: ${{ secrets.GOOGLE_WEB_CLIENT_ID }}
+          GOOGLE_IOS_CLIENT_ID: ${{ secrets.GOOGLE_IOS_CLIENT_ID }}
         run: |
           missing=()
           for secret in \
@@ -57,7 +58,8 @@ jobs:
             APP_STORE_CONNECT_KEY_BASE64 \
             SUPABASE_URL \
             SUPABASE_ANON_KEY \
-            GOOGLE_WEB_CLIENT_ID; do
+            GOOGLE_WEB_CLIENT_ID \
+            GOOGLE_IOS_CLIENT_ID; do
             if [ -z "${!secret}" ]; then
               missing+=("$secret")
             fi
@@ -196,7 +198,8 @@ jobs:
             --export-options-plist=ExportOptions.plist \
             --dart-define=SUPABASE_URL=${{ secrets.SUPABASE_URL }} \
             --dart-define=SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }} \
-            --dart-define=GOOGLE_WEB_CLIENT_ID=${{ secrets.GOOGLE_WEB_CLIENT_ID }}
+            --dart-define=GOOGLE_WEB_CLIENT_ID=${{ secrets.GOOGLE_WEB_CLIENT_ID }} \
+            --dart-define=GOOGLE_IOS_CLIENT_ID=${{ secrets.GOOGLE_IOS_CLIENT_ID }}
 
       - name: Upload to TestFlight
         env:

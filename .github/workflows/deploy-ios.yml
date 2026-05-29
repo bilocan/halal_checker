@@ -51,7 +51,7 @@ on:
 #                                        base64 -i AuthKey_XXXXXX.p8 | pbcopy
 #
 #   Also needed (shared with Android):
-#     SUPABASE_URL, SUPABASE_ANON_KEY, GOOGLE_WEB_CLIENT_ID
+#     SUPABASE_URL, SUPABASE_ANON_KEY, GOOGLE_WEB_CLIENT_ID, GOOGLE_IOS_CLIENT_ID
 #
 #   App Store Connect prerequisite:
 #     Create the app (bundle ID: app.halalscan) and fill in all metadata
@@ -80,6 +80,7 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
           GOOGLE_WEB_CLIENT_ID: ${{ secrets.GOOGLE_WEB_CLIENT_ID }}
+          GOOGLE_IOS_CLIENT_ID: ${{ secrets.GOOGLE_IOS_CLIENT_ID }}
         run: |
           missing=()
           for secret in \
@@ -91,7 +92,8 @@ jobs:
             APP_STORE_CONNECT_KEY_BASE64 \
             SUPABASE_URL \
             SUPABASE_ANON_KEY \
-            GOOGLE_WEB_CLIENT_ID; do
+            GOOGLE_WEB_CLIENT_ID \
+            GOOGLE_IOS_CLIENT_ID; do
             if [ -z "${!secret}" ]; then
               missing+=("$secret")
             fi
@@ -269,7 +271,8 @@ jobs:
             --export-options-plist=ExportOptions.plist \
             --dart-define=SUPABASE_URL=${{ secrets.SUPABASE_URL }} \
             --dart-define=SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }} \
-            --dart-define=GOOGLE_WEB_CLIENT_ID=${{ secrets.GOOGLE_WEB_CLIENT_ID }}
+            --dart-define=GOOGLE_WEB_CLIENT_ID=${{ secrets.GOOGLE_WEB_CLIENT_ID }} \
+            --dart-define=GOOGLE_IOS_CLIENT_ID=${{ secrets.GOOGLE_IOS_CLIENT_ID }}
 
       - name: Upload to TestFlight
         if: ${{ !(inputs.skip_testflight || false) }}

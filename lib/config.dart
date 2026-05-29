@@ -9,9 +9,17 @@ class AppConfig {
     defaultValue: '',
   );
 
-  // Web OAuth client ID from Google Cloud Console (APIs & Services → Credentials)
+  /// Web OAuth client ID from Google Cloud Console (APIs & Services → Credentials).
+  /// Used for native Google Sign-In ([serverClientId]) and browser OAuth fallback.
   static const String googleWebClientId = String.fromEnvironment(
     'GOOGLE_WEB_CLIENT_ID',
+    defaultValue: '',
+  );
+
+  /// iOS OAuth client ID (optional). Required for native sign-in on iOS; also add
+  /// its reversed form to `ios/Runner/Info.plist` → `CFBundleURLSchemes`.
+  static const String googleIosClientId = String.fromEnvironment(
+    'GOOGLE_IOS_CLIENT_ID',
     defaultValue: '',
   );
 
@@ -25,6 +33,8 @@ class AppConfig {
   );
 
   static bool get hasGoogleAuth => googleWebClientId.isNotEmpty;
+
+  static bool get hasGoogleIosClientId => googleIosClientId.isNotEmpty;
 
   /// When set (e.g. `en`), forces app locale during UI E2E runs.
   static const String e2eForceLocale = String.fromEnvironment(
