@@ -1438,6 +1438,96 @@ abstract class AppLocalizations {
   /// **'Signed in'**
   String get signedIn;
 
+  /// No description provided for @changeUsername.
+  ///
+  /// In en, this message translates to:
+  /// **'Change display name'**
+  String get changeUsername;
+
+  /// No description provided for @firstLoginUsernameTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your community name'**
+  String get firstLoginUsernameTitle;
+
+  /// No description provided for @publicDisplayNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'This name is shown on discussions and comments. You can change it anytime in your profile.'**
+  String get publicDisplayNameHint;
+
+  /// No description provided for @usernameSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Display name updated.'**
+  String get usernameSaved;
+
+  /// No description provided for @usernameInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Use 2–40 characters: letters, numbers, spaces, and . _ - \''**
+  String get usernameInvalid;
+
+  /// No description provided for @usernameSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save display name. Please try again.'**
+  String get usernameSaveFailed;
+
+  /// No description provided for @keepThisName.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep this name'**
+  String get keepThisName;
+
+  /// No description provided for @save.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get save;
+
+  /// No description provided for @signInDisplayNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Your name from sign-in may appear in community discussions until you change it in your profile.'**
+  String get signInDisplayNameHint;
+
+  /// No description provided for @profileRole.
+  ///
+  /// In en, this message translates to:
+  /// **'Role: {role}'**
+  String profileRole(String role);
+
+  /// No description provided for @roleUser.
+  ///
+  /// In en, this message translates to:
+  /// **'Member'**
+  String get roleUser;
+
+  /// No description provided for @roleModerator.
+  ///
+  /// In en, this message translates to:
+  /// **'Moderator'**
+  String get roleModerator;
+
+  /// No description provided for @roleScholar.
+  ///
+  /// In en, this message translates to:
+  /// **'Scholar'**
+  String get roleScholar;
+
+  /// No description provided for @roleAdmin.
+  ///
+  /// In en, this message translates to:
+  /// **'Admin'**
+  String get roleAdmin;
+
+  /// No description provided for @roleSuperadmin.
+  ///
+  /// In en, this message translates to:
+  /// **'Super Admin'**
+  String get roleSuperadmin;
+
   /// No description provided for @adminPanel.
   ///
   /// In en, this message translates to:

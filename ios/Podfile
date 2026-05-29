@@ -1,7 +1,7 @@
 source 'https://cdn.cocoapods.org/'
 install! 'cocoapods', :warn_for_unused_master_specs_repo => false
 
-platform :ios, '14.0'
+platform :ios, '15.5'
 
 ENV['COCOAPODS_DISABLE_STATS'] = 'true'
 
@@ -29,6 +29,8 @@ target 'Runner' do
   use_modular_headers!
 
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
+  # google_sign_in_ios pulls GoogleSignIn (~> 9.0), which includes App Check.
+  # AppDelegate calls GIDSignIn.sharedInstance.configure() for production devices.
 end
 
 post_install do |installer|

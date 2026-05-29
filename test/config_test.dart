@@ -15,6 +15,14 @@ void main() {
       expect(AppConfig.supabaseAnonKey, isEmpty);
     });
 
+    test('googleIosClientId defaults to empty string', () {
+      expect(AppConfig.googleIosClientId, isEmpty);
+    });
+
+    test('hasGoogleIosClientId is false when iOS client ID is empty', () {
+      expect(AppConfig.hasGoogleIosClientId, isFalse);
+    });
+
     test('googleWebClientId defaults to empty string', () {
       expect(AppConfig.googleWebClientId, isEmpty);
     });

@@ -217,6 +217,26 @@
   "signIn": "Anmelden",
   "signOut": "Abmelden",
   "signedIn": "Angemeldet",
+  "changeUsername": "Anzeigenamen ändern",
+  "firstLoginUsernameTitle": "Ihr Community-Name",
+  "publicDisplayNameHint": "Dieser Name wird in Diskussionen und Kommentaren angezeigt. Sie können ihn jederzeit im Profil ändern.",
+  "usernameSaved": "Anzeigename aktualisiert.",
+  "usernameInvalid": "2–40 Zeichen: Buchstaben, Zahlen, Leerzeichen sowie . _ - '",
+  "usernameSaveFailed": "Anzeigename konnte nicht gespeichert werden. Bitte erneut versuchen.",
+  "keepThisName": "Diesen Namen behalten",
+  "save": "Speichern",
+  "signInDisplayNameHint": "Ihr Name von der Anmeldung kann in Community-Diskussionen erscheinen, bis Sie ihn im Profil ändern.",
+  "profileRole": "Rolle: {role}",
+  "@profileRole": {
+    "placeholders": {
+      "role": { "type": "String" }
+    }
+  },
+  "roleUser": "Mitglied",
+  "roleModerator": "Moderator",
+  "roleScholar": "Gelehrter",
+  "roleAdmin": "Administrator",
+  "roleSuperadmin": "Super-Administrator",
   "adminPanel": "Admin-Panel",
   "noDiscussionsHint": "Seien Sie der Erste!",
   "approvalsTab": "Freigaben",

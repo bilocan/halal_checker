@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:math';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -10,7 +11,9 @@ import '../config.dart';
 
 class AuthService {
   static const _sessionKey = 'supabase_session_active';
+  static const _googleScopes = ['email', 'profile'];
   static bool _initialized = false;
+  static bool _googleSignInInitialized = false;
   static bool _supabaseAvailable = AppConfig.hasSupabase;
   static User? _currentUserOverride;
 
@@ -32,6 +35,7 @@ class AuthService {
     _currentUserOverride = null;
     _supabaseAvailable = AppConfig.hasSupabase;
     _initialized = false;
+    _googleSignInInitialized = false;
   }
 
   /// Call once from main() — initializes Supabase only if the user previously
@@ -87,14 +91,106 @@ class AuthService {
   static Future<bool> signInWithGoogle() async {
     if (!AppConfig.hasSupabase) return false;
     if (!await _initialize()) return false;
+
+    if (_supportsNativeGoogleSignIn) {
+      final nativeResult = await _signInWithGoogleNative();
+      if (nativeResult != null) return nativeResult;
+    }
+
+    return _signInWithGoogleOAuth();
+  }
+
+  static bool get _supportsNativeGoogleSignIn {
+    if (kIsWeb || !AppConfig.hasGoogleAuth) return false;
+    return switch (defaultTargetPlatform) {
+      TargetPlatform.android => true,
+      TargetPlatform.iOS => AppConfig.hasGoogleIosClientId,
+      _ => false,
+    };
+  }
+
+  static Future<void> _ensureGoogleSignInInitialized() async {
+    if (_googleSignInInitialized) return;
+    await GoogleSignIn.instance.initialize(
+      serverClientId: AppConfig.googleWebClientId,
+      clientId: defaultTargetPlatform == TargetPlatform.iOS
+          ? AppConfig.googleIosClientId
+          : null,
+    );
+    _googleSignInInitialized = true;
+  }
+
+  /// Returns `true`/`false` when native sign-in completes or is cancelled;
+  /// returns `null` when browser OAuth fallback should run (e.g. no GMS).
+  static Future<bool?> _signInWithGoogleNative() async {
+    try {
+      await _ensureGoogleSignInInitialized();
+
+      GoogleSignInAccount? googleUser;
+      final lightweightFuture = GoogleSignIn.instance
+          .attemptLightweightAuthentication();
+      if (lightweightFuture != null) {
+        googleUser = await lightweightFuture;
+      }
+      googleUser ??= await GoogleSignIn.instance.authenticate();
+
+      final authorization =
+          await googleUser.authorizationClient.authorizationForScopes(
+            _googleScopes,
+          ) ??
+          await googleUser.authorizationClient.authorizeScopes(_googleScopes);
+
+      final idToken = googleUser.authentication.idToken;
+      if (idToken == null) {
+        debugPrint('Native Google sign-in: no ID token, using browser OAuth');
+        return null;
+      }
+
+      await Supabase.instance.client.auth.signInWithIdToken(
+        provider: OAuthProvider.google,
+        idToken: idToken,
+        accessToken: authorization.accessToken,
+      );
+      return true;
+    } on GoogleSignInException catch (e) {
+      if (e.code == GoogleSignInExceptionCode.canceled) return false;
+      if (_shouldFallbackToBrowserOAuth(e)) {
+        debugPrint(
+          'Native Google sign-in unavailable, using browser OAuth: $e',
+        );
+        return null;
+      }
+      debugPrint('Native Google sign-in error: $e');
+      return false;
+    } catch (e) {
+      debugPrint('Native Google sign-in failed, using browser OAuth: $e');
+      return null;
+    }
+  }
+
+  static bool _shouldFallbackToBrowserOAuth(GoogleSignInException e) {
+    switch (e.code) {
+      case GoogleSignInExceptionCode.providerConfigurationError:
+        return true;
+      case GoogleSignInExceptionCode.interrupted:
+      case GoogleSignInExceptionCode.uiUnavailable:
+        return defaultTargetPlatform == TargetPlatform.android;
+      case GoogleSignInExceptionCode.canceled:
+      case GoogleSignInExceptionCode.clientConfigurationError:
+      case GoogleSignInExceptionCode.userMismatch:
+      case GoogleSignInExceptionCode.unknownError:
+        return false;
+    }
+  }
+
+  static Future<bool> _signInWithGoogleOAuth() async {
     try {
       await Supabase.instance.client.auth.signInWithOAuth(
         OAuthProvider.google,
         redirectTo: 'app.halalscan://callback/',
-        // Android uses external browser so Huawei devices (no GMS) can complete the OAuth flow.
-        authScreenLaunchMode: defaultTargetPlatform == TargetPlatform.android
-            ? LaunchMode.externalApplication
-            : LaunchMode.inAppBrowserView,
+        // External browser: required on Android (no GMS) and iOS (Google blocks
+        // embedded WebViews for OAuth).
+        authScreenLaunchMode: LaunchMode.externalApplication,
       );
       return true;
     } catch (e) {
@@ -159,6 +255,13 @@ class AuthService {
   }
 
   static Future<void> signOut() async {
+    if (_googleSignInInitialized) {
+      try {
+        await GoogleSignIn.instance.signOut();
+      } catch (e) {
+        debugPrint('Google sign out error: $e');
+      }
+    }
     if (!_initialized) return;
     try {
       await Supabase.instance.client.auth.signOut();
