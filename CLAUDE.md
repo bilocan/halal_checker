@@ -1,10 +1,14 @@
 # HalalScan — Claude Code Guide
 
-Agent checklist: [AGENTS.md](AGENTS.md). Cursor rules: `.cursor/rules/`.
+Agent checklist: [AGENTS.md](AGENTS.md). **Definition of done (Cursor + Claude Code):** [DEFINITION_OF_DONE.md](DEFINITION_OF_DONE.md) — edit only that file when changing done steps. Cursor rules in `.cursor/rules/` point there.
+
+## Task done (Claude Code + Cursor)
+
+When the user says **task done** / **done** / **finish**: follow **[DEFINITION_OF_DONE.md](DEFINITION_OF_DONE.md)** in full. For user-visible work you **must** write release notes — run `add_release_note` or edit `release_notes/unreleased/{en,de,tr,ar}.md`. Consolidating docs into one file does **not** remove that step.
 
 ## Current deployment defaults
 
-**Claude (Anthropic) is off in this project** unless you explicitly re-enable it: `CLAUDE_ENABLED=false` on edge functions; no `CLAUDE_API_KEY` required for normal development ([CONTRIBUTING.md](CONTRIBUTING.md)). Production lookups rely on **Open Food Facts + keyword analysis**; AI layers below still exist in code for optional/local use.
+**Claude product AI (edge function) is off** in this project unless you re-enable it: `CLAUDE_ENABLED=false` on edge functions; no `CLAUDE_API_KEY` required for normal development ([CONTRIBUTING.md](CONTRIBUTING.md)). This is **not** about Claude Code writing release notes or using this repo as an agent. Production lookups rely on **Open Food Facts + keyword analysis**; optional AI layers remain in code for local use.
 
 **Gemini** is optional (`GEMINI_*`, admin approval, or `GEMINI_LOOKUP_EMPTY_OFF`).
 

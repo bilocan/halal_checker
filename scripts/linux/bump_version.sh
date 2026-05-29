@@ -15,8 +15,9 @@
 #   5. Updates pubspec.yaml and commits
 #   6. Creates git tag vX.Y.Z
 #   7. Pushes branch + tag to origin
-#   8. Creates a GitHub Release with auto-generated notes
-#   9. Opens a GitHub PR (if `gh` CLI is available)
+#   8. Finalizes release_notes/unreleased/ → release_notes/<version>/ (if any)
+#   9. Creates a GitHub Release (en.md or auto-generated notes)
+#  10. Opens a GitHub PR (if `gh` CLI is available)
 #
 # The tag push triggers deploy-android.yml and deploy-ios.yml.
 # Merge the PR to keep pubspec.yaml in sync on main.
@@ -30,6 +31,8 @@ if [ "${1:-}" = "--dry-run" ]; then
 fi
 
 PUBSPEC="pubspec.yaml"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+FINALIZE_NOTES="$SCRIPT_DIR/finalize_release_notes.sh"
 
 if [ ! -f "$PUBSPEC" ]; then
   echo "Error: $PUBSPEC not found. Run this script from the project root." >&2
@@ -91,6 +94,12 @@ echo "Branch:          $BRANCH"
 echo ""
 
 if $DRY_RUN; then
+  NOTES_PREVIEW=$("$FINALIZE_NOTES" "$NEW_VERSION" --dry-run || true)
+  if [ -n "$NOTES_PREVIEW" ]; then
+    echo "Release notes:   $NOTES_PREVIEW (will be finalized for GitHub Release)"
+  else
+    echo "Release notes:   (none in release_notes/unreleased/ — will use --generate-notes)"
+  fi
   echo "(dry run — no changes made)"
   exit 0
 fi
@@ -122,8 +131,17 @@ echo "Created branch $BRANCH"
 sed -i "s/^version:.*/version: $NEW_FULL/" "$PUBSPEC"
 echo "Updated $PUBSPEC → $NEW_FULL"
 
+# ── Finalize release notes (unreleased/ → <version>/) ───────────────────
+NOTES_EN=$("$FINALIZE_NOTES" "$NEW_VERSION" || true)
+if [ -n "$NOTES_EN" ]; then
+  echo "Finalized release notes → $NOTES_EN"
+fi
+
 # ── Commit, tag, push ─────────────────────────────────────────────────
 git add "$PUBSPEC"
+if [ -d "release_notes/$NEW_VERSION" ]; then
+  git add release_notes/
+fi
 git commit -m "chore: bump version to $NEW_VERSION"
 git tag "$TAG"
 git push origin "$BRANCH" --tags
@@ -135,9 +153,15 @@ echo ""
 # ── Create GitHub Release + open PR if gh CLI is available ─────────────
 if command -v gh &>/dev/null; then
   echo "Creating GitHub Release $TAG..."
-  gh release create "$TAG" \
-    --title "$TAG" \
-    --generate-notes
+  if [ -n "$NOTES_EN" ] && [ -f "$NOTES_EN" ]; then
+    gh release create "$TAG" \
+      --title "$TAG" \
+      --notes-file "$NOTES_EN"
+  else
+    gh release create "$TAG" \
+      --title "$TAG" \
+      --generate-notes
+  fi
 
   echo "Opening pull request..."
   REPO_SLUG=$(git remote get-url origin | sed 's|.*github.com[:/]||;s|\.git$||')

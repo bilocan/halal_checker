@@ -1,0 +1,10 @@
+---
+description: On task done — execute DEFINITION_OF_DONE.md (single source of truth)
+alwaysApply: true
+---
+
+# Task done
+
+When the user says **task done**, **done**, **finish**, **complete**, or similar:
+
+**Read and execute [DEFINITION_OF_DONE.md](../../DEFINITION_OF_DONE.md)** — especially **Task done (agent flow)** and **Checklist**. Do not use this rule file for step details; if steps change, they change only in that markdown file.

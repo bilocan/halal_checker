@@ -14,8 +14,9 @@
 #   5. Updates pubspec.yaml and commits
 #   6. Creates git tag vX.Y.Z
 #   7. Pushes branch + tag to origin
-#   8. Creates a GitHub Release with auto-generated notes
-#   9. Opens a GitHub PR (if `gh` CLI is available)
+#   8. Finalizes release_notes/unreleased/ -> release_notes/<version>/ (if any)
+#   9. Creates a GitHub Release (en.md or auto-generated notes)
+#  10. Opens a GitHub PR (if `gh` CLI is available)
 #
 # The tag push triggers deploy-android.yml and deploy-ios.yml.
 # Merge the PR to keep pubspec.yaml in sync on main.
@@ -29,6 +30,8 @@ param(
 
 $ErrorActionPreference = "Stop"
 $Pubspec = "pubspec.yaml"
+$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$FinalizeNotes = Join-Path $ScriptDir "finalize_release_notes.ps1"
 
 if (-not (Test-Path $Pubspec)) {
     Write-Error "$Pubspec not found. Run this script from the project root."
@@ -85,6 +88,12 @@ Write-Host "Branch:          $branch"
 Write-Host ""
 
 if ($DryRun) {
+    $notesPreview = & $FinalizeNotes $newVersion -DryRun 2>$null
+    if ($notesPreview) {
+        Write-Host "Release notes:   $notesPreview (will be finalized for GitHub Release)"
+    } else {
+        Write-Host "Release notes:   (none in release_notes/unreleased/ - will use --generate-notes)"
+    }
     Write-Host "(dry run - no changes made)"
     exit 0
 }
@@ -117,8 +126,17 @@ Write-Host "Created branch $branch"
 (Get-Content $Pubspec) -replace '^version:.*', "version: $newFull" | Set-Content $Pubspec
 Write-Host "Updated $Pubspec -> $newFull"
 
+# ── Finalize release notes (unreleased/ -> <version>/) ────────────────
+$notesEn = & $FinalizeNotes $newVersion 2>$null
+if ($notesEn) {
+    Write-Host "Finalized release notes -> $notesEn"
+}
+
 # ── Commit, tag, push ─────────────────────────────────────────────────
 git add $Pubspec
+if (Test-Path "release_notes/$newVersion") {
+    git add release_notes/
+}
 git commit -m "chore: bump version to $newVersion"
 git tag $tag
 git push origin $branch --tags
@@ -131,9 +149,15 @@ Write-Host ""
 $ghAvailable = Get-Command gh -ErrorAction SilentlyContinue
 if ($ghAvailable) {
     Write-Host "Creating GitHub Release $tag..."
-    gh release create $tag `
-        --title $tag `
-        --generate-notes
+    if ($notesEn -and (Test-Path $notesEn)) {
+        gh release create $tag `
+            --title $tag `
+            --notes-file $notesEn
+    } else {
+        gh release create $tag `
+            --title $tag `
+            --generate-notes
+    }
 
     Write-Host "Opening pull request..."
     gh pr create `

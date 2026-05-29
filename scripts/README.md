@@ -54,13 +54,26 @@ Bump the app version, commit, tag, and push — triggering the store deploy work
 3. Increments the build number (`+N`) by 1
 4. Creates a `release/vX.Y.Z` branch (works with branch protection on `main`)
 5. Updates `pubspec.yaml` and commits
-6. Creates git tag `vX.Y.Z`
-7. Pushes the branch + tag to origin
-8. Creates a GitHub Release with auto-generated notes (via `gh` CLI)
-9. Opens a PR (via `gh` CLI), or prints links to do both manually
+6. Finalizes `release_notes/unreleased/` → `release_notes/<version>/` when bullets exist (see below)
+7. Creates git tag `vX.Y.Z`
+8. Pushes the branch + tag to origin
+9. Creates a GitHub Release using `release_notes/<version>/en.md`, or `--generate-notes` if empty
+10. Opens a PR (via `gh` CLI), or prints links to do both manually
 
 The tag push triggers `deploy-android.yml` and `deploy-ios.yml` automatically.
 Merge the PR to keep `pubspec.yaml` in sync on `main`.
+
+### Release notes (`release_notes/`)
+
+During development, add user-facing bullets to `release_notes/unreleased/` (`en.md` required for GitHub; `de.md`, `tr.md`, `ar.md` for store copy). On bump, `finalize_release_notes` moves them to `release_notes/<version>/` and resets `unreleased/` from `_template.md`.
+
+Full workflow: [release_notes/README.md](../release_notes/README.md).
+
+```bash
+# Preview whether unreleased notes will be picked up
+./scripts/linux/bump_version.sh --dry-run patch
+.\scripts\windows\bump_version.ps1 -DryRun patch
+```
 
 ### TestFlight only (manual, build bump)
 
@@ -75,6 +88,44 @@ Same iOS secrets as `deploy-ios.yml`. Optional input: submit external beta revie
 **Preview with `--dry-run`:** pass `--dry-run` (Linux) or `-DryRun` (Windows) to see what the next version would be without making any changes.
 
 **Safety checks:** refuses to run with uncommitted changes, validates version format, checks the tag doesn't already exist, and asks for confirmation.
+
+---
+
+## Task done: `task_done`
+
+When you finish a task, run the automated DoD checks and see manual reminders:
+
+```bash
+./scripts/linux/task_done.sh
+```
+
+```powershell
+.\scripts\windows\task_done.ps1
+```
+
+In Cursor or Claude Code, say **task done** — full flow in [DEFINITION_OF_DONE.md](../DEFINITION_OF_DONE.md). Scripts below implement items 1–3 and release-note append (item 4).
+
+### `add_release_note` — append unreleased bullets
+
+See **Release notes** in [DEFINITION_OF_DONE.md](../DEFINITION_OF_DONE.md). Quick reference:
+
+```bash
+./scripts/linux/add_release_note.sh \
+  --en "**Title** — English." \
+  --de "**Titel** — Deutsch." \
+  --tr "**Başlık** — Türkçe." \
+  --ar "**العنوان** — العربية."
+```
+
+```powershell
+.\scripts\windows\add_release_note.ps1 `
+  -En "**Title** — English." `
+  -De "**Titel** — Deutsch." `
+  -Tr "**Başlık** — Türkçe." `
+  -Ar "**العنوان** — العربية."
+```
+
+Dedupes exact lines. See [release_notes/README.md](../release_notes/README.md).
 
 ---
 

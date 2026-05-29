@@ -1,19 +1,14 @@
 ---
-description: HalalScan agent checklist — architecture, scope, definition of done
+description: HalalScan agent checklist — architecture, scope; DoD is DEFINITION_OF_DONE.md only
 alwaysApply: true
 ---
 
 # Agent checklist (HalalScan)
 
-## Definition of done
+**Definition of done:** follow **[DEFINITION_OF_DONE.md](../../DEFINITION_OF_DONE.md)** only — do not duplicate its steps in replies or other docs.
 
-After non-trivial code changes:
-
-1. `./scripts/linux/format_dart.sh` or `.\scripts\windows\format_dart.ps1` (not `dart format .` — breaks on Windows when `build/` has stale paths)
-2. `flutter analyze --no-fatal-infos`
-3. `flutter test test/services/ test/constants/ test/models/ test/config_test.dart`
-
-Do not claim work is complete until these pass or you report the failures.
+- **During work:** items 1–3 after non-trivial code changes.
+- **When user says task done:** full **Task done** section in that file.
 
 ## Architecture (read `CLAUDE.md` for detail)
 
