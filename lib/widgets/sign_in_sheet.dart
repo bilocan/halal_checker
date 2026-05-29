@@ -51,6 +51,14 @@ Future<void> showSignInSheet(
                 style: const TextStyle(color: Colors.grey),
               ),
             ],
+            if (!gated) ...[
+              const SizedBox(height: 8),
+              Text(
+                loc.signInDisplayNameHint,
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+            ],
             SizedBox(height: gated ? 24 : 20),
             if (!gated && Platform.isIOS) ...[
               SignInWithAppleButton(

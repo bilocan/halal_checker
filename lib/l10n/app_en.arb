@@ -254,6 +254,26 @@
   "signIn": "Sign in",
   "signOut": "Sign out",
   "signedIn": "Signed in",
+  "changeUsername": "Change display name",
+  "firstLoginUsernameTitle": "Your community name",
+  "publicDisplayNameHint": "This name is shown on discussions and comments. You can change it anytime in your profile.",
+  "usernameSaved": "Display name updated.",
+  "usernameInvalid": "Use 2–40 characters: letters, numbers, spaces, and . _ - '",
+  "usernameSaveFailed": "Could not save display name. Please try again.",
+  "keepThisName": "Keep this name",
+  "save": "Save",
+  "signInDisplayNameHint": "Your name from sign-in may appear in community discussions until you change it in your profile.",
+  "profileRole": "Role: {role}",
+  "@profileRole": {
+    "placeholders": {
+      "role": { "type": "String" }
+    }
+  },
+  "roleUser": "Member",
+  "roleModerator": "Moderator",
+  "roleScholar": "Scholar",
+  "roleAdmin": "Admin",
+  "roleSuperadmin": "Super Admin",
   "adminPanel": "Admin panel",
   "noDiscussionsHint": "Be the first to start one!",
   "approvalsTab": "Approvals",

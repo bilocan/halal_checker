@@ -734,6 +734,57 @@ class AppLocalizationsEn extends AppLocalizations {
   String get signedIn => 'Signed in';
 
   @override
+  String get changeUsername => 'Change display name';
+
+  @override
+  String get firstLoginUsernameTitle => 'Your community name';
+
+  @override
+  String get publicDisplayNameHint =>
+      'This name is shown on discussions and comments. You can change it anytime in your profile.';
+
+  @override
+  String get usernameSaved => 'Display name updated.';
+
+  @override
+  String get usernameInvalid =>
+      'Use 2–40 characters: letters, numbers, spaces, and . _ - \'';
+
+  @override
+  String get usernameSaveFailed =>
+      'Could not save display name. Please try again.';
+
+  @override
+  String get keepThisName => 'Keep this name';
+
+  @override
+  String get save => 'Save';
+
+  @override
+  String get signInDisplayNameHint =>
+      'Your name from sign-in may appear in community discussions until you change it in your profile.';
+
+  @override
+  String profileRole(String role) {
+    return 'Role: $role';
+  }
+
+  @override
+  String get roleUser => 'Member';
+
+  @override
+  String get roleModerator => 'Moderator';
+
+  @override
+  String get roleScholar => 'Scholar';
+
+  @override
+  String get roleAdmin => 'Admin';
+
+  @override
+  String get roleSuperadmin => 'Super Admin';
+
+  @override
   String get adminPanel => 'Admin panel';
 
   @override

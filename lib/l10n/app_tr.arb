@@ -217,6 +217,26 @@
   "signIn": "Giriş Yap",
   "signOut": "Çıkış Yap",
   "signedIn": "Giriş yapıldı",
+  "changeUsername": "Görünen adı değiştir",
+  "firstLoginUsernameTitle": "Topluluk adınız",
+  "publicDisplayNameHint": "Bu ad tartışma ve yorumlarda görünür. Profilden istediğiniz zaman değiştirebilirsiniz.",
+  "usernameSaved": "Görünen ad güncellendi.",
+  "usernameInvalid": "2–40 karakter: harf, rakam, boşluk ve . _ - '",
+  "usernameSaveFailed": "Görünen ad kaydedilemedi. Lütfen tekrar deneyin.",
+  "keepThisName": "Bu adı kullan",
+  "save": "Kaydet",
+  "signInDisplayNameHint": "Girişteki adınız, profilden değiştirene kadar topluluk tartışmalarında görünebilir.",
+  "profileRole": "Rol: {role}",
+  "@profileRole": {
+    "placeholders": {
+      "role": { "type": "String" }
+    }
+  },
+  "roleUser": "Üye",
+  "roleModerator": "Moderatör",
+  "roleScholar": "Alim",
+  "roleAdmin": "Yönetici",
+  "roleSuperadmin": "Süper yönetici",
   "adminPanel": "Yönetici paneli",
   "noDiscussionsHint": "İlk tartışmayı siz başlatın!",
   "approvalsTab": "Onaylar",

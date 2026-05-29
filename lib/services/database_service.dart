@@ -196,17 +196,23 @@ class DatabaseService {
     return db;
   }
 
+  /// PRAGMA journal_mode returns rows; on Android [Database.execute] fails for it.
+  @visibleForTesting
+  static Future<void> configureJournalMode(Database db, String mode) async {
+    try {
+      await db.rawQuery('PRAGMA journal_mode=$mode');
+    } catch (e) {
+      debugPrint('[DatabaseService] journal_mode not set: $e');
+    }
+  }
+
   Future<Database> _openDatabaseAt(String path) async {
     return openDatabase(
       path,
       version: 3,
       onConfigure: (db) async {
-        try {
-          final mode = Platform.isIOS ? 'DELETE' : 'WAL';
-          await db.execute('PRAGMA journal_mode=$mode');
-        } catch (e) {
-          debugPrint('[DatabaseService] journal_mode not set: $e');
-        }
+        final mode = Platform.isIOS ? 'DELETE' : 'WAL';
+        await configureJournalMode(db, mode);
       },
       onCreate: (db, _) async {
         await db.execute('''

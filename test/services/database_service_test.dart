@@ -12,7 +12,7 @@ import 'package:halal_checker/services/database_service.dart';
 //   - _databaseFilePath: SqfliteDarwin unprotected folder + legacy path list
 //   - _open: empty target DB → migrateBestIosDatabaseCopy from legacy locations
 //   - _open: resetConnection when _openedPath != new path (rare in production)
-//   - onConfigure: journal_mode PRAGMA failure (caught and logged)
+//   - onConfigure: journal_mode PRAGMA failure on exotic platforms (caught and logged)
 // These need a real iOS run or platform injection; ffi/desktop tests use
 // testDatabasePath / non-iOS legacy path only.
 
@@ -465,13 +465,43 @@ void main() {
     });
   });
 
+  group('DatabaseService.configureJournalMode', () {
+    Future<String> readJournalMode(Database db) async {
+      final rows = await db.rawQuery('PRAGMA journal_mode');
+      return (rows.first.values.first as String).toLowerCase();
+    }
+
+    test('sets WAL via rawQuery (Android-safe path)', () async {
+      final dir = await Directory.systemTemp.createTemp('halal_journal');
+      final path = p.join(dir.path, 'journal_wal.db');
+      final db = await openDatabase(path, version: 1);
+      await DatabaseService.configureJournalMode(db, 'WAL');
+      expect(await readJournalMode(db), 'wal');
+      await db.close();
+      await deleteDatabase(path);
+      await dir.delete(recursive: true);
+    });
+
+    test('sets DELETE journal mode (iOS production default)', () async {
+      final dir = await Directory.systemTemp.createTemp('halal_journal');
+      final path = p.join(dir.path, 'journal_delete.db');
+      final db = await openDatabase(path, version: 1);
+      await DatabaseService.configureJournalMode(db, 'WAL');
+      await DatabaseService.configureJournalMode(db, 'DELETE');
+      expect(await readJournalMode(db), 'delete');
+      await db.close();
+      await deleteDatabase(path);
+      await dir.delete(recursive: true);
+    });
+  });
+
   group('DatabaseService.copySqliteDatabaseFiles', () {
     Future<String> _createWalDb(String path, String barcode) async {
       final db = await openDatabase(
         path,
         version: 3,
         onConfigure: (db) async {
-          await db.execute('PRAGMA journal_mode=WAL');
+          await DatabaseService.configureJournalMode(db, 'WAL');
         },
         onCreate: (db, _) async {
           await db.execute('''

@@ -733,6 +733,57 @@ class AppLocalizationsTr extends AppLocalizations {
   String get signedIn => 'Giriş yapıldı';
 
   @override
+  String get changeUsername => 'Görünen adı değiştir';
+
+  @override
+  String get firstLoginUsernameTitle => 'Topluluk adınız';
+
+  @override
+  String get publicDisplayNameHint =>
+      'Bu ad tartışma ve yorumlarda görünür. Profilden istediğiniz zaman değiştirebilirsiniz.';
+
+  @override
+  String get usernameSaved => 'Görünen ad güncellendi.';
+
+  @override
+  String get usernameInvalid =>
+      '2–40 karakter: harf, rakam, boşluk ve . _ - \'';
+
+  @override
+  String get usernameSaveFailed =>
+      'Görünen ad kaydedilemedi. Lütfen tekrar deneyin.';
+
+  @override
+  String get keepThisName => 'Bu adı kullan';
+
+  @override
+  String get save => 'Kaydet';
+
+  @override
+  String get signInDisplayNameHint =>
+      'Girişteki adınız, profilden değiştirene kadar topluluk tartışmalarında görünebilir.';
+
+  @override
+  String profileRole(String role) {
+    return 'Rol: $role';
+  }
+
+  @override
+  String get roleUser => 'Üye';
+
+  @override
+  String get roleModerator => 'Moderatör';
+
+  @override
+  String get roleScholar => 'Alim';
+
+  @override
+  String get roleAdmin => 'Yönetici';
+
+  @override
+  String get roleSuperadmin => 'Süper yönetici';
+
+  @override
   String get adminPanel => 'Yönetici paneli';
 
   @override

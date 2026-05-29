@@ -7,6 +7,7 @@ import 'config.dart';
 import 'localization/app_localizations.dart';
 import 'screens/start_screen.dart';
 import 'services/auth_service.dart';
+import 'widgets/username_setup_listener.dart';
 import 'services/database_service.dart';
 import 'services/seed_data_service.dart';
 
@@ -117,7 +118,7 @@ class HalalCheckerAppState extends State<HalalCheckerApp> {
         ),
         useMaterial3: true,
       ),
-      home: const StartScreen(),
+      home: const UsernameSetupListener(child: StartScreen()),
     );
   }
 }
