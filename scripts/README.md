@@ -136,6 +136,16 @@ See **Release notes** in [DEFINITION_OF_DONE.md](../DEFINITION_OF_DONE.md). Quic
 
 Dedupes exact lines. See [release_notes/README.md](../release_notes/README.md).
 
+### Store What's New (Play + App Store)
+
+| Script | Role |
+|--------|------|
+| `prepare_store_whatsnew.sh` / `.ps1` | Play: `build/play-whatsnew/whatsnew-*` (500 chars/locale) |
+| `prepare_appstore_whatsnew.sh` / `.ps1` | App Store preview: `build/appstore-whatsnew/*.txt` (4000 chars/locale) |
+| `upload_appstore_whatsnew.sh` | CI only: PATCH App Store Connect before Gate 1 (`deploy-ios.yml`) |
+
+Shared extraction: `_release_note_text.sh` / `_release_note_text.ps1`. Encoding rules: [release_notes/README.md](../release_notes/README.md#encoding-required).
+
 ---
 
 ## Tagging helpers

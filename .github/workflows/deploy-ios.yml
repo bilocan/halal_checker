@@ -407,6 +407,17 @@ jobs:
     runs-on: ubuntu-latest
     environment: appstore/submit-review
     steps:
+      - uses: actions/checkout@v4
+
+      - name: Upload App Store What's New
+        env:
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APP_STORE_CONNECT_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_KEY_BASE64 }}
+        run: |
+          VERSION="${{ needs.build-and-upload.outputs.version-name }}"
+          bash ./scripts/linux/upload_appstore_whatsnew.sh "$VERSION" || true
+
       - name: Submit for App Store review
         env:
           APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}

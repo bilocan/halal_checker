@@ -111,9 +111,21 @@ Local preview:
 
 Output: `build/play-whatsnew/whatsnew-de-DE`, `whatsnew-tr-TR`, `whatsnew-ar`, `whatsnew-en-US`.
 
-### App Store Connect (manual today)
+### App Store Connect (automated)
 
-Copy from `release_notes/<version>/de.md` (etc.) into App Store Connect “What’s New” fields. iOS deploy does not upload this text yet.
+On tag deploy, Gate 1 (`submit-review` in `deploy-ios.yml`) runs `upload_appstore_whatsnew.sh` before submitting for review. It PATCHes `whatsNew` on existing `appStoreVersionLocalizations` for the version in **Prepare for Submission** (`en-US`, `de-DE`, `tr`, `ar-SA`). Markdown bullets are stripped to plain text; App Store's **4000 character** limit per locale is enforced (truncates with a workflow warning).
+
+If frozen notes or the ASC version/localization is missing, the step warns and continues (non-breaking). Screenshots and other listing metadata remain manual in App Store Connect.
+
+Local preview:
+
+```bash
+./scripts/linux/prepare_appstore_whatsnew.sh 1.3.6
+# or
+.\scripts\windows\prepare_appstore_whatsnew.ps1 1.3.6
+```
+
+Output: `build/appstore-whatsnew/en-US.txt`, `de-DE.txt`, `tr.txt`, `ar-SA.txt`.
 
 ## Backfill
 

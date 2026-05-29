@@ -15,6 +15,7 @@ param(
 $ErrorActionPreference = "Stop"
 
 . (Join-Path $PSScriptRoot "_utf8_helpers.ps1")
+. (Join-Path $PSScriptRoot "_release_note_text.ps1")
 
 $NotesRoot = if ($env:RELEASE_NOTES_ROOT) { $env:RELEASE_NOTES_ROOT } else { "release_notes" }
 $Source = Join-Path $NotesRoot $Version
@@ -26,63 +27,6 @@ $PlayLocales = [ordered]@{
     de = "de-DE"
     tr = "tr-TR"
     ar = "ar"
-}
-
-function Get-CharCount {
-    param([string]$Text)
-    return $Text.Length
-}
-
-function Remove-Bold {
-    param([string]$Text)
-    return $Text -replace '\*\*', ''
-}
-
-function Test-HasBullets {
-    param([string]$FilePath)
-    foreach ($line in (Read-Utf8Lines $FilePath)) {
-        if ($line -match '^\s*-\s+') {
-            return $true
-        }
-    }
-    return $false
-}
-
-function Get-PlayWhatsNewText {
-    param(
-        [string]$FilePath,
-        [int]$Limit
-    )
-
-    $bullets = @()
-    foreach ($line in (Read-Utf8Lines $FilePath)) {
-        if ($line -match '^\s*<!--') { continue }
-        if ($line -match '^\s*-->') { continue }
-        if ($line -match '^\s*-\s+(.+)') {
-            $content = Remove-Bold $Matches[1].Trim()
-            if ($content) {
-                $bullets += "- $content"
-            }
-        }
-    }
-
-    if ($bullets.Count -eq 0) { return $null }
-
-    $result = ""
-    foreach ($bullet in $bullets) {
-        $candidate = if ($result) { "$result`n$bullet" } else { $bullet }
-        if ((Get-CharCount $candidate) -gt $Limit) {
-            if (-not $result) {
-                Write-Warning "$FilePath exceeds Play limit ($Limit chars); hard-truncated first bullet."
-                return $bullet.Substring(0, [Math]::Min($Limit, $bullet.Length))
-            }
-            Write-Warning "$FilePath exceeds Play limit ($Limit chars); dropped trailing bullets."
-            break
-        }
-        $result = $candidate
-    }
-
-    return $result
 }
 
 if (-not (Test-Path $Source -PathType Container)) {
@@ -100,14 +44,14 @@ foreach ($entry in $PlayLocales.GetEnumerator()) {
     $locale = $entry.Key
     $playLocale = $entry.Value
     $src = Join-Path $Source "$locale.md"
-    if (-not (Test-HasBullets $src)) { continue }
+    if (-not (Test-ReleaseNoteHasBullets $src)) { continue }
 
-    $text = Get-PlayWhatsNewText -FilePath $src -Limit $Max
+    $text = Get-ReleaseNoteText -FilePath $src -Limit $Max -LimitLabel "Play limit"
     if (-not $text) { continue }
 
     $dest = Join-Path $Out "whatsnew-$playLocale"
     Write-Utf8Text -Path $dest -Text $text
-    Write-Host "Prepared whatsnew-$playLocale from $locale.md ($((Get-CharCount $text)) chars)"
+    Write-Host "Prepared whatsnew-$playLocale from $locale.md ($((Get-ReleaseNoteCharCount $text)) chars)"
     $written++
 }
 

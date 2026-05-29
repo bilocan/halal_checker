@@ -101,7 +101,7 @@ jobs:
             echo "Prepared What's New files:"
             ls -la "$DIR"
           else
-            echo "::warning::No Play Store release notes for v$VERSION — upload continues without whatsNewDirectory."
+            echo "::warning::No Play Store release notes for v$VERSION - upload continues without whatsNewDirectory."
           fi
 
       - name: Upload draft to internal track (with release notes)
