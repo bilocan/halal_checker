@@ -29,6 +29,8 @@ target 'Runner' do
   use_modular_headers!
 
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
+  # Google Identity for iOS App Check requires GoogleSignIn 8.0+ and GIDSignIn.configure().
+  pod 'GoogleSignIn', '~> 8.0'
 end
 
 post_install do |installer|

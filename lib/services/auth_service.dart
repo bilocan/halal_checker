@@ -188,10 +188,9 @@ class AuthService {
       await Supabase.instance.client.auth.signInWithOAuth(
         OAuthProvider.google,
         redirectTo: 'app.halalscan://callback/',
-        // External browser on Android so Huawei devices (no GMS) can sign in.
-        authScreenLaunchMode: defaultTargetPlatform == TargetPlatform.android
-            ? LaunchMode.externalApplication
-            : LaunchMode.inAppBrowserView,
+        // External browser: required on Android (no GMS) and iOS (Google blocks
+        // embedded WebViews for OAuth).
+        authScreenLaunchMode: LaunchMode.externalApplication,
       );
       return true;
     } catch (e) {
