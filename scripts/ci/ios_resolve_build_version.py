@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 """Resolve iOS marketing version (pubspec) and next CFBundleVersion (App Store Connect).
 
-Marketing version (build-name) always comes from pubspec.yaml.
-Build number (build-number) is max existing ASC build for that version + 1,
+Marketing version (build-name) comes from pubspec.yaml. When ``--update-pubspec``
+is set (TestFlight workflow), the patch version is bumped if App Store Connect has
+closed that version's pre-release train (e.g. after App Store release).
+
+Build number (build-number) is max existing ASC build for the resolved version + 1,
 so it stays ahead of TestFlight (e.g. 160 -> 161) even when pubspec still says +18.
 """
 
@@ -84,6 +87,61 @@ def _app_id(jwt: str, bundle_id: str) -> str:
     return apps[0]["id"]
 
 
+# App Store states where ASC no longer accepts new builds for that version train.
+_CLOSED_TRAIN_STATES = frozenset({
+    "READY_FOR_SALE",
+    "REPLACED_WITH_NEW_VERSION",
+    "PENDING_DEVELOPER_RELEASE",
+    "PENDING_APPLE_RELEASE",
+    "PROCESSING_FOR_APP_STORE",
+})
+
+
+def _bump_patch(version: str) -> str:
+    m = re.match(r"^(\d+)\.(\d+)\.(\d+)$", version)
+    if not m:
+        raise SystemExit(f"Cannot bump patch for version {version!r}")
+    major, minor, patch = (int(m.group(1)), int(m.group(2)), int(m.group(3)))
+    return f"{major}.{minor}.{patch + 1}"
+
+
+def _app_store_version_state(jwt: str, app_id: str, marketing_version: str) -> str | None:
+    url = (
+        f"https://api.appstoreconnect.apple.com/v1/apps/{app_id}/appStoreVersions"
+        f"?filter[platform]=IOS"
+        f"&filter[versionString]={marketing_version}"
+        "&limit=1"
+    )
+    data = _api_get(url, jwt)
+    items = data.get("data") or []
+    if not items:
+        return None
+    return (items[0].get("attributes") or {}).get("appStoreState")
+
+
+def _is_train_closed(jwt: str, app_id: str, marketing_version: str) -> bool:
+    state = _app_store_version_state(jwt, app_id, marketing_version)
+    return state in _CLOSED_TRAIN_STATES if state else False
+
+
+def _resolve_marketing_version(
+    jwt: str, app_id: str, name: str, *, bump_if_closed: bool
+) -> tuple[str, bool]:
+    if not bump_if_closed:
+        return name, False
+    current = name
+    bumped = False
+    while _is_train_closed(jwt, app_id, current):
+        next_name = _bump_patch(current)
+        print(
+            f"Pre-release train {current} is closed on App Store Connect; "
+            f"bumping marketing version to {next_name}"
+        )
+        current = next_name
+        bumped = True
+    return current, bumped
+
+
 def _max_build_for_version(jwt: str, app_id: str, marketing_version: str) -> int | None:
     """Largest CFBundleVersion uploaded for [marketing_version], or None."""
     base = (
@@ -93,6 +151,21 @@ def _max_build_for_version(jwt: str, app_id: str, marketing_version: str) -> int
         "&limit=200"
         "&sort=-version"
     )
+    return _max_build_from_builds_url(jwt, base)
+
+
+def _max_build_for_app(jwt: str, app_id: str) -> int | None:
+    """Largest CFBundleVersion uploaded for the app (any marketing version), or None."""
+    base = (
+        "https://api.appstoreconnect.apple.com/v1/builds"
+        f"?filter[app]={app_id}"
+        "&limit=200"
+        "&sort=-version"
+    )
+    return _max_build_from_builds_url(jwt, base)
+
+
+def _max_build_from_builds_url(jwt: str, base: str) -> int | None:
     max_build: int | None = None
     url: str | None = base
     while url:
@@ -110,7 +183,16 @@ def _max_build_for_version(jwt: str, app_id: str, marketing_version: str) -> int
     return max_build
 
 
-def _write_github_output(name: str, code: int, full: str, asc_max: int | None, pubspec_build: int) -> None:
+def _write_github_output(
+    name: str,
+    code: int,
+    full: str,
+    asc_max: int | None,
+    pubspec_build: int,
+    *,
+    pubspec_name: str,
+    version_bumped: bool,
+) -> None:
     out_path = os.environ.get("GITHUB_OUTPUT")
     if not out_path:
         return
@@ -119,6 +201,8 @@ def _write_github_output(name: str, code: int, full: str, asc_max: int | None, p
         f.write(f"code={code}\n")
         f.write(f"full={full}\n")
         f.write(f"pubspec_build={pubspec_build}\n")
+        f.write(f"pubspec_name={pubspec_name}\n")
+        f.write(f"version_bumped={'true' if version_bumped else 'false'}\n")
         if asc_max is not None:
             f.write(f"asc_max_build={asc_max}\n")
 
@@ -139,14 +223,17 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    name, pubspec_build = _parse_pubspec(args.pubspec)
+    pubspec_name, pubspec_build = _parse_pubspec(args.pubspec)
     tag = (args.tag_version or os.environ.get("TAG_VERSION", "")).strip().lstrip("v")
-    if tag and tag != name:
+    if tag and tag != pubspec_name:
         raise SystemExit(
-            f"Tag/input version {tag!r} does not match pubspec marketing version {name!r}"
+            f"Tag/input version {tag!r} does not match pubspec marketing version {pubspec_name!r}"
         )
 
+    name = pubspec_name
+    version_bumped = False
     asc_max: int | None = None
+    asc_app_max: int | None = None
     if all(os.environ.get(k) for k in (
         "APP_STORE_CONNECT_KEY_ID",
         "APP_STORE_CONNECT_ISSUER_ID",
@@ -154,17 +241,36 @@ def main() -> None:
     )):
         jwt = _make_jwt()
         app_id = _app_id(jwt, args.bundle_id)
+        bump_if_closed = args.update_pubspec and not tag
+        name, version_bumped = _resolve_marketing_version(
+            jwt, app_id, pubspec_name, bump_if_closed=bump_if_closed
+        )
         asc_max = _max_build_for_version(jwt, app_id, name)
+        asc_app_max = _max_build_for_app(jwt, app_id)
 
-    if asc_max is not None:
-        next_build = asc_max + 1
-        source = f"App Store Connect max {asc_max} + 1"
+    asc_effective_max = asc_max
+    if asc_app_max is not None:
+        asc_effective_max = (
+            asc_app_max if asc_effective_max is None else max(asc_effective_max, asc_app_max)
+        )
+
+    if asc_effective_max is not None:
+        next_build = asc_effective_max + 1
+        if asc_max is not None and asc_max == asc_effective_max:
+            source = f"App Store Connect max {asc_effective_max} + 1"
+        elif asc_max is not None:
+            source = (
+                f"App Store Connect app max {asc_app_max} + 1 "
+                f"(version {name} max {asc_max})"
+            )
+        else:
+            source = f"App Store Connect app max {asc_app_max} + 1 (new version train)"
     else:
         next_build = pubspec_build + 1
         source = f"no ASC builds for {name}; pubspec {pubspec_build} + 1"
 
-    if asc_max is not None and next_build <= asc_max:
-        next_build = asc_max + 1
+    if asc_effective_max is not None and next_build <= asc_effective_max:
+        next_build = asc_effective_max + 1
 
     full = f"{name}+{next_build}"
     if args.update_pubspec:
@@ -175,14 +281,27 @@ def main() -> None:
         )
         print(f"Updated {args.pubspec} to {full}")
 
-    print(f"Marketing version: {name} (from pubspec)")
+    if version_bumped:
+        print(f"Marketing version: {name} (pubspec was {pubspec_name}; train closed)")
+    else:
+        print(f"Marketing version: {name} (from pubspec)")
     print(f"Pubspec build:     {pubspec_build}")
     if asc_max is not None:
-        print(f"ASC max build:     {asc_max}")
+        print(f"ASC max build:     {asc_max} (version {name})")
+    if asc_app_max is not None and asc_app_max != asc_max:
+        print(f"ASC app max build: {asc_app_max} (all versions)")
     print(f"Next build number: {next_build} ({source})")
     print(f"Full:              {full}")
 
-    _write_github_output(name, next_build, full, asc_max, pubspec_build)
+    _write_github_output(
+        name,
+        next_build,
+        full,
+        asc_effective_max,
+        pubspec_build,
+        pubspec_name=pubspec_name,
+        version_bumped=version_bumped,
+    )
 
 
 if __name__ == "__main__":

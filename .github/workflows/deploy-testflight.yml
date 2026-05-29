@@ -1,7 +1,8 @@
 name: Deploy TestFlight (manual)
 
 # Manual TestFlight uploads only — no App Store review/release gates.
-# Marketing version from pubspec.yaml; build number = max App Store Connect build + 1.
+# Marketing version from pubspec.yaml; patch is auto-bumped when ASC closed that train
+# (e.g. after App Store release). Build number = max ASC build for resolved version + 1.
 #
 # Run: Actions → Deploy TestFlight (manual) → Run workflow → pick branch.
 #
@@ -80,7 +81,7 @@ jobs:
           pip install cryptography --quiet
           python3 scripts/ci/ios_resolve_build_version.py --update-pubspec
 
-      - name: Commit pubspec build bump
+      - name: Commit pubspec version bump
         if: inputs.commit_pubspec
         run: |
           set -euo pipefail
@@ -92,7 +93,12 @@ jobs:
             exit 0
           fi
           # Do not use [skip ci] — it leaves open PRs with no reported checks (branch protection).
-          git commit -m "chore(ios): bump build to ${{ steps.version.outputs.full }}"
+          if [ "${{ steps.version.outputs.version_bumped }}" = "true" ]; then
+            MSG="chore(ios): bump version to ${{ steps.version.outputs.full }} (train ${{ steps.version.outputs.pubspec_name }} closed)"
+          else
+            MSG="chore(ios): bump build to ${{ steps.version.outputs.full }}"
+          fi
+          git commit -m "$MSG"
           git push
 
       - name: Select latest Xcode
@@ -285,7 +291,11 @@ jobs:
       - name: Summary
         run: |
           echo "## TestFlight upload" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Version: **${{ steps.version.outputs.name }}** (unchanged)" >> "$GITHUB_STEP_SUMMARY"
+          if [ "${{ steps.version.outputs.version_bumped }}" = "true" ]; then
+            echo "- Version: **${{ steps.version.outputs.name }}** (was \`${{ steps.version.outputs.pubspec_name }}\`; ASC train closed)" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "- Version: **${{ steps.version.outputs.name }}** (unchanged)" >> "$GITHUB_STEP_SUMMARY"
+          fi
           echo "- Build: **${{ steps.version.outputs.code }}** (\`${{ steps.version.outputs.full }}\`)" >> "$GITHUB_STEP_SUMMARY"
           if [ -n "${{ steps.version.outputs.asc_max_build }}" ]; then
             echo "- Previous ASC build: **${{ steps.version.outputs.asc_max_build }}**" >> "$GITHUB_STEP_SUMMARY"
