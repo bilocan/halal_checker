@@ -168,6 +168,10 @@ class AuthService {
     }
   }
 
+  @visibleForTesting
+  static bool shouldFallbackToBrowserOAuthForTesting(GoogleSignInException e) =>
+      _shouldFallbackToBrowserOAuth(e);
+
   static bool _shouldFallbackToBrowserOAuth(GoogleSignInException e) {
     switch (e.code) {
       case GoogleSignInExceptionCode.providerConfigurationError:

@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -203,5 +205,75 @@ void main() {
         expect(AuthService.currentUser, isNull);
       },
     );
+  });
+
+  // ── shouldFallbackToBrowserOAuth ───────────────────────────────────────────
+
+  group('AuthService.shouldFallbackToBrowserOAuthForTesting', () {
+    tearDown(() {
+      debugDefaultTargetPlatformOverride = null;
+    });
+
+    test('providerConfigurationError always falls back', () {
+      const exception = GoogleSignInException(
+        code: GoogleSignInExceptionCode.providerConfigurationError,
+      );
+      for (final platform in TargetPlatform.values) {
+        debugDefaultTargetPlatformOverride = platform;
+        expect(
+          AuthService.shouldFallbackToBrowserOAuthForTesting(exception),
+          isTrue,
+          reason: 'expected fallback on $platform',
+        );
+      }
+    });
+
+    const androidOnlyFallbackCodes = [
+      GoogleSignInExceptionCode.interrupted,
+      GoogleSignInExceptionCode.uiUnavailable,
+      GoogleSignInExceptionCode.clientConfigurationError,
+      GoogleSignInExceptionCode.unknownError,
+    ];
+
+    for (final code in androidOnlyFallbackCodes) {
+      test('$code falls back on Android only', () {
+        final exception = GoogleSignInException(code: code);
+
+        debugDefaultTargetPlatformOverride = TargetPlatform.android;
+        expect(
+          AuthService.shouldFallbackToBrowserOAuthForTesting(exception),
+          isTrue,
+        );
+
+        for (final platform in TargetPlatform.values) {
+          if (platform == TargetPlatform.android) continue;
+          debugDefaultTargetPlatformOverride = platform;
+          expect(
+            AuthService.shouldFallbackToBrowserOAuthForTesting(exception),
+            isFalse,
+            reason: 'expected no fallback on $platform',
+          );
+        }
+      });
+    }
+
+    const neverFallbackCodes = [
+      GoogleSignInExceptionCode.canceled,
+      GoogleSignInExceptionCode.userMismatch,
+    ];
+
+    for (final code in neverFallbackCodes) {
+      test('$code never falls back', () {
+        final exception = GoogleSignInException(code: code);
+        for (final platform in TargetPlatform.values) {
+          debugDefaultTargetPlatformOverride = platform;
+          expect(
+            AuthService.shouldFallbackToBrowserOAuthForTesting(exception),
+            isFalse,
+            reason: 'expected no fallback on $platform',
+          );
+        }
+      });
+    }
   });
 }
