@@ -33,6 +33,8 @@ Say **task done** for the full agent flow.
 | Lookup pipeline | `lib/services/product_service.dart` |
 | Keywords | `lib/services/keyword_service.dart` |
 | Edge function | `supabase/functions/lookup-product/` |
+| Shared Gemini ingredient lookup | `supabase/functions/_shared/gemini_ingredient_lookup.ts` |
+| Admin Gemini probe (web) | `supabase/functions/admin-gemini-ingredient-lookup/` |
 | Edge verdict steps | `supabase/functions/lookup-product/VERDICT_PIPELINE.md` |
 | Tests | `test/services/`, `test_data/`, [TESTING.md](TESTING.md) |
 | UI E2E registry | `test/e2e_coverage.json`, `lib/integration_test_keys.dart` |

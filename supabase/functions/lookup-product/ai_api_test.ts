@@ -1,6 +1,7 @@
 // Run with: deno test --allow-env supabase/functions/lookup-product/ai_api_test.ts
 
 import { assertEquals, assertExists } from 'https://deno.land/std@0.224.0/assert/mod.ts'
+import { buildGeminiIngredientLookupRequest } from '../_shared/gemini_ingredient_lookup.ts'
 import {
   analyzeWithClaude,
   analyzeWithClaudeVision,
@@ -27,6 +28,19 @@ Deno.test('geminiIngredientLookup — parses comma list from mocked API', async 
     () => geminiIngredientLookup('Cola', BARCODE, 'fake-key', 'Brand'),
   )
   assertEquals(list, ['water', 'sugar', 'citric acid'])
+})
+
+Deno.test('geminiIngredientLookup — POST body matches shared snapshot builder', async () => {
+  const expected = buildGeminiIngredientLookupRequest('Cola', BARCODE, 'Brand')
+  await withMockedFetch(
+    async (req) => {
+      assertEquals(req.method, 'POST')
+      const body = await req.json()
+      assertEquals(body, expected)
+      return geminiGenerateText('water, sugar')
+    },
+    () => geminiIngredientLookup('Cola', BARCODE, 'fake-key', 'Brand'),
+  )
 })
 
 Deno.test('geminiIngredientLookup — UNKNOWN yields empty list', async () => {

@@ -167,6 +167,8 @@ Categories for cert: `categories.ts` (`ANIMAL_PRODUCT_CATEGORIES`, `HALAL_CERT_L
 | `GEMINI_ENABLED` / `GEMINI_API_KEY` | Gemini text AI + ingredient web lookup |
 | `GEMINI_LOOKUP_EMPTY_OFF` | Auto Gemini ingredients when OFF empty (see `ingredient_lookup_gate.ts`) |
 
+**Gemini ingredient web lookup (shared):** `_shared/gemini_ingredient_lookup.ts` — model, system prompt, and `generateContent` body used by `lookup-product` (Flutter) and `admin-gemini-ingredient-lookup` (web admin probe). Request contract: `_shared/gemini_ingredient_lookup_test.ts` (no API calls in CI).
+
 Production default: **Open Food Facts + keywords + post-rules**; AI tiers optional.
 
 ---
@@ -184,7 +186,8 @@ Production default: **Open Food Facts + keywords + post-rules**; AI tiers option
 | `ingredientResolver_test.ts` | `resolveGeminiIngredients` (mocked Gemini HTTP) |
 | `reanalysis_test.ts` | `runStoredProductReanalysis`, `jsonManagedProduct` |
 | `ai_test.ts` | `parseIngredientList` |
-| `ai_api_test.ts` | `analyzeWithGemini/Claude/Vision`, `geminiIngredientLookup` (mocked HTTP) |
+| `ai_api_test.ts` | `analyzeWithGemini/Claude/Vision`, `geminiIngredientLookup` (mocked HTTP + shared request body) |
+| `_shared/gemini_ingredient_lookup_test.ts` | `buildGeminiIngredientLookupRequest` snapshot (zero token cost) |
 | `persistence_test.ts` | `persistLookupAndRespond` (`products_full` vs fallback) |
 | `handler_test.ts` | `handleLookup` / `handleLookupRequest` (mocked Supabase + OFF) |
 
