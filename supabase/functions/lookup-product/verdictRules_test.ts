@@ -97,6 +97,31 @@ Deno.test('computeVerdict — empty ingredients → unknown', async () => {
   assertEquals(result.analyzedByAI, false)
 })
 
+Deno.test('computeVerdict — ai-sourced ingredients skip verdict AI (keyword-only)', async () => {
+  const env = saveTestEnv()
+  setAiEnvEnabled()
+  let geminiVerdictCalls = 0
+  try {
+    const result = await withMockedFetch((req) => {
+      if (req.url.includes('generativelanguage.googleapis.com')) {
+        geminiVerdictCalls++
+        return geminiGenerateText(aiVerdictJson())
+      }
+      return new Response('not found', { status: 404 })
+    }, async () =>
+      computeVerdict(baseCtx({
+        ingredients: ['water', 'sugar', 'citric acid'],
+        ingredientSource: 'ai',
+      })))
+
+    assertEquals(result.analyzedByAI, false)
+    assertEquals(geminiVerdictCalls, 0)
+    assertEquals(result.isHalal, true)
+  } finally {
+    restoreTestEnv(env)
+  }
+})
+
 Deno.test('computeVerdict — animal product without halal label → requiresHalalCert', async () => {
   const result = await computeVerdict(baseCtx({
     name: 'Chicken Breast Fillets',
