@@ -11,3 +11,5 @@
 - **Etiket analizi** — Ürün etiketleri (ör. 'domuz içerir') artık haram ve şüpheli anahtar kelimeler için taranıyor ve sonuç ekranında ayrıca gösteriliyor.
 
 - **Jelatin şüpheli olarak yeniden sınıflandırıldı** — Jelatin ve E441 artık haram yerine şüpheli (kaynak doğrulaması gerektirir) olarak işaretleniyor; zira helal kaynaklar (balık, helal sertifikalı sığır) mevcuttur. Batı pazarlarında kaynak belirtilmemiş jelatin ağırlıklı olarak domuzdan elde edilmektedir — helal sertifika logosunu veya açık kaynak bilgisini arayın.
+
+- **İşaretli etiket vurgulama** — Haram veya şüpheli olarak işaretlenen ürün etiketleri artık sonuç ekranında kırmızı/turuncu renkte gösterilmekte ve karar açıklaması artık etiket uyarılarını da içermektedir.

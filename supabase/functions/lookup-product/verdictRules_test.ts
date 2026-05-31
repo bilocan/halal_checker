@@ -510,7 +510,7 @@ Deno.test('postRules — label haram explanation used when no ingredient haram',
   assertMatch(snapshot.explanation, /pork/i)
 })
 
-Deno.test('postRules — label haram defers to ingredient explanation when both haram', () => {
+Deno.test('postRules — label haram appends label note to ingredient explanation when both haram', () => {
   const ctx = baseCtx({ ingredients: ['pork', 'salt'], labels: ['en:pork'] })
   const kwFirst = keywordAnalysis(ctx.ingredients, ctx.customHaramEntries, ctx.customSuspiciousEntries)
   const kwLabels = keywordAnalysis(ctx.labels, ctx.customHaramEntries, ctx.customSuspiciousEntries)
@@ -519,8 +519,10 @@ Deno.test('postRules — label haram defers to ingredient explanation when both 
   assertEquals(snapshot.isHalal, false)
   assertEquals(snapshot.haramIngredients.includes('pork'), true)
   assertEquals(snapshot.haramLabels.includes('en:pork'), true)
-  // Explanation comes from the ingredient keyword analysis, not the label
+  // Starts with ingredient explanation, then appends label note
   assertMatch(snapshot.explanation, /keyword matching|not permissible/i)
+  assertMatch(snapshot.explanation, /label also indicates/i)
+  assertMatch(snapshot.explanation, /en:pork/i)
 })
 
 Deno.test('postRules — label suspicious override forces not halal when snapshot isHalal', () => {
@@ -535,16 +537,59 @@ Deno.test('postRules — label suspicious override forces not halal when snapsho
   assertEquals(snapshot.haramLabels.length, 0)
 })
 
-Deno.test('postRules — label suspicious does not override when snapshot already not halal', () => {
+Deno.test('postRules — label suspicious + haram both captured when labels contain both types', () => {
+  const ctx = baseCtx({ ingredients: ['water'], labels: ['pork', 'contains rennet'] })
+  const kwFirst = keywordAnalysis(ctx.ingredients, ctx.customHaramEntries, ctx.customSuspiciousEntries)
+  const kwLabels = keywordAnalysis(ctx.labels, ctx.customHaramEntries, ctx.customSuspiciousEntries)
+  const { snapshot } = applyPostAnalysisRules(aiSaysHalalSnapshot(), ctx, kwFirst, kwLabels)
+
+  // haram override fires first → sets explanation to label-haram text
+  // suspicious override appends its own note to that explanation
+  assertEquals(snapshot.haramLabels.includes('pork'), true)
+  assertEquals(snapshot.suspiciousLabels.includes('contains rennet'), true)
+  assertMatch(snapshot.explanation, /pork/i)
+  assertMatch(snapshot.explanation, /rennet/i)
+})
+
+Deno.test('postRules — label suspicious sets explanation when no ingredient flags', () => {
+  const ctx = baseCtx({ ingredients: ['water'], labels: ['contains rennet'] })
+  const kwFirst = keywordAnalysis(ctx.ingredients, ctx.customHaramEntries, ctx.customSuspiciousEntries)
+  const kwLabels = keywordAnalysis(ctx.labels, ctx.customHaramEntries, ctx.customSuspiciousEntries)
+  const { snapshot } = applyPostAnalysisRules(aiSaysHalalSnapshot(), ctx, kwFirst, kwLabels)
+
+  assertMatch(snapshot.explanation, /label/i)
+  assertMatch(snapshot.explanation, /rennet/i)
+})
+
+Deno.test('postRules — label suspicious defers to existing explanation when AI set suspicious ingredients', () => {
+  // ingredients have no keyword hits, but AI already flagged gelatin as suspicious
+  const ctx = baseCtx({ ingredients: ['water'], labels: ['contains rennet'] })
+  const kwFirst = keywordAnalysis(ctx.ingredients, ctx.customHaramEntries, ctx.customSuspiciousEntries)
+  const kwLabels = keywordAnalysis(ctx.labels, ctx.customHaramEntries, ctx.customSuspiciousEntries)
+  const snapshotWithAiIngredients = aiSaysHalalSnapshot({
+    suspiciousIngredients: ['gelatin'],
+    ingredientWarnings: { gelatin: 'May be animal-derived' },
+    explanation: 'Gelatin found.',
+  })
+  const { snapshot } = applyPostAnalysisRules(snapshotWithAiIngredients, ctx, kwFirst, kwLabels)
+
+  // isHalal stays true after kwFirst (no hits) so label override fires,
+  // but defers to the existing ingredient-based explanation
+  assertMatch(snapshot.explanation, /Gelatin/i)
+})
+
+Deno.test('postRules — label suspicious merges labels even when snapshot already not halal', () => {
   const ctx = baseCtx({ ingredients: ['pork'], labels: ['contains rennet'] })
   const kwFirst = keywordAnalysis(ctx.ingredients, ctx.customHaramEntries, ctx.customSuspiciousEntries)
   const kwLabels = keywordAnalysis(ctx.labels, ctx.customHaramEntries, ctx.customSuspiciousEntries)
-  const notHalalSnapshot = aiSaysHalalSnapshot({ isHalal: false, isUnknown: false })
+  const notHalalSnapshot = aiSaysHalalSnapshot({ isHalal: false, isUnknown: false, explanation: 'Pork found.' })
   const { snapshot } = applyPostAnalysisRules(notHalalSnapshot, ctx, kwFirst, kwLabels)
 
-  // suspiciousLabels seeded from initial snapshot (empty) but label-suspicious rule
-  // skips when isHalal is already false — so suspiciousLabels stays empty
-  assertEquals(snapshot.suspiciousLabels.length, 0)
+  // suspicious labels are captured and a note is appended to the existing explanation
+  assertEquals(snapshot.suspiciousLabels.includes('contains rennet'), true)
+  assertEquals(snapshot.isHalal, false)
+  assertMatch(snapshot.explanation, /Pork/i)
+  assertMatch(snapshot.explanation, /animal-derived.*rennet/i)
 })
 
 Deno.test('postRules — haramLabels exempts requiresHalalCert (animal product + haram label)', () => {

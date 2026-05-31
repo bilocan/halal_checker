@@ -136,10 +136,20 @@ function runInitialKeywordAnalysis(ctx: VerdictContext): KeywordResult {
   )
 }
 
+/** Deduplicate labels that differ only in language prefix or hyphen/space variant (e.g. "en:pure-pork" vs "en:pure pork"). */
+function deduplicateLabels(labels: string[]): string[] {
+  const normalize = (l: string) => l.toLowerCase().replace(/^[a-z]{2,3}:/, '').replace(/[-_]/g, ' ').trim()
+  const seen = new Set<string>()
+  return labels.filter(l => {
+    const key = normalize(l)
+    return seen.has(key) ? false : (seen.add(key), true)
+  })
+}
+
 function createInitialState(ctx: VerdictContext): VerdictState {
   const { ingredients, isNonFood, isHalalByCategory } = ctx
   const kwFirst = runInitialKeywordAnalysis(ctx)
-  const kwLabelsRaw = keywordAnalysis(ctx.labels, ctx.customHaramEntries, ctx.customSuspiciousEntries)
+  const kwLabelsRaw = keywordAnalysis(deduplicateLabels(ctx.labels), ctx.customHaramEntries, ctx.customSuspiciousEntries)
   const kwLabels = {
     ...kwLabelsRaw,
     warnings: Object.fromEntries(
@@ -414,8 +424,9 @@ function applyNameFallback(snapshot: VerdictSnapshot, { ctx }: PostRuleContext):
 function applyLabelHaramOverride(snapshot: VerdictSnapshot, { kwLabels }: PostRuleContext): VerdictSnapshot {
   if (kwLabels.haram.length === 0) return snapshot
   const mergedHaram = [...new Set([...snapshot.haramLabels, ...kwLabels.haram])]
+  const labelNote = `Product label also indicates: ${mergedHaram.join(', ')}.`
   const explanation = snapshot.haramIngredients.length > 0
-    ? snapshot.explanation
+    ? `${snapshot.explanation} ${labelNote}`
     : `This product's label indicates it contains: ${mergedHaram.join(', ')}.`
   return {
     ...snapshot,
@@ -428,13 +439,31 @@ function applyLabelHaramOverride(snapshot: VerdictSnapshot, { kwLabels }: PostRu
 }
 
 function applyLabelSuspiciousOverride(snapshot: VerdictSnapshot, { kwLabels }: PostRuleContext): VerdictSnapshot {
-  if (kwLabels.suspicious.length === 0 || !snapshot.isHalal) return snapshot
+  if (kwLabels.suspicious.length === 0) return snapshot
+  const suspiciousLabels = [...new Set([...snapshot.suspiciousLabels, ...kwLabels.suspicious])]
+  const mergedLabelWarnings = { ...snapshot.labelWarnings, ...kwLabels.warnings }
+  if (!snapshot.isHalal) {
+    // Already not-halal — capture labels and append a note to the existing explanation.
+    const suspiciousNote = `Product labels may also indicate animal-derived content: ${suspiciousLabels.join(', ')}.`
+    return {
+      ...snapshot,
+      suspiciousLabels,
+      labelWarnings: mergedLabelWarnings,
+      explanation: `${snapshot.explanation} ${suspiciousNote}`,
+    }
+  }
+  const allFlaggedLabels = [...snapshot.haramLabels, ...suspiciousLabels]
+  const explanation =
+    snapshot.suspiciousIngredients.length === 0 && snapshot.haramIngredients.length === 0
+      ? `Product labels may indicate animal-derived content: ${allFlaggedLabels.join(', ')}.`
+      : snapshot.explanation
   return {
     ...snapshot,
     isHalal: false,
     isUnknown: false,
-    suspiciousLabels: [...new Set([...snapshot.suspiciousLabels, ...kwLabels.suspicious])],
-    labelWarnings: { ...snapshot.labelWarnings, ...kwLabels.warnings },
+    suspiciousLabels,
+    labelWarnings: mergedLabelWarnings,
+    explanation,
   }
 }
 

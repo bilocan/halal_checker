@@ -3,7 +3,11 @@ import 'package:flutter/material.dart';
 import '../app_colors.dart';
 
 abstract final class ProductLabelChips {
-  static List<Widget> build(List<String> rawLabels) {
+  static List<Widget> build(
+    List<String> rawLabels, {
+    Set<String> haramLabels = const {},
+    Set<String> suspiciousLabels = const {},
+  }) {
     if (rawLabels.isEmpty) return [];
 
     final lower = rawLabels.map((l) => l.toLowerCase()).toList();
@@ -67,7 +71,13 @@ abstract final class ProductLabelChips {
       if (display.length < 3) continue;
       if (!seenDisplay.add(display)) continue;
 
-      chips.add(_buildGenericChip(display));
+      if (haramLabels.contains(raw)) {
+        chips.add(_buildFlaggedChip(display, isHaram: true));
+      } else if (suspiciousLabels.contains(raw)) {
+        chips.add(_buildFlaggedChip(display, isHaram: false));
+      } else {
+        chips.add(_buildGenericChip(display));
+      }
     }
 
     return chips;
@@ -82,6 +92,18 @@ abstract final class ProductLabelChips {
         .where((w) => w.isNotEmpty)
         .map((w) => '${w[0].toUpperCase()}${w.substring(1).toLowerCase()}')
         .join(' ');
+  }
+
+  static Widget _buildFlaggedChip(String label, {required bool isHaram}) {
+    final color = isHaram ? Colors.red : Colors.orange;
+    final icon = isHaram ? Icons.error : Icons.warning_amber;
+    return Chip(
+      avatar: Icon(icon, size: 16, color: color.shade700),
+      label: Text(label, style: TextStyle(color: color.shade800, fontSize: 12)),
+      backgroundColor: color.shade50,
+      side: BorderSide(color: color.shade300),
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+    );
   }
 
   static Widget _buildGenericChip(String label) {
