@@ -18,6 +18,7 @@ export interface HalalScanProduct extends Record<string, unknown> {
   fetched_at?: string;
   gemini_web_ingredient_lookup_at?: string;
   gemini_web_ingredient_lookup_name_key?: string;
+  tags_version?: number;
 }
 
 /**

@@ -6,6 +6,7 @@ import {
   parseOffBrand,
   parseOffLabels,
   parseOffProductName,
+  parseOffTags,
   resolveImg,
 } from './fetch.ts'
 import { resolveOffIngredientAnalysis } from './ingredientResolution.ts'
@@ -21,6 +22,7 @@ import { computeVerdict } from './verdictRules.ts'
 import type { KeywordEntry } from './keyword.ts'
 import {
   jsonResponse,
+  patchProductTags,
   persistLookupAndRespond,
   type AnalysisRow,
   type ProductRow,
@@ -115,19 +117,18 @@ export async function handleLookup(
     return deps.jsonManagedProduct(existing, corsHeaders)
   }
 
-  // Unknown rows with OFF-source ingredients refetch OFF so halal-by-category can apply.
-  // But if ingredients came from AI or community, protect them — OFF has dummy/worse data.
+  // Protect AI/community ingredients — OFF has dummy/worse data for those products.
   const hasNonOffIngredients = existing?.ingredient_source === 'ai' ||
     existing?.ingredient_source === 'community'
-  // Unknown+OFF products with no stored ingredients must re-fetch OFF: stored reanalysis
-  // has no categories_tags, so halal-by-category would never apply without a fresh response.
-  // If ingredients exist, the analysis already ran on them — don't re-fetch.
   const hasStoredIngredients = Array.isArray(existing?.ingredients) &&
     (existing.ingredients as string[]).length > 0
   const isUnknownOff = !!(existing?.is_unknown && !hasNonOffIngredients && !hasStoredIngredients)
+  // Stale, force-refresh, or unknown+OFF with stored tags: re-run rules on stored data.
+  // No OFF refetch — stored categories_tags drive halal-by-category.
+  // Unknown+OFF rows without stored tags fall through to the tag-backfill path below.
+  const hasStoredTags = (existing?.tags_version ?? 0) > 0
   if (!fetchAiIngredients && !refetchForGeminiAuto && existing &&
-      (!existing.is_unknown || hasNonOffIngredients) &&
-      (isStale(existing) || force)) {
+      (isStale(existing) || force || (isUnknownOff && hasStoredTags))) {
     const reason = isStale(existing) ? 'stale (updated_at > last_analysed_at)' : 'force-refresh'
     console.log(`[${barcode}] ${reason} — re-running rules engine on stored data`)
     const { haram: customHaramEntries, suspicious: customSuspiciousEntries } =
@@ -144,7 +145,32 @@ export async function handleLookup(
     const visionUrlRaw = existing.image_ingredients_url as string | null | undefined
     const visionUrl = typeof visionUrlRaw === 'string' ? visionUrlRaw.trim() : ''
     const needsVisionIngredients = storedIngredients.length === 0 && visionUrl !== ''
-    if (!needsVisionIngredients && !isUnknownOff) {
+    // Re-fetch OFF when tags have never been populated (pre-migration rows have tags_version=0).
+    // Skipped for managed/AI/community products — those don't use OFF tags.
+    const needsTagFetch = (existing.tags_version ?? 0) === 0 && !hasNonOffIngredients && !existing.is_managed
+    if (!needsVisionIngredients && !isUnknownOff && !needsTagFetch) {
+      return jsonResponse(
+        { product: toProduct(withCommunitySource(existing, communityIngredients)) },
+        200,
+        corsHeaders,
+      )
+    }
+    // Tags-only backfill: fetch OFF for tag columns only — never touch ingredients or
+    // analysis for existing Supabase products, regardless of unknown/known status.
+    if (needsTagFetch && !needsVisionIngredients) {
+      console.log(`[${barcode}] tags_version=0 — fetching OFF tags only, preserving stored ingredients`)
+      const off = await deps.fetchOpenFactsProduct(barcode)
+      if (off?.pd) {
+        const tags = parseOffTags(off.pd)
+        await patchProductTags(supabase, barcode, tags)
+        return jsonResponse(
+          { product: toProduct({ ...withCommunitySource(existing, communityIngredients), ...tags, tags_version: 1 }) },
+          200,
+          corsHeaders,
+        )
+      }
+      // OFF unavailable — serve existing product; tags_version stays 0 so next scan retries.
+      console.log(`[${barcode}] OFF unavailable for tag fetch — serving existing, will retry`)
       return jsonResponse(
         { product: toProduct(withCommunitySource(existing, communityIngredients)) },
         200,
@@ -163,9 +189,9 @@ export async function handleLookup(
 
     let pd: Record<string, unknown> | null = null
     let isNonFood = false
-    // Fetch OFF for new products or unknown+OFF products (halal-by-category re-detection).
-    // AI/community ingredients are always preserved — only OFF-sourced unknowns re-fetch.
-    if (!existing || isUnknownOff) {
+    // Only fetch OFF for brand-new products (no existing DB row).
+    // Existing products always use stored data — ingredients are never overwritten from OFF.
+    if (!existing) {
       const off = await deps.fetchOpenFactsProduct(barcode)
       if (off) {
         pd = off.pd
@@ -229,6 +255,10 @@ export async function handleLookup(
 
   const labels = parseOffLabels(pd)
   const rawCategories: string[] = Array.isArray(pd.categories_tags) ? pd.categories_tags as string[] : []
+  const offAdditivesTags: string[] = Array.isArray(pd.additives_tags) ? pd.additives_tags as string[] : []
+  const offAllergensTags: string[] = Array.isArray(pd.allergens_tags) ? pd.allergens_tags as string[] : []
+  const offTracesTags: string[] = Array.isArray(pd.traces_tags) ? pd.traces_tags as string[] : []
+  const offQuantity: string = typeof pd.quantity === 'string' ? pd.quantity.trim() : ''
   const classified = classifyOffCategories(rawCategories, isNonFood)
   isNonFood = classified.isNonFood
 
@@ -261,6 +291,14 @@ export async function handleLookup(
     verdict, classified.isNonFood, labels, images,
     existing?.fetched_at as string | undefined,
     geminiResolved.geminiAt, geminiResolved.geminiNameKey,
+    false,
+    {
+      brand, quantity: offQuantity,
+      categoriesTags: rawCategories,
+      additivesTags: offAdditivesTags,
+      allergensTags: offAllergensTags,
+      tracesTags: offTracesTags,
+    },
   )
 }
 
@@ -324,7 +362,12 @@ async function analyzeFromDbStub(
   }
 
   const labels = normalizeStoredLabels(existing.labels)
-  const isNonFood = !!(existing.is_non_food ?? false)
+  const rawCategories: string[] = Array.isArray(existing.categories_tags)
+    ? existing.categories_tags as string[]
+    : []
+  const isNonFoodBase = !!(existing.is_non_food ?? false)
+  const classified = classifyOffCategories(rawCategories, isNonFoodBase)
+  const isNonFood = classified.isNonFood
 
   console.log(`[${barcode}] DB stub name="${name}" ingredients=${ingredients.length}`)
   console.log(
@@ -347,11 +390,11 @@ async function analyzeFromDbStub(
     analyzeLang: null,
     name,
     labels,
-    rawCategories: [],
+    rawCategories,
     isNonFood,
     ingredientSource,
-    haramCategory: null,
-    isHalalByCategory: false,
+    haramCategory: classified.haramCategory,
+    isHalalByCategory: classified.isHalalByCategory,
     customHaramEntries,
     customSuspiciousEntries,
     imageIngredientsUrl: typeof existing.image_ingredients_url === 'string'
@@ -383,6 +426,11 @@ async function saveFullLookup(
   geminiAt?: string,
   geminiNameKey?: string,
   isManaged = false,
+  offTags: {
+    brand?: string; quantity?: string
+    categoriesTags?: string[]; additivesTags?: string[]
+    allergensTags?: string[]; tracesTags?: string[]
+  } = {},
 ): Promise<Response> {
   const {
     isHalal, isUnknown, haramIngredients, suspiciousIngredients,
@@ -405,6 +453,12 @@ async function saveFullLookup(
     geminiAt,
     geminiNameKey,
     displayLang: displayLang ?? '',
+    brand:          offTags.brand ?? '',
+    quantity:       offTags.quantity ?? '',
+    categoriesTags: offTags.categoriesTags ?? [],
+    additivesTags:  offTags.additivesTags ?? [],
+    allergensTags:  offTags.allergensTags ?? [],
+    tracesTags:     offTags.tracesTags ?? [],
   }
 
   const analysisRow: AnalysisRow = {
@@ -455,6 +509,12 @@ async function saveFullLookup(
     fetched_at: productRow.fetchedAt,
     gemini_web_ingredient_lookup_at: geminiAt ?? null,
     gemini_web_ingredient_lookup_name_key: geminiNameKey ?? null,
+    brand:           offTags.brand ?? '',
+    quantity:        offTags.quantity ?? '',
+    categories_tags: offTags.categoriesTags ?? [],
+    additives_tags:  offTags.additivesTags ?? [],
+    allergens_tags:  offTags.allergensTags ?? [],
+    traces_tags:     offTags.tracesTags ?? [],
   }
 
   return persistLookupAndRespond(supabase, corsHeaders, productRow, analysisRow, fallbackRow)

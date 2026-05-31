@@ -18,6 +18,12 @@ export interface ProductRow {
   geminiAt?: string
   geminiNameKey?: string
   displayLang?: string
+  brand?: string
+  quantity?: string
+  categoriesTags?: string[]
+  additivesTags?: string[]
+  allergensTags?: string[]
+  tracesTags?: string[]
 }
 
 export interface AnalysisRow {
@@ -54,6 +60,13 @@ export async function upsertProduct(supabase: SupabaseClient, row: ProductRow): 
     last_analysed_at:      new Date().toISOString(),
     fetched_at:            row.fetchedAt,
     display_lang:          row.displayLang || null,
+    brand:                 row.brand ?? '',
+    quantity:              row.quantity ?? '',
+    categories_tags:       row.categoriesTags ?? [],
+    additives_tags:        row.additivesTags ?? [],
+    allergens_tags:        row.allergensTags ?? [],
+    traces_tags:           row.tracesTags ?? [],
+    tags_version:          1,
     ...(row.isManaged !== undefined ? { is_managed: row.isManaged } : {}),
     ...(row.geminiNameKey ? {
       gemini_web_ingredient_lookup_at:       row.geminiAt,
@@ -61,6 +74,24 @@ export async function upsertProduct(supabase: SupabaseClient, row: ProductRow): 
     } : {}),
   })
   if (error) console.error(`[${row.barcode}] products upsert error`, error)
+}
+
+/** Update only tag columns + tags_version. Never touches ingredients or analysis. */
+export async function patchProductTags(
+  supabase: SupabaseClient,
+  barcode: string,
+  tags: { brand: string; quantity: string; categoriesTags: string[]; additivesTags: string[]; allergensTags: string[]; tracesTags: string[] },
+): Promise<void> {
+  const { error } = await supabase.from('products').update({
+    brand:           tags.brand,
+    quantity:        tags.quantity,
+    categories_tags: tags.categoriesTags,
+    additives_tags:  tags.additivesTags,
+    allergens_tags:  tags.allergensTags,
+    traces_tags:     tags.tracesTags,
+    tags_version:    1,
+  }).eq('barcode', barcode)
+  if (error) console.error(`[${barcode}] patchProductTags error`, error)
 }
 
 export async function upsertAnalysis(supabase: SupabaseClient, row: AnalysisRow): Promise<void> {

@@ -36,6 +36,13 @@ export function toProduct(row: Record<string, any>) {
     keywordMatchOrigins:   row.keyword_match_origins ?? {},
     analyzeLang:           row.analyze_lang ?? null,
     displayLang:           row.display_lang ?? null,
+    brand:                 row.brand ?? '',
+    quantity:              row.quantity ?? '',
+    categoriesTags:        row.categories_tags ?? [],
+    additivesTags:         row.additives_tags ?? [],
+    allergensTags:         row.allergens_tags ?? [],
+    tracesTags:            row.traces_tags ?? [],
+    tagsPopulated:         (row.tags_version ?? 0) > 0,
   }
 }
 

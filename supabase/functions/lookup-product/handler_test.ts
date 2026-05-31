@@ -24,6 +24,7 @@ function cachedProduct(overrides: Record<string, unknown> = {}) {
     updated_at: '2026-05-01T00:00:00Z',
     last_analysed_at: '2026-05-02T00:00:00Z',
     fetched_at: '2026-05-01T00:00:00Z',
+    tags_version: 1,
     ...overrides,
   }
 }
@@ -101,30 +102,22 @@ Deno.test('handleLookup — unknown barcode and OFF miss returns null product', 
   assertEquals(body.product, null)
 })
 
-Deno.test('handleLookup — unknown OFF row re-fetches OFF (force=true)', async () => {
+Deno.test('handleLookup — unknown OFF row uses stored categories (force=true, no OFF refetch)', async () => {
   const row = cachedProduct({
     is_unknown: true,
     is_halal: false,
     ingredient_source: 'off',
     ingredients: [],
+    categories_tags: ['en:waters'],
     explanation: 'stale unknown',
     updated_at: '2026-05-03T00:00:00Z',
     last_analysed_at: '2026-05-01T00:00:00Z',
   })
   const saved = cachedProduct({ is_unknown: false, is_halal: true, ingredients: [] })
-  let offCalled = false
   const supabase = mockHandlerSupabase({ cacheProduct: row, savedProduct: saved })
   const deps = createLookupDeps(supabase)
-  deps.fetchOpenFactsProduct = async () => {
-    offCalled = true
-    return {
-      pd: {
-        product_name: 'Mineral Water',
-        categories_tags: ['en:waters'],
-        ingredients_text: '',
-      },
-      isNonFood: false,
-    }
+  deps.fetchOpenFactsProduct = () => {
+    throw new Error('OFF must not be fetched for existing DB row')
   }
 
   const res = await handleLookup(
@@ -132,7 +125,6 @@ Deno.test('handleLookup — unknown OFF row re-fetches OFF (force=true)', async 
     deps,
   )
   assertEquals(res.status, 200)
-  assertEquals(offCalled, true)
   const body = await res.json()
   assertEquals(body.product.barcode, '1234567890')
   assertEquals(body.product.isHalal, true)
@@ -163,37 +155,28 @@ Deno.test('handleLookup — force on unknown row with AI ingredients skips OFF, 
   assertEquals(body.product.ingredientSource, 'ai')
 })
 
-Deno.test('handleLookup — unknown OFF row re-fetches OFF (force=false) for halal-by-category', async () => {
+Deno.test('handleLookup — unknown OFF row uses stored categories (force=false, no OFF refetch)', async () => {
   const row = cachedProduct({
     is_unknown: true,
     is_halal: false,
     ingredient_source: 'off',
     ingredients: [],
+    categories_tags: ['en:waters'],
     explanation: 'frozen unknown',
     updated_at: '2026-05-03T00:00:00Z',
     last_analysed_at: '2026-05-01T00:00:00Z',
   })
   const saved = cachedProduct({ is_unknown: false, is_halal: true, ingredients: [] })
-  let offCalled = false
   const supabase = mockHandlerSupabase({ cacheProduct: row, savedProduct: saved })
   const deps = createLookupDeps(supabase)
-  deps.fetchOpenFactsProduct = async () => {
-    offCalled = true
-    return {
-      pd: {
-        product_name: 'Mineral Water',
-        categories_tags: ['en:waters'],
-        ingredients_text: '',
-      },
-      isNonFood: false,
-    }
+  deps.fetchOpenFactsProduct = () => {
+    throw new Error('OFF must not be fetched for existing DB row')
   }
 
   const res = await handleLookup(
     { barcode: '1234567890', force: false, fetchAiIngredients: false },
     deps,
   )
-  assertEquals(offCalled, true)
   const body = await res.json()
   assertEquals(body.product.isHalal, true)
   assertEquals(body.product.isUnknown, false)

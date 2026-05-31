@@ -3,7 +3,7 @@ import { toProduct } from './db.ts'
 import { getApprovedContribution } from './community.ts'
 import { computeVerdict } from './verdictRules.ts'
 import type { KeywordEntry } from './keyword.ts'
-import { normalizeStoredLabels } from './lookupHelpers.ts'
+import { classifyOffCategories, normalizeStoredLabels } from './lookupHelpers.ts'
 import type { HalalScanProduct } from './productQueries.ts'
 import {
   jsonResponse,
@@ -52,6 +52,11 @@ export async function runStoredProductReanalysis(
     ? [{ key: 'primary' as const, ingredients: storedIngredients }]
     : []
 
+  const rawCategories: string[] = Array.isArray(existing.categories_tags)
+    ? existing.categories_tags as string[]
+    : []
+  const { haramCategory, isHalalByCategory } = classifyOffCategories(rawCategories, isNonFood)
+
   const verdict = await computeVerdict({
     barcode,
     ingredients: storedIngredients,
@@ -60,11 +65,11 @@ export async function runStoredProductReanalysis(
     analyzeLang,
     name,
     labels,
-    rawCategories: [],
+    rawCategories,
     isNonFood,
     ingredientSource,
-    haramCategory: null,
-    isHalalByCategory: false,
+    haramCategory,
+    isHalalByCategory,
     customHaramEntries,
     customSuspiciousEntries,
     imageIngredientsUrl,
@@ -93,6 +98,12 @@ export async function runStoredProductReanalysis(
     fetchedAt: (existing.fetched_at as string) ?? new Date().toISOString(),
     geminiAt: existing.gemini_web_ingredient_lookup_at as string | undefined,
     geminiNameKey: existing.gemini_web_ingredient_lookup_name_key as string | undefined,
+    brand:          typeof existing.brand === 'string' ? existing.brand : '',
+    quantity:       typeof existing.quantity === 'string' ? existing.quantity : '',
+    categoriesTags: rawCategories,
+    additivesTags:  Array.isArray(existing.additives_tags) ? existing.additives_tags as string[] : [],
+    allergensTags:  Array.isArray(existing.allergens_tags) ? existing.allergens_tags as string[] : [],
+    tracesTags:     Array.isArray(existing.traces_tags) ? existing.traces_tags as string[] : [],
   }
 
   const analysisRow: AnalysisRow = {

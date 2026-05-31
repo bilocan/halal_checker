@@ -407,12 +407,11 @@ class ProductService {
     } catch (_) {}
   }
 
-  /// Approved pack-photo rows may only have image URLs and empty ingredients.
+  /// True when a pack-photo stub is present — i.e. an approved ingredients
+  /// image URL exists. Front images are ordinary OFF photos and do not qualify.
   static bool _hasPackPhotoUrls(Product p) {
     final ing = p.imageIngredientsUrl?.trim();
-    final front = p.imageFrontUrl?.trim();
-    return (ing != null && ing.isNotEmpty) ||
-        (front != null && front.isNotEmpty);
+    return ing != null && ing.isNotEmpty;
   }
 
   // Read from [products_full] (products + product_analysis), bypassing the Edge
@@ -503,6 +502,15 @@ class ProductService {
       ),
       'analyzeLang': row['analyze_lang'] as String?,
       'displayLang': row['display_lang'] as String?,
+      'brand': row['brand'] as String? ?? '',
+      'quantity': row['quantity'] as String? ?? '',
+      'categoriesTags': List<String>.from(
+        row['categories_tags'] as List? ?? [],
+      ),
+      'additivesTags': List<String>.from(row['additives_tags'] as List? ?? []),
+      'allergensTags': List<String>.from(row['allergens_tags'] as List? ?? []),
+      'tracesTags': List<String>.from(row['traces_tags'] as List? ?? []),
+      'tagsPopulated': (row['tags_version'] as int? ?? 0) > 0,
     });
   }
 
@@ -641,15 +649,19 @@ class ProductService {
           }
           if (!_isStale(dbProduct)) {
             final merged = _mergeApprovedImages(cached, dbProduct);
-            // Backfill ingredientCanonicals for products cached before that
-            // field was introduced (they have warnings but empty canonicals).
-            if (merged.ingredientCanonicals.isEmpty &&
-                merged.ingredientWarnings.isNotEmpty) {
-              final safe = _applyKeywordSafety(merged);
-              await _cache.saveProduct(barcode, safe);
-              return safe;
+            // Tags not yet populated (pre-migration row): fall through to EF
+            // so it re-fetches OFF and writes tags_version=1.
+            if (merged.tagsPopulated) {
+              // Backfill ingredientCanonicals for products cached before that
+              // field was introduced (they have warnings but empty canonicals).
+              if (merged.ingredientCanonicals.isEmpty &&
+                  merged.ingredientWarnings.isNotEmpty) {
+                final safe = _applyKeywordSafety(merged);
+                await _cache.saveProduct(barcode, safe);
+                return safe;
+              }
+              return merged;
             }
-            return merged;
           }
           // stale (updated_at > last_analysed_at): fall through so the EF re-analyses
         }
@@ -667,7 +679,8 @@ class ProductService {
       );
       final canServeFromDb =
           !_isStale(dbProduct) &&
-          (!dbProduct.isUnknown || _hasPackPhotoUrls(dbProduct));
+          (!dbProduct.isUnknown || _hasPackPhotoUrls(dbProduct)) &&
+          dbProduct.tagsPopulated;
       if (canServeFromDb) {
         final safe = _applyKeywordSafety(dbProduct);
         await _cache.saveProduct(barcode, safe);
