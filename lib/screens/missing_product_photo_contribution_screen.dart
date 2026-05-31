@@ -11,6 +11,7 @@ import '../config.dart';
 import '../localization/app_localizations.dart';
 import '../services/auth_service.dart';
 import '../services/product_image_service.dart';
+import '../utils/image_crop_helper.dart';
 import '../utils/submission_photo_validator.dart';
 import 'result/widgets/copy_barcode_row.dart';
 
@@ -104,6 +105,9 @@ class _MissingProductPhotoContributionScreenState
       return;
     }
     if (photo == null || !mounted) return;
+
+    photo = await maybeCropImage(context, photo);
+    if (!mounted) return;
 
     final file = await _persistPick(photo);
     final issue = await SubmissionPhotoValidator.validate(file);

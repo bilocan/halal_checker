@@ -14,6 +14,7 @@ import '../../../services/product_verdict.dart';
 import '../../../services/ingredient_sanitizer.dart';
 import '../../../services/ocr_service.dart';
 import '../../../services/product_service.dart';
+import '../../../utils/image_crop_helper.dart';
 import '../../batch_scan_screen.dart';
 import '../../home_screen.dart';
 import '../../result_screen.dart';
@@ -162,6 +163,9 @@ class _StartHomeTabState extends State<StartHomeTab>
       return;
     }
     if (photo == null || !mounted) return;
+
+    photo = await maybeCropImage(context, photo);
+    if (!mounted) return;
 
     setState(() => _isLoadingProduct = true);
     try {

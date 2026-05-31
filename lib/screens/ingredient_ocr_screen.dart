@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../app_colors.dart';
 import '../localization/app_localizations.dart';
+import '../utils/image_crop_helper.dart';
 import '../models/product.dart';
 import '../services/database_service.dart';
 import '../services/ingredient_sanitizer.dart';
@@ -51,6 +52,10 @@ class _IngredientOcrScreenState extends State<IngredientOcrScreen> {
       if (mounted) Navigator.pop(context);
       return;
     }
+
+    if (!mounted) return;
+    photo = await maybeCropImage(context, photo);
+    if (!mounted) return;
 
     setState(() => _isProcessing = true);
     try {

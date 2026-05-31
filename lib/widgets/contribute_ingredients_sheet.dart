@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../app_colors.dart';
+import '../utils/image_crop_helper.dart';
 import '../localization/app_localizations.dart';
 import '../models/product.dart';
 import '../services/ingredient_contribution_service.dart';
@@ -38,6 +39,9 @@ Future<void> pickImageAndContribute(
   }
 
   if (photo == null || !context.mounted) return;
+
+  photo = await maybeCropImage(context, photo);
+  if (!context.mounted) return;
 
   final file = File(photo.path);
 
