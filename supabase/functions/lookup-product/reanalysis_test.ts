@@ -129,6 +129,31 @@ Deno.test('runStoredProductReanalysis — pork in stored labels → haramLabels 
   assertEquals(body.product.analyzedByAI, false)
 })
 
+Deno.test('runStoredProductReanalysis — halal-by-category preserved for mineral water (no ingredients)', async () => {
+  const row = storedRow({
+    name: 'Mineralwasser prickelnd',
+    ingredients: [],
+    is_halal: true,
+    is_unknown: false,
+    categories_tags: ['en:beverages', 'en:waters', 'en:mineral-waters'],
+  })
+  const fallback = { ...row }
+  const supabase = mockSupabase({ productsFullRow: fallback })
+
+  const res = await runStoredProductReanalysis(
+    supabase,
+    row,
+    row.barcode as string,
+    [],
+    [],
+    cors,
+  )
+  const body = await res.json()
+  assertEquals(body.product.isHalal, true)
+  assertEquals(body.product.isUnknown, false)
+  assertEquals(body.product.analyzedByAI, false)
+})
+
 Deno.test('runStoredProductReanalysis — clean labels → haramLabels empty', async () => {
   const row = storedRow({
     ingredients: ['water', 'salt'],

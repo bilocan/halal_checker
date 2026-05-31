@@ -29,11 +29,11 @@ flowchart TD
   A[parseRequest] --> B[getHalalScanProduct]
   B --> C{is_managed?}
   C -->|yes| D[Return DB row]
-  C -->|no| E{stale or force AND not unknown-OFF?}
+  C -->|no| E{stale or force\nor unknown-OFF+stored-tags?}
   E -->|yes| F[runStoredProductReanalysis]
-  E -->|no| G{cache hit AND not unknown-OFF?}
-  G -->|yes, no vision needed| H[Return cached row]
-  G -->|no DB row / vision stub / unknown-OFF| I{OFF fetch}
+  E -->|no| G{cache hit?}
+  G -->|yes, no vision/tag-backfill needed| H[Return cached row]
+  G -->|no DB row / vision stub / unknown-OFF (no tags yet)| I{OFF fetch - new products only}
   I -->|miss| J[analyzeFromDbStub]
   I -->|hit| K[OFF path + computeVerdict]
   F --> L[persistLookupAndRespond]
@@ -47,9 +47,9 @@ flowchart TD
 | Load cache | `productQueries.ts` | `getHalalScanProduct` from `products_full` |
 | Gemini empty-OFF gate | `ingredient_lookup_gate.ts` | `refetchForGeminiAuto`, bypass cache when enabled |
 | Managed | `reanalysis.ts` | Return row unchanged |
-| Stale / force | `reanalysis.ts` | `computeVerdict({ skipAi: true })` on stored data; includes unknown rows with AI/community ingredients (those must not be overwritten by OFF) |
-| Cache return | `index.ts` | Skip if empty ingredients + `image_ingredients_url` (vision path); also skipped for unknown+OFF rows (they must re-fetch) |
-| OFF fetch | `fetch.ts` | `fetchOpenFactsProduct` (OFF → OBF → OPF) — called when no DB row exists **or** when the existing row is `is_unknown=true` with `ingredient_source='off'` (halal-by-category cannot apply without categories_tags) |
+| Stale / force / unknown+tags | `reanalysis.ts` | `computeVerdict({ skipAi: true })` on stored data — routes when stale, force=true, or unknown+OFF with `tags_version>0`; reads stored `categories_tags` for halal-by-category; OFF is **never** re-fetched for existing rows |
+| Cache return | `index.ts` | Skip if `!unknown && !needsTagFetch && !needsVisionIngredients`; unknown+OFF rows without stored tags still fall through to the tag-backfill path |
+| OFF fetch | `fetch.ts` | `fetchOpenFactsProduct` (OFF → OBF → OPF) — called **only when no DB row exists** (`!existing`); existing products always use stored data |
 | OFF miss | `index.ts` | `analyzeFromDbStub` — DB stub + optional Gemini ingredients |
 | Full analysis | `index.ts` | Community override → `computeVerdict` → `persistLookupAndRespond` |
 | Persist | `persistence.ts` | `upsertProduct` + `upsertAnalysis` + `products_full` read |
@@ -144,7 +144,7 @@ Categories for cert: `categories.ts` (`ANIMAL_PRODUCT_CATEGORIES`, `HALAL_CERT_L
 
 ### Stored re-analysis
 
-`reanalysis.ts` → `computeVerdict({ …, skipAi: true, rawCategories: [], haramCategory: null, isHalalByCategory: false })`.
+`reanalysis.ts` → reads `existing.categories_tags` → `computeVerdict({ …, skipAi: true, rawCategories: <stored>, haramCategory: <derived>, isHalalByCategory: <derived> })`.
 
 - No OFF refetch, no text AI, no vision.
 - Full post-analysis rules **do** run (cert, suspicious-only, keyword safety).

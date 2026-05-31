@@ -407,12 +407,11 @@ class ProductService {
     } catch (_) {}
   }
 
-  /// Approved pack-photo rows may only have image URLs and empty ingredients.
+  /// True when a pack-photo stub is present — i.e. an approved ingredients
+  /// image URL exists. Front images are ordinary OFF photos and do not qualify.
   static bool _hasPackPhotoUrls(Product p) {
     final ing = p.imageIngredientsUrl?.trim();
-    final front = p.imageFrontUrl?.trim();
-    return (ing != null && ing.isNotEmpty) ||
-        (front != null && front.isNotEmpty);
+    return ing != null && ing.isNotEmpty;
   }
 
   // Read from [products_full] (products + product_analysis), bypassing the Edge

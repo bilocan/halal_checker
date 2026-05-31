@@ -117,19 +117,18 @@ export async function handleLookup(
     return deps.jsonManagedProduct(existing, corsHeaders)
   }
 
-  // Unknown rows with OFF-source ingredients refetch OFF so halal-by-category can apply.
-  // But if ingredients came from AI or community, protect them — OFF has dummy/worse data.
+  // Protect AI/community ingredients — OFF has dummy/worse data for those products.
   const hasNonOffIngredients = existing?.ingredient_source === 'ai' ||
     existing?.ingredient_source === 'community'
-  // Unknown+OFF products with no stored ingredients must re-fetch OFF: stored reanalysis
-  // has no categories_tags, so halal-by-category would never apply without a fresh response.
-  // If ingredients exist, the analysis already ran on them — don't re-fetch.
   const hasStoredIngredients = Array.isArray(existing?.ingredients) &&
     (existing.ingredients as string[]).length > 0
   const isUnknownOff = !!(existing?.is_unknown && !hasNonOffIngredients && !hasStoredIngredients)
+  // Stale, force-refresh, or unknown+OFF with stored tags: re-run rules on stored data.
+  // No OFF refetch — stored categories_tags drive halal-by-category.
+  // Unknown+OFF rows without stored tags fall through to the tag-backfill path below.
+  const hasStoredTags = (existing?.tags_version ?? 0) > 0
   if (!fetchAiIngredients && !refetchForGeminiAuto && existing &&
-      (!existing.is_unknown || hasNonOffIngredients) &&
-      (isStale(existing) || force)) {
+      (isStale(existing) || force || (isUnknownOff && hasStoredTags))) {
     const reason = isStale(existing) ? 'stale (updated_at > last_analysed_at)' : 'force-refresh'
     console.log(`[${barcode}] ${reason} — re-running rules engine on stored data`)
     const { haram: customHaramEntries, suspicious: customSuspiciousEntries } =
