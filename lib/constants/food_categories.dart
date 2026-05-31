@@ -192,4 +192,21 @@ class FoodCategories {
     'en:granulated-sugar',
     'en:vinegars',
   };
+
+  // Product name terms that indicate an inherently halal product. Used as a
+  // fallback when OFF categories_tags lack English canonical water/salt entries
+  // (e.g. a product whose only category tag is the German-language de:mineralwässer).
+  // Matched case-insensitively with word-boundary guards; only applies when no
+  // ingredients are present (see off_fetcher.dart isHalalByCategory logic).
+  static const Set<String> halalCategoryNameTerms = {
+    // Water — German
+    'mineralwasser', 'mineralwässer', 'quellwasser', 'tafelwasser',
+    'trinkwasser', 'leitungswasser',
+    // Water — English
+    'mineral water', 'spring water', 'table water', 'drinking water',
+    // Water — Turkish
+    'maden suyu', 'içme suyu',
+    // Water — French
+    'eau minérale', 'eau de source',
+  };
 }
