@@ -11,6 +11,7 @@ import '../localization/app_localizations.dart';
 import '../models/product.dart';
 import '../models/product_analysis.dart';
 import '../services/auth_service.dart';
+import '../utils/image_crop_helper.dart';
 import '../services/feedback_service.dart';
 import '../services/product_image_service.dart';
 import '../widgets/feedback_dialog.dart';
@@ -299,10 +300,41 @@ class _ResultScreenState extends State<ResultScreen> {
     }
     if (photo == null || !mounted) return;
 
+    photo = await maybeCropImage(context, photo);
+    if (!mounted) return;
+    final photoFile = File(photo.path);
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        contentPadding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.file(photoFile, fit: BoxFit.contain),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(loc.cancel),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(loc.submit),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
     setState(() => _uploadingImageType = type);
     final success = await ProductImageService.uploadImage(
       barcode: widget.barcode,
-      imageFile: File(photo.path),
+      imageFile: photoFile,
       type: type,
       productName: widget.product?.name,
     );
