@@ -211,8 +211,6 @@ jobs:
             "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PKG/edits/$EDIT/tracks/alpha" \
             2>/dev/null || echo "{}")
 
-          # If the track already has a build newer than VC, promoting would be a
-          # downgrade — Play Store rejects it. Skip gracefully.
           HIGHER=$(echo "$TRACK_JSON" | jq -r --argjson vc "$VC" \
             '[.releases[]?.versionCodes[]? | tonumber | select(. > $vc)] | length' 2>/dev/null || echo "0")
           if [ "$HIGHER" -gt 0 ]; then
@@ -220,18 +218,10 @@ jobs:
             exit 0
           fi
 
-          # Include lower VCs so users on older builds still have an upgrade path.
-          EXISTING=$(echo "$TRACK_JSON" | jq -r --argjson vc "$VC" \
-            '[.releases[]?.versionCodes[]? | tonumber | select(. < $vc) | tostring] | unique | .[]' \
-            2>/dev/null || true)
-          VC_ARRAY="[\"$VC\""
-          for v in $EXISTING; do VC_ARRAY="$VC_ARRAY,\"$v\""; done
-          VC_ARRAY="$VC_ARRAY]"
-
           RESPONSE=$(curl -sS -w "\n%{http_code}" -X PUT \
             -H "Authorization: Bearer $TOKEN" \
             -H "Content-Type: application/json" \
-            -d "{\"releases\":[{\"versionCodes\":$VC_ARRAY,\"status\":\"completed\"}]}" \
+            -d "{\"releases\":[{\"versionCodes\":[\"$VC\"],\"status\":\"completed\"}]}" \
             "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PKG/edits/$EDIT/tracks/alpha")
           HTTP_CODE=$(echo "$RESPONSE" | tail -1)
           BODY=$(echo "$RESPONSE" | sed '$d')
@@ -297,17 +287,10 @@ jobs:
             exit 0
           fi
 
-          EXISTING=$(echo "$TRACK_JSON" | jq -r --argjson vc "$VC" \
-            '[.releases[]?.versionCodes[]? | tonumber | select(. < $vc) | tostring] | unique | .[]' \
-            2>/dev/null || true)
-          VC_ARRAY="[\"$VC\""
-          for v in $EXISTING; do VC_ARRAY="$VC_ARRAY,\"$v\""; done
-          VC_ARRAY="$VC_ARRAY]"
-
           RESPONSE=$(curl -sS -w "\n%{http_code}" -X PUT \
             -H "Authorization: Bearer $TOKEN" \
             -H "Content-Type: application/json" \
-            -d "{\"releases\":[{\"versionCodes\":$VC_ARRAY,\"status\":\"completed\"}]}" \
+            -d "{\"releases\":[{\"versionCodes\":[\"$VC\"],\"status\":\"completed\"}]}" \
             "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PKG/edits/$EDIT/tracks/alpha")
           HTTP_CODE=$(echo "$RESPONSE" | tail -1)
           BODY=$(echo "$RESPONSE" | sed '$d')
@@ -372,17 +355,10 @@ jobs:
             exit 0
           fi
 
-          EXISTING=$(echo "$TRACK_JSON" | jq -r --argjson vc "$VC" \
-            '[.releases[]?.versionCodes[]? | tonumber | select(. < $vc) | tostring] | unique | .[]' \
-            2>/dev/null || true)
-          VC_ARRAY="[\"$VC\""
-          for v in $EXISTING; do VC_ARRAY="$VC_ARRAY,\"$v\""; done
-          VC_ARRAY="$VC_ARRAY]"
-
           RESPONSE=$(curl -sS -w "\n%{http_code}" -X PUT \
             -H "Authorization: Bearer $TOKEN" \
             -H "Content-Type: application/json" \
-            -d "{\"releases\":[{\"versionCodes\":$VC_ARRAY,\"status\":\"completed\"}]}" \
+            -d "{\"releases\":[{\"versionCodes\":[\"$VC\"],\"status\":\"completed\"}]}" \
             "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PKG/edits/$EDIT/tracks/beta")
           HTTP_CODE=$(echo "$RESPONSE" | tail -1)
           BODY=$(echo "$RESPONSE" | sed '$d')
