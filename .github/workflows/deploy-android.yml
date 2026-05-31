@@ -64,16 +64,25 @@ jobs:
             echo "storeFile=upload-keystore.jks"
           } > android/key.properties
 
-      - name: Extract version
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/androidpublisher
+
+      - name: Resolve version
         id: version
+        env:
+          PLAY_ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
         run: |
-          TAG_NAME="${GITHUB_REF_NAME#v}"
-          if [ -z "$TAG_NAME" ]; then
-            echo "ERROR: GITHUB_REF_NAME is empty — workflow must be triggered by a version tag" >&2
-            exit 1
+          ARGS=""
+          if [ "${{ github.event_name }}" = "push" ]; then
+            ARGS="--tag-version ${GITHUB_REF_NAME#v}"
           fi
-          echo "name=$TAG_NAME" >> $GITHUB_OUTPUT
-          echo "code=$((100 + ${{ github.run_number }}))" >> $GITHUB_OUTPUT
+          python3 scripts/ci/android_resolve_build_version.py $ARGS
 
       - name: Build App Bundle
         run: |
@@ -83,14 +92,6 @@ jobs:
             --dart-define=SUPABASE_URL=${{ secrets.SUPABASE_URL }} \
             --dart-define=SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }} \
             --dart-define=GOOGLE_WEB_CLIENT_ID=${{ secrets.GOOGLE_WEB_CLIENT_ID }}
-
-      - name: Authenticate to Google Cloud
-        id: auth
-        uses: google-github-actions/auth@v2
-        with:
-          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
-          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
-          token_format: access_token
 
       - name: Prepare Play Store What's New
         id: whatsnew
