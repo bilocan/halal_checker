@@ -457,19 +457,32 @@ jobs:
             | jq -r '.data[0].id')
           echo "App ID: $APP_ID"
 
-          VERSION_ID=$(curl -gsS --fail-with-body \
+          # Accept PREPARE_FOR_SUBMISSION and rejected states (resubmit case)
+          VERSION_ID=$(curl -gsS \
             -H "Authorization: Bearer $JWT" \
-            "https://api.appstoreconnect.apple.com/v1/apps/$APP_ID/appStoreVersions?filter[platform]=IOS&filter[appStoreState]=PREPARE_FOR_SUBMISSION&filter[versionString]=$VERSION" \
-            | jq -r '.data[0].id')
+            "https://api.appstoreconnect.apple.com/v1/apps/$APP_ID/appStoreVersions?filter[platform]=IOS&filter[versionString]=$VERSION" \
+            | jq -r '.data[] | select(.attributes.appStoreState | test("PREPARE_FOR_SUBMISSION|REJECTED|DEVELOPER_REJECTED")) | .id' \
+            | head -1)
 
           if [ -z "$VERSION_ID" ] || [ "$VERSION_ID" = "null" ]; then
-            echo "::warning::No version found in PREPARE_FOR_SUBMISSION state. Skipping App Store submission."
-            echo "Current versions:"
-            curl -gsS -H "Authorization: Bearer $JWT" \
-              "https://api.appstoreconnect.apple.com/v1/apps/$APP_ID/appStoreVersions?filter[platform]=IOS" \
-              | jq '.data[] | {id: .id, version: .attributes.versionString, state: .attributes.appStoreState}'
-            echo "To submit, create a new version in App Store Connect in 'Prepare for Submission' state."
-            exit 0
+            echo "Version $VERSION not found in a submittable state — creating it in App Store Connect..."
+            CREATE_RESP=$(curl -gsS -w "\n%{http_code}" \
+              -X POST \
+              -H "Authorization: Bearer $JWT" \
+              -H "Content-Type: application/json" \
+              -d "{\"data\":{\"type\":\"appStoreVersions\",\"attributes\":{\"platform\":\"IOS\",\"versionString\":\"$VERSION\"},\"relationships\":{\"app\":{\"data\":{\"type\":\"apps\",\"id\":\"$APP_ID\"}}}}}" \
+              "https://api.appstoreconnect.apple.com/v1/appStoreVersions")
+            CREATE_HTTP=$(echo "$CREATE_RESP" | tail -1)
+            CREATE_BODY=$(echo "$CREATE_RESP" | sed '$d')
+            if [ "$CREATE_HTTP" -ge 400 ]; then
+              echo "::error::Failed to create App Store version (HTTP $CREATE_HTTP):"
+              echo "$CREATE_BODY"
+              exit 1
+            fi
+            VERSION_ID=$(echo "$CREATE_BODY" | jq -r '.data.id')
+            echo "Created App Store version $VERSION (ID: $VERSION_ID)"
+          else
+            echo "Found existing version $VERSION (ID: $VERSION_ID)"
           fi
 
           RESPONSE=$(curl -gsS -w "\n%{http_code}" \

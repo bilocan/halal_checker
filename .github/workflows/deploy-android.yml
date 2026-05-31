@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'
+  workflow_dispatch:
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Gate structure (each environment requires a manual approval in GitHub Actions):
@@ -234,10 +235,19 @@ jobs:
             "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PKG/edits" \
             | jq -r '.id')
 
+          # Include existing alpha version codes so no current tester is stranded
+          EXISTING=$(curl -sS \
+            -H "Authorization: Bearer $TOKEN" \
+            "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PKG/edits/$EDIT/tracks/alpha" \
+            | jq -r '[.releases[]?.versionCodes[]? | tostring] | unique | .[]' 2>/dev/null | grep -v "^$VC$" || true)
+          VC_ARRAY="[\"$VC\""
+          for v in $EXISTING; do VC_ARRAY="$VC_ARRAY,\"$v\""; done
+          VC_ARRAY="$VC_ARRAY]"
+
           RESPONSE=$(curl -sS -w "\n%{http_code}" -X PUT \
             -H "Authorization: Bearer $TOKEN" \
             -H "Content-Type: application/json" \
-            -d "{\"releases\":[{\"versionCodes\":[\"$VC\"],\"status\":\"completed\"}]}" \
+            -d "{\"releases\":[{\"versionCodes\":$VC_ARRAY,\"status\":\"completed\"}]}" \
             "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PKG/edits/$EDIT/tracks/alpha")
           HTTP_CODE=$(echo "$RESPONSE" | tail -1)
           BODY=$(echo "$RESPONSE" | sed '$d')
@@ -291,10 +301,19 @@ jobs:
             "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PKG/edits" \
             | jq -r '.id')
 
+          # Include existing alpha version codes so no current tester is stranded
+          EXISTING=$(curl -sS \
+            -H "Authorization: Bearer $TOKEN" \
+            "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PKG/edits/$EDIT/tracks/alpha" \
+            | jq -r '[.releases[]?.versionCodes[]? | tostring] | unique | .[]' 2>/dev/null | grep -v "^$VC$" || true)
+          VC_ARRAY="[\"$VC\""
+          for v in $EXISTING; do VC_ARRAY="$VC_ARRAY,\"$v\""; done
+          VC_ARRAY="$VC_ARRAY]"
+
           RESPONSE=$(curl -sS -w "\n%{http_code}" -X PUT \
             -H "Authorization: Bearer $TOKEN" \
             -H "Content-Type: application/json" \
-            -d "{\"releases\":[{\"versionCodes\":[\"$VC\"],\"status\":\"completed\"}]}" \
+            -d "{\"releases\":[{\"versionCodes\":$VC_ARRAY,\"status\":\"completed\"}]}" \
             "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PKG/edits/$EDIT/tracks/alpha")
           HTTP_CODE=$(echo "$RESPONSE" | tail -1)
           BODY=$(echo "$RESPONSE" | sed '$d')
@@ -347,10 +366,19 @@ jobs:
             "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PKG/edits" \
             | jq -r '.id')
 
+          # Include existing beta version codes so no current tester is stranded
+          EXISTING=$(curl -sS \
+            -H "Authorization: Bearer $TOKEN" \
+            "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PKG/edits/$EDIT/tracks/beta" \
+            | jq -r '[.releases[]?.versionCodes[]? | tostring] | unique | .[]' 2>/dev/null | grep -v "^$VC$" || true)
+          VC_ARRAY="[\"$VC\""
+          for v in $EXISTING; do VC_ARRAY="$VC_ARRAY,\"$v\""; done
+          VC_ARRAY="$VC_ARRAY]"
+
           RESPONSE=$(curl -sS -w "\n%{http_code}" -X PUT \
             -H "Authorization: Bearer $TOKEN" \
             -H "Content-Type: application/json" \
-            -d "{\"releases\":[{\"versionCodes\":[\"$VC\"],\"status\":\"completed\"}]}" \
+            -d "{\"releases\":[{\"versionCodes\":$VC_ARRAY,\"status\":\"completed\"}]}" \
             "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PKG/edits/$EDIT/tracks/beta")
           HTTP_CODE=$(echo "$RESPONSE" | tail -1)
           BODY=$(echo "$RESPONSE" | sed '$d')
