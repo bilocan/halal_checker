@@ -1,27 +1,36 @@
-name: Cancel Beta Review Submission
+name: Manage Beta Builds
 
 on:
   workflow_dispatch:
     inputs:
       versions:
-        description: 'Comma-separated versions to cancel (e.g. 1.3.7,1.3.8)'
+        description: 'Comma-separated versions to act on (e.g. 1.3.7,1.3.8)'
         required: true
         type: string
+      action:
+        description: 'Action to perform'
+        required: true
+        type: choice
+        options:
+          - cancel-review
+          - expire
+        default: expire
+
+# cancel-review  — tries to DELETE the betaAppReviewSubmission (only works while
+#                  "Waiting for Review"; 403 means Apple already processed it)
+# expire         — marks the build as expired, removing it from TestFlight
 
 jobs:
-  cancel:
+  manage:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Generate JWT and cancel submissions
+      - name: Generate JWT
+        id: jwt
         env:
           APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
           APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
           APP_STORE_CONNECT_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_KEY_BASE64 }}
-          VERSIONS: ${{ inputs.versions }}
         run: |
-          set -euo pipefail
           pip install cryptography --quiet
 
           KEY_FILE=$(mktemp /tmp/authkey.XXXXXX.p8)
@@ -46,18 +55,34 @@ jobs:
           PYEOF
           )
           rm -f "$KEY_FILE"
+          echo "jwt=$JWT" >> "$GITHUB_OUTPUT"
 
+      - name: Resolve app ID
+        id: app
+        env:
+          JWT: ${{ steps.jwt.outputs.jwt }}
+        run: |
           APP_ID=$(curl -gsS --fail-with-body \
             -H "Authorization: Bearer $JWT" \
             "https://api.appstoreconnect.apple.com/v1/apps?filter[bundleId]=app.halalscan" \
             | jq -r '.data[0].id')
           echo "App ID: $APP_ID"
+          echo "id=$APP_ID" >> "$GITHUB_OUTPUT"
 
+      - name: Process versions
+        env:
+          JWT: ${{ steps.jwt.outputs.jwt }}
+          APP_ID: ${{ steps.app.outputs.id }}
+          VERSIONS: ${{ inputs.versions }}
+          ACTION: ${{ inputs.action }}
+        run: |
+          set -euo pipefail
           IFS=',' read -ra VER_LIST <<< "$VERSIONS"
+
           for VERSION in "${VER_LIST[@]}"; do
             VERSION="${VERSION// /}"
             echo ""
-            echo "--- Processing v$VERSION ---"
+            echo "=== v$VERSION ==="
 
             BUILD_ID=$(curl -gsS \
               -H "Authorization: Bearer $JWT" \
@@ -65,24 +90,43 @@ jobs:
               | jq -r '.data[0].id // empty')
 
             if [ -z "$BUILD_ID" ]; then
-              echo "No valid build found for v$VERSION, skipping."
+              echo "No valid build found for v$VERSION — skipping."
               continue
             fi
             echo "Build ID: $BUILD_ID"
 
-            SUBMISSION_ID=$(curl -gsS \
-              -H "Authorization: Bearer $JWT" \
-              "https://api.appstoreconnect.apple.com/v1/builds/$BUILD_ID/betaAppReviewSubmission" \
-              | jq -r '.data.id // empty')
+            if [ "$ACTION" = "cancel-review" ]; then
+              SUBMISSION_ID=$(curl -gsS \
+                -H "Authorization: Bearer $JWT" \
+                "https://api.appstoreconnect.apple.com/v1/builds/$BUILD_ID/betaAppReviewSubmission" \
+                | jq -r '.data.id // empty')
 
-            if [ -z "$SUBMISSION_ID" ]; then
-              echo "No beta review submission found for v$VERSION."
-              continue
+              if [ -z "$SUBMISSION_ID" ]; then
+                echo "No beta review submission found — skipping."
+                continue
+              fi
+              echo "Submission ID: $SUBMISSION_ID"
+
+              HTTP=$(curl -sS -o /dev/null -w "%{http_code}" -X DELETE \
+                -H "Authorization: Bearer $JWT" \
+                "https://api.appstoreconnect.apple.com/v1/betaAppReviewSubmissions/$SUBMISSION_ID")
+              if [ "$HTTP" = "204" ]; then
+                echo "Beta review submission cancelled."
+              else
+                echo "::warning::Could not cancel (HTTP $HTTP) — Apple may have already processed the review. Try 'expire' instead."
+              fi
+
+            elif [ "$ACTION" = "expire" ]; then
+              HTTP=$(curl -sS -o /dev/null -w "%{http_code}" \
+                -X PATCH \
+                -H "Authorization: Bearer $JWT" \
+                -H "Content-Type: application/json" \
+                -d "{\"data\":{\"type\":\"builds\",\"id\":\"$BUILD_ID\",\"attributes\":{\"expired\":true}}}" \
+                "https://api.appstoreconnect.apple.com/v1/builds/$BUILD_ID")
+              if [ "$HTTP" -ge 200 ] && [ "$HTTP" -lt 300 ]; then
+                echo "Build expired — removed from TestFlight."
+              else
+                echo "::warning::Could not expire build (HTTP $HTTP)."
+              fi
             fi
-            echo "Submission ID: $SUBMISSION_ID"
-
-            HTTP=$(curl -sS -o /dev/null -w "%{http_code}" -X DELETE \
-              -H "Authorization: Bearer $JWT" \
-              "https://api.appstoreconnect.apple.com/v1/betaAppReviewSubmissions/$SUBMISSION_ID")
-            [ "$HTTP" = "204" ] && echo "Cancelled successfully." || echo "Could not cancel (HTTP $HTTP)."
           done
