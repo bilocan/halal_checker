@@ -30,6 +30,12 @@ class ResultTransparencyCard extends StatelessWidget {
     final suspiciousText = product.suspiciousIngredients.isEmpty
         ? loc.transparentNoMatches
         : product.suspiciousIngredients.join(', ');
+    final flaggedLabelsText = product.haramLabels.isEmpty
+        ? loc.transparentNoMatches
+        : product.haramLabels.join(', ');
+    final suspiciousLabelsText = product.suspiciousLabels.isEmpty
+        ? loc.transparentNoMatches
+        : product.suspiciousLabels.join(', ');
 
     final matchSourceText = KeywordMatchDisplay.combinedSourcesLabel(
       loc,
@@ -126,6 +132,26 @@ class ResultTransparencyCard extends StatelessWidget {
                   value: suspiciousText,
                   color: Colors.orange.shade700,
                 ),
+                if (product.labels.isNotEmpty) ...[
+                  _SummaryRow(
+                    icon: Icons.label_outline,
+                    label: loc.transparentLabelsChecked,
+                    value: product.labels.length.toString(),
+                    color: Colors.blueGrey.shade600,
+                  ),
+                  _SummaryRow(
+                    icon: Icons.error_outline,
+                    label: loc.transparentFlaggedLabels,
+                    value: flaggedLabelsText,
+                    color: Colors.red.shade600,
+                  ),
+                  _SummaryRow(
+                    icon: Icons.warning_amber,
+                    label: loc.transparentSuspiciousLabels,
+                    value: suspiciousLabelsText,
+                    color: Colors.orange.shade700,
+                  ),
+                ],
                 _SummaryRow(
                   icon: Icons.notes_outlined,
                   label: loc.transparentExplanation,

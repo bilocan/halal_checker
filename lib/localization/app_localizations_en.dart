@@ -432,6 +432,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get transparentDisplayLanguage => 'Label language';
 
   @override
+  String get transparentLabelsChecked => 'Labels checked';
+
+  @override
+  String get transparentFlaggedLabels => 'Flagged labels';
+
+  @override
+  String get transparentSuspiciousLabels => 'Suspicious labels';
+
+  @override
   String get contributeIngredients => 'Add Ingredients';
 
   @override

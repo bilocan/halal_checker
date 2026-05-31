@@ -5,3 +5,5 @@
 - **Image cropping** — you can now crop photos before sending them for ingredient analysis or product image submission.
 
 - **Image upload preview** — after cropping a product photo, a preview is now shown with Cancel and Submit buttons before the image is sent.
+
+- **Transparency card — label analysis** — Analysis Transparency now shows labels checked, flagged labels, and suspicious labels; German and Turkish translations added for all transparency card strings.

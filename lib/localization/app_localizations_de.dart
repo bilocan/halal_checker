@@ -377,16 +377,16 @@ class AppLocalizationsDe extends AppLocalizations {
   String get analysisTransparency => 'Analysetransparenz';
 
   @override
-  String get transparentSummary => 'Decision summary';
+  String get transparentSummary => 'Entscheidungsübersicht';
 
   @override
-  String get transparentResult => 'Result';
+  String get transparentResult => 'Ergebnis';
 
   @override
-  String get transparentIngredientsChecked => 'Ingredients checked';
+  String get transparentIngredientsChecked => 'Geprüfte Zutaten';
 
   @override
-  String get transparentRulesChecked => 'Rules checked';
+  String get transparentRulesChecked => 'Geprüfte Regeln';
 
   @override
   String transparentRulesAvailable(int count) {
@@ -394,20 +394,19 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get transparentFlagged => 'Flagged';
+  String get transparentFlagged => 'Markiert (Haram)';
 
   @override
-  String get transparentSuspicious => 'Needs verification';
+  String get transparentSuspicious => 'Zur Überprüfung';
 
   @override
-  String get transparentNoMatches => 'No rule matches found';
+  String get transparentNoMatches => 'Keine Regelübereinstimmungen gefunden';
 
   @override
-  String get transparentNoIngredients =>
-      'No ingredient text was available to check';
+  String get transparentNoIngredients => 'Kein Zutatentext verfügbar';
 
   @override
-  String get transparentExplanation => 'Explanation';
+  String get transparentExplanation => 'Erklärung';
 
   @override
   String get transparentMatchSource => 'Abgleich über';
@@ -436,6 +435,15 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get transparentDisplayLanguage => 'Etikettensprache';
+
+  @override
+  String get transparentLabelsChecked => 'Geprüfte Etiketten';
+
+  @override
+  String get transparentFlaggedLabels => 'Markierte Etiketten';
+
+  @override
+  String get transparentSuspiciousLabels => 'Verdächtige Etiketten';
 
   @override
   String get contributeIngredients => 'Zutaten hinzufügen';

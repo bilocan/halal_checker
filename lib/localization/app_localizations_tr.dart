@@ -372,16 +372,16 @@ class AppLocalizationsTr extends AppLocalizations {
   String get analysisTransparency => 'Analiz Şeffaflığı';
 
   @override
-  String get transparentSummary => 'Decision summary';
+  String get transparentSummary => 'Karar özeti';
 
   @override
-  String get transparentResult => 'Result';
+  String get transparentResult => 'Sonuç';
 
   @override
-  String get transparentIngredientsChecked => 'Ingredients checked';
+  String get transparentIngredientsChecked => 'Kontrol edilen içerikler';
 
   @override
-  String get transparentRulesChecked => 'Rules checked';
+  String get transparentRulesChecked => 'Kontrol edilen kurallar';
 
   @override
   String transparentRulesAvailable(int count) {
@@ -389,20 +389,20 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get transparentFlagged => 'Flagged';
+  String get transparentFlagged => 'İşaretlendi (Haram)';
 
   @override
-  String get transparentSuspicious => 'Needs verification';
+  String get transparentSuspicious => 'Doğrulama gerekiyor';
 
   @override
-  String get transparentNoMatches => 'No rule matches found';
+  String get transparentNoMatches => 'Kural eşleşmesi bulunamadı';
 
   @override
   String get transparentNoIngredients =>
-      'No ingredient text was available to check';
+      'Kontrol edilecek içerik metni bulunamadı';
 
   @override
-  String get transparentExplanation => 'Explanation';
+  String get transparentExplanation => 'Açıklama';
 
   @override
   String get transparentMatchSource => 'Eşleşme kaynağı';
@@ -431,6 +431,15 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get transparentDisplayLanguage => 'Etiket dili';
+
+  @override
+  String get transparentLabelsChecked => 'Kontrol edilen etiketler';
+
+  @override
+  String get transparentFlaggedLabels => 'İşaretlenen etiketler';
+
+  @override
+  String get transparentSuspiciousLabels => 'Şüpheli etiketler';
 
   @override
   String get contributeIngredients => 'İçerik Ekle';

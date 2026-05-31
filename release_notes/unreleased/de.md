@@ -5,3 +5,5 @@
 - **Bildzuschnitt** — Fotos können jetzt vor der Zutatenanalyse oder dem Einreichen von Produktbildern zugeschnitten werden.
 
 - **Bildvorschau beim Upload** — nach dem Zuschneiden wird ein Vorschaubild mit Abbrechen- und Senden-Schaltflächen angezeigt, bevor das Foto eingereicht wird.
+
+- **Transparenzkarte — Etikettenanalyse** — Die Analysetransparenz zeigt jetzt geprüfte Etiketten, markierte Etiketten und verdächtige Etiketten; deutsche und türkische Übersetzungen für alle Transparenz-Texte hinzugefügt.
