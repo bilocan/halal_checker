@@ -6,6 +6,7 @@ import {
   parseOffBrand,
   parseOffLabels,
   parseOffProductName,
+  parseOffTags,
   resolveImg,
 } from './fetch.ts'
 import { resolveOffIngredientAnalysis } from './ingredientResolution.ts'
@@ -21,6 +22,7 @@ import { computeVerdict } from './verdictRules.ts'
 import type { KeywordEntry } from './keyword.ts'
 import {
   jsonResponse,
+  patchProductTags,
   persistLookupAndRespond,
   type AnalysisRow,
   type ProductRow,
@@ -154,10 +156,30 @@ export async function handleLookup(
         corsHeaders,
       )
     }
-    if (!needsVisionIngredients && !needsTagFetch) {
+    // Tags-only backfill: fetch OFF for tag columns only — never touch ingredients or
+    // analysis for existing Supabase products, regardless of unknown/known status.
+    if (needsTagFetch && !needsVisionIngredients) {
+      console.log(`[${barcode}] tags_version=0 — fetching OFF tags only, preserving stored ingredients`)
+      const off = await deps.fetchOpenFactsProduct(barcode)
+      if (off?.pd) {
+        const tags = parseOffTags(off.pd)
+        await patchProductTags(supabase, barcode, tags)
+        return jsonResponse(
+          { product: toProduct({ ...withCommunitySource(existing, communityIngredients), ...tags, tags_version: 1 }) },
+          200,
+          corsHeaders,
+        )
+      }
+      // OFF unavailable — serve existing product; tags_version stays 0 so next scan retries.
+      console.log(`[${barcode}] OFF unavailable for tag fetch — serving existing, will retry`)
+      return jsonResponse(
+        { product: toProduct(withCommunitySource(existing, communityIngredients)) },
+        200,
+        corsHeaders,
+      )
+    }
+    if (!needsVisionIngredients) {
       console.log(`[${barcode}] unknown+OFF — re-fetching OFF for halal-by-category detection`)
-    } else if (!needsVisionIngredients) {
-      console.log(`[${barcode}] tags_version=0 — re-fetching OFF to populate tag columns`)
     } else {
       console.log(`[${barcode}] DB stub has ingredient image — running vision/analysis path`)
     }
@@ -168,9 +190,9 @@ export async function handleLookup(
 
     let pd: Record<string, unknown> | null = null
     let isNonFood = false
-    // Fetch OFF for new products or unknown+OFF products (halal-by-category re-detection).
-    // AI/community ingredients are always preserved — only OFF-sourced unknowns re-fetch.
-    if (!existing || isUnknownOff) {
+    // Only fetch OFF for brand-new products (no existing DB row).
+    // Existing products always use stored data — ingredients are never overwritten from OFF.
+    if (!existing) {
       const off = await deps.fetchOpenFactsProduct(barcode)
       if (off) {
         pd = off.pd
@@ -341,7 +363,12 @@ async function analyzeFromDbStub(
   }
 
   const labels = normalizeStoredLabels(existing.labels)
-  const isNonFood = !!(existing.is_non_food ?? false)
+  const rawCategories: string[] = Array.isArray(existing.categories_tags)
+    ? existing.categories_tags as string[]
+    : []
+  const isNonFoodBase = !!(existing.is_non_food ?? false)
+  const classified = classifyOffCategories(rawCategories, isNonFoodBase)
+  const isNonFood = classified.isNonFood
 
   console.log(`[${barcode}] DB stub name="${name}" ingredients=${ingredients.length}`)
   console.log(
@@ -364,11 +391,11 @@ async function analyzeFromDbStub(
     analyzeLang: null,
     name,
     labels,
-    rawCategories: [],
+    rawCategories,
     isNonFood,
     ingredientSource,
-    haramCategory: null,
-    isHalalByCategory: false,
+    haramCategory: classified.haramCategory,
+    isHalalByCategory: classified.isHalalByCategory,
     customHaramEntries,
     customSuspiciousEntries,
     imageIngredientsUrl: typeof existing.image_ingredients_url === 'string'

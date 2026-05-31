@@ -76,6 +76,24 @@ export async function upsertProduct(supabase: SupabaseClient, row: ProductRow): 
   if (error) console.error(`[${row.barcode}] products upsert error`, error)
 }
 
+/** Update only tag columns + tags_version. Never touches ingredients or analysis. */
+export async function patchProductTags(
+  supabase: SupabaseClient,
+  barcode: string,
+  tags: { brand: string; quantity: string; categoriesTags: string[]; additivesTags: string[]; allergensTags: string[]; tracesTags: string[] },
+): Promise<void> {
+  const { error } = await supabase.from('products').update({
+    brand:           tags.brand,
+    quantity:        tags.quantity,
+    categories_tags: tags.categoriesTags,
+    additives_tags:  tags.additivesTags,
+    allergens_tags:  tags.allergensTags,
+    traces_tags:     tags.tracesTags,
+    tags_version:    1,
+  }).eq('barcode', barcode)
+  if (error) console.error(`[${barcode}] patchProductTags error`, error)
+}
+
 export async function upsertAnalysis(supabase: SupabaseClient, row: AnalysisRow): Promise<void> {
   const { error } = await supabase.from('product_analysis').upsert({
     barcode:                row.barcode,

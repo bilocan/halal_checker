@@ -112,6 +112,22 @@ export function parseOffIngredientList(pd: any): string[] {
 }
 
 // deno-lint-ignore no-explicit-any
+export function parseOffTags(pd: any): {
+  brand: string; quantity: string
+  categoriesTags: string[]; additivesTags: string[]
+  allergensTags: string[]; tracesTags: string[]
+} {
+  return {
+    brand:          parseOffBrand(pd),
+    quantity:       typeof pd.quantity === 'string' ? pd.quantity.trim() : '',
+    categoriesTags: Array.isArray(pd.categories_tags) ? pd.categories_tags as string[] : [],
+    additivesTags:  Array.isArray(pd.additives_tags)  ? pd.additives_tags  as string[] : [],
+    allergensTags:  Array.isArray(pd.allergens_tags)  ? pd.allergens_tags  as string[] : [],
+    tracesTags:     Array.isArray(pd.traces_tags)     ? pd.traces_tags     as string[] : [],
+  }
+}
+
+// deno-lint-ignore no-explicit-any
 export function parseOffLabels(pd: any): string[] {
   const labelSet = new Set<string>()
   const addLabels = (v: unknown) => {
