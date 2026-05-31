@@ -18,6 +18,12 @@ export interface ProductRow {
   geminiAt?: string
   geminiNameKey?: string
   displayLang?: string
+  brand?: string
+  quantity?: string
+  categoriesTags?: string[]
+  additivesTags?: string[]
+  allergensTags?: string[]
+  tracesTags?: string[]
 }
 
 export interface AnalysisRow {
@@ -54,6 +60,12 @@ export async function upsertProduct(supabase: SupabaseClient, row: ProductRow): 
     last_analysed_at:      new Date().toISOString(),
     fetched_at:            row.fetchedAt,
     display_lang:          row.displayLang || null,
+    brand:                 row.brand ?? '',
+    quantity:              row.quantity ?? '',
+    categories_tags:       row.categoriesTags ?? [],
+    additives_tags:        row.additivesTags ?? [],
+    allergens_tags:        row.allergensTags ?? [],
+    traces_tags:           row.tracesTags ?? [],
     ...(row.isManaged !== undefined ? { is_managed: row.isManaged } : {}),
     ...(row.geminiNameKey ? {
       gemini_web_ingredient_lookup_at:       row.geminiAt,

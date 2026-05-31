@@ -503,6 +503,14 @@ class ProductService {
       ),
       'analyzeLang': row['analyze_lang'] as String?,
       'displayLang': row['display_lang'] as String?,
+      'brand': row['brand'] as String? ?? '',
+      'quantity': row['quantity'] as String? ?? '',
+      'categoriesTags': List<String>.from(
+        row['categories_tags'] as List? ?? [],
+      ),
+      'additivesTags': List<String>.from(row['additives_tags'] as List? ?? []),
+      'allergensTags': List<String>.from(row['allergens_tags'] as List? ?? []),
+      'tracesTags': List<String>.from(row['traces_tags'] as List? ?? []),
     });
   }
 

@@ -229,6 +229,10 @@ export async function handleLookup(
 
   const labels = parseOffLabels(pd)
   const rawCategories: string[] = Array.isArray(pd.categories_tags) ? pd.categories_tags as string[] : []
+  const offAdditivesTags: string[] = Array.isArray(pd.additives_tags) ? pd.additives_tags as string[] : []
+  const offAllergensTags: string[] = Array.isArray(pd.allergens_tags) ? pd.allergens_tags as string[] : []
+  const offTracesTags: string[] = Array.isArray(pd.traces_tags) ? pd.traces_tags as string[] : []
+  const offQuantity: string = typeof pd.quantity === 'string' ? pd.quantity.trim() : ''
   const classified = classifyOffCategories(rawCategories, isNonFood)
   isNonFood = classified.isNonFood
 
@@ -261,6 +265,14 @@ export async function handleLookup(
     verdict, classified.isNonFood, labels, images,
     existing?.fetched_at as string | undefined,
     geminiResolved.geminiAt, geminiResolved.geminiNameKey,
+    false,
+    {
+      brand, quantity: offQuantity,
+      categoriesTags: rawCategories,
+      additivesTags: offAdditivesTags,
+      allergensTags: offAllergensTags,
+      tracesTags: offTracesTags,
+    },
   )
 }
 
@@ -383,6 +395,11 @@ async function saveFullLookup(
   geminiAt?: string,
   geminiNameKey?: string,
   isManaged = false,
+  offTags: {
+    brand?: string; quantity?: string
+    categoriesTags?: string[]; additivesTags?: string[]
+    allergensTags?: string[]; tracesTags?: string[]
+  } = {},
 ): Promise<Response> {
   const {
     isHalal, isUnknown, haramIngredients, suspiciousIngredients,
@@ -405,6 +422,12 @@ async function saveFullLookup(
     geminiAt,
     geminiNameKey,
     displayLang: displayLang ?? '',
+    brand:          offTags.brand ?? '',
+    quantity:       offTags.quantity ?? '',
+    categoriesTags: offTags.categoriesTags ?? [],
+    additivesTags:  offTags.additivesTags ?? [],
+    allergensTags:  offTags.allergensTags ?? [],
+    tracesTags:     offTags.tracesTags ?? [],
   }
 
   const analysisRow: AnalysisRow = {
@@ -455,6 +478,12 @@ async function saveFullLookup(
     fetched_at: productRow.fetchedAt,
     gemini_web_ingredient_lookup_at: geminiAt ?? null,
     gemini_web_ingredient_lookup_name_key: geminiNameKey ?? null,
+    brand:           offTags.brand ?? '',
+    quantity:        offTags.quantity ?? '',
+    categories_tags: offTags.categoriesTags ?? [],
+    additives_tags:  offTags.additivesTags ?? [],
+    allergens_tags:  offTags.allergensTags ?? [],
+    traces_tags:     offTags.tracesTags ?? [],
   }
 
   return persistLookupAndRespond(supabase, corsHeaders, productRow, analysisRow, fallbackRow)

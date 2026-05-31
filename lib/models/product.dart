@@ -72,6 +72,24 @@ class Product {
   /// barcode with the same normalized [name] as now. Controls the AI lookup CTA.
   final bool geminiWebIngredientLookupAttemptedForName;
 
+  /// Brand name from OFF `brands` / `brand_owner` (first entry when comma-separated).
+  final String brand;
+
+  /// Pack size / quantity string from OFF (e.g. "37g", "1 l").
+  final String quantity;
+
+  /// OFF `categories_tags` canonical tag array (e.g. ["en:snacks", "en:bars"]).
+  final List<String> categoriesTags;
+
+  /// OFF `additives_tags` canonical additive IDs (e.g. ["en:e422-glycerol"]).
+  final List<String> additivesTags;
+
+  /// OFF `allergens_tags` declared allergens (e.g. ["en:milk", "en:gluten"]).
+  final List<String> allergensTags;
+
+  /// OFF `traces_tags` may-contain allergen/cross-contamination tags.
+  final List<String> tracesTags;
+
   /// Normalizes a product title the same way the edge function does for dedupe.
   static String normalizeProductNameForGeminiKey(String name) {
     return name.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
@@ -121,6 +139,12 @@ class Product {
     this.analyzeLang,
     this.displayLang,
     this.geminiWebIngredientLookupAttemptedForName = false,
+    this.brand = '',
+    this.quantity = '',
+    this.categoriesTags = const [],
+    this.additivesTags = const [],
+    this.allergensTags = const [],
+    this.tracesTags = const [],
   });
 
   Product copyWith({
@@ -156,6 +180,12 @@ class Product {
     String? analyzeLang,
     String? displayLang,
     bool? geminiWebIngredientLookupAttemptedForName,
+    String? brand,
+    String? quantity,
+    List<String>? categoriesTags,
+    List<String>? additivesTags,
+    List<String>? allergensTags,
+    List<String>? tracesTags,
   }) => Product(
     barcode: barcode ?? this.barcode,
     name: name ?? this.name,
@@ -192,6 +222,12 @@ class Product {
     geminiWebIngredientLookupAttemptedForName:
         geminiWebIngredientLookupAttemptedForName ??
         this.geminiWebIngredientLookupAttemptedForName,
+    brand: brand ?? this.brand,
+    quantity: quantity ?? this.quantity,
+    categoriesTags: categoriesTags ?? this.categoriesTags,
+    additivesTags: additivesTags ?? this.additivesTags,
+    allergensTags: allergensTags ?? this.allergensTags,
+    tracesTags: tracesTags ?? this.tracesTags,
   );
 
   Map<String, dynamic> toJson() => {
@@ -231,6 +267,12 @@ class Product {
     if (displayLang != null) 'displayLang': displayLang,
     'geminiWebIngredientLookupAttemptedForName':
         geminiWebIngredientLookupAttemptedForName,
+    if (brand.isNotEmpty) 'brand': brand,
+    if (quantity.isNotEmpty) 'quantity': quantity,
+    if (categoriesTags.isNotEmpty) 'categoriesTags': categoriesTags,
+    if (additivesTags.isNotEmpty) 'additivesTags': additivesTags,
+    if (allergensTags.isNotEmpty) 'allergensTags': allergensTags,
+    if (tracesTags.isNotEmpty) 'tracesTags': tracesTags,
   };
 
   factory Product.fromJson(Map<String, dynamic> json) => Product(
@@ -293,5 +335,19 @@ class Product {
           explicitFromApi:
               json['geminiWebIngredientLookupAttemptedForName'] as bool?,
         ),
+    brand: json['brand'] as String? ?? '',
+    quantity: json['quantity'] as String? ?? '',
+    categoriesTags: json['categoriesTags'] != null
+        ? List<String>.from(json['categoriesTags'] as List)
+        : const [],
+    additivesTags: json['additivesTags'] != null
+        ? List<String>.from(json['additivesTags'] as List)
+        : const [],
+    allergensTags: json['allergensTags'] != null
+        ? List<String>.from(json['allergensTags'] as List)
+        : const [],
+    tracesTags: json['tracesTags'] != null
+        ? List<String>.from(json['tracesTags'] as List)
+        : const [],
   );
 }

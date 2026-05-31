@@ -160,7 +160,31 @@ class OffFetcher {
       addLabelValue(productData['labels_en']);
       final labels = labelSet.toList();
 
+      final brand = (() {
+        final raw =
+            (productData['brands']?.toString() ??
+                    productData['brand_owner']?.toString() ??
+                    '')
+                .trim();
+        return raw.split(',').first.trim();
+      })();
+
+      final quantity = (productData['quantity']?.toString() ?? '').trim();
+
       final rawCategories = productData['categories_tags'];
+      final List<String> categoriesTags = rawCategories is List
+          ? rawCategories.map((c) => c.toString()).toList()
+          : const [];
+
+      List<String> toStringList(Object? value) {
+        if (value is! List) return const [];
+        return value.map((e) => e.toString()).toList();
+      }
+
+      final additivesTags = toStringList(productData['additives_tags']);
+      final allergensTags = toStringList(productData['allergens_tags']);
+      final tracesTags = toStringList(productData['traces_tags']);
+
       final bool isNonFoodByCategory =
           rawCategories is List &&
           rawCategories.any(
@@ -231,6 +255,12 @@ class OffFetcher {
           explanation: '',
           analyzedByAI: false,
           ingredientSource: 'off',
+          brand: brand,
+          quantity: quantity,
+          categoriesTags: categoriesTags,
+          additivesTags: additivesTags,
+          allergensTags: allergensTags,
+          tracesTags: tracesTags,
         );
       }
 
@@ -347,6 +377,12 @@ class OffFetcher {
         keywordMatchOrigins: kwResult.keywordMatchOrigins,
         analyzeLang: kwResult.analyzeLang,
         displayLang: resolved.displayLang.isEmpty ? null : resolved.displayLang,
+        brand: brand,
+        quantity: quantity,
+        categoriesTags: categoriesTags,
+        additivesTags: additivesTags,
+        allergensTags: allergensTags,
+        tracesTags: tracesTags,
       );
     } catch (_) {
       return null;
