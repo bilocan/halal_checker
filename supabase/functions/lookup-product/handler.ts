@@ -119,6 +119,12 @@ export async function handleLookup(
   // But if ingredients came from AI or community, protect them — OFF has dummy/worse data.
   const hasNonOffIngredients = existing?.ingredient_source === 'ai' ||
     existing?.ingredient_source === 'community'
+  // Unknown+OFF products with no stored ingredients must re-fetch OFF: stored reanalysis
+  // has no categories_tags, so halal-by-category would never apply without a fresh response.
+  // If ingredients exist, the analysis already ran on them — don't re-fetch.
+  const hasStoredIngredients = Array.isArray(existing?.ingredients) &&
+    (existing.ingredients as string[]).length > 0
+  const isUnknownOff = !!(existing?.is_unknown && !hasNonOffIngredients && !hasStoredIngredients)
   if (!fetchAiIngredients && !refetchForGeminiAuto && existing &&
       (!existing.is_unknown || hasNonOffIngredients) &&
       (isStale(existing) || force)) {
@@ -138,14 +144,18 @@ export async function handleLookup(
     const visionUrlRaw = existing.image_ingredients_url as string | null | undefined
     const visionUrl = typeof visionUrlRaw === 'string' ? visionUrlRaw.trim() : ''
     const needsVisionIngredients = storedIngredients.length === 0 && visionUrl !== ''
-    if (!needsVisionIngredients) {
+    if (!needsVisionIngredients && !isUnknownOff) {
       return jsonResponse(
         { product: toProduct(withCommunitySource(existing, communityIngredients)) },
         200,
         corsHeaders,
       )
     }
-    console.log(`[${barcode}] DB stub has ingredient image — running vision/analysis path`)
+    if (!needsVisionIngredients) {
+      console.log(`[${barcode}] unknown+OFF — re-fetching OFF for halal-by-category detection`)
+    } else {
+      console.log(`[${barcode}] DB stub has ingredient image — running vision/analysis path`)
+    }
   }
 
   const { haram: customHaramEntries, suspicious: customSuspiciousEntries } =
@@ -153,9 +163,9 @@ export async function handleLookup(
 
     let pd: Record<string, unknown> | null = null
     let isNonFood = false
-    // Only fetch OFF when there is no DB row at all. Once a product exists in our DB
-    // (any ingredient source), we never overwrite it with OFF data on re-analysis.
-    if (!existing) {
+    // Fetch OFF for new products or unknown+OFF products (halal-by-category re-detection).
+    // AI/community ingredients are always preserved — only OFF-sourced unknowns re-fetch.
+    if (!existing || isUnknownOff) {
       const off = await deps.fetchOpenFactsProduct(barcode)
       if (off) {
         pd = off.pd
