@@ -108,11 +108,13 @@ def main() -> None:
     if token:
         play_max = _max_version_code(token, args.package_name)
 
-    if play_max is not None:
-        next_code = play_max + 1
+    effective_max = max(play_max or 0, pubspec_build)
+    next_code = effective_max + 1
+    if play_max is not None and play_max > pubspec_build:
         source = f"Play Store max {play_max} + 1"
+    elif play_max is not None:
+        source = f"pubspec {pubspec_build} + 1 (Play Store max {play_max} is lower — stale or discarded drafts)"
     else:
-        next_code = pubspec_build + 1
         source = f"no Play Store builds found; pubspec {pubspec_build} + 1"
 
     print(f"Marketing version: {name}")
