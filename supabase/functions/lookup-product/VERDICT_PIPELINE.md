@@ -64,7 +64,7 @@ Runs in `index.ts` (OFF path and DB-stub path), **not** inside `computeVerdict`.
 
 | Priority | Source | Module |
 |----------|--------|--------|
-| 1 | Open Food Facts text | `fetch.ts` → `parseOffIngredientList` |
+| 1 | Open Food Facts text | `fetch.ts` → `ingredientResolution.ts` → display + analyze sources |
 | 2 | Gemini web lookup (empty OFF) | `ingredientResolver.ts` |
 | 3 | Community approved list | `community.ts` (wins over OFF/Gemini) |
 
@@ -84,10 +84,10 @@ Do not use a state machine — each step reads the snapshot left by the previous
 
 | Step | Function | Notes |
 |------|----------|--------|
-| 0a | `createInitialState` | `keywordAnalysis(ingredients)` → `kwFirst` |
-| 0b | Initial snapshot | Non-food / halal-by-category-empty-ingredients shortcuts; else `kwFirst` verdict |
+| 0a | `createInitialState` | `keywordAnalysis(ingredients)` → `kwFirst`; `deduplicateLabels(labels)` then `keywordAnalysis` → `kwLabels` |
+| 0b | Initial snapshot | Non-food / halal-by-category-empty-ingredients shortcuts; else `kwFirst` verdict; `haramLabels`/`suspiciousLabels` seeded from `kwLabels` |
 
-`kwFirst` is frozen for the whole run — post-rules use it for **keyword safety override** even after AI changes the snapshot.
+`kwFirst` and `kwLabels` are both frozen for the whole run — post-rules use them for **keyword safety override** even after AI changes the snapshot.
 
 ### Phase 1 — Async pipeline (`VERDICT_PIPELINE`)
 
@@ -110,6 +110,7 @@ Do not use a state machine — each step reads the snapshot left by the previous
 - `isNonFood`
 - `isHalalByCategory`
 - `kwFirst.haram.length > 0`
+- `kwLabels.haram.length > 0` ← haram label keyword found
 - `haramCategory !== null`
 - `ingredients.length === 0`
 - `ingredientSource === 'ai'`
@@ -134,8 +135,10 @@ Applied in `applyPostAnalysisRules` — **must not reorder** without updating te
 | 2 | `applyKeywordSuspiciousOverride` | Same for suspicious |
 | 3 | `applyHaramCategoryOverride` | `ctx.haramCategory` wins over AI |
 | 4 | `applyNameFallback` | If `isUnknown`, keyword-scan product name |
-| 5 | `applyHalalCertRequirement` | Animal product without halal label → `requiresHalalCert`, not halal |
-| 6 | `applySuspiciousNotHalal` | Suspicious only (no haram) → `isHalal = false` |
+| 5 | `applyLabelHaramOverride` | If `kwLabels` has haram → force not halal, populate `haramLabels`/`labelWarnings`; explanation = label text when no ingredient haram, else ingredient explanation + label note appended |
+| 6 | `applyLabelSuspiciousOverride` | Always merges `suspiciousLabels`/`labelWarnings` from `kwLabels`; if snapshot still `isHalal` → force not halal, set label-based explanation (defers when ingredient flags present); if already not halal → appends suspicious-label note to existing explanation |
+| 7 | `applyHalalCertRequirement` | Animal product without halal label → `requiresHalalCert`, not halal; skipped if `haramLabels` non-empty |
+| 8 | `applySuspiciousNotHalal` | Suspicious only (no haram ingredients or labels) → `isHalal = false` |
 
 Categories for cert: `categories.ts` (`ANIMAL_PRODUCT_CATEGORIES`, `HALAL_CERT_LABELS`, `ANIMAL_PRODUCT_NAME_TERMS`).
 
@@ -149,6 +152,15 @@ Categories for cert: `categories.ts` (`ANIMAL_PRODUCT_CATEGORIES`, `HALAL_CERT_L
 ---
 
 ## Keyword source
+
+When the displayed ingredient label is not keyword-analyzable (e.g. Cyrillic), the pipeline:
+
+1. Keeps **display** ingredients from `ingredients_text` (original language).
+2. Adds **analyze** sources from `ingredients_text_{en,de,fr,…}` when present.
+3. Adds **OFF taxonomy** IDs (`en:*` from structured `ingredients` array).
+4. If primary script is unsupported, no translated OFF text exists, and no keyword matches (including from taxonomy) → `isUnknown`, `keywordMatchSource=unanalyzable`.
+
+Transparency fields: `keyword_match_source`, `keyword_match_origins`, `analyze_lang`, `display_lang`.
 
 | Layer | Location |
 |-------|----------|
@@ -167,6 +179,8 @@ Categories for cert: `categories.ts` (`ANIMAL_PRODUCT_CATEGORIES`, `HALAL_CERT_L
 | `GEMINI_ENABLED` / `GEMINI_API_KEY` | Gemini text AI + ingredient web lookup |
 | `GEMINI_LOOKUP_EMPTY_OFF` | Auto Gemini ingredients when OFF empty (see `ingredient_lookup_gate.ts`) |
 
+**Gemini ingredient web lookup (shared):** `_shared/gemini_ingredient_lookup.ts` — model, system prompt, and `generateContent` body used by `lookup-product` (Flutter) and `admin-gemini-ingredient-lookup` (web admin probe). Request contract: `_shared/gemini_ingredient_lookup_test.ts` (no API calls in CI).
+
 Production default: **Open Food Facts + keywords + post-rules**; AI tiers optional.
 
 ---
@@ -184,7 +198,8 @@ Production default: **Open Food Facts + keywords + post-rules**; AI tiers option
 | `ingredientResolver_test.ts` | `resolveGeminiIngredients` (mocked Gemini HTTP) |
 | `reanalysis_test.ts` | `runStoredProductReanalysis`, `jsonManagedProduct` |
 | `ai_test.ts` | `parseIngredientList` |
-| `ai_api_test.ts` | `analyzeWithGemini/Claude/Vision`, `geminiIngredientLookup` (mocked HTTP) |
+| `ai_api_test.ts` | `analyzeWithGemini/Claude/Vision`, `geminiIngredientLookup` (mocked HTTP + shared request body) |
+| `_shared/gemini_ingredient_lookup_test.ts` | `buildGeminiIngredientLookupRequest` snapshot (zero token cost) |
 | `persistence_test.ts` | `persistLookupAndRespond` (`products_full` vs fallback) |
 | `handler_test.ts` | `handleLookup` / `handleLookupRequest` (mocked Supabase + OFF) |
 

@@ -195,7 +195,7 @@ void main() {
   // ── e-number hyphenated forms ─────────────────────────────────────────────
 
   group('IngredientKeywords — haram e-numbers include hyphenated form', () {
-    for (final key in ['e120', 'e441', 'e542', 'e904']) {
+    for (final key in ['e120', 'e542', 'e904']) {
       test(
         'haramVariants["$key"] contains "${key.replaceFirst('e', 'e-')}"',
         () {
@@ -219,6 +219,7 @@ void main() {
       'e473',
       'e927',
       'e422',
+      'e441',
     ]) {
       test(
         'suspiciousVariants["$key"] contains "${key.replaceFirst('e', 'e-')}"',

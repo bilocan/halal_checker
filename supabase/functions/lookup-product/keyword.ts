@@ -24,12 +24,11 @@ export const HARAM_ENTRIES: KeywordEntry[] = [
   ['sake',      'Contains sake (alcoholic)',            'sake', 'saké'],
   ['pork',       'Contains pork or pork-derived ingredient',
    'pork', 'schwein', 'schweinefleisch', 'porc', 'maiale', 'cerdo',
-   'domuz', 'varkens', 'varkensvlees', 'porco'],
+   'domuz', 'varkens', 'varkensvlees', 'porco',
+   'свинско', 'свински', 'свинска', 'свинско месо', 'свинска месо'],
   ['lard',       'Contains pork fat',
    'lard', 'schmalz', 'schweineschmalz', 'saindoux', 'strutto',
    'manteca', 'domuz yağı', 'banha'],
-  ['gelatin',    'Gelatin is typically animal-derived',
-   'gelatin', 'gelatine', 'gelatina', 'jelatin', 'gélatine'],
   ['bacon',      'Contains pork product',
    'bacon', 'speck', 'lardons', 'pancetta', 'domuz pastırması'],
   ['ham',        'Contains pork product',
@@ -43,12 +42,15 @@ export const HARAM_ENTRIES: KeywordEntry[] = [
   ['cochineal',  'Carmine/cochineal is insect-derived',
    'cochineal', 'cochenille', 'cocciniglia', 'cochinilla', 'koşnil'],
   ['e120', 'Carmine/cochineal color, animal-derived', 'e120', 'e-120'],
-  ['e441', 'Gelatin, animal-derived',       'e441', 'e-441'],
   ['e542', 'Bone phosphate, animal-derived','e542', 'e-542'],
   ['e904', 'Shellac, animal-derived',       'e904', 'e-904'],
 ]
 
 export const SUSPICIOUS_ENTRIES: KeywordEntry[] = [
+  ['gelatin', 'Gelatin source often unspecified — predominantly pork-derived in Western products',
+   'gelatin', 'gelatine', 'gelatina', 'jelatin', 'gélatine', 'želatina', 'zselatin'],
+  ['e441', 'Gelatin (E441), source often unspecified — predominantly pork-derived',
+   'e441', 'e-441'],
   ['e920', 'L-cysteine may be animal-derived',          'e920', 'e-920'],
   ['e322', 'Lecithin may be animal-derived',            'e322', 'e-322'],
   ['e471', 'Mono- and diglycerides may be animal-derived','e471','e-471'],
@@ -128,6 +130,12 @@ function isNegated(chunk: string, variant: string): boolean {
   return NEGATION_WORDS.test(lower.substring(0, idx))
 }
 
+import type { IngredientAnalysisSource } from './ingredientResolution.ts'
+import {
+  combineMatchSourceKeys,
+  isAnalyzableScript,
+} from './ingredientResolution.ts'
+
 export interface KeywordResult {
   isHalal: boolean
   isUnknown: boolean
@@ -135,18 +143,31 @@ export interface KeywordResult {
   suspicious: string[]
   warnings: Record<string, string>
   explanation: string
+  /** Which ingredient source(s) produced keyword matches (primary, off_en, off_taxonomy, …). */
+  keywordMatchSource?: string
+  /** Flagged ingredient token → source key that matched it. */
+  keywordMatchOrigins?: Record<string, string>
+  /** OFF language field used when display text was not keyword-analyzable. */
+  analyzeLang?: string | null
 }
 
-export function keywordAnalysis(
+interface SinglePassResult {
+  haram: string[]
+  suspicious: string[]
+  warnings: Record<string, string>
+  origins: Record<string, string>
+}
+
+function keywordSinglePass(
   ingredients: string[],
-  extraHaram: KeywordEntry[] = [],
-  extraSuspicious: KeywordEntry[] = [],
-): KeywordResult {
+  sourceKey: string,
+  allHaram: KeywordEntry[],
+  allSuspicious: KeywordEntry[],
+): SinglePassResult {
   const warnings: Record<string, string> = {}
   const haram: string[] = []
   const suspicious: string[] = []
-  const allHaram = [...HARAM_ENTRIES, ...extraHaram]
-  const allSuspicious = [...SUSPICIOUS_ENTRIES, ...extraSuspicious]
+  const origins: Record<string, string> = {}
 
   for (const ing of ingredients) {
     const lower = ing.toLowerCase()
@@ -154,26 +175,137 @@ export function keywordAnalysis(
     for (const entry of allHaram) {
       const matchedVariant = (entry.slice(2) as string[]).find(v => matchesVariant(lower, v))
       if (matchedVariant && !isNegated(lower, matchedVariant)) {
-        warnings[ing] = entry[1]; haram.push(ing); foundHaram = true; break
+        warnings[ing] = entry[1]
+        haram.push(ing)
+        origins[ing] = sourceKey
+        foundHaram = true
+        break
       }
     }
     if (foundHaram) continue
     for (const entry of allSuspicious) {
       const matchedVariant = (entry.slice(2) as string[]).find(v => matchesVariant(lower, v))
       if (matchedVariant && !isNegated(lower, matchedVariant)) {
-        warnings[ing] = entry[1]; suspicious.push(ing); break
+        warnings[ing] = entry[1]
+        suspicious.push(ing)
+        origins[ing] = sourceKey
+        break
       }
     }
   }
 
-  const isUnknown = ingredients.length === 0
-  const explanation = haram.length > 0
-    ? `This product contains ingredient(s) that are not permissible: ${haram.join(', ')}. Assessed by keyword matching.`
-    : suspicious.length > 0
-      ? `No definitively haram ingredients found, but the following may be animal-derived: ${suspicious.join(', ')}. Assessed by keyword matching.`
-      : isUnknown
-        ? 'No ingredient data found. Halal status cannot be determined — check the packaging directly.'
-        : 'No haram or suspicious ingredients detected. Assessed by keyword matching.'
+  return { haram, suspicious, warnings, origins }
+}
+
+function buildKeywordExplanation(
+  haram: string[],
+  suspicious: string[],
+  isUnknown: boolean,
+  isUnanalyzableLanguage: boolean,
+): string {
+  if (haram.length > 0) {
+    return `This product contains ingredient(s) that are not permissible: ${haram.join(', ')}. Assessed by keyword matching.`
+  }
+  if (suspicious.length > 0) {
+    return `No definitively haram ingredients found, but the following may be animal-derived: ${suspicious.join(', ')}. Assessed by keyword matching.`
+  }
+  if (isUnanalyzableLanguage) {
+    return 'Ingredients are in a language we cannot analyze. Halal status cannot be determined — check the packaging directly.'
+  }
+  if (isUnknown) {
+    return 'No ingredient data found. Halal status cannot be determined — check the packaging directly.'
+  }
+  return 'No haram or suspicious ingredients detected. Assessed by keyword matching.'
+}
+
+export function keywordAnalysis(
+  ingredients: string[],
+  extraHaram: KeywordEntry[] = [],
+  extraSuspicious: KeywordEntry[] = [],
+): KeywordResult {
+  return keywordAnalysisFromSources(
+    ingredients.length > 0 ? [{ key: 'primary', ingredients }] : [],
+    ingredients,
+    null,
+    extraHaram,
+    extraSuspicious,
+  )
+}
+
+/** Multi-source keyword pass with language-fallback transparency. */
+export function keywordAnalysisFromSources(
+  sources: IngredientAnalysisSource[],
+  displayIngredients: string[],
+  analyzeLang: string | null,
+  extraHaram: KeywordEntry[] = [],
+  extraSuspicious: KeywordEntry[] = [],
+): KeywordResult {
+  const allHaram = [...HARAM_ENTRIES, ...extraHaram]
+  const allSuspicious = [...SUSPICIOUS_ENTRIES, ...extraSuspicious]
+
+  const haram: string[] = []
+  const suspicious: string[] = []
+  const warnings: Record<string, string> = {}
+  const matchOrigins: Record<string, string> = {}
+  const matchedSourceKeys: string[] = []
+
+  const seenHaram = new Set<string>()
+  const seenSuspicious = new Set<string>()
+
+  for (const source of sources) {
+    const pass = keywordSinglePass(
+      source.ingredients,
+      source.key,
+      allHaram,
+      allSuspicious,
+    )
+    if (pass.haram.length > 0 || pass.suspicious.length > 0) {
+      matchedSourceKeys.push(source.key)
+    }
+    for (const ing of pass.haram) {
+      const key = ing.toLowerCase()
+      if (!seenHaram.has(key)) {
+        seenHaram.add(key)
+        haram.push(ing)
+      }
+      matchOrigins[ing] = pass.origins[ing] ?? source.key
+      warnings[ing] = pass.warnings[ing] ?? warnings[ing] ?? ''
+    }
+    for (const ing of pass.suspicious) {
+      const key = ing.toLowerCase()
+      if (!seenSuspicious.has(key)) {
+        seenSuspicious.add(key)
+        suspicious.push(ing)
+      }
+      matchOrigins[ing] = pass.origins[ing] ?? source.key
+      warnings[ing] = pass.warnings[ing] ?? warnings[ing] ?? ''
+    }
+  }
+
+  const primaryText = displayIngredients.join(', ')
+  const hasLangFallback = sources.some(
+    s => s.key.startsWith('off_') && s.key !== 'off_taxonomy' && s.ingredients.length > 0,
+  )
+
+  // Primary label unreadable and no translated OFF text — unknown even when
+  // taxonomy IDs exist but matched nothing (e.g. bg:pork + en:water only).
+  const isUnanalyzableLanguage = displayIngredients.length > 0 &&
+    haram.length === 0 &&
+    suspicious.length === 0 &&
+    !isAnalyzableScript(primaryText) &&
+    !hasLangFallback
+
+  const isUnknown = displayIngredients.length === 0 || isUnanalyzableLanguage
+  const explanation = buildKeywordExplanation(
+    haram,
+    suspicious,
+    displayIngredients.length === 0,
+    isUnanalyzableLanguage,
+  )
+
+  const keywordMatchSource = isUnanalyzableLanguage
+    ? 'unanalyzable'
+    : combineMatchSourceKeys(matchedSourceKeys)
 
   return {
     isHalal: !isUnknown && haram.length === 0 && suspicious.length === 0,
@@ -182,5 +314,8 @@ export function keywordAnalysis(
     suspicious,
     warnings,
     explanation,
+    keywordMatchSource,
+    keywordMatchOrigins: Object.keys(matchOrigins).length > 0 ? matchOrigins : undefined,
+    analyzeLang,
   }
 }

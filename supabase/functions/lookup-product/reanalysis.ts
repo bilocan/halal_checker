@@ -42,9 +42,22 @@ export async function runStoredProductReanalysis(
     ? existing.image_ingredients_url.trim()
     : ''
 
+  const displayLang = typeof existing.display_lang === 'string'
+    ? existing.display_lang
+    : ''
+  const analyzeLang = typeof existing.analyze_lang === 'string'
+    ? existing.analyze_lang
+    : null
+  const analyzeSources = storedIngredients.length > 0
+    ? [{ key: 'primary' as const, ingredients: storedIngredients }]
+    : []
+
   const verdict = await computeVerdict({
     barcode,
     ingredients: storedIngredients,
+    analyzeSources,
+    displayLang,
+    analyzeLang,
     name,
     labels,
     rawCategories: [],
@@ -60,7 +73,8 @@ export async function runStoredProductReanalysis(
 
   const {
     isHalal, isUnknown, haramIngredients, suspiciousIngredients,
-    ingredientWarnings, explanation, requiresHalalCert,
+    ingredientWarnings, haramLabels, suspiciousLabels, labelWarnings,
+    explanation, requiresHalalCert,
   } = verdict
 
   const productRow: ProductRow = {
@@ -89,8 +103,14 @@ export async function runStoredProductReanalysis(
     haramIngredients,
     suspiciousIngredients,
     ingredientWarnings,
+    haramLabels,
+    suspiciousLabels,
+    labelWarnings,
     explanation,
     analyzedByAI: false,
+    keywordMatchSource: verdict.keywordMatchSource,
+    keywordMatchOrigins: verdict.keywordMatchOrigins,
+    analyzeLang: verdict.analyzeLang,
   }
 
   const responseRow = {
@@ -104,6 +124,9 @@ export async function runStoredProductReanalysis(
     haram_ingredients: haramIngredients,
     suspicious_ingredients: suspiciousIngredients,
     ingredient_warnings: ingredientWarnings,
+    haram_labels: haramLabels,
+    suspicious_labels: suspiciousLabels,
+    label_warnings: labelWarnings,
     labels,
     image_url: existing.image_url,
     image_front_url: existing.image_front_url,
@@ -112,6 +135,10 @@ export async function runStoredProductReanalysis(
     explanation,
     analyzed_by_ai: false,
     requires_halal_cert: requiresHalalCert,
+    keyword_match_source: verdict.keywordMatchSource ?? null,
+    keyword_match_origins: verdict.keywordMatchOrigins ?? {},
+    analyze_lang: verdict.analyzeLang ?? null,
+    display_lang: verdict.displayLang ?? null,
     is_managed: existing.is_managed,
     last_analysed_at: new Date().toISOString(),
     fetched_at: productRow.fetchedAt,

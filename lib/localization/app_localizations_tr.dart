@@ -320,6 +320,12 @@ class AppLocalizationsTr extends AppLocalizations {
   String get foundInIngredients => 'Ürün içeriklerinde bulundu.';
 
   @override
+  String get flaggedLabels => 'İşaretli Etiketler';
+
+  @override
+  String get foundInLabels => 'Ürün etiketlerinde bulundu.';
+
+  @override
   String get mayBeAnimalDerivedNote => 'Hayvansal kaynaklı olabilir.';
 
   @override
@@ -397,6 +403,34 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get transparentExplanation => 'Explanation';
+
+  @override
+  String get transparentMatchSource => 'Eşleşme kaynağı';
+
+  @override
+  String get transparentMatchSourcePrimary => 'Orijinal içerik etiketi';
+
+  @override
+  String get transparentMatchSourceOffTaxonomy =>
+      'Open Food Facts içerik taksonomisi (EN)';
+
+  @override
+  String get transparentMatchSourceUnanalyzable =>
+      'Analiz edilemedi — desteklenmeyen dil';
+
+  @override
+  String get transparentMatchSourceNone => 'Anahtar kelime eşleşmesi yok';
+
+  @override
+  String transparentMatchSourceOffLang(String lang) {
+    return '$lang çevirisi (Open Food Facts)';
+  }
+
+  @override
+  String get transparentMatchOrigins => 'Eşleşme kaynakları';
+
+  @override
+  String get transparentDisplayLanguage => 'Etiket dili';
 
   @override
   String get contributeIngredients => 'İçerik Ekle';

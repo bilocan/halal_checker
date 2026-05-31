@@ -20,7 +20,6 @@ class IngredientKeywords {
     'sake': 'Contains sake (alcoholic)',
     'pork': 'Contains pork or pork-derived ingredient',
     'lard': 'Contains pork fat',
-    'gelatin': 'Gelatin is typically animal-derived',
     'bacon': 'Contains pork product',
     'ham': 'Contains pork product',
     'pepperoni': 'Contains pork product',
@@ -30,12 +29,15 @@ class IngredientKeywords {
     'carmine': 'Carmine/cochineal is insect-derived',
     'cochineal': 'Carmine/cochineal is insect-derived',
     'e120': 'Carmine/cochineal color, animal-derived',
-    'e441': 'Gelatin, animal-derived',
     'e542': 'Bone phosphate, animal-derived',
     'e904': 'Shellac, animal-derived',
   };
 
   static const Map<String, String> suspicious = {
+    'gelatin':
+        'Gelatin source often unspecified — predominantly pork-derived in Western products',
+    'e441':
+        'Gelatin (E441), source often unspecified — predominantly pork-derived',
     'e920': 'L-cysteine may be animal-derived',
     'e322': 'Lecithin may be animal-derived',
     'e471': 'Mono- and diglycerides may be animal-derived',
@@ -100,6 +102,7 @@ class IngredientKeywords {
       'svinjetina', 'svinjsko', // SR
       'sertéshús', 'sertés', // HU
       'vepřové', 'vepřová', // CS
+      'свинско', 'свински', 'свинска', 'свинско месо', 'свинска месо', // BG
     ],
     'lard': [
       'lard', 'schmalz', 'schweineschmalz', 'saindoux', 'strutto', 'manteca',
@@ -107,11 +110,6 @@ class IngredientKeywords {
       'svinjska mast', // SR
       'sertészsír', // HU
       'sádlo', // CS
-    ],
-    'gelatin': [
-      'gelatin', 'gelatine', 'gelatina', 'jelatin', 'gélatine',
-      'želatina', // SR / CS
-      'zselatin', // HU
     ],
     'bacon': [
       'bacon', 'speck', 'lardons', 'pancetta', 'domuz pastırması',
@@ -134,12 +132,17 @@ class IngredientKeywords {
       'košenila', // CS
     ],
     'e120': ['e120', 'e-120'],
-    'e441': ['e441', 'e-441'],
     'e542': ['e542', 'e-542'],
     'e904': ['e904', 'e-904'],
   };
 
   static const Map<String, List<String>> suspiciousVariants = {
+    'gelatin': [
+      'gelatin', 'gelatine', 'gelatina', 'jelatin', 'gélatine',
+      'želatina', // SR / CS
+      'zselatin', // HU
+    ],
+    'e441': ['e441', 'e-441'],
     'e920': ['e920', 'e-920'],
     'e322': ['e322', 'e-322'],
     'e471': ['e471', 'e-471', 'mono- und diglyceride von speisefettsäuren'],
@@ -320,17 +323,6 @@ class IngredientKeywords {
       'hu': ['sertészsír'],
       'cs': ['sádlo'],
     },
-    'gelatin': {
-      'en': ['gelatin', 'gelatine'],
-      'de': ['gelatine'],
-      'fr': ['gélatine'],
-      'it': ['gelatina'],
-      'tr': ['jelatin'],
-      'es': ['gelatina'],
-      'sr': ['želatina'],
-      'hu': ['zselatin'],
-      'cs': ['želatina'],
-    },
     'bacon': {
       'en': ['bacon'],
       'de': ['speck'],
@@ -387,9 +379,6 @@ class IngredientKeywords {
     'e120': {
       'en': ['e120', 'e-120'],
     },
-    'e441': {
-      'en': ['e441', 'e-441'],
-    },
     'e542': {
       'en': ['e542', 'e-542'],
     },
@@ -399,6 +388,20 @@ class IngredientKeywords {
   };
 
   static const Map<String, Map<String, List<String>>> suspiciousByLang = {
+    'gelatin': {
+      'en': ['gelatin', 'gelatine'],
+      'de': ['gelatine'],
+      'fr': ['gélatine'],
+      'it': ['gelatina'],
+      'tr': ['jelatin'],
+      'es': ['gelatina'],
+      'sr': ['želatina'],
+      'hu': ['zselatin'],
+      'cs': ['želatina'],
+    },
+    'e441': {
+      'en': ['e441', 'e-441'],
+    },
     'e920': {
       'en': ['e920', 'e-920'],
     },
@@ -543,6 +546,14 @@ class IngredientKeywords {
   // Falls back to the English reason in [suspicious] / [haram] when the
   // locale is not listed here.
   static const Map<String, Map<String, String>> localizedReasons = {
+    'gelatin': {
+      'en':
+          'Gelatin source is often unspecified on packaging. In Western markets it is predominantly pork-derived, making it not halal unless explicitly labelled as fish gelatin, beef gelatin from a halal-slaughtered animal, or a plant-based alternative. Look for a halal logo or the words "beef gelatin" / "fish gelatin"; strict followers should contact the manufacturer to confirm the source.',
+      'de':
+          'Die Herkunft von Gelatine ist auf der Verpackung häufig nicht angegeben. In westlichen Märkten stammt sie überwiegend vom Schwein und ist daher nicht halal, sofern sie nicht ausdrücklich als Fischgelatine, Rindergelatine aus halal-geschlachtetem Tier oder pflanzliche Alternative deklariert ist. Achten Sie auf ein Halal-Zertifizierungszeichen oder die Angabe „Rindergelatine" / „Fischgelatine"; besonders strenge Verbraucher können die Herkunft beim Hersteller erfragen.',
+      'tr':
+          'Jelatin kaynağı ambalajda çoğunlukla belirtilmez. Batı pazarlarında jelatin büyük ölçüde domuzdan elde edilmekte olup açıkça balık jelatini, helal kesimli sığır jelatini veya bitkisel alternatif olarak etiketlenmediği sürece helal değildir. Helal sertifika logosunu veya "sığır jelatini" / "balık jelatini" ibaresini arayın; daha titiz tüketiciler kaynağı üreticiden teyit etmek isteyebilir.',
+    },
     'whey': {
       'en':
           'The concern with whey is not whey itself, but the rennet used during cheese-making. If animal rennet from a non-halal source (e.g. pork-derived or improperly slaughtered cattle) was used, some scholars consider this problematic — though many hold that the transformation of the substance renders it permissible regardless. Microbial, vegetable, or halal-certified animal rennet poses no issue. In practice, whey in packaged foods is widely considered halal by the majority of scholars and certification bodies. Look for a halal logo if you want certainty; strict followers may wish to verify the rennet source with the manufacturer.',

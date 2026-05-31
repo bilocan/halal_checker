@@ -8,6 +8,9 @@ class Product {
   final List<String> haramIngredients;
   final List<String> suspiciousIngredients;
   final Map<String, String> ingredientWarnings;
+  final List<String> haramLabels;
+  final List<String> suspiciousLabels;
+  final Map<String, String> labelWarnings;
   final Map<String, String> ingredientTranslations;
 
   /// Maps ingredient text → canonical keyword (e.g. "poudre de lactosérum" → "whey").
@@ -53,6 +56,18 @@ class Product {
   /// Distinct from fetched_at, which tracks the Open Food Facts fetch time.
   final DateTime? lastAnalysedAt;
 
+  /// Which ingredient source produced keyword matches (primary, off_en, off_taxonomy, …).
+  final String? keywordMatchSource;
+
+  /// Flagged ingredient → source key that matched it.
+  final Map<String, String> keywordMatchOrigins;
+
+  /// OFF language used for analysis when the displayed label was not keyword-analyzable.
+  final String? analyzeLang;
+
+  /// Language of the ingredient label shown in the app (from OFF ingredients_lc).
+  final String? displayLang;
+
   /// Whether Gemini **web ingredient lookup** already ran server-side for this
   /// barcode with the same normalized [name] as now. Controls the AI lookup CTA.
   final bool geminiWebIngredientLookupAttemptedForName;
@@ -83,6 +98,9 @@ class Product {
     required this.haramIngredients,
     required this.suspiciousIngredients,
     required this.ingredientWarnings,
+    this.haramLabels = const [],
+    this.suspiciousLabels = const [],
+    this.labelWarnings = const {},
     this.ingredientTranslations = const {},
     this.ingredientCanonicals = const {},
     required this.labels,
@@ -98,6 +116,10 @@ class Product {
     this.isManaged = false,
     this.updatedAt,
     this.lastAnalysedAt,
+    this.keywordMatchSource,
+    this.keywordMatchOrigins = const {},
+    this.analyzeLang,
+    this.displayLang,
     this.geminiWebIngredientLookupAttemptedForName = false,
   });
 
@@ -111,6 +133,9 @@ class Product {
     List<String>? haramIngredients,
     List<String>? suspiciousIngredients,
     Map<String, String>? ingredientWarnings,
+    List<String>? haramLabels,
+    List<String>? suspiciousLabels,
+    Map<String, String>? labelWarnings,
     Map<String, String>? ingredientTranslations,
     Map<String, String>? ingredientCanonicals,
     List<String>? labels,
@@ -126,6 +151,10 @@ class Product {
     bool? isManaged,
     DateTime? updatedAt,
     DateTime? lastAnalysedAt,
+    String? keywordMatchSource,
+    Map<String, String>? keywordMatchOrigins,
+    String? analyzeLang,
+    String? displayLang,
     bool? geminiWebIngredientLookupAttemptedForName,
   }) => Product(
     barcode: barcode ?? this.barcode,
@@ -137,6 +166,9 @@ class Product {
     haramIngredients: haramIngredients ?? this.haramIngredients,
     suspiciousIngredients: suspiciousIngredients ?? this.suspiciousIngredients,
     ingredientWarnings: ingredientWarnings ?? this.ingredientWarnings,
+    haramLabels: haramLabels ?? this.haramLabels,
+    suspiciousLabels: suspiciousLabels ?? this.suspiciousLabels,
+    labelWarnings: labelWarnings ?? this.labelWarnings,
     ingredientTranslations:
         ingredientTranslations ?? this.ingredientTranslations,
     ingredientCanonicals: ingredientCanonicals ?? this.ingredientCanonicals,
@@ -153,6 +185,10 @@ class Product {
     isManaged: isManaged ?? this.isManaged,
     updatedAt: updatedAt ?? this.updatedAt,
     lastAnalysedAt: lastAnalysedAt ?? this.lastAnalysedAt,
+    keywordMatchSource: keywordMatchSource ?? this.keywordMatchSource,
+    keywordMatchOrigins: keywordMatchOrigins ?? this.keywordMatchOrigins,
+    analyzeLang: analyzeLang ?? this.analyzeLang,
+    displayLang: displayLang ?? this.displayLang,
     geminiWebIngredientLookupAttemptedForName:
         geminiWebIngredientLookupAttemptedForName ??
         this.geminiWebIngredientLookupAttemptedForName,
@@ -168,6 +204,9 @@ class Product {
     'haramIngredients': haramIngredients,
     'suspiciousIngredients': suspiciousIngredients,
     'ingredientWarnings': ingredientWarnings,
+    if (haramLabels.isNotEmpty) 'haramLabels': haramLabels,
+    if (suspiciousLabels.isNotEmpty) 'suspiciousLabels': suspiciousLabels,
+    if (labelWarnings.isNotEmpty) 'labelWarnings': labelWarnings,
     'ingredientTranslations': ingredientTranslations,
     if (ingredientCanonicals.isNotEmpty)
       'ingredientCanonicals': ingredientCanonicals,
@@ -185,6 +224,11 @@ class Product {
     if (updatedAt != null) 'updatedAt': updatedAt!.toIso8601String(),
     if (lastAnalysedAt != null)
       'lastAnalysedAt': lastAnalysedAt!.toIso8601String(),
+    if (keywordMatchSource != null) 'keywordMatchSource': keywordMatchSource,
+    if (keywordMatchOrigins.isNotEmpty)
+      'keywordMatchOrigins': keywordMatchOrigins,
+    if (analyzeLang != null) 'analyzeLang': analyzeLang,
+    if (displayLang != null) 'displayLang': displayLang,
     'geminiWebIngredientLookupAttemptedForName':
         geminiWebIngredientLookupAttemptedForName,
   };
@@ -203,6 +247,15 @@ class Product {
     ingredientWarnings: Map<String, String>.from(
       json['ingredientWarnings'] as Map,
     ),
+    haramLabels: json['haramLabels'] != null
+        ? List<String>.from(json['haramLabels'] as List)
+        : const [],
+    suspiciousLabels: json['suspiciousLabels'] != null
+        ? List<String>.from(json['suspiciousLabels'] as List)
+        : const [],
+    labelWarnings: json['labelWarnings'] != null
+        ? Map<String, String>.from(json['labelWarnings'] as Map)
+        : const {},
     ingredientTranslations: json['ingredientTranslations'] != null
         ? Map<String, String>.from(json['ingredientTranslations'] as Map)
         : const {},
@@ -226,6 +279,12 @@ class Product {
     lastAnalysedAt: json['lastAnalysedAt'] != null
         ? DateTime.tryParse(json['lastAnalysedAt'] as String)
         : null,
+    keywordMatchSource: json['keywordMatchSource'] as String?,
+    keywordMatchOrigins: json['keywordMatchOrigins'] != null
+        ? Map<String, String>.from(json['keywordMatchOrigins'] as Map)
+        : const {},
+    analyzeLang: json['analyzeLang'] as String?,
+    displayLang: json['displayLang'] as String?,
     geminiWebIngredientLookupAttemptedForName:
         computeGeminiWebLookupAttemptedForName(
           productName: json['name'] as String,

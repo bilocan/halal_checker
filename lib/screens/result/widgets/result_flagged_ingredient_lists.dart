@@ -22,7 +22,9 @@ class ResultFlaggedIngredientLists extends StatelessWidget {
   Widget build(BuildContext context) {
     if (product.isHalal &&
         product.haramIngredients.isEmpty &&
-        product.suspiciousIngredients.isEmpty) {
+        product.suspiciousIngredients.isEmpty &&
+        product.haramLabels.isEmpty &&
+        product.suspiciousLabels.isEmpty) {
       return const SizedBox.shrink();
     }
 
@@ -46,6 +48,7 @@ class ResultFlaggedIngredientLists extends StatelessWidget {
           ...product.haramIngredients.map(
             (e) => _FlaggedListTile(
               ingredient: e,
+              warnings: product.ingredientWarnings,
               product: product,
               showTranslated: showTranslated,
               languageCode: languageCode,
@@ -72,11 +75,52 @@ class ResultFlaggedIngredientLists extends StatelessWidget {
           ...product.suspiciousIngredients.map(
             (e) => _FlaggedListTile(
               ingredient: e,
+              warnings: product.ingredientWarnings,
               product: product,
               showTranslated: showTranslated,
               languageCode: languageCode,
               loc: loc,
               fallbackWarning: loc.mayBeAnimalDerivedNote,
+              icon: Icon(Icons.warning, color: Colors.orange.shade600),
+            ),
+          ),
+        ],
+        if (product.haramLabels.isNotEmpty ||
+            product.suspiciousLabels.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              loc.flaggedLabels,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.red.shade700,
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          ...product.haramLabels.map(
+            (e) => _FlaggedListTile(
+              ingredient: e,
+              warnings: product.labelWarnings,
+              product: product,
+              showTranslated: false,
+              languageCode: languageCode,
+              loc: loc,
+              fallbackWarning: loc.foundInLabels,
+              icon: const Icon(Icons.error, color: Colors.red),
+            ),
+          ),
+          ...product.suspiciousLabels.map(
+            (e) => _FlaggedListTile(
+              ingredient: e,
+              warnings: product.labelWarnings,
+              product: product,
+              showTranslated: false,
+              languageCode: languageCode,
+              loc: loc,
+              fallbackWarning: loc.foundInLabels,
               icon: Icon(Icons.warning, color: Colors.orange.shade600),
             ),
           ),
@@ -89,6 +133,7 @@ class ResultFlaggedIngredientLists extends StatelessWidget {
 class _FlaggedListTile extends StatelessWidget {
   const _FlaggedListTile({
     required this.ingredient,
+    required this.warnings,
     required this.product,
     required this.showTranslated,
     required this.languageCode,
@@ -98,6 +143,7 @@ class _FlaggedListTile extends StatelessWidget {
   });
 
   final String ingredient;
+  final Map<String, String> warnings;
   final Product product;
   final bool showTranslated;
   final String languageCode;
@@ -107,7 +153,7 @@ class _FlaggedListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final warning = product.ingredientWarnings[ingredient];
+    final warning = warnings[ingredient];
     final canonical = product.ingredientCanonicals[ingredient];
     final displayWarning = localizedIngredientWarning(
       ingredient: ingredient,

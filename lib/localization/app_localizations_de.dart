@@ -323,6 +323,12 @@ class AppLocalizationsDe extends AppLocalizations {
   String get foundInIngredients => 'In Produktzutaten gefunden.';
 
   @override
+  String get flaggedLabels => 'Markierte Etiketten';
+
+  @override
+  String get foundInLabels => 'In der Produktkennzeichnung gefunden.';
+
+  @override
   String get mayBeAnimalDerivedNote => 'Kann tierischen Ursprungs sein.';
 
   @override
@@ -402,6 +408,34 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get transparentExplanation => 'Explanation';
+
+  @override
+  String get transparentMatchSource => 'Abgleich über';
+
+  @override
+  String get transparentMatchSourcePrimary => 'Original-Zutatenetikett';
+
+  @override
+  String get transparentMatchSourceOffTaxonomy =>
+      'Open-Food-Facts-Zutaten-Taxonomie (EN)';
+
+  @override
+  String get transparentMatchSourceUnanalyzable =>
+      'Nicht analysierbar — nicht unterstützte Sprache';
+
+  @override
+  String get transparentMatchSourceNone => 'Keine Schlüsselwort-Treffer';
+
+  @override
+  String transparentMatchSourceOffLang(String lang) {
+    return '$lang-Übersetzung (Open Food Facts)';
+  }
+
+  @override
+  String get transparentMatchOrigins => 'Treffer-Herkunft';
+
+  @override
+  String get transparentDisplayLanguage => 'Etikettensprache';
 
   @override
   String get contributeIngredients => 'Zutaten hinzufügen';

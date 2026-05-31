@@ -139,10 +139,14 @@ void main() {
               'Barcode ${r.barcode}: isHalal and isUnknown cannot both be true',
         );
         if (p.ingredients.isNotEmpty) {
+          final allowUnknownWithIngredients =
+              p.keywordMatchSource == 'unanalyzable';
           expect(
             p.isUnknown,
-            isFalse,
-            reason: 'Barcode ${r.barcode}: has ingredients but isUnknown=true',
+            allowUnknownWithIngredients,
+            reason:
+                'Barcode ${r.barcode}: has ingredients but isUnknown=${p.isUnknown} '
+                '(only allowed when keywordMatchSource=unanalyzable)',
           );
         }
         if (p.haramIngredients.isNotEmpty) {

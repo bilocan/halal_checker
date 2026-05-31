@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../app_colors.dart';
 import '../../../localization/app_localizations.dart';
 import '../../../models/product.dart';
+import '../../../services/keyword_match_display.dart';
 import '../../../services/product_service.dart';
 import '../../keywords_screen.dart';
 import '../result_status.dart';
@@ -29,6 +30,18 @@ class ResultTransparencyCard extends StatelessWidget {
     final suspiciousText = product.suspiciousIngredients.isEmpty
         ? loc.transparentNoMatches
         : product.suspiciousIngredients.join(', ');
+
+    final matchSourceText = KeywordMatchDisplay.combinedSourcesLabel(
+      loc,
+      product.keywordMatchSource,
+    );
+    final matchOriginsText = KeywordMatchDisplay.originSummary(
+      loc,
+      product.keywordMatchOrigins,
+    );
+    final displayLangText = product.displayLang?.isNotEmpty == true
+        ? product.displayLang!.toUpperCase()
+        : loc.transparentNoMatches;
 
     return Card(
       margin: EdgeInsets.zero,
@@ -82,6 +95,25 @@ class ResultTransparencyCard extends StatelessWidget {
                       : ProductService.keywordRuleCount.toString(),
                   color: Colors.blueGrey.shade600,
                 ),
+                _SummaryRow(
+                  icon: Icons.translate,
+                  label: loc.transparentDisplayLanguage,
+                  value: displayLangText,
+                  color: Colors.blueGrey.shade600,
+                ),
+                _SummaryRow(
+                  icon: Icons.compare_arrows,
+                  label: loc.transparentMatchSource,
+                  value: matchSourceText,
+                  color: Colors.blueGrey.shade700,
+                ),
+                if (product.keywordMatchOrigins.isNotEmpty)
+                  _SummaryRow(
+                    icon: Icons.link,
+                    label: loc.transparentMatchOrigins,
+                    value: matchOriginsText,
+                    color: Colors.blueGrey.shade700,
+                  ),
                 _SummaryRow(
                   icon: Icons.error_outline,
                   label: loc.transparentFlagged,

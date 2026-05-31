@@ -116,6 +116,8 @@
   "resultTitle": "Result",
   "noIngredientData": "No ingredient data available.",
   "foundInIngredients": "Found in product ingredients.",
+  "flaggedLabels": "Flagged Labels",
+  "foundInLabels": "Found in product labels.",
   "mayBeAnimalDerivedNote": "May be animal-derived.",
   "couldNotLoadFeedback": "Could not load feedback.",
   "couldNotSubmitFeedback": "Could not submit feedback.",
@@ -146,6 +148,19 @@
   "transparentNoMatches": "No rule matches found",
   "transparentNoIngredients": "No ingredient text was available to check",
   "transparentExplanation": "Explanation",
+  "transparentMatchSource": "Matched via",
+  "transparentMatchSourcePrimary": "Original ingredient label",
+  "transparentMatchSourceOffTaxonomy": "Open Food Facts ingredient taxonomy (EN)",
+  "transparentMatchSourceUnanalyzable": "Could not analyze — unsupported language",
+  "transparentMatchSourceNone": "No keyword rule matches",
+  "transparentMatchSourceOffLang": "{lang} translation (Open Food Facts)",
+  "@transparentMatchSourceOffLang": {
+    "placeholders": {
+      "lang": { "type": "String" }
+    }
+  },
+  "transparentMatchOrigins": "Match origins",
+  "transparentDisplayLanguage": "Label language",
   "contributeIngredients": "Add Ingredients",
   "contributeIngredientsHint": "No ingredient data found. Help the community by adding the ingredients from the packaging.",
   "ingredientTextLabel": "Ingredient text",

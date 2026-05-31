@@ -670,6 +670,18 @@ abstract class AppLocalizations {
   /// **'Found in product ingredients.'**
   String get foundInIngredients;
 
+  /// No description provided for @flaggedLabels.
+  ///
+  /// In en, this message translates to:
+  /// **'Flagged Labels'**
+  String get flaggedLabels;
+
+  /// No description provided for @foundInLabels.
+  ///
+  /// In en, this message translates to:
+  /// **'Found in product labels.'**
+  String get foundInLabels;
+
   /// No description provided for @mayBeAnimalDerivedNote.
   ///
   /// In en, this message translates to:
@@ -819,6 +831,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Explanation'**
   String get transparentExplanation;
+
+  /// No description provided for @transparentMatchSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Matched via'**
+  String get transparentMatchSource;
+
+  /// No description provided for @transparentMatchSourcePrimary.
+  ///
+  /// In en, this message translates to:
+  /// **'Original ingredient label'**
+  String get transparentMatchSourcePrimary;
+
+  /// No description provided for @transparentMatchSourceOffTaxonomy.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Food Facts ingredient taxonomy (EN)'**
+  String get transparentMatchSourceOffTaxonomy;
+
+  /// No description provided for @transparentMatchSourceUnanalyzable.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not analyze — unsupported language'**
+  String get transparentMatchSourceUnanalyzable;
+
+  /// No description provided for @transparentMatchSourceNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No keyword rule matches'**
+  String get transparentMatchSourceNone;
+
+  /// No description provided for @transparentMatchSourceOffLang.
+  ///
+  /// In en, this message translates to:
+  /// **'{lang} translation (Open Food Facts)'**
+  String transparentMatchSourceOffLang(String lang);
+
+  /// No description provided for @transparentMatchOrigins.
+  ///
+  /// In en, this message translates to:
+  /// **'Match origins'**
+  String get transparentMatchOrigins;
+
+  /// No description provided for @transparentDisplayLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'Label language'**
+  String get transparentDisplayLanguage;
 
   /// No description provided for @contributeIngredients.
   ///

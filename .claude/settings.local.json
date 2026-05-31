@@ -16,7 +16,12 @@
       "Bash(command -v fnm)",
       "Read(//usr/local/bin/**)",
       "WebFetch(domain:world.openfoodfacts.org)",
-      "Bash(flutter analyze *)"
+      "Bash(flutter analyze *)",
+      "Bash(deno test *)",
+      "Bash(flutter gen-l10n *)",
+      "Bash(Select-String -Pattern \"FAILED|ERROR|All tests passed|Some tests failed|^\\\\d+ tests\")",
+      "Bash(.\\\\scripts\\\\windows\\\\task_done.ps1)",
+      "Bash(flutter build *)"
     ],
     "additionalDirectories": [
       "/home/bilal/dev/halal_checker/test",

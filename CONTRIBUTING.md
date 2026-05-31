@@ -61,6 +61,25 @@ cp dart_defines.example.json dart_defines.json
 
 Edit `dart_defines.json` with your Supabase URL, anon key, and Google OAuth client ID. Never commit this file.
 
+#### Google Sign-In on Android (Play Console vs local)
+
+Native Google Sign-In validates the app **package name** and **signing certificate SHA-1** against OAuth clients in [Google Cloud Console](https://console.cloud.google.com/apis/credentials) (APIs & Services → Credentials). Local debug and any install from Play Console (internal, closed, open, or production) differ:
+
+| Build | Package name | Signing key |
+|-------|--------------|-------------|
+| `flutter run` (debug) | `app.halalscan.dev` | Android debug keystore |
+| Play Console install (any track) | `app.halalscan` | **Google Play App Signing** certificate (not the upload keystore) |
+
+If native sign-in works locally but fails on a closed-testing (or other Play) install, register the **App signing key certificate** SHA-1 on an **Android** OAuth client for package `app.halalscan`. Find that SHA-1 in Play Console (pick one path — menus vary by account):
+
+1. Select your app → left sidebar **Protected with Play** → **Play Store distribution** → **Go to Play app signing** → **App signing key certificate** (copy SHA-1), or
+2. Select your app → **Test and release** (or **Release**) → **App integrity** → open **Play app signing** (the fingerprints are on that sub-page, not the App integrity overview), or
+3. Use the Play Console search bar and type **app signing**.
+
+You need at least one uploaded AAB before Play shows the app signing certificate. Copy **App signing key certificate** SHA-1 — not the upload key (upload key is for sideloaded local release builds only). Also add a separate Android client for `app.halalscan.dev` with the debug SHA-1 (run `cd android && ./gradlew signingReport`, or `.\gradlew.bat signingReport` on Windows).
+
+Keep the **Web application** OAuth client ID in `GOOGLE_WEB_CLIENT_ID` (`serverClientId` for native sign-in and Supabase browser OAuth). When SHA/package are missing, the app falls back to browser OAuth on Android.
+
 **Pipeline integration** (separate **test** Supabase project — not production):
 
 ```bash

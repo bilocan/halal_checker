@@ -8,6 +8,8 @@ import '../constants/ingredient_keywords.dart';
 import '../models/product.dart';
 import 'cache_service.dart';
 import 'halal_rules_engine.dart';
+import 'ingredient_resolution.dart';
+import 'keyword_multi_source.dart';
 import 'off_fetcher.dart';
 import 'product_verdict.dart';
 import 'keyword_normalization.dart';
@@ -304,7 +306,17 @@ class ProductService {
 
   Product _reanalyzeStoredProduct(Product product) {
     if (product.ingredients.isEmpty) return product;
-    final kwResult = analyzeWithKeywords(product.ingredients);
+    final kwResult = analyzeIngredientsFromSources(
+      engine: _rulesEngine,
+      sources: [
+        IngredientAnalysisSource(
+          key: 'primary',
+          ingredients: product.ingredients,
+        ),
+      ],
+      displayIngredients: product.ingredients,
+      analyzeLang: product.analyzeLang,
+    );
     final customResult = _customKeywordAnalysis(product.ingredients);
     final allHaram = {...kwResult.haram, ...customResult.haram}.toList();
     final allSuspicious = {
@@ -338,8 +350,9 @@ class ProductService {
         haramIngredients: allHaram,
         suspiciousIngredients: allSuspicious,
         requiresHalalCert: requiresHalalCert,
+        isUnknown: kwResult.isUnknown,
       ),
-      isUnknown: false,
+      isUnknown: kwResult.isUnknown,
       haramIngredients: allHaram,
       suspiciousIngredients: allSuspicious,
       ingredientWarnings: {...kwResult.warnings, ...customResult.warnings},
@@ -352,6 +365,8 @@ class ProductService {
       analyzedByAI: false,
       analysisMethod: 'keyword',
       requiresHalalCert: requiresHalalCert,
+      keywordMatchSource: kwResult.keywordMatchSource,
+      keywordMatchOrigins: kwResult.keywordMatchOrigins,
       lastAnalysedAt: DateTime.now().toUtc(),
     );
   }
@@ -450,6 +465,13 @@ class ProductService {
       'ingredientWarnings': Map<String, String>.from(
         row['ingredient_warnings'] as Map? ?? {},
       ),
+      'haramLabels': List<String>.from(row['haram_labels'] as List? ?? []),
+      'suspiciousLabels': List<String>.from(
+        row['suspicious_labels'] as List? ?? [],
+      ),
+      'labelWarnings': Map<String, String>.from(
+        row['label_warnings'] as Map? ?? {},
+      ),
       'labels': List<String>.from(row['labels'] as List? ?? []),
       'imageUrl': row['image_url'] as String?,
       'imageFrontUrl': row['image_front_url'] as String?,
@@ -472,6 +494,15 @@ class ProductService {
             lookupNameKey: row['gemini_web_ingredient_lookup_name_key'],
             explicitFromApi: null,
           ),
+      'keywordMatchSource': row['keyword_match_source'] as String?,
+      'keywordMatchOrigins': Map<String, String>.from(
+        (row['keyword_match_origins'] as Map?)?.map(
+              (k, v) => MapEntry(k.toString(), v.toString()),
+            ) ??
+            {},
+      ),
+      'analyzeLang': row['analyze_lang'] as String?,
+      'displayLang': row['display_lang'] as String?,
     });
   }
 

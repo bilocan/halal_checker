@@ -18,7 +18,11 @@ class ResultProductHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final chips = ProductLabelChips.build(product.labels);
+    final chips = ProductLabelChips.build(
+      product.labels,
+      haramLabels: product.haramLabels.toSet(),
+      suspiciousLabels: product.suspiciousLabels.toSet(),
+    );
 
     return Column(
       children: [

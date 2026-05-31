@@ -168,17 +168,24 @@ class AuthService {
     }
   }
 
+  @visibleForTesting
+  static bool shouldFallbackToBrowserOAuthForTesting(GoogleSignInException e) =>
+      _shouldFallbackToBrowserOAuth(e);
+
   static bool _shouldFallbackToBrowserOAuth(GoogleSignInException e) {
     switch (e.code) {
       case GoogleSignInExceptionCode.providerConfigurationError:
         return true;
       case GoogleSignInExceptionCode.interrupted:
       case GoogleSignInExceptionCode.uiUnavailable:
+      case GoogleSignInExceptionCode.clientConfigurationError:
+      case GoogleSignInExceptionCode.unknownError:
+        // Play Store builds use a different package + signing cert than
+        // `flutter run` (app.halalscan vs app.halalscan.dev). Misconfigured
+        // SHA fingerprints surface as clientConfigurationError / ApiException 10.
         return defaultTargetPlatform == TargetPlatform.android;
       case GoogleSignInExceptionCode.canceled:
-      case GoogleSignInExceptionCode.clientConfigurationError:
       case GoogleSignInExceptionCode.userMismatch:
-      case GoogleSignInExceptionCode.unknownError:
         return false;
     }
   }

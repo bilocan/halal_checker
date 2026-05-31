@@ -87,7 +87,10 @@ String defaultExplanation(
     ProductOutcome.unknown => loc.explanationUnknown,
     ProductOutcome.haram => loc.explanationHaram,
     ProductOutcome.suspicious => loc.explanationSuspiciousOnly(
-      product.suspiciousIngredients.join(', '),
+      [
+        ...product.suspiciousIngredients,
+        ...product.suspiciousLabels,
+      ].join(', '),
     ),
     ProductOutcome.halal => loc.explanationClean,
     ProductOutcome.noCert => loc.explanationNoCert,

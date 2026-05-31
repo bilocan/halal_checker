@@ -12,6 +12,9 @@ export function toProduct(row: Record<string, any>) {
     haramIngredients:      row.haram_ingredients,
     suspiciousIngredients: row.suspicious_ingredients,
     ingredientWarnings:    row.ingredient_warnings,
+    haramLabels:           row.haram_labels ?? [],
+    suspiciousLabels:      row.suspicious_labels ?? [],
+    labelWarnings:         row.label_warnings ?? {},
     labels:                row.labels,
     imageUrl:              row.image_url,
     imageFrontUrl:         row.image_front_url,
@@ -29,6 +32,10 @@ export function toProduct(row: Record<string, any>) {
       row,
       String(row.name ?? ''),
     ),
+    keywordMatchSource:    row.keyword_match_source ?? null,
+    keywordMatchOrigins:   row.keyword_match_origins ?? {},
+    analyzeLang:           row.analyze_lang ?? null,
+    displayLang:           row.display_lang ?? null,
   }
 }
 

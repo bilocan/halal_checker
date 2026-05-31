@@ -4,11 +4,11 @@ import { toProduct, isStale } from './db.ts'
 import {
   fetchOpenFactsProduct,
   parseOffBrand,
-  parseOffIngredientList,
   parseOffLabels,
   parseOffProductName,
   resolveImg,
 } from './fetch.ts'
+import { resolveOffIngredientAnalysis } from './ingredientResolution.ts'
 import { getApprovedContribution, withCommunitySource } from './community.ts'
 import {
   hasApprovedAiIngredientRequest,
@@ -172,7 +172,11 @@ export async function handleLookup(
 
   const name = parseOffProductName(pd)
   const brand = parseOffBrand(pd)
-  let ingredients = parseOffIngredientList(pd)
+  const resolved = resolveOffIngredientAnalysis(pd)
+  let ingredients = resolved.display
+  let analyzeSources = resolved.sources
+  let displayLang = resolved.displayLang
+  let analyzeLang = resolved.analyzeLang
   let ingredientSource: 'off' | 'ai' | 'community' = 'off'
 
   console.log(`[${barcode}] OFF: name="${name}" brand="${brand}" ingredients=${ingredients.length}`)
@@ -194,10 +198,18 @@ export async function handleLookup(
   })
   ingredients = geminiResolved.ingredients
   ingredientSource = geminiResolved.ingredientSource
+  if (ingredientSource === 'ai') {
+    analyzeSources = [{ key: 'primary', ingredients }]
+    displayLang = ''
+    analyzeLang = null
+  }
 
   const communityIngredients = await deps.getApprovedContribution(supabase, barcode)
   if (communityIngredients) {
     ingredients = communityIngredients
+    analyzeSources = [{ key: 'primary', ingredients: communityIngredients }]
+    displayLang = ''
+    analyzeLang = null
     ingredientSource = 'community'
     console.log(`[${barcode}] community override: ${ingredients.length} ingredients`)
   }
@@ -215,6 +227,9 @@ export async function handleLookup(
   const verdict = await deps.computeVerdict({
     barcode,
     ingredients,
+    analyzeSources,
+    displayLang,
+    analyzeLang,
     name,
     labels,
     rawCategories,
@@ -304,9 +319,19 @@ async function analyzeFromDbStub(
     `list=[${ingredients.slice(0, 10).join(' | ')}${ingredients.length > 10 ? '…' : ''}]`,
   )
 
+  const displayLang = typeof existing.display_lang === 'string'
+    ? existing.display_lang
+    : ''
+  const analyzeSources = ingredients.length > 0
+    ? [{ key: 'primary' as const, ingredients }]
+    : []
+
   const verdict = await deps.computeVerdict({
     barcode,
     ingredients,
+    analyzeSources,
+    displayLang,
+    analyzeLang: null,
     name,
     labels,
     rawCategories: [],
@@ -348,7 +373,9 @@ async function saveFullLookup(
 ): Promise<Response> {
   const {
     isHalal, isUnknown, haramIngredients, suspiciousIngredients,
-    ingredientWarnings, explanation, analyzedByAI, requiresHalalCert,
+    ingredientWarnings, haramLabels, suspiciousLabels, labelWarnings,
+    explanation, analyzedByAI, requiresHalalCert,
+    keywordMatchSource, keywordMatchOrigins, analyzeLang, displayLang,
   } = verdict
 
   const productRow: ProductRow = {
@@ -364,6 +391,7 @@ async function saveFullLookup(
     fetchedAt: fetchedAt ?? new Date().toISOString(),
     geminiAt,
     geminiNameKey,
+    displayLang: displayLang ?? '',
   }
 
   const analysisRow: AnalysisRow = {
@@ -374,8 +402,14 @@ async function saveFullLookup(
     haramIngredients,
     suspiciousIngredients,
     ingredientWarnings,
+    haramLabels,
+    suspiciousLabels,
+    labelWarnings,
     explanation,
     analyzedByAI,
+    keywordMatchSource,
+    keywordMatchOrigins,
+    analyzeLang,
   }
 
   const fallbackRow = {
@@ -389,6 +423,9 @@ async function saveFullLookup(
     haram_ingredients: haramIngredients,
     suspicious_ingredients: suspiciousIngredients,
     ingredient_warnings: ingredientWarnings,
+    haram_labels: haramLabels,
+    suspicious_labels: suspiciousLabels,
+    label_warnings: labelWarnings,
     labels,
     image_url: images.imageUrl,
     image_front_url: images.imageFrontUrl,
@@ -397,6 +434,10 @@ async function saveFullLookup(
     explanation,
     analyzed_by_ai: analyzedByAI,
     requires_halal_cert: requiresHalalCert,
+    keyword_match_source: keywordMatchSource ?? null,
+    keyword_match_origins: keywordMatchOrigins ?? {},
+    analyze_lang: analyzeLang ?? null,
+    display_lang: displayLang || null,
     last_analysed_at: new Date().toISOString(),
     fetched_at: productRow.fetchedAt,
     gemini_web_ingredient_lookup_at: geminiAt ?? null,

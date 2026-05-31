@@ -56,8 +56,10 @@ jobs:
       - name: Add Deno to PATH
         run: echo "$HOME/.deno/bin" >> "$GITHUB_PATH"
 
-      - name: Edge function unit tests (lookup-product)
-        run: deno test --allow-env supabase/functions/lookup-product/
+      - name: Edge function unit tests (shared + lookup-product)
+        run: |
+          deno test supabase/functions/_shared/
+          deno test --allow-env supabase/functions/lookup-product/
 
       - uses: subosito/flutter-action@v2
         with:

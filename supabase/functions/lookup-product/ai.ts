@@ -1,12 +1,16 @@
 const CLAUDE_URL = "https://api.anthropic.com/v1/messages";
 const CLAUDE_MODEL = "claude-haiku-4-5";
+import {
+  geminiIngredientLookup,
+  parseIngredientList,
+} from "../_shared/gemini_ingredient_lookup.ts";
+
+export { geminiIngredientLookup, parseIngredientList };
+
 const GEMINI_URL_BASE =
   "https://generativelanguage.googleapis.com/v1beta/models";
 /** Halal JSON analysis — no search grounding. */
 const GEMINI_MODEL = "gemini-2.5-flash";
-/** Ingredient lookup — grounded web search; needs a search-capable model. */
-const GEMINI_LOOKUP_MODEL = "gemini-2.5-flash";
-const GEMINI_LOOKUP_MAX_OUTPUT_TOKENS = 2048;
 
 export const CLAUDE_SYSTEM =
   `You are an expert in Islamic dietary laws (halal). Analyze ingredient lists and determine if a product is halal.
@@ -66,176 +70,6 @@ function toVerdict(
     ingredientWarnings: p.ingredientWarnings ?? {},
     explanation: p.explanation ?? "",
   };
-}
-
-const INGREDIENT_LOOKUP_SYSTEM = `You have a strict operational mode:
-  INGREDIENT LOOKUP (STRICT DATABASE)
-  Whenever the user provides a food product name, barcode, or an explicit request for product ingredients:
-  1. Use your search tool to find the product. Return ingredients in their original language exactly as found — do not translate.
-  2. Respond with ONLY the final comma-separated list of its ingredients.
-  3. If the search tool yields absolutely no matching product data or no ingredients can be identified, respond with exactly one word: UNKNOWN.
-  4. NEVER write explanations, apologies, introductions, markdown formatting, or any other text.
-  `;
-
-const REFUSAL_PREFIXES = [
-  "unfortunately",
-  "i cannot",
-  "i can't",
-  "i don't",
-  "i do not",
-  "sorry",
-  "i'm unable",
-  "i am unable",
-  "i'm not able",
-  "i am not able",
-];
-
-function isRefusal(text: string): boolean {
-  const lower = text.toLowerCase().trimStart();
-  return REFUSAL_PREFIXES.some((p) => lower.startsWith(p));
-}
-
-function buildIngredientLookupPrompt(
-  name: string,
-  barcode: string,
-  brand: string,
-): string {
-  const brandPart = brand ? `, brand "${brand}"` : "";
-  return `Find the complete ingredients list for "${name}"${brandPart}, ` +
-    `EAN/GTIN barcode ${barcode}. Search Open Food Facts, manufacturer sites, and ` +
-    `EU retailer product pages (Zutaten / ingredients).`;
-}
-
-/** Parse model output into ingredient strings (comma/semicolon/newline lists). */
-export function parseIngredientList(raw: string): string[] {
-  let text = raw.trim().replace(/^```\w*\n?|```$/g, "").replace(/\*\*/g, "");
-  if (!text || text.toUpperCase() === "UNKNOWN") return [];
-
-  text = text.replace(
-    /^(ingredients?|zutaten|inhaltsstoffe|contains)\s*:\s*/i,
-    "",
-  ).trim();
-
-  const splitDelimited = (s: string): string[] => {
-    const parts: string[] = [];
-    let depth = 0;
-    let current = "";
-    for (const ch of s) {
-      if (ch === "(") {
-        depth++;
-        current += ch;
-      } else if (ch === ")") {
-        depth--;
-        current += ch;
-      } else if ((ch === "," || ch === ";") && depth === 0) {
-        const t = current.trim();
-        if (t) parts.push(t);
-        current = "";
-      } else current += ch;
-    }
-    const t = current.trim();
-    if (t) parts.push(t);
-    return parts;
-  };
-
-  let parts = splitDelimited(text);
-  if (parts.length <= 1 && /[\n\r]/.test(text)) {
-    parts = text.split(/[\n\r]+/)
-      .map((line) => line.replace(/^[-•*]\s*/, "").trim())
-      .filter((line) =>
-        line.length > 0 && !/^(ingredients?|zutaten)$/i.test(line)
-      );
-  }
-  return parts;
-}
-
-export async function geminiIngredientLookup(
-  name: string,
-  barcode: string,
-  key: string,
-  brand = "",
-): Promise<string[]> {
-  console.log(
-    `[${barcode}] Gemini ingredient lookup (${GEMINI_LOOKUP_MODEL}): ` +
-      `"${name}"${brand ? ` brand="${brand}"` : ""}`,
-  );
-  try {
-    const res = await fetch(
-      `${GEMINI_URL_BASE}/${GEMINI_LOOKUP_MODEL}:generateContent?key=${key}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{
-            parts: [{
-              text: buildIngredientLookupPrompt(name, barcode, brand),
-            }],
-          }],
-          systemInstruction: { parts: [{ text: INGREDIENT_LOOKUP_SYSTEM }] },
-          tools: [{ google_search: {} }],
-          generationConfig: {
-            maxOutputTokens: GEMINI_LOOKUP_MAX_OUTPUT_TOKENS,
-            temperature: 0.1,
-            topP: 0.95,
-            thinkingConfig: { thinkingBudget: 0 },
-          },
-        }),
-      },
-    );
-    if (!res.ok) {
-      const errBody = await res.text();
-      console.error(
-        `[${barcode}] Gemini ingredient lookup: HTTP ${res.status} — ${errBody}`,
-      );
-      return [];
-    }
-    const ld = await res.json();
-    const candidate = ld.candidates?.[0];
-    const text: string = (candidate?.content?.parts?.[0]?.text ?? "").trim();
-    const usage = ld.usageMetadata;
-    const grounding = candidate?.groundingMetadata;
-    if (grounding) {
-      const queries = grounding.webSearchQueries ?? [];
-      const chunkCount = (grounding.groundingChunks ?? []).length;
-      console.log(
-        `[${barcode}] Gemini ingredient lookup: grounding ` +
-          `queries=${JSON.stringify(queries)} chunks=${chunkCount}`,
-      );
-    } else {
-      console.log(
-        `[${barcode}] Gemini ingredient lookup: no groundingMetadata (search may not have run)`,
-      );
-    }
-    if (candidate?.finishReason) {
-      console.log(
-        `[${barcode}] Gemini ingredient lookup: finishReason=${candidate.finishReason}`,
-      );
-    }
-    console.log(
-      `[${barcode}] Gemini ingredient lookup: response="${
-        text.slice(0, 120)
-      }" prompt=${usage?.promptTokenCount ?? "?"} output=${
-        usage?.candidatesTokenCount ?? "?"
-      } thoughts=${usage?.thoughtsTokenCount ?? 0} total=${
-        usage?.totalTokenCount ?? "?"
-      } tokens`,
-    );
-    if (text && !isRefusal(text)) {
-      const ingredients = parseIngredientList(text);
-      if (ingredients.length > 0) {
-        console.log(
-          `[${barcode}] Gemini ingredient lookup: found ${ingredients.length} ingredients`,
-        );
-        return ingredients;
-      }
-    }
-    console.log(
-      `[${barcode}] Gemini ingredient lookup: no ingredients found (refusal, UNKNOWN, or unparseable)`,
-    );
-  } catch (e) {
-    console.error(`[${barcode}] Gemini ingredient lookup: exception:`, e);
-  }
-  return [];
 }
 
 export async function analyzeWithGemini(

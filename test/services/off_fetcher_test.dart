@@ -128,6 +128,116 @@ void main() {
     );
 
     test(
+      'Cyrillic label matches Bulgarian pork keywords, keeps BG display ingredients',
+      () async {
+        final body = jsonEncode({
+          'status': 1,
+          'product': {
+            'product_name': 'Свински кюфтета',
+            'ingredients_lc': 'bg',
+            'ingredients_text':
+                '80% частично финомляно свинско месо, вода, сол',
+          },
+        });
+        final client = MockClient(
+          (_) async => http.Response.bytes(
+            utf8.encode(body),
+            200,
+            headers: {'content-type': 'application/json; charset=utf-8'},
+          ),
+        );
+        final product = await OffFetcher(
+          client,
+        ).fetch('20013066', OffFetcher.offBaseUrl);
+
+        expect(product, isNotNull);
+        expect(product!.ingredients, isNotEmpty);
+        expect(
+          product.ingredients.any((i) => i.contains('свинско')),
+          isTrue,
+          reason: 'display list must stay in original label language',
+        );
+        expect(product.isUnknown, isFalse);
+        expect(product.isHalal, isFalse);
+        expect(product.keywordMatchSource, 'primary');
+        expect(product.displayLang, 'bg');
+        expect(product.analyzeLang, isNull);
+        expect(product.haramIngredients, isNotEmpty);
+        expect(product.explanation.toLowerCase(), contains('keyword matching'));
+        expect(
+          product.haramIngredients.any((h) => h.contains('свинско')),
+          isTrue,
+        );
+      },
+    );
+
+    test(
+      'Cyrillic without EN but only non-pork taxonomy → unanalyzable',
+      () async {
+        final body = jsonEncode({
+          'status': 1,
+          'product': {
+            'product_name': 'Вода',
+            'ingredients_lc': 'bg',
+            'ingredients_text': 'вода, сол',
+            'ingredients': [
+              {'id': 'en:water', 'text': 'вода'},
+              {'id': 'en:salt', 'text': 'сол'},
+            ],
+          },
+        });
+        final client = MockClient(
+          (_) async => http.Response.bytes(
+            utf8.encode(body),
+            200,
+            headers: {'content-type': 'application/json; charset=utf-8'},
+          ),
+        );
+        final product = await OffFetcher(
+          client,
+        ).fetch('20013066', OffFetcher.offBaseUrl);
+
+        expect(product?.isUnknown, isTrue);
+        expect(product?.keywordMatchSource, 'unanalyzable');
+        expect(product?.haramIngredients, isEmpty);
+      },
+    );
+
+    test(
+      'Cyrillic label with English OFF fallback flags pork and records match source',
+      () async {
+        final body = jsonEncode({
+          'status': 1,
+          'product': {
+            'product_name': 'Свински кюфтета',
+            'ingredients_lc': 'bg',
+            'ingredients_text':
+                '80% частично финомляно свинско месо, вода, сол',
+            'ingredients_text_en':
+                '80% pork meat is partially minced, water, salt',
+            'categories_tags': ['en:prepared-meats'],
+          },
+        });
+        final client = MockClient(
+          (_) async => http.Response.bytes(
+            utf8.encode(body),
+            200,
+            headers: {'content-type': 'application/json; charset=utf-8'},
+          ),
+        );
+        final product = await OffFetcher(
+          client,
+        ).fetch('20013066', OffFetcher.offBaseUrl);
+
+        expect(product?.isHalal, isFalse);
+        expect(product?.haramIngredients, isNotEmpty);
+        expect(product?.keywordMatchSource, contains('off_en'));
+        expect(product?.displayLang, 'bg');
+        expect(product?.analyzeLang, 'en');
+      },
+    );
+
+    test(
       'extracts nested structured ingredient ids for keyword analysis',
       () async {
         final body = jsonEncode({
@@ -153,7 +263,7 @@ void main() {
 
         expect(product?.isHalal, isFalse);
         expect(product?.haramIngredients, contains('pork'));
-        expect(product?.haramIngredients, contains('gelatin'));
+        expect(product?.suspiciousIngredients, contains('gelatin'));
       },
     );
 
