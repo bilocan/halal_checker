@@ -25,7 +25,7 @@ on:
 
 jobs:
 
-  # ── Automated: build + upload draft to internal ────────────────────────────
+  # ── Automated: build AAB and save artifact ────────────────────────────────
   build-and-draft:
     runs-on: ubuntu-latest
     permissions:
@@ -33,6 +33,7 @@ jobs:
       id-token: write
     outputs:
       version-code: ${{ steps.version.outputs.code }}
+      version-name: ${{ steps.version.outputs.name }}
     steps:
       - uses: actions/checkout@v4
 
@@ -93,10 +94,37 @@ jobs:
             --dart-define=SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }} \
             --dart-define=GOOGLE_WEB_CLIENT_ID=${{ secrets.GOOGLE_WEB_CLIENT_ID }}
 
+      - name: Save AAB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-aab
+          path: build/app/outputs/bundle/release/*.aab
+          retention-days: 30
+
+  # ── Gate 1: Upload and publish to internal testers ─────────────────────────
+  # Approve this gate to upload the build and publish it to internal testers.
+  # The AAB is uploaded exactly once here — no draft, no separate promotion step.
+  publish-internal:
+    needs: build-and-draft
+    runs-on: ubuntu-latest
+    environment: play/publish-internal
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+
       - name: Prepare Play Store What's New
         id: whatsnew
         run: |
-          VERSION="${{ steps.version.outputs.name }}"
+          VERSION="${{ needs.build-and-draft.outputs.version-name }}"
           DIR=$(bash ./scripts/linux/prepare_store_whatsnew.sh "$VERSION" || true)
           if [ -n "$DIR" ] && [ -d "$DIR" ]; then
             echo "directory=$DIR" >> "$GITHUB_OUTPUT"
@@ -106,7 +134,13 @@ jobs:
             echo "::warning::No Play Store release notes for v$VERSION - upload continues without whatsNewDirectory."
           fi
 
-      - name: Upload draft to internal track (with release notes)
+      - name: Download AAB artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: release-aab
+          path: build/app/outputs/bundle/release/
+
+      - name: Publish to internal track (with release notes)
         if: steps.whatsnew.outputs.directory != ''
         uses: r0adkll/upload-google-play@v1
         with:
@@ -114,10 +148,10 @@ jobs:
           packageName: app.halalscan
           releaseFiles: build/app/outputs/bundle/release/*.aab
           track: internal
-          status: draft
+          status: completed
           whatsNewDirectory: ${{ steps.whatsnew.outputs.directory }}
 
-      - name: Upload draft to internal track
+      - name: Publish to internal track
         if: steps.whatsnew.outputs.directory == ''
         uses: r0adkll/upload-google-play@v1
         with:
@@ -125,21 +159,14 @@ jobs:
           packageName: app.halalscan
           releaseFiles: build/app/outputs/bundle/release/*.aab
           track: internal
-          status: draft
-
-      - name: Save AAB artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: release-aab
-          path: build/app/outputs/bundle/release/*.aab
-          retention-days: 30
+          status: completed
 
       - name: Update latest_version in Supabase
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
+          VERSION="${{ needs.build-and-draft.outputs.version-name }}"
           curl -sS --fail-with-body -X PATCH \
             -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
             -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
@@ -147,63 +174,6 @@ jobs:
             -d "{\"value\": \"$VERSION\"}" \
             "$SUPABASE_URL/rest/v1/app_config?key=eq.latest_version"
           echo "Set latest_version to $VERSION in Supabase."
-
-  # ── Gate 1: Publish on internal ────────────────────────────────────────────
-  # Check the draft in Play Console, then approve this gate to publish it to
-  # internal testers.
-  publish-internal:
-    needs: build-and-draft
-    runs-on: ubuntu-latest
-    environment: play/publish-internal
-    permissions:
-      contents: read
-      id-token: write
-    steps:
-      - name: Authenticate to Google Cloud
-        id: auth
-        uses: google-github-actions/auth@v2
-        with:
-          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
-          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
-          token_format: access_token
-          access_token_scopes: https://www.googleapis.com/auth/androidpublisher
-
-      - name: Publish internal draft → completed
-        env:
-          TOKEN: ${{ steps.auth.outputs.access_token }}
-          PKG: app.halalscan
-          VC: ${{ needs.build-and-draft.outputs.version-code }}
-        run: |
-          set -euo pipefail
-          EDIT=$(curl -sS --fail-with-body -X POST \
-            -H "Authorization: Bearer $TOKEN" \
-            "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PKG/edits" \
-            | jq -r '.id')
-
-          RESPONSE=$(curl -sS -w "\n%{http_code}" -X PUT \
-            -H "Authorization: Bearer $TOKEN" \
-            -H "Content-Type: application/json" \
-            -d "{\"releases\":[{\"versionCodes\":[\"$VC\"],\"status\":\"completed\"}]}" \
-            "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PKG/edits/$EDIT/tracks/internal")
-          HTTP_CODE=$(echo "$RESPONSE" | tail -1)
-          BODY=$(echo "$RESPONSE" | sed '$d')
-
-          if [ "$HTTP_CODE" -ge 400 ]; then
-            if echo "$BODY" | grep -q "FAILED_PRECONDITION"; then
-              echo "::warning::Precondition check failed — the app is likely under review."
-              echo "::warning::Re-run this workflow after Google Play review completes."
-              echo "$BODY" | jq '.error.message' 2>/dev/null || echo "$BODY"
-              exit 0
-            fi
-            echo "::error::Track update failed (HTTP $HTTP_CODE):"
-            echo "$BODY"
-            exit 1
-          fi
-
-          curl -sS --fail-with-body -X POST \
-            -H "Authorization: Bearer $TOKEN" \
-            "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PKG/edits/$EDIT:commit"
-          echo "Internal release $VC published."
 
   # ── Gate 2: Promote to closed testing ──────────────────────────────────────
   # Approve when internal testers have validated the build.
