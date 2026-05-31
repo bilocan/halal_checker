@@ -9,3 +9,5 @@
 - **Transparenzkarte — Etikettenanalyse** — Die Analysetransparenz zeigt jetzt geprüfte Etiketten, markierte Etiketten und verdächtige Etiketten; deutsche und türkische Übersetzungen für alle Transparenz-Texte hinzugefügt.
 
 - **Überarbeitetes Ergebnisfenster** — Urteil und Produktname sind jetzt in einer kompakten Karte zusammengefasst, Zutatenbilder erscheinen nebeneinander, Zutaten sind standardmäßig eingeklappt und zeigen nur markierte Einträge, und die Karten für Tiefenanalyse und Gemeinschaftsdiskussion sind zusammengeführt.
+
+- **Neuer Scan aus Verlauf repariert** — 'Weiteres Produkt scannen' öffnet jetzt den Scanner, auch wenn das Ergebnis aus dem Scanverlauf geöffnet wurde.

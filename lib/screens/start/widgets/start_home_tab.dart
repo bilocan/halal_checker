@@ -207,12 +207,16 @@ class _StartHomeTabState extends State<StartHomeTab>
       );
 
       if (!mounted) return;
-      await Navigator.push(
+      final result = await Navigator.push<String>(
         context,
         MaterialPageRoute(
           builder: (_) => ResultScreen(product: product, barcode: barcode),
         ),
       );
+      if (mounted && result == 'scan_another') {
+        await _openScan();
+        return;
+      }
       if (mounted) await _loadRecentScans();
     } finally {
       if (mounted) setState(() => _isLoadingProduct = false);
@@ -238,7 +242,7 @@ class _StartHomeTabState extends State<StartHomeTab>
         );
       }
       if (!mounted) return;
-      await Navigator.push(
+      final result = await Navigator.push<String>(
         context,
         MaterialPageRoute(
           builder: (_) => ResultScreen(
@@ -247,6 +251,10 @@ class _StartHomeTabState extends State<StartHomeTab>
           ),
         ),
       );
+      if (mounted && result == 'scan_another') {
+        await _openScan();
+        return;
+      }
       if (mounted) await _loadRecentScans();
     } catch (e) {
       if (mounted) {

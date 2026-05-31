@@ -384,7 +384,7 @@ class _ResultScreenState extends State<ResultScreen> {
           barcode: barcode,
           loc: loc,
           onCopyBarcode: () => _copyToClipboard(barcode, loc.barcodeLabel),
-          onScanAgain: () => Navigator.pop(context),
+          onScanAgain: () => Navigator.pop(context, 'scan_another'),
           onSubmitPackPhotos: AppConfig.hasSupabase
               ? _openMissingProductPhotoFlow
               : null,
@@ -517,7 +517,7 @@ class _ResultScreenState extends State<ResultScreen> {
                   const SizedBox(height: 24),
                   ResultFooterActions(
                     loc: loc,
-                    onScanAnother: () => Navigator.pop(context),
+                    onScanAnother: () => Navigator.pop(context, 'scan_another'),
                     onFeedback: () => _onFeedbackTap(context),
                     onReport: () => _showReportDialog(context, product),
                   ),
