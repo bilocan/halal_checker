@@ -99,6 +99,8 @@
   "resultTitle": "Sonuç",
   "noIngredientData": "İçerik bilgisi mevcut değil.",
   "foundInIngredients": "Ürün içeriklerinde bulundu.",
+  "flaggedLabels": "İşaretli Etiketler",
+  "foundInLabels": "Ürün etiketlerinde bulundu.",
   "mayBeAnimalDerivedNote": "Hayvansal kaynaklı olabilir.",
   "couldNotLoadFeedback": "Geri bildirim yüklenemedi.",
   "couldNotSubmitFeedback": "Geri bildirim gönderilemedi.",

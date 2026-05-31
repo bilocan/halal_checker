@@ -116,6 +116,8 @@
   "resultTitle": "Result",
   "noIngredientData": "No ingredient data available.",
   "foundInIngredients": "Found in product ingredients.",
+  "flaggedLabels": "Flagged Labels",
+  "foundInLabels": "Found in product labels.",
   "mayBeAnimalDerivedNote": "May be animal-derived.",
   "couldNotLoadFeedback": "Could not load feedback.",
   "couldNotSubmitFeedback": "Could not submit feedback.",

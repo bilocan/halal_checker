@@ -17,7 +17,8 @@
       "Read(//usr/local/bin/**)",
       "WebFetch(domain:world.openfoodfacts.org)",
       "Bash(flutter analyze *)",
-      "Bash(deno test *)"
+      "Bash(deno test *)",
+      "Bash(flutter gen-l10n *)"
     ],
     "additionalDirectories": [
       "/home/bilal/dev/halal_checker/test",

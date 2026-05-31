@@ -99,6 +99,8 @@
   "resultTitle": "Ergebnis",
   "noIngredientData": "Keine Zutatendaten verfügbar.",
   "foundInIngredients": "In Produktzutaten gefunden.",
+  "flaggedLabels": "Markierte Etiketten",
+  "foundInLabels": "In der Produktkennzeichnung gefunden.",
   "mayBeAnimalDerivedNote": "Kann tierischen Ursprungs sein.",
   "couldNotLoadFeedback": "Feedback konnte nicht geladen werden.",
   "couldNotSubmitFeedback": "Feedback konnte nicht gesendet werden.",
