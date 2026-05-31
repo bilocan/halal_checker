@@ -7,3 +7,5 @@
 - **Bildvorschau beim Upload** — nach dem Zuschneiden wird ein Vorschaubild mit Abbrechen- und Senden-Schaltflächen angezeigt, bevor das Foto eingereicht wird.
 
 - **Transparenzkarte — Etikettenanalyse** — Die Analysetransparenz zeigt jetzt geprüfte Etiketten, markierte Etiketten und verdächtige Etiketten; deutsche und türkische Übersetzungen für alle Transparenz-Texte hinzugefügt.
+
+- **Überarbeitetes Ergebnisfenster** — Urteil und Produktname sind jetzt in einer kompakten Karte zusammengefasst, Zutatenbilder erscheinen nebeneinander, Zutaten sind standardmäßig eingeklappt und zeigen nur markierte Einträge, und die Karten für Tiefenanalyse und Gemeinschaftsdiskussion sind zusammengeführt.

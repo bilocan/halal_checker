@@ -1405,4 +1405,12 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get requestAgain => 'Erneut anfragen';
+
+  @override
+  String showAllIngredients(int count) {
+    return 'Alle $count Zutaten anzeigen';
+  }
+
+  @override
+  String get showLessIngredients => 'Weniger anzeigen';
 }

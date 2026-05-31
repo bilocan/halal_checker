@@ -110,29 +110,30 @@ class ResultProductImages extends StatelessWidget {
             onUpload: () => onUpload(ProductImageType.front),
           ),
         if (!product.isNonFood) ...[
-          const SizedBox(height: 24),
-          Text(
-            loc.additionalImages,
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey.shade700,
-            ),
-          ),
           const SizedBox(height: 12),
-          _ImageSlot(
-            url: product.imageIngredientsUrl,
-            label: loc.ingredients,
-            type: ProductImageType.ingredients,
-            uploadingImageType: uploadingImageType,
-            onUpload: onUpload,
-          ),
-          _ImageSlot(
-            url: product.imageNutritionUrl,
-            label: loc.nutritionLabel,
-            type: ProductImageType.nutrition,
-            uploadingImageType: uploadingImageType,
-            onUpload: onUpload,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: _ImageSlot(
+                  url: product.imageIngredientsUrl,
+                  label: loc.ingredients,
+                  type: ProductImageType.ingredients,
+                  uploadingImageType: uploadingImageType,
+                  onUpload: onUpload,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _ImageSlot(
+                  url: product.imageNutritionUrl,
+                  label: loc.nutritionLabel,
+                  type: ProductImageType.nutrition,
+                  uploadingImageType: uploadingImageType,
+                  onUpload: onUpload,
+                ),
+              ),
+            ],
           ),
         ],
       ],

@@ -546,5 +546,14 @@
   "aiWebIngredientLookupAlreadyRanTitle": "AI ingredient lookup already ran",
   "aiWebIngredientLookupAlreadyRanHint": "Gemini web search already ran for this product name but no usable ingredient list was found. You can still contribute ingredients or improve data on Open Food Facts.",
   "requestViaAi": "Request via AI",
-  "requestAgain": "Request again"
+  "requestAgain": "Request again",
+  "showAllIngredients": "Show all {count} ingredients",
+  "@showAllIngredients": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "showLessIngredients": "Show less"
 }

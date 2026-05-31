@@ -1385,4 +1385,12 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get requestAgain => 'Tekrar iste';
+
+  @override
+  String showAllIngredients(int count) {
+    return 'Tüm $count içeriği göster';
+  }
+
+  @override
+  String get showLessIngredients => 'Daha az göster';
 }

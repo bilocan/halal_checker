@@ -1384,4 +1384,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get requestAgain => 'Request again';
+
+  @override
+  String showAllIngredients(int count) {
+    return 'Show all $count ingredients';
+  }
+
+  @override
+  String get showLessIngredients => 'Show less';
 }

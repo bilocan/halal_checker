@@ -425,5 +425,14 @@
   "aiWebIngredientLookupAlreadyRanTitle": "KI-Zutatensuche bereits durchgeführt",
   "aiWebIngredientLookupAlreadyRanHint": "Die Gemini-Websuche lief bereits für diesen Produktnamen, jedoch ohne verwertbare Zutatenliste. Sie können weiter Zutaten beitragen oder Open Food Facts verbessern.",
   "requestViaAi": "Per KI anfragen",
-  "requestAgain": "Erneut anfragen"
+  "requestAgain": "Erneut anfragen",
+  "showAllIngredients": "Alle {count} Zutaten anzeigen",
+  "@showAllIngredients": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "showLessIngredients": "Weniger anzeigen"
 }

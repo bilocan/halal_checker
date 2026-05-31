@@ -14,7 +14,6 @@ class ResultNoteCard extends StatelessWidget {
     required this.onToggleExpanded,
     required this.onToggleFlag,
     required this.onSave,
-    required this.onReportWithNote,
   });
 
   final AppLocalizations loc;
@@ -25,7 +24,6 @@ class ResultNoteCard extends StatelessWidget {
   final VoidCallback onToggleExpanded;
   final VoidCallback onToggleFlag;
   final VoidCallback onSave;
-  final VoidCallback onReportWithNote;
 
   @override
   Widget build(BuildContext context) {
@@ -112,30 +110,16 @@ class ResultNoteCard extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 8),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            TextButton.icon(
-                              onPressed: onReportWithNote,
-                              style: TextButton.styleFrom(
-                                foregroundColor: Colors.orange.shade700,
-                                padding: EdgeInsets.zero,
-                              ),
-                              icon: const Icon(Icons.flag_outlined, size: 16),
-                              label: Text(
-                                loc.reportWrongResult,
-                                style: const TextStyle(fontSize: 12),
-                              ),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: ElevatedButton(
+                            onPressed: onSave,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: kGreen,
+                              foregroundColor: Colors.white,
                             ),
-                            ElevatedButton(
-                              onPressed: onSave,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: kGreen,
-                                foregroundColor: Colors.white,
-                              ),
-                              child: Text(loc.submit),
-                            ),
-                          ],
+                            child: Text(loc.submit),
+                          ),
                         ),
                       ],
                     ),
