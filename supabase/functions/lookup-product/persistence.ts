@@ -66,6 +66,7 @@ export async function upsertProduct(supabase: SupabaseClient, row: ProductRow): 
     additives_tags:        row.additivesTags ?? [],
     allergens_tags:        row.allergensTags ?? [],
     traces_tags:           row.tracesTags ?? [],
+    tags_version:          1,
     ...(row.isManaged !== undefined ? { is_managed: row.isManaged } : {}),
     ...(row.geminiNameKey ? {
       gemini_web_ingredient_lookup_at:       row.geminiAt,

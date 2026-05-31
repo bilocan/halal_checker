@@ -144,15 +144,20 @@ export async function handleLookup(
     const visionUrlRaw = existing.image_ingredients_url as string | null | undefined
     const visionUrl = typeof visionUrlRaw === 'string' ? visionUrlRaw.trim() : ''
     const needsVisionIngredients = storedIngredients.length === 0 && visionUrl !== ''
-    if (!needsVisionIngredients && !isUnknownOff) {
+    // Re-fetch OFF when tags have never been populated (pre-migration rows have tags_version=0).
+    // Skipped for managed/AI/community products — those don't use OFF tags.
+    const needsTagFetch = (existing.tags_version ?? 0) === 0 && !hasNonOffIngredients && !existing.is_managed
+    if (!needsVisionIngredients && !isUnknownOff && !needsTagFetch) {
       return jsonResponse(
         { product: toProduct(withCommunitySource(existing, communityIngredients)) },
         200,
         corsHeaders,
       )
     }
-    if (!needsVisionIngredients) {
+    if (!needsVisionIngredients && !needsTagFetch) {
       console.log(`[${barcode}] unknown+OFF — re-fetching OFF for halal-by-category detection`)
+    } else if (!needsVisionIngredients) {
+      console.log(`[${barcode}] tags_version=0 — re-fetching OFF to populate tag columns`)
     } else {
       console.log(`[${barcode}] DB stub has ingredient image — running vision/analysis path`)
     }

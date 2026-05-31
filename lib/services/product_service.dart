@@ -511,6 +511,7 @@ class ProductService {
       'additivesTags': List<String>.from(row['additives_tags'] as List? ?? []),
       'allergensTags': List<String>.from(row['allergens_tags'] as List? ?? []),
       'tracesTags': List<String>.from(row['traces_tags'] as List? ?? []),
+      'tagsPopulated': (row['tags_version'] as int? ?? 0) > 0,
     });
   }
 
@@ -649,15 +650,19 @@ class ProductService {
           }
           if (!_isStale(dbProduct)) {
             final merged = _mergeApprovedImages(cached, dbProduct);
-            // Backfill ingredientCanonicals for products cached before that
-            // field was introduced (they have warnings but empty canonicals).
-            if (merged.ingredientCanonicals.isEmpty &&
-                merged.ingredientWarnings.isNotEmpty) {
-              final safe = _applyKeywordSafety(merged);
-              await _cache.saveProduct(barcode, safe);
-              return safe;
+            // Tags not yet populated (pre-migration row): fall through to EF
+            // so it re-fetches OFF and writes tags_version=1.
+            if (merged.tagsPopulated) {
+              // Backfill ingredientCanonicals for products cached before that
+              // field was introduced (they have warnings but empty canonicals).
+              if (merged.ingredientCanonicals.isEmpty &&
+                  merged.ingredientWarnings.isNotEmpty) {
+                final safe = _applyKeywordSafety(merged);
+                await _cache.saveProduct(barcode, safe);
+                return safe;
+              }
+              return merged;
             }
-            return merged;
           }
           // stale (updated_at > last_analysed_at): fall through so the EF re-analyses
         }
@@ -675,7 +680,8 @@ class ProductService {
       );
       final canServeFromDb =
           !_isStale(dbProduct) &&
-          (!dbProduct.isUnknown || _hasPackPhotoUrls(dbProduct));
+          (!dbProduct.isUnknown || _hasPackPhotoUrls(dbProduct)) &&
+          dbProduct.tagsPopulated;
       if (canServeFromDb) {
         final safe = _applyKeywordSafety(dbProduct);
         await _cache.saveProduct(barcode, safe);

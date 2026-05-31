@@ -90,6 +90,12 @@ class Product {
   /// OFF `traces_tags` may-contain allergen/cross-contamination tags.
   final List<String> tracesTags;
 
+  /// True when the tag columns (categoriesTags, additivesTags, etc.) have been
+  /// populated from a fresh OFF fetch. False for rows cached before this feature
+  /// was introduced (tags_version=0). The app uses this to decide whether to
+  /// re-fetch via the edge function instead of serving stale tag-less data.
+  final bool tagsPopulated;
+
   /// Normalizes a product title the same way the edge function does for dedupe.
   static String normalizeProductNameForGeminiKey(String name) {
     return name.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
@@ -145,6 +151,7 @@ class Product {
     this.additivesTags = const [],
     this.allergensTags = const [],
     this.tracesTags = const [],
+    this.tagsPopulated = false,
   });
 
   Product copyWith({
@@ -186,6 +193,7 @@ class Product {
     List<String>? additivesTags,
     List<String>? allergensTags,
     List<String>? tracesTags,
+    bool? tagsPopulated,
   }) => Product(
     barcode: barcode ?? this.barcode,
     name: name ?? this.name,
@@ -228,6 +236,7 @@ class Product {
     additivesTags: additivesTags ?? this.additivesTags,
     allergensTags: allergensTags ?? this.allergensTags,
     tracesTags: tracesTags ?? this.tracesTags,
+    tagsPopulated: tagsPopulated ?? this.tagsPopulated,
   );
 
   Map<String, dynamic> toJson() => {
@@ -273,6 +282,7 @@ class Product {
     if (additivesTags.isNotEmpty) 'additivesTags': additivesTags,
     if (allergensTags.isNotEmpty) 'allergensTags': allergensTags,
     if (tracesTags.isNotEmpty) 'tracesTags': tracesTags,
+    if (tagsPopulated) 'tagsPopulated': tagsPopulated,
   };
 
   factory Product.fromJson(Map<String, dynamic> json) => Product(
@@ -349,5 +359,6 @@ class Product {
     tracesTags: json['tracesTags'] != null
         ? List<String>.from(json['tracesTags'] as List)
         : const [],
+    tagsPopulated: json['tagsPopulated'] as bool? ?? false,
   );
 }

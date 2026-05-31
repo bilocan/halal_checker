@@ -60,6 +60,7 @@ Map<String, dynamic> _dbRow({
   'fetched_at': _kFresh,
   'last_analysed_at': _kAnalysed,
   'updated_at': isStale ? _kUpdated : _kFresh, // _kUpdated > _kAnalysed → stale
+  'tags_version': 1,
 };
 
 // Edge Function product JSON (camelCase) returned by _fetchFromBackend.

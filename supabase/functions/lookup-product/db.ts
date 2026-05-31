@@ -42,6 +42,7 @@ export function toProduct(row: Record<string, any>) {
     additivesTags:         row.additives_tags ?? [],
     allergensTags:         row.allergens_tags ?? [],
     tracesTags:            row.traces_tags ?? [],
+    tagsPopulated:         (row.tags_version ?? 0) > 0,
   }
 }
 

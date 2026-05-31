@@ -261,6 +261,7 @@ class OffFetcher {
           additivesTags: additivesTags,
           allergensTags: allergensTags,
           tracesTags: tracesTags,
+          tagsPopulated: true,
         );
       }
 
@@ -383,6 +384,7 @@ class OffFetcher {
         additivesTags: additivesTags,
         allergensTags: allergensTags,
         tracesTags: tracesTags,
+        tagsPopulated: true,
       );
     } catch (_) {
       return null;
