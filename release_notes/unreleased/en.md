@@ -3,3 +3,5 @@
      Copy wording to de.md, tr.md, and ar.md when the change is user-visible. -->
 
 - **Image cropping** — you can now crop photos before sending them for ingredient analysis or product image submission.
+
+- **Image upload preview** — after cropping a product photo, a preview is now shown with Cancel and Submit buttons before the image is sent.
