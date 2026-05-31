@@ -101,19 +101,30 @@ Deno.test('handleLookup — unknown barcode and OFF miss returns null product', 
   assertEquals(body.product, null)
 })
 
-Deno.test('handleLookup — force on unknown row never calls OFF, uses DB row', async () => {
+Deno.test('handleLookup — unknown OFF row re-fetches OFF (force=true)', async () => {
   const row = cachedProduct({
     is_unknown: true,
     is_halal: false,
+    ingredient_source: 'off',
     ingredients: [],
     explanation: 'stale unknown',
     updated_at: '2026-05-03T00:00:00Z',
     last_analysed_at: '2026-05-01T00:00:00Z',
   })
-  const supabase = mockHandlerSupabase({ cacheProduct: row, savedProduct: null })
+  const saved = cachedProduct({ is_unknown: false, is_halal: true, ingredients: [] })
+  let offCalled = false
+  const supabase = mockHandlerSupabase({ cacheProduct: row, savedProduct: saved })
   const deps = createLookupDeps(supabase)
-  deps.fetchOpenFactsProduct = () => {
-    throw new Error('OFF must never be called when product exists in DB')
+  deps.fetchOpenFactsProduct = async () => {
+    offCalled = true
+    return {
+      pd: {
+        product_name: 'Mineral Water',
+        categories_tags: ['en:waters'],
+        ingredients_text: '',
+      },
+      isNonFood: false,
+    }
   }
 
   const res = await handleLookup(
@@ -121,8 +132,10 @@ Deno.test('handleLookup — force on unknown row never calls OFF, uses DB row', 
     deps,
   )
   assertEquals(res.status, 200)
+  assertEquals(offCalled, true)
   const body = await res.json()
   assertEquals(body.product.barcode, '1234567890')
+  assertEquals(body.product.isHalal, true)
 })
 
 Deno.test('handleLookup — force on unknown row with AI ingredients skips OFF, uses stored', async () => {
@@ -150,28 +163,63 @@ Deno.test('handleLookup — force on unknown row with AI ingredients skips OFF, 
   assertEquals(body.product.ingredientSource, 'ai')
 })
 
-Deno.test('handleLookup — stale unknown without force returns cached row', async () => {
+Deno.test('handleLookup — unknown OFF row re-fetches OFF (force=false) for halal-by-category', async () => {
   const row = cachedProduct({
     is_unknown: true,
     is_halal: false,
+    ingredient_source: 'off',
     ingredients: [],
     explanation: 'frozen unknown',
     updated_at: '2026-05-03T00:00:00Z',
     last_analysed_at: '2026-05-01T00:00:00Z',
   })
-  const supabase = mockHandlerSupabase({ cacheProduct: row })
+  const saved = cachedProduct({ is_unknown: false, is_halal: true, ingredients: [] })
+  let offCalled = false
+  const supabase = mockHandlerSupabase({ cacheProduct: row, savedProduct: saved })
   const deps = createLookupDeps(supabase)
-  deps.fetchOpenFactsProduct = () => {
-    throw new Error('fetchOpenFactsProduct should not run when serving frozen unknown')
+  deps.fetchOpenFactsProduct = async () => {
+    offCalled = true
+    return {
+      pd: {
+        product_name: 'Mineral Water',
+        categories_tags: ['en:waters'],
+        ingredients_text: '',
+      },
+      isNonFood: false,
+    }
   }
 
   const res = await handleLookup(
     { barcode: '1234567890', force: false, fetchAiIngredients: false },
     deps,
   )
+  assertEquals(offCalled, true)
+  const body = await res.json()
+  assertEquals(body.product.isHalal, true)
+  assertEquals(body.product.isUnknown, false)
+})
+
+Deno.test('handleLookup — unknown OFF row with ingredients never re-fetches OFF', async () => {
+  const row = cachedProduct({
+    is_unknown: true,
+    is_halal: false,
+    ingredient_source: 'off',
+    ingredients: ['e471', 'sugar'],
+    explanation: 'suspicious ingredients',
+  })
+  const supabase = mockHandlerSupabase({ cacheProduct: row })
+  const deps = createLookupDeps(supabase)
+  deps.fetchOpenFactsProduct = () => {
+    throw new Error('OFF must not be re-fetched when stored ingredients exist')
+  }
+
+  const res = await handleLookup(
+    { barcode: '1234567890', force: false, fetchAiIngredients: false },
+    deps,
+  )
+  assertEquals(res.status, 200)
   const body = await res.json()
   assertEquals(body.product.isUnknown, true)
-  assertEquals(body.product.explanation, 'frozen unknown')
 })
 
 Deno.test('handleLookup — stale row triggers reanalysis', async () => {
