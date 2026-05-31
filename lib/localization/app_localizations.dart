@@ -880,6 +880,24 @@ abstract class AppLocalizations {
   /// **'Label language'**
   String get transparentDisplayLanguage;
 
+  /// No description provided for @transparentLabelsChecked.
+  ///
+  /// In en, this message translates to:
+  /// **'Labels checked'**
+  String get transparentLabelsChecked;
+
+  /// No description provided for @transparentFlaggedLabels.
+  ///
+  /// In en, this message translates to:
+  /// **'Flagged labels'**
+  String get transparentFlaggedLabels;
+
+  /// No description provided for @transparentSuspiciousLabels.
+  ///
+  /// In en, this message translates to:
+  /// **'Suspicious labels'**
+  String get transparentSuspiciousLabels;
+
   /// No description provided for @contributeIngredients.
   ///
   /// In en, this message translates to:
@@ -2589,6 +2607,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Request again'**
   String get requestAgain;
+
+  /// No description provided for @showAllIngredients.
+  ///
+  /// In en, this message translates to:
+  /// **'Show all {count} ingredients'**
+  String showAllIngredients(int count);
+
+  /// No description provided for @showLessIngredients.
+  ///
+  /// In en, this message translates to:
+  /// **'Show less'**
+  String get showLessIngredients;
 }
 
 class _AppLocalizationsDelegate

@@ -116,6 +116,18 @@
   "aiAnalysis": "KI-Analyse",
   "keywordAnalysis": "Schlüsselwortanalyse",
   "analysisTransparency": "Analysetransparenz",
+  "transparentSummary": "Entscheidungsübersicht",
+  "transparentResult": "Ergebnis",
+  "transparentIngredientsChecked": "Geprüfte Zutaten",
+  "transparentRulesChecked": "Geprüfte Regeln",
+  "transparentFlagged": "Markiert (Haram)",
+  "transparentSuspicious": "Zur Überprüfung",
+  "transparentNoMatches": "Keine Regelübereinstimmungen gefunden",
+  "transparentNoIngredients": "Kein Zutatentext verfügbar",
+  "transparentExplanation": "Erklärung",
+  "transparentLabelsChecked": "Geprüfte Etiketten",
+  "transparentFlaggedLabels": "Markierte Etiketten",
+  "transparentSuspiciousLabels": "Verdächtige Etiketten",
   "transparentMatchSource": "Abgleich über",
   "transparentMatchSourcePrimary": "Original-Zutatenetikett",
   "transparentMatchSourceOffTaxonomy": "Open-Food-Facts-Zutaten-Taxonomie (EN)",
@@ -413,5 +425,14 @@
   "aiWebIngredientLookupAlreadyRanTitle": "KI-Zutatensuche bereits durchgeführt",
   "aiWebIngredientLookupAlreadyRanHint": "Die Gemini-Websuche lief bereits für diesen Produktnamen, jedoch ohne verwertbare Zutatenliste. Sie können weiter Zutaten beitragen oder Open Food Facts verbessern.",
   "requestViaAi": "Per KI anfragen",
-  "requestAgain": "Erneut anfragen"
+  "requestAgain": "Erneut anfragen",
+  "showAllIngredients": "Alle {count} Zutaten anzeigen",
+  "@showAllIngredients": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "showLessIngredients": "Weniger anzeigen"
 }

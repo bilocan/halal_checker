@@ -116,6 +116,18 @@
   "aiAnalysis": "Yapay Zeka Analizi",
   "keywordAnalysis": "Anahtar Kelime Analizi",
   "analysisTransparency": "Analiz Şeffaflığı",
+  "transparentSummary": "Karar özeti",
+  "transparentResult": "Sonuç",
+  "transparentIngredientsChecked": "Kontrol edilen içerikler",
+  "transparentRulesChecked": "Kontrol edilen kurallar",
+  "transparentFlagged": "İşaretlendi (Haram)",
+  "transparentSuspicious": "Doğrulama gerekiyor",
+  "transparentNoMatches": "Kural eşleşmesi bulunamadı",
+  "transparentNoIngredients": "Kontrol edilecek içerik metni bulunamadı",
+  "transparentExplanation": "Açıklama",
+  "transparentLabelsChecked": "Kontrol edilen etiketler",
+  "transparentFlaggedLabels": "İşaretlenen etiketler",
+  "transparentSuspiciousLabels": "Şüpheli etiketler",
   "transparentMatchSource": "Eşleşme kaynağı",
   "transparentMatchSourcePrimary": "Orijinal içerik etiketi",
   "transparentMatchSourceOffTaxonomy": "Open Food Facts içerik taksonomisi (EN)",
@@ -413,5 +425,14 @@
   "aiWebIngredientLookupAlreadyRanTitle": "Yapay zeka içerik araması zaten yapıldı",
   "aiWebIngredientLookupAlreadyRanHint": "Gemini ile web araması bu ürün adı için zaten yapıldı; kullanılabilir bir içerik listesi bulunamadı. Yine de içerik ekleyebilir veya Open Food Facts verisini geliştirebilirsiniz.",
   "requestViaAi": "Yapay zeka ile iste",
-  "requestAgain": "Tekrar iste"
+  "requestAgain": "Tekrar iste",
+  "showAllIngredients": "Tüm {count} içeriği göster",
+  "@showAllIngredients": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "showLessIngredients": "Daha az göster"
 }

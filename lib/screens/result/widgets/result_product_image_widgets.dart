@@ -19,7 +19,7 @@ class _FrontImage extends StatelessWidget {
       children: [
         Container(
           width: double.infinity,
-          height: 200,
+          height: 150,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: Colors.grey.shade300),
@@ -225,7 +225,7 @@ class _ImageSlot extends StatelessWidget {
         children: [
           _LabelledImage(url: url!, label: label),
           Positioned(
-            bottom: 18,
+            bottom: 8,
             right: 8,
             child: uploadingImageType == type
                 ? const SizedBox(
@@ -242,8 +242,7 @@ class _ImageSlot extends StatelessWidget {
       onTap: () => onUpload(type),
       child: Container(
         width: double.infinity,
-        height: 100,
-        margin: const EdgeInsets.only(bottom: 12),
+        height: 120,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(8),
           border: Border.all(color: Colors.grey.shade300),
@@ -289,8 +288,7 @@ class _LabelledImage extends StatelessWidget {
           ResultProductImages.showFullscreen(context, url: url, label: label),
       child: Container(
         width: double.infinity,
-        height: 150,
-        margin: const EdgeInsets.only(bottom: 12),
+        height: 120,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(8),
           border: Border.all(color: Colors.grey.shade300),

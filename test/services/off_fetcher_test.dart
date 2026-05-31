@@ -41,7 +41,55 @@ void main() {
     });
   });
 
+  group('OffFetcher.nameIndicatesHalalCategory', () {
+    test('detects German water term "mineralwasser"', () {
+      expect(
+        OffFetcher.nameIndicatesHalalCategory('mineralwasser prickelnd'),
+        isTrue,
+      );
+    });
+
+    test('detects English water term "mineral water"', () {
+      expect(
+        OffFetcher.nameIndicatesHalalCategory('mineral water sparkling'),
+        isTrue,
+      );
+    });
+
+    test('does not match unrelated names', () {
+      expect(OffFetcher.nameIndicatesHalalCategory('orange juice'), isFalse);
+    });
+
+    test('does not match compound word "mineralwasserbasis"', () {
+      expect(
+        OffFetcher.nameIndicatesHalalCategory('mineralwasserbasis'),
+        isFalse,
+      );
+    });
+  });
+
   group('OffFetcher.fetch', () {
+    test(
+      'water product with only non-English categories returns halal by name',
+      () async {
+        final body = jsonEncode({
+          'status': 1,
+          'product': {
+            'product_name': 'Mineralwasser prickelnd',
+            'categories_tags': ['de:mineralwässer', 'de:wasser'],
+          },
+        });
+        final client = MockClient((_) async => http.Response(body, 200));
+        final product = await OffFetcher(
+          client,
+        ).fetch('90098369', OffFetcher.offBaseUrl);
+
+        expect(product, isNotNull);
+        expect(product!.isHalal, isTrue);
+        expect(product.isUnknown, isFalse);
+      },
+    );
+
     test('returns null when API status is 0', () async {
       final client = MockClient(
         (_) async => http.Response(jsonEncode({'status': 0}), 200),

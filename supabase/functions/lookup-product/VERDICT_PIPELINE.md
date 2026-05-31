@@ -29,11 +29,11 @@ flowchart TD
   A[parseRequest] --> B[getHalalScanProduct]
   B --> C{is_managed?}
   C -->|yes| D[Return DB row]
-  C -->|no| E{stale or force refresh?}
+  C -->|no| E{stale or force AND not unknown-OFF?}
   E -->|yes| F[runStoredProductReanalysis]
   E -->|no| G{cache hit?}
   G -->|yes, no vision needed| H[Return cached row]
-  G -->|no / vision stub| I{OFF fetch}
+  G -->|no DB row / vision stub| I{OFF fetch}
   I -->|miss| J[analyzeFromDbStub]
   I -->|hit| K[OFF path + computeVerdict]
   F --> L[persistLookupAndRespond]
@@ -47,9 +47,9 @@ flowchart TD
 | Load cache | `productQueries.ts` | `getHalalScanProduct` from `products_full` |
 | Gemini empty-OFF gate | `ingredient_lookup_gate.ts` | `refetchForGeminiAuto`, bypass cache when enabled |
 | Managed | `reanalysis.ts` | Return row unchanged |
-| Stale / force | `reanalysis.ts` | `computeVerdict({ skipAi: true })` on stored data |
+| Stale / force | `reanalysis.ts` | `computeVerdict({ skipAi: true })` on stored data; includes unknown rows with AI/community ingredients (those must not be overwritten by OFF) |
 | Cache return | `index.ts` | Skip if empty ingredients + `image_ingredients_url` (vision path) |
-| OFF fetch | `fetch.ts` | `fetchOpenFactsProduct` (OFF → OBF → OPF) |
+| OFF fetch | `fetch.ts` | `fetchOpenFactsProduct` (OFF → OBF → OPF) — **only when no DB row exists**; existing products are never re-fetched from OFF |
 | OFF miss | `index.ts` | `analyzeFromDbStub` — DB stub + optional Gemini ingredients |
 | Full analysis | `index.ts` | Community override → `computeVerdict` → `persistLookupAndRespond` |
 | Persist | `persistence.ts` | `upsertProduct` + `upsertAnalysis` + `products_full` read |

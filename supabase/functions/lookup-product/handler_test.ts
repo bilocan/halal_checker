@@ -101,7 +101,7 @@ Deno.test('handleLookup — unknown barcode and OFF miss returns null product', 
   assertEquals(body.product, null)
 })
 
-Deno.test('handleLookup — force refetches OFF when cached row is unknown (stale)', async () => {
+Deno.test('handleLookup — force on unknown row never calls OFF, uses DB row', async () => {
   const row = cachedProduct({
     is_unknown: true,
     is_halal: false,
@@ -110,33 +110,44 @@ Deno.test('handleLookup — force refetches OFF when cached row is unknown (stal
     updated_at: '2026-05-03T00:00:00Z',
     last_analysed_at: '2026-05-01T00:00:00Z',
   })
-  const supabase = mockHandlerSupabase({
-    cacheProduct: row,
-    savedProduct: {
-      ...row,
-      name: 'Mineral Water',
-      is_halal: true,
-      is_unknown: false,
-      explanation: 'This product is in an inherently halal category (e.g. water, salt). No harmful ingredients expected.',
-    },
-  })
+  const supabase = mockHandlerSupabase({ cacheProduct: row, savedProduct: null })
   const deps = createLookupDeps(supabase)
-  deps.fetchOpenFactsProduct = async () => ({
-    pd: {
-      product_name: 'Mineral Water',
-      ingredients_text: '',
-      categories_tags: ['en:waters', 'en:mineral-waters'],
-    },
-    isNonFood: false,
-  })
+  deps.fetchOpenFactsProduct = () => {
+    throw new Error('OFF must never be called when product exists in DB')
+  }
 
   const res = await handleLookup(
     { barcode: '1234567890', force: true, fetchAiIngredients: false },
     deps,
   )
+  assertEquals(res.status, 200)
   const body = await res.json()
-  assertEquals(body.product.isHalal, true)
-  assertEquals(body.product.isUnknown, false)
+  assertEquals(body.product.barcode, '1234567890')
+})
+
+Deno.test('handleLookup — force on unknown row with AI ingredients skips OFF, uses stored', async () => {
+  const aiIngredients = ['sugar', 'cocoa butter', 'milk powder']
+  const row = cachedProduct({
+    is_unknown: true,
+    is_halal: false,
+    ingredient_source: 'ai',
+    ingredients: aiIngredients,
+    explanation: 'ai unknown',
+  })
+  const supabase = mockHandlerSupabase({ cacheProduct: row, savedProduct: null })
+  const deps = createLookupDeps(supabase)
+  deps.fetchOpenFactsProduct = () => {
+    throw new Error('OFF must not be fetched when ingredient_source is ai')
+  }
+
+  const res = await handleLookup(
+    { barcode: '1234567890', force: true, fetchAiIngredients: false },
+    deps,
+  )
+  assertEquals(res.status, 200)
+  const body = await res.json()
+  assertEquals(body.product.ingredients, aiIngredients)
+  assertEquals(body.product.ingredientSource, 'ai')
 })
 
 Deno.test('handleLookup — stale unknown without force returns cached row', async () => {

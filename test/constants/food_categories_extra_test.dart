@@ -361,6 +361,48 @@ void main() {
     );
   });
 
+  // ── halalCategoryNameTerms set ───────────────────────────────────────────
+
+  group('FoodCategories — halalCategoryNameTerms set', () {
+    test('is non-empty', () {
+      expect(FoodCategories.halalCategoryNameTerms, isNotEmpty);
+    });
+
+    test('contains German water term "mineralwasser"', () {
+      expect(
+        FoodCategories.halalCategoryNameTerms.contains('mineralwasser'),
+        isTrue,
+      );
+    });
+
+    test('contains English water term "mineral water"', () {
+      expect(
+        FoodCategories.halalCategoryNameTerms.contains('mineral water'),
+        isTrue,
+      );
+    });
+
+    test('all terms are lowercase', () {
+      for (final term in FoodCategories.halalCategoryNameTerms) {
+        expect(
+          term,
+          equals(term.toLowerCase()),
+          reason: '"$term" is not lowercase',
+        );
+      }
+    });
+
+    test('no term is shorter than 4 characters', () {
+      for (final term in FoodCategories.halalCategoryNameTerms) {
+        expect(
+          term.length,
+          greaterThanOrEqualTo(4),
+          reason: '"$term" is too short',
+        );
+      }
+    });
+  });
+
   // ── nonFood pet-food entries ──────────────────────────────────────────────
 
   group('FoodCategories — nonFood pet-food subcategories', () {

@@ -46,6 +46,15 @@ class OffFetcher {
     );
   }
 
+  static bool nameIndicatesHalalCategory(String nameLower) {
+    return FoodCategories.halalCategoryNameTerms.any(
+      (term) => RegExp(
+        '(?<![a-zA-ZÀ-ɏ])${RegExp.escape(term)}(?![a-zA-ZÀ-ɏ])',
+        caseSensitive: false,
+      ).hasMatch(nameLower),
+    );
+  }
+
   static ({
     bool isHalal,
     List<String> haram,
@@ -166,10 +175,13 @@ class OffFetcher {
       final bool halalByCategory =
           !isNonFoodByCategory &&
           !haramByCategory &&
-          rawCategories is List &&
-          rawCategories.any(
-            (c) => FoodCategories.halal.contains(c.toString().toLowerCase()),
-          );
+          ((rawCategories is List &&
+                  rawCategories.any(
+                    (c) => FoodCategories.halal.contains(
+                      c.toString().toLowerCase(),
+                    ),
+                  )) ||
+              nameIndicatesHalalCategory(name.toLowerCase()));
 
       final kwResult = analyzeIngredientsFromSources(
         engine: _engine,

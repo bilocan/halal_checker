@@ -23,17 +23,14 @@ import 'discussion_screen.dart';
 import 'missing_product_photo_contribution_screen.dart';
 import 'result/debug/local_db_debug_dialog.dart';
 import 'result/result_controller.dart';
-import 'result/widgets/result_analysis_card.dart';
 import 'result/widgets/result_bottom_nav.dart';
-import 'result/widgets/result_community_card.dart';
-import 'result/widgets/result_feedback_section.dart';
+import 'result/widgets/result_community_section.dart';
 import 'result/widgets/result_footer_actions.dart';
+import 'result/widgets/result_hero_card.dart';
 import 'result/widgets/result_ingredients_section.dart';
 import 'result/widgets/result_not_found_body.dart';
 import 'result/widgets/result_note_card.dart';
-import 'result/widgets/result_product_header.dart';
 import 'result/widgets/result_product_images.dart';
-import 'result/widgets/result_status_banner.dart';
 import 'result/widgets/result_transparency_card.dart';
 
 class ResultScreen extends StatefulWidget {
@@ -96,16 +93,6 @@ class _ResultScreenState extends State<ResultScreen> {
         content: Text(AppLocalizations.of(context).labelCopied(label)),
         duration: const Duration(seconds: 1),
       ),
-    );
-  }
-
-  void _reportWithNote() {
-    final product = widget.product;
-    if (product == null) return;
-    _showReportDialog(
-      context,
-      product,
-      initialNote: _noteController.text.trim(),
     );
   }
 
@@ -397,7 +384,7 @@ class _ResultScreenState extends State<ResultScreen> {
           barcode: barcode,
           loc: loc,
           onCopyBarcode: () => _copyToClipboard(barcode, loc.barcodeLabel),
-          onScanAgain: () => Navigator.pop(context),
+          onScanAgain: () => Navigator.pop(context, 'scan_another'),
           onSubmitPackPhotos: AppConfig.hasSupabase
               ? _openMissingProductPhotoFlow
               : null,
@@ -467,22 +454,21 @@ class _ResultScreenState extends State<ResultScreen> {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   const SizedBox(height: 20),
-                  ResultStatusBanner(product: product, loc: loc),
-                  const SizedBox(height: 24),
-                  ResultProductHeader(
+                  ResultHeroCard(
                     product: product,
                     barcode: barcode,
+                    loc: loc,
                     onCopyBarcode: () =>
                         _copyToClipboard(barcode, loc.barcodeLabel),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 16),
                   ResultProductImages(
                     product: product,
                     loc: loc,
                     uploadingImageType: _uploadingImageType,
                     onUpload: _uploadProductImage,
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 16),
                   ResultIngredientsSection(
                     product: product,
                     loc: loc,
@@ -517,33 +503,21 @@ class _ResultScreenState extends State<ResultScreen> {
                         setState(() => _noteExpanded = !_noteExpanded),
                     onToggleFlag: _toggleFlag,
                     onSave: _saveNote,
-                    onReportWithNote: _reportWithNote,
                   ),
                   const SizedBox(height: 16),
-                  ResultAnalysisCard(
+                  ResultCommunitySection(
                     loc: loc,
                     analysis: _controller.analysis,
-                    isRequesting: _controller.isRequestingAnalysis,
-                    onRequest: _requestAnalysis,
-                    onOpenAnalysis: _openDeepAnalysis,
-                  ),
-                  const SizedBox(height: 8),
-                  ResultCommunityCard(
-                    loc: loc,
+                    isRequestingAnalysis: _controller.isRequestingAnalysis,
                     discussionCount: _controller.discussions.length,
-                    onTap: _openDiscussion,
-                  ),
-                  const SizedBox(height: 16),
-                  ResultFeedbackSection(
-                    loc: loc,
-                    feedbacks: _controller.feedbacks,
-                    isLoading: _controller.isLoadingFeedback,
-                    onProducerReply: _showProducerReplyDialog,
+                    onRequestAnalysis: _requestAnalysis,
+                    onOpenAnalysis: _openDeepAnalysis,
+                    onOpenDiscussion: _openDiscussion,
                   ),
                   const SizedBox(height: 24),
                   ResultFooterActions(
                     loc: loc,
-                    onScanAnother: () => Navigator.pop(context),
+                    onScanAnother: () => Navigator.pop(context, 'scan_another'),
                     onFeedback: () => _onFeedbackTap(context),
                     onReport: () => _showReportDialog(context, product),
                   ),
@@ -568,88 +542,6 @@ class _ResultScreenState extends State<ResultScreen> {
       feedbackService: _feedbackService,
       onSubmitted: _controller.loadFeedbacks,
     );
-  }
-
-  Future<void> _showProducerReplyDialog(String feedbackId) async {
-    final loc = AppLocalizations.of(context);
-
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(loc.producerReplyWarningTitle),
-        content: Text(loc.producerReplyWarning),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(loc.cancel),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(loc.proceedAnyway),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true || !mounted) return;
-
-    final TextEditingController replyController = TextEditingController();
-
-    await showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(loc.replyAsProducer),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(loc.replyDialogHint, style: const TextStyle(fontSize: 14)),
-            const SizedBox(height: 16),
-            TextField(
-              controller: replyController,
-              maxLines: 3,
-              maxLength: 500,
-              decoration: InputDecoration(
-                hintText: loc.replyInputHint,
-                border: const OutlineInputBorder(),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(loc.cancel),
-          ),
-          ValueListenableBuilder<TextEditingValue>(
-            valueListenable: replyController,
-            builder: (_, value, _) => ElevatedButton(
-              onPressed: value.text.trim().isEmpty
-                  ? null
-                  : () async {
-                      final navigator = Navigator.of(ctx);
-                      final messenger = ScaffoldMessenger.of(context);
-                      try {
-                        await _feedbackService.addProducerReply(
-                          feedbackId,
-                          replyController.text.trim(),
-                        );
-                        navigator.pop();
-                        messenger.showSnackBar(
-                          SnackBar(content: Text(loc.replySubmitted)),
-                        );
-                        await _controller.loadFeedbacks();
-                      } catch (e) {
-                        messenger.showSnackBar(
-                          SnackBar(content: Text(loc.couldNotSubmitReply)),
-                        );
-                      }
-                    },
-              child: Text(loc.submitReply),
-            ),
-          ),
-        ],
-      ),
-    );
-    replyController.dispose();
   }
 
   void _showIngredientReportSheet(BuildContext context, Product product) {
