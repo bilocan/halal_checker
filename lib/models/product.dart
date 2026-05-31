@@ -53,6 +53,18 @@ class Product {
   /// Distinct from fetched_at, which tracks the Open Food Facts fetch time.
   final DateTime? lastAnalysedAt;
 
+  /// Which ingredient source produced keyword matches (primary, off_en, off_taxonomy, …).
+  final String? keywordMatchSource;
+
+  /// Flagged ingredient → source key that matched it.
+  final Map<String, String> keywordMatchOrigins;
+
+  /// OFF language used for analysis when the displayed label was not keyword-analyzable.
+  final String? analyzeLang;
+
+  /// Language of the ingredient label shown in the app (from OFF ingredients_lc).
+  final String? displayLang;
+
   /// Whether Gemini **web ingredient lookup** already ran server-side for this
   /// barcode with the same normalized [name] as now. Controls the AI lookup CTA.
   final bool geminiWebIngredientLookupAttemptedForName;
@@ -98,6 +110,10 @@ class Product {
     this.isManaged = false,
     this.updatedAt,
     this.lastAnalysedAt,
+    this.keywordMatchSource,
+    this.keywordMatchOrigins = const {},
+    this.analyzeLang,
+    this.displayLang,
     this.geminiWebIngredientLookupAttemptedForName = false,
   });
 
@@ -126,6 +142,10 @@ class Product {
     bool? isManaged,
     DateTime? updatedAt,
     DateTime? lastAnalysedAt,
+    String? keywordMatchSource,
+    Map<String, String>? keywordMatchOrigins,
+    String? analyzeLang,
+    String? displayLang,
     bool? geminiWebIngredientLookupAttemptedForName,
   }) => Product(
     barcode: barcode ?? this.barcode,
@@ -153,6 +173,10 @@ class Product {
     isManaged: isManaged ?? this.isManaged,
     updatedAt: updatedAt ?? this.updatedAt,
     lastAnalysedAt: lastAnalysedAt ?? this.lastAnalysedAt,
+    keywordMatchSource: keywordMatchSource ?? this.keywordMatchSource,
+    keywordMatchOrigins: keywordMatchOrigins ?? this.keywordMatchOrigins,
+    analyzeLang: analyzeLang ?? this.analyzeLang,
+    displayLang: displayLang ?? this.displayLang,
     geminiWebIngredientLookupAttemptedForName:
         geminiWebIngredientLookupAttemptedForName ??
         this.geminiWebIngredientLookupAttemptedForName,
@@ -185,6 +209,11 @@ class Product {
     if (updatedAt != null) 'updatedAt': updatedAt!.toIso8601String(),
     if (lastAnalysedAt != null)
       'lastAnalysedAt': lastAnalysedAt!.toIso8601String(),
+    if (keywordMatchSource != null) 'keywordMatchSource': keywordMatchSource,
+    if (keywordMatchOrigins.isNotEmpty)
+      'keywordMatchOrigins': keywordMatchOrigins,
+    if (analyzeLang != null) 'analyzeLang': analyzeLang,
+    if (displayLang != null) 'displayLang': displayLang,
     'geminiWebIngredientLookupAttemptedForName':
         geminiWebIngredientLookupAttemptedForName,
   };
@@ -226,6 +255,12 @@ class Product {
     lastAnalysedAt: json['lastAnalysedAt'] != null
         ? DateTime.tryParse(json['lastAnalysedAt'] as String)
         : null,
+    keywordMatchSource: json['keywordMatchSource'] as String?,
+    keywordMatchOrigins: json['keywordMatchOrigins'] != null
+        ? Map<String, String>.from(json['keywordMatchOrigins'] as Map)
+        : const {},
+    analyzeLang: json['analyzeLang'] as String?,
+    displayLang: json['displayLang'] as String?,
     geminiWebIngredientLookupAttemptedForName:
         computeGeminiWebLookupAttemptedForName(
           productName: json['name'] as String,

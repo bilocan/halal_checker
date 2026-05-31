@@ -5,6 +5,8 @@ import 'package:http/http.dart' as http;
 import '../constants/food_categories.dart';
 import '../models/product.dart';
 import 'halal_rules_engine.dart';
+import 'ingredient_resolution.dart';
+import 'keyword_multi_source.dart';
 import 'product_verdict.dart';
 
 /// Fetches and parses products from OpenFoodFacts, OpenBeautyFacts, and
@@ -85,43 +87,9 @@ class OffFetcher {
                 'Unknown Product')
           : productData['product_name'].toString();
 
-      // Ingredient text — try multiple language fields and structured array
-      String ingredientsText = (productData['ingredients_text'] ?? '')
-          .toString()
-          .trim();
-      if (ingredientsText.isEmpty) {
-        for (final lang in [
-          'en',
-          'nl',
-          'de',
-          'fr',
-          'tr',
-          'es',
-          'it',
-          'sr',
-          'hu',
-          'cs',
-        ]) {
-          final langText = (productData['ingredients_text_$lang'] ?? '')
-              .toString()
-              .trim();
-          if (langText.isNotEmpty) {
-            ingredientsText = langText;
-            break;
-          }
-        }
-      }
-      if (ingredientsText.isEmpty) {
-        final structured = productData['ingredients'];
-        if (structured is List && structured.isNotEmpty) {
-          ingredientsText = structured
-              .whereType<Map>()
-              .map((i) => i['text']?.toString() ?? '')
-              .where((t) => t.isNotEmpty)
-              .join(', ');
-        }
-      }
-      ingredientsText = ingredientsText.toLowerCase();
+      // Ingredient text — display list + multi-source analysis (language fallback).
+      final resolved = resolveOffIngredientAnalysis(productData);
+      final ingredients = resolved.display;
 
       String? optimizeImageUrl(String? url) {
         if (url == null || url.isEmpty) return null;
@@ -183,41 +151,6 @@ class OffFetcher {
       addLabelValue(productData['labels_en']);
       final labels = labelSet.toList();
 
-      final ingredients = ingredientsText
-          .split(RegExp(r'[,;]'))
-          .map((e) => e.trim())
-          .where((e) => e.isNotEmpty)
-          .toList();
-
-      // Extract canonical IDs from the structured ingredients array for
-      // supplementary keyword analysis. OFf normalises these (e.g. "en:pork")
-      // so they catch matches that the label's free-form text may omit when
-      // the language is not covered by our variant lists.
-      final List<String> ingredientIds = [];
-      void addId(Map<dynamic, dynamic> item) {
-        final id = (item['id'] ?? '').toString();
-        if (id.isNotEmpty) {
-          final canonical = id
-              .replaceFirst(RegExp(r'^[a-z]{2,3}:'), '')
-              .replaceAll('-', ' ');
-          if (canonical.isNotEmpty) ingredientIds.add(canonical);
-        }
-        final sub = item['ingredients'];
-        if (sub is List) {
-          for (final s in sub.whereType<Map<dynamic, dynamic>>()) {
-            addId(s);
-          }
-        }
-      }
-
-      final rawStructuredIngredients = productData['ingredients'];
-      if (rawStructuredIngredients is List) {
-        for (final item
-            in rawStructuredIngredients.whereType<Map<dynamic, dynamic>>()) {
-          addId(item);
-        }
-      }
-
       final rawCategories = productData['categories_tags'];
       final bool isNonFoodByCategory =
           rawCategories is List &&
@@ -238,46 +171,32 @@ class OffFetcher {
             (c) => FoodCategories.halal.contains(c.toString().toLowerCase()),
           );
 
-      final fallback = _analyze(ingredients);
-
-      // Also analyse canonical IDs; merge extra matches the text analysis missed.
-      final idAnalysis = _analyze(ingredientIds);
-      final textHaramLower = fallback.haram.map((s) => s.toLowerCase()).toSet();
-      final extraIdHaram = idAnalysis.haram
-          .where((s) => !textHaramLower.contains(s.toLowerCase()))
-          .toList();
-      final textSuspiciousLower = fallback.suspicious
-          .map((s) => s.toLowerCase())
-          .toSet();
-      final extraIdSuspicious = idAnalysis.suspicious
-          .where((s) => !textSuspiciousLower.contains(s.toLowerCase()))
-          .toList();
+      final kwResult = analyzeIngredientsFromSources(
+        engine: _engine,
+        sources: resolved.sources,
+        displayIngredients: ingredients,
+        analyzeLang: resolved.analyzeLang,
+      );
 
       // When no ingredient data at all, check the product name itself.
-      // Names like "Wieselburger Bier" or "Rosé Wine" contain haram keywords
-      // that make the verdict unambiguous without needing ingredient data.
-      final nameCheck = ingredients.isEmpty && ingredientIds.isEmpty
+      final nameCheck = ingredients.isEmpty && resolved.sources.isEmpty
           ? _analyze([name.toLowerCase()])
           : null;
 
       final List<String> haramIngredients = [
-        ...(fallback.haram.isNotEmpty
-            ? fallback.haram
+        ...(kwResult.haram.isNotEmpty
+            ? kwResult.haram
             : (nameCheck?.haram ?? [])),
-        ...extraIdHaram,
       ];
       final List<String> suspiciousIngredients = [
-        ...(fallback.suspicious.isNotEmpty
-            ? fallback.suspicious
+        ...(kwResult.suspicious.isNotEmpty
+            ? kwResult.suspicious
             : (nameCheck?.suspicious ?? [])),
-        ...extraIdSuspicious,
       ];
       final Map<String, String> ingredientWarnings = {
-        ...(fallback.warnings.isNotEmpty
-            ? fallback.warnings
+        ...(kwResult.warnings.isNotEmpty
+            ? kwResult.warnings
             : (nameCheck?.warnings ?? {})),
-        for (final id in extraIdHaram) id: idAnalysis.warnings[id] ?? '',
-        for (final id in extraIdSuspicious) id: idAnalysis.warnings[id] ?? '',
       };
 
       if (isNonFoodByCategory) {
@@ -350,17 +269,17 @@ class OffFetcher {
           haramIngredients.isEmpty;
 
       final bool isUnknown =
-          ingredients.isEmpty &&
-          ingredientIds.isEmpty &&
-          (nameCheck?.isHalal ?? true) &&
           !haramByCategory &&
-          !isHalalByCategory &&
-          !requiresHalalCert;
+          !halalByCategory &&
+          (kwResult.isUnknown ||
+              (ingredients.isEmpty &&
+                  resolved.sources.isEmpty &&
+                  (nameCheck?.isHalal ?? true) &&
+                  !requiresHalalCert));
 
       final String explanation;
       if (haramByCategory &&
-          fallback.haram.isEmpty &&
-          extraIdHaram.isEmpty &&
+          kwResult.haram.isEmpty &&
           (nameCheck?.isHalal ?? true)) {
         explanation =
             'This product belongs to a category that is not permissible: '
@@ -370,17 +289,12 @@ class OffFetcher {
             'This product is in an inherently halal category (e.g. water, salt). No harmful ingredients expected.';
       } else if (requiresHalalCert) {
         explanation = '';
-      } else if (isUnknown) {
-        explanation =
-            'No ingredient data found. Halal status cannot be determined — check the packaging directly.';
       } else if (nameCheck != null && !nameCheck.isHalal) {
         explanation =
             'No ingredient list found, but the product name contains a haram indicator: '
             '${nameCheck.haram.join(', ')}.';
       } else {
-        explanation = ingredients.isNotEmpty
-            ? fallback.explanation
-            : idAnalysis.explanation;
+        explanation = kwResult.explanation;
       }
 
       return Product(
@@ -401,11 +315,11 @@ class OffFetcher {
         suspiciousIngredients: suspiciousIngredients,
         ingredientWarnings: ingredientWarnings,
         ingredientTranslations: {
-          ...fallback.translations,
+          ...kwResult.translations,
           ...(nameCheck?.translations ?? {}),
         },
         ingredientCanonicals: {
-          ...fallback.canonicals,
+          ...kwResult.canonicals,
           ...(nameCheck?.canonicals ?? {}),
         },
         labels: labels,
@@ -417,6 +331,10 @@ class OffFetcher {
         analyzedByAI: false,
         ingredientSource: 'off',
         requiresHalalCert: requiresHalalCert,
+        keywordMatchSource: kwResult.keywordMatchSource,
+        keywordMatchOrigins: kwResult.keywordMatchOrigins,
+        analyzeLang: kwResult.analyzeLang,
+        displayLang: resolved.displayLang.isEmpty ? null : resolved.displayLang,
       );
     } catch (_) {
       return null;

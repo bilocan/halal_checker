@@ -29,6 +29,10 @@ export function toProduct(row: Record<string, any>) {
       row,
       String(row.name ?? ''),
     ),
+    keywordMatchSource:    row.keyword_match_source ?? null,
+    keywordMatchOrigins:   row.keyword_match_origins ?? {},
+    analyzeLang:           row.analyze_lang ?? null,
+    displayLang:           row.display_lang ?? null,
   }
 }
 

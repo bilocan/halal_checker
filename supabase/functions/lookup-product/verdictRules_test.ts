@@ -1,6 +1,7 @@
 // Run with: deno test --allow-env supabase/functions/lookup-product/verdictRules_test.ts
 
 import { assertEquals, assertFalse, assertMatch } from 'https://deno.land/std@0.224.0/assert/mod.ts'
+import { resolveOffIngredientAnalysis } from './ingredientResolution.ts'
 import { keywordAnalysis } from './keyword.ts'
 import {
   aiVerdictJson,
@@ -187,6 +188,32 @@ Deno.test('postRules — haram category override wins over AI halal snapshot', (
   assertMatch(snapshot.explanation, /not permissible: beer/)
 })
 
+Deno.test('postRules — Cyrillic label pork skips empty name fallback', () => {
+  const ctx = baseCtx({
+    ingredients: ['80% частично финомляно свинско месо', 'вода', 'сол'],
+    name: 'Свински кюфтета',
+    displayLang: 'bg',
+  })
+  const kwFirst = keywordAnalysis(ctx.ingredients, ctx.customHaramEntries, ctx.customSuspiciousEntries)
+  assertEquals(kwFirst.isUnknown, false)
+  assertEquals(kwFirst.haram.length > 0, true)
+
+  const { snapshot } = applyPostAnalysisRules({
+    isHalal: kwFirst.isHalal,
+    isUnknown: kwFirst.isUnknown,
+    haramIngredients: kwFirst.haram,
+    suspiciousIngredients: kwFirst.suspicious,
+    ingredientWarnings: kwFirst.warnings,
+    explanation: kwFirst.explanation,
+  }, ctx, kwFirst)
+
+  assertEquals(snapshot.isUnknown, false)
+  assertEquals(snapshot.haramIngredients.length > 0, true)
+  assertMatch(snapshot.explanation, /keyword matching/i)
+  assertFalse(snapshot.explanation.includes('product name contains a haram indicator'))
+  assertFalse(snapshot.explanation.includes('language we cannot analyze'))
+})
+
 Deno.test('postRules — name fallback when unknown and name contains haram term', () => {
   const ctx = baseCtx({ ingredients: [], name: 'Premium Pork Crackling' })
   const kwFirst = keywordAnalysis(ctx.ingredients, ctx.customHaramEntries, ctx.customSuspiciousEntries)
@@ -298,4 +325,36 @@ Deno.test('computeVerdict — vision finds pork, skips Gemini (keyword-haram)', 
   } finally {
     restoreTestEnv(env)
   }
+})
+
+Deno.test('computeVerdict — 20013066 Cyrillic label + OFF en → label keyword match explanation', async () => {
+  const resolved = resolveOffIngredientAnalysis({
+    ingredients_lc: 'bg',
+    ingredients_text:
+      '80% частично финомляно свинско месо, вода, сол',
+    ingredients_text_en:
+      '80% pork meat is partially minced, water, salt',
+    ingredients: [
+      { id: 'bg:свинско-месо', text: 'частично финомляно свинско месо' },
+      { id: 'en:water', text: 'вода' },
+    ],
+  })
+
+  const result = await computeVerdict(baseCtx({
+    barcode: '20013066',
+    name: 'Свински кюфтета',
+    ingredients: resolved.display,
+    analyzeSources: resolved.sources,
+    displayLang: resolved.displayLang,
+    analyzeLang: resolved.analyzeLang,
+  }))
+
+  assertEquals(result.isHalal, false)
+  assertEquals(result.isUnknown, false)
+  assertEquals(result.keywordMatchSource?.includes('off_en'), true)
+  assertEquals(result.haramIngredients.length > 0, true)
+  assertMatch(result.explanation, /keyword matching/i)
+  assertMatch(result.explanation, /pork|свинско|not permissible/i)
+  assertFalse(result.explanation.includes('product name contains a haram indicator'))
+  assertFalse(result.explanation.includes('language we cannot analyze'))
 })

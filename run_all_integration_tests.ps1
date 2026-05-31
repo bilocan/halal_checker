@@ -19,4 +19,10 @@ if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
     -TestFile "test/integration/supabase_services_integration_test.dart" `
     -DefinesFile $DefinesFile `
     -Timeout $Timeout
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+& "$root\run_integration_test.ps1" `
+    -TestFile "test/integration/barcode_20013066_stored_analysis_test.dart" `
+    -DefinesFile $DefinesFile `
+    -Timeout $Timeout
 exit $LASTEXITCODE

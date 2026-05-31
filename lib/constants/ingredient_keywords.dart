@@ -100,6 +100,7 @@ class IngredientKeywords {
       'svinjetina', 'svinjsko', // SR
       'sertéshús', 'sertés', // HU
       'vepřové', 'vepřová', // CS
+      'свинско', 'свински', 'свинска', 'свинско месо', 'свинска месо', // BG
     ],
     'lard': [
       'lard', 'schmalz', 'schweineschmalz', 'saindoux', 'strutto', 'manteca',

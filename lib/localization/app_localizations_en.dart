@@ -398,6 +398,34 @@ class AppLocalizationsEn extends AppLocalizations {
   String get transparentExplanation => 'Explanation';
 
   @override
+  String get transparentMatchSource => 'Matched via';
+
+  @override
+  String get transparentMatchSourcePrimary => 'Original ingredient label';
+
+  @override
+  String get transparentMatchSourceOffTaxonomy =>
+      'Open Food Facts ingredient taxonomy (EN)';
+
+  @override
+  String get transparentMatchSourceUnanalyzable =>
+      'Could not analyze — unsupported language';
+
+  @override
+  String get transparentMatchSourceNone => 'No keyword rule matches';
+
+  @override
+  String transparentMatchSourceOffLang(String lang) {
+    return '$lang translation (Open Food Facts)';
+  }
+
+  @override
+  String get transparentMatchOrigins => 'Match origins';
+
+  @override
+  String get transparentDisplayLanguage => 'Label language';
+
+  @override
   String get contributeIngredients => 'Add Ingredients';
 
   @override

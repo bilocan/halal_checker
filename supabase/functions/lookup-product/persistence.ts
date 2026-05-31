@@ -17,6 +17,7 @@ export interface ProductRow {
   fetchedAt: string
   geminiAt?: string
   geminiNameKey?: string
+  displayLang?: string
 }
 
 export interface AnalysisRow {
@@ -29,6 +30,9 @@ export interface AnalysisRow {
   ingredientWarnings: Record<string, string>
   explanation: string
   analyzedByAI: boolean
+  keywordMatchSource?: string
+  keywordMatchOrigins?: Record<string, string>
+  analyzeLang?: string | null
 }
 
 export async function upsertProduct(supabase: SupabaseClient, row: ProductRow): Promise<void> {
@@ -46,6 +50,7 @@ export async function upsertProduct(supabase: SupabaseClient, row: ProductRow): 
     requires_halal_cert:   row.requiresHalalCert,
     last_analysed_at:      new Date().toISOString(),
     fetched_at:            row.fetchedAt,
+    display_lang:          row.displayLang || null,
     ...(row.isManaged !== undefined ? { is_managed: row.isManaged } : {}),
     ...(row.geminiNameKey ? {
       gemini_web_ingredient_lookup_at:       row.geminiAt,
@@ -66,6 +71,9 @@ export async function upsertAnalysis(supabase: SupabaseClient, row: AnalysisRow)
     ingredient_warnings:    row.ingredientWarnings,
     explanation:            row.explanation,
     analyzed_by_ai:         row.analyzedByAI,
+    keyword_match_source:   row.keywordMatchSource ?? null,
+    keyword_match_origins:  row.keywordMatchOrigins ?? {},
+    analyze_lang:           row.analyzeLang ?? null,
     analyzed_at:            new Date().toISOString(),
   })
   if (error) console.error(`[${row.barcode}] product_analysis upsert error`, error)
