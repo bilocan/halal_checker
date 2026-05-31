@@ -235,11 +235,15 @@ jobs:
             "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PKG/edits" \
             | jq -r '.id')
 
-          # Include existing alpha version codes so no current tester is stranded
+          # Include existing alpha version codes that are LOWER than VC so those
+          # users still have an upgrade path. Higher VCs are excluded — devices on
+          # a newer build stay there; including them would make VC unreachable.
           EXISTING=$(curl -sS \
             -H "Authorization: Bearer $TOKEN" \
             "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PKG/edits/$EDIT/tracks/alpha" \
-            | jq -r '[.releases[]?.versionCodes[]? | tostring] | unique | .[]' 2>/dev/null | grep -v "^$VC$" || true)
+            | jq -r --argjson vc "$VC" \
+              '[.releases[]?.versionCodes[]? | tonumber | select(. < $vc) | tostring] | unique | .[]' \
+            2>/dev/null || true)
           VC_ARRAY="[\"$VC\""
           for v in $EXISTING; do VC_ARRAY="$VC_ARRAY,\"$v\""; done
           VC_ARRAY="$VC_ARRAY]"
@@ -301,11 +305,13 @@ jobs:
             "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PKG/edits" \
             | jq -r '.id')
 
-          # Include existing alpha version codes so no current tester is stranded
+          # Include existing alpha version codes that are LOWER than VC only
           EXISTING=$(curl -sS \
             -H "Authorization: Bearer $TOKEN" \
             "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PKG/edits/$EDIT/tracks/alpha" \
-            | jq -r '[.releases[]?.versionCodes[]? | tostring] | unique | .[]' 2>/dev/null | grep -v "^$VC$" || true)
+            | jq -r --argjson vc "$VC" \
+              '[.releases[]?.versionCodes[]? | tonumber | select(. < $vc) | tostring] | unique | .[]' \
+            2>/dev/null || true)
           VC_ARRAY="[\"$VC\""
           for v in $EXISTING; do VC_ARRAY="$VC_ARRAY,\"$v\""; done
           VC_ARRAY="$VC_ARRAY]"
@@ -366,11 +372,13 @@ jobs:
             "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PKG/edits" \
             | jq -r '.id')
 
-          # Include existing beta version codes so no current tester is stranded
+          # Include existing beta version codes that are LOWER than VC only
           EXISTING=$(curl -sS \
             -H "Authorization: Bearer $TOKEN" \
             "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PKG/edits/$EDIT/tracks/beta" \
-            | jq -r '[.releases[]?.versionCodes[]? | tostring] | unique | .[]' 2>/dev/null | grep -v "^$VC$" || true)
+            | jq -r --argjson vc "$VC" \
+              '[.releases[]?.versionCodes[]? | tonumber | select(. < $vc) | tostring] | unique | .[]' \
+            2>/dev/null || true)
           VC_ARRAY="[\"$VC\""
           for v in $EXISTING; do VC_ARRAY="$VC_ARRAY,\"$v\""; done
           VC_ARRAY="$VC_ARRAY]"
