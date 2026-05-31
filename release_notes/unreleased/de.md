@@ -7,3 +7,5 @@
 - **Intelligentere Zutatenprüfung** — Bei kyrillischen oder anderen nicht-lateinischen Etiketten nutzt die App englische OFF-Texte und Taxonomie, damit Schweinefleisch und ähnliche Begriffe zuverlässig erkannt werden (z. B. bulgarisches Hack). Erklärungen behaupten keinen Haram-Namenstreffer mehr ohne Treffer.
 
 - **Ergebnisdetails** — Wenn die Stichwortsuche übersetzte oder Taxonomie-Daten nutzte, zeigt das Ergebnis die Quelle (Etikett, OFF-Sprache oder Taxonomie).
+
+- **Etiketten-Analyse** — Produktlabels (z.B. 'enthält Schweinefleisch') werden jetzt auf Haram- und verdächtige Schlagwörter geprüft und separat im Ergebnisbildschirm angezeigt.

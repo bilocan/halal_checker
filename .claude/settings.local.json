@@ -16,7 +16,8 @@
       "Bash(command -v fnm)",
       "Read(//usr/local/bin/**)",
       "WebFetch(domain:world.openfoodfacts.org)",
-      "Bash(flutter analyze *)"
+      "Bash(flutter analyze *)",
+      "Bash(deno test *)"
     ],
     "additionalDirectories": [
       "/home/bilal/dev/halal_checker/test",

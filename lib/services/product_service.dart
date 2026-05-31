@@ -465,6 +465,13 @@ class ProductService {
       'ingredientWarnings': Map<String, String>.from(
         row['ingredient_warnings'] as Map? ?? {},
       ),
+      'haramLabels': List<String>.from(row['haram_labels'] as List? ?? []),
+      'suspiciousLabels': List<String>.from(
+        row['suspicious_labels'] as List? ?? [],
+      ),
+      'labelWarnings': Map<String, String>.from(
+        row['label_warnings'] as Map? ?? {},
+      ),
       'labels': List<String>.from(row['labels'] as List? ?? []),
       'imageUrl': row['image_url'] as String?,
       'imageFrontUrl': row['image_front_url'] as String?,

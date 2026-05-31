@@ -40,6 +40,9 @@ export interface VerdictResult {
   haramIngredients: string[]
   suspiciousIngredients: string[]
   ingredientWarnings: Record<string, string>
+  haramLabels: string[]
+  suspiciousLabels: string[]
+  labelWarnings: Record<string, string>
   explanation: string
   analyzedByAI: boolean
   requiresHalalCert: boolean
@@ -57,6 +60,9 @@ export interface VerdictSnapshot {
   haramIngredients: string[]
   suspiciousIngredients: string[]
   ingredientWarnings: Record<string, string>
+  haramLabels: string[]
+  suspiciousLabels: string[]
+  labelWarnings: Record<string, string>
   explanation: string
   keywordMatchSource?: string
   keywordMatchOrigins?: Record<string, string>
@@ -67,6 +73,7 @@ interface VerdictState {
   ctx: VerdictContext
   ingredients: string[]
   kwFirst: KeywordResult
+  kwLabels: KeywordResult
   analyzedByAI: boolean
   requiresHalalCert: boolean
   snapshot: VerdictSnapshot
@@ -84,6 +91,7 @@ interface AiEnv {
 interface PostRuleContext {
   ctx: VerdictContext
   kwFirst: KeywordResult
+  kwLabels: KeywordResult
 }
 
 type PostRule = (snapshot: VerdictSnapshot, ruleCtx: PostRuleContext) => VerdictSnapshot
@@ -93,6 +101,8 @@ const POST_ANALYSIS_RULES: PostRule[] = [
   applyKeywordSuspiciousOverride,
   applyHaramCategoryOverride,
   applyNameFallback,
+  applyLabelHaramOverride,
+  applyLabelSuspiciousOverride,
 ]
 
 const VERDICT_PIPELINE: AsyncVerdictStep[] = [
@@ -129,15 +139,28 @@ function runInitialKeywordAnalysis(ctx: VerdictContext): KeywordResult {
 function createInitialState(ctx: VerdictContext): VerdictState {
   const { ingredients, isNonFood, isHalalByCategory } = ctx
   const kwFirst = runInitialKeywordAnalysis(ctx)
+  const kwLabelsRaw = keywordAnalysis(ctx.labels, ctx.customHaramEntries, ctx.customSuspiciousEntries)
+  const kwLabels = {
+    ...kwLabelsRaw,
+    warnings: Object.fromEntries(
+      Object.entries(kwLabelsRaw.warnings).map(([k, v]) => [k, `Found on label: ${v}`]),
+    ),
+  }
   console.log(
     `[${ctx.barcode}] keywords: isHalal=${kwFirst.isHalal} isUnknown=${kwFirst.isUnknown} ` +
     `haram=[${kwFirst.haram.join(', ')}] suspicious=[${kwFirst.suspicious.join(', ')}]`,
   )
+  if (kwLabels.haram.length > 0 || kwLabels.suspicious.length > 0) {
+    console.log(
+      `[${ctx.barcode}] label keywords: haram=[${kwLabels.haram.join(', ')}] suspicious=[${kwLabels.suspicious.join(', ')}]`,
+    )
+  }
   const halalByCategoryNoIngredients = isHalalByCategory && ingredients.length === 0
   return {
     ctx,
     ingredients,
     kwFirst,
+    kwLabels,
     analyzedByAI: false,
     requiresHalalCert: false,
     snapshot: {
@@ -146,6 +169,9 @@ function createInitialState(ctx: VerdictContext): VerdictState {
       haramIngredients: kwFirst.haram,
       suspiciousIngredients: kwFirst.suspicious,
       ingredientWarnings: kwFirst.warnings,
+      haramLabels: kwLabels.haram,
+      suspiciousLabels: kwLabels.suspicious,
+      labelWarnings: kwLabels.warnings,
       explanation: isNonFood
         ? 'This is a non-food product. Islamic dietary rules do not apply.'
         : (halalByCategoryNoIngredients
@@ -164,6 +190,7 @@ function withSnapshot(state: VerdictState, snapshot: VerdictSnapshot): VerdictSt
 
 function withAiVerdict(state: VerdictState, ai: AiVerdict): VerdictState {
   return withSnapshot(state, {
+    ...state.snapshot,
     isHalal: ai.isHalal,
     isUnknown: ai.isUnknown,
     haramIngredients: ai.haramIngredients,
@@ -187,19 +214,21 @@ function readAiEnv(): AiEnv {
 }
 
 function shouldSkipTextAi(state: VerdictState): boolean {
-  const { ctx, kwFirst, ingredients } = state
+  const { ctx, kwFirst, kwLabels, ingredients } = state
   if (ctx.skipAi) return true
   return ctx.isNonFood || ctx.isHalalByCategory || kwFirst.haram.length > 0 ||
-    ctx.haramCategory !== null || ingredients.length === 0 || ctx.ingredientSource === 'ai'
+    kwLabels.haram.length > 0 || ctx.haramCategory !== null ||
+    ingredients.length === 0 || ctx.ingredientSource === 'ai'
 }
 
 function skipTextAiReason(state: VerdictState): string {
-  const { ctx, kwFirst } = state
+  const { ctx, kwFirst, kwLabels } = state
   if (ctx.skipAi) return 'rules-only-reanalysis'
   if (ctx.isNonFood) return 'non-food'
   if (ctx.isHalalByCategory) return 'halal-by-category'
   if (ctx.haramCategory !== null) return `haram-category(${ctx.haramCategory})`
   if (kwFirst.haram.length > 0) return `keyword-haram(${kwFirst.haram.join(', ')})`
+  if (kwLabels.haram.length > 0) return `label-haram(${kwLabels.haram.join(', ')})`
   if (ctx.ingredientSource === 'ai') return 'ai-sourced-ingredients'
   return 'no-ingredients'
 }
@@ -271,6 +300,7 @@ async function stepVisionWithOptionalAi(state: VerdictState): Promise<VerdictSta
     ...state,
     ingredients: visionIngredients,
     snapshot: {
+      ...state.snapshot,
       isHalal: kwVision.isHalal,
       isUnknown: kwVision.isUnknown,
       haramIngredients: kwVision.haram,
@@ -302,6 +332,7 @@ async function stepPostAnalysis(state: VerdictState): Promise<VerdictState> {
     state.snapshot,
     state.ctx,
     state.kwFirst,
+    state.kwLabels,
   )
   return { ...state, snapshot, requiresHalalCert }
 }
@@ -311,8 +342,9 @@ export function applyPostAnalysisRules(
   snapshot: VerdictSnapshot,
   ctx: VerdictContext,
   kwFirst: KeywordResult,
+  kwLabels: KeywordResult = { haram: [], suspicious: [], warnings: {}, isHalal: true, isUnknown: false, explanation: '', keywordMatchSource: undefined, keywordMatchOrigins: {}, analyzeLang: null },
 ): { snapshot: VerdictSnapshot; requiresHalalCert: boolean } {
-  const ruleCtx: PostRuleContext = { ctx, kwFirst }
+  const ruleCtx: PostRuleContext = { ctx, kwFirst, kwLabels }
   const afterCore = POST_ANALYSIS_RULES.reduce(
     (s, rule) => rule(s, ruleCtx),
     snapshot,
@@ -379,11 +411,39 @@ function applyNameFallback(snapshot: VerdictSnapshot, { ctx }: PostRuleContext):
   }
 }
 
+function applyLabelHaramOverride(snapshot: VerdictSnapshot, { kwLabels }: PostRuleContext): VerdictSnapshot {
+  if (kwLabels.haram.length === 0) return snapshot
+  const mergedHaram = [...new Set([...snapshot.haramLabels, ...kwLabels.haram])]
+  const explanation = snapshot.haramIngredients.length > 0
+    ? snapshot.explanation
+    : `This product's label indicates it contains: ${mergedHaram.join(', ')}.`
+  return {
+    ...snapshot,
+    isHalal: false,
+    isUnknown: false,
+    haramLabels: mergedHaram,
+    labelWarnings: { ...snapshot.labelWarnings, ...kwLabels.warnings },
+    explanation,
+  }
+}
+
+function applyLabelSuspiciousOverride(snapshot: VerdictSnapshot, { kwLabels }: PostRuleContext): VerdictSnapshot {
+  if (kwLabels.suspicious.length === 0 || !snapshot.isHalal) return snapshot
+  return {
+    ...snapshot,
+    isHalal: false,
+    isUnknown: false,
+    suspiciousLabels: [...new Set([...snapshot.suspiciousLabels, ...kwLabels.suspicious])],
+    labelWarnings: { ...snapshot.labelWarnings, ...kwLabels.warnings },
+  }
+}
+
 function applySuspiciousNotHalal(snapshot: VerdictSnapshot, { ctx }: PostRuleContext): VerdictSnapshot {
   if (
     snapshot.isUnknown ||
     ctx.isHalalByCategory ||
     snapshot.haramIngredients.length > 0 ||
+    snapshot.haramLabels.length > 0 ||
     snapshot.suspiciousIngredients.length === 0
   ) {
     return snapshot
@@ -404,7 +464,8 @@ function applyHalalCertRequirement(
   const isAnimalProduct = categoryIsAnimalProduct || nameIsAnimalProduct
   const hasHalalCert = ctx.labels.some(l => HALAL_CERT_LABELS.has(l.toLowerCase()))
   const requiresHalalCert = isAnimalProduct && !hasHalalCert && !ctx.isNonFood &&
-    !ctx.haramCategory && !ctx.isHalalByCategory && snapshot.haramIngredients.length === 0
+    !ctx.haramCategory && !ctx.isHalalByCategory &&
+    snapshot.haramIngredients.length === 0 && snapshot.haramLabels.length === 0
   if (!requiresHalalCert) return { snapshot, requiresHalalCert: false }
   return {
     requiresHalalCert: true,
@@ -416,16 +477,19 @@ function toVerdictResult(state: VerdictState): VerdictResult {
   const { ctx, ingredients, snapshot, analyzedByAI, requiresHalalCert } = state
   const {
     isHalal, isUnknown, haramIngredients, suspiciousIngredients,
-    ingredientWarnings, explanation, keywordMatchSource, keywordMatchOrigins, analyzeLang,
+    ingredientWarnings, haramLabels, suspiciousLabels, labelWarnings,
+    explanation, keywordMatchSource, keywordMatchOrigins, analyzeLang,
   } = snapshot
   console.log(
     `[${ctx.barcode}] verdict: isHalal=${isHalal} isUnknown=${isUnknown} analyzedByAI=${analyzedByAI} ` +
     `requiresHalalCert=${requiresHalalCert} haram=[${haramIngredients.join(', ')}] suspicious=[${suspiciousIngredients.join(', ')}] ` +
+    `haramLabels=[${haramLabels.join(', ')}] suspiciousLabels=[${suspiciousLabels.join(', ')}] ` +
     `keywordMatchSource=${keywordMatchSource ?? 'n/a'}`,
   )
   return {
     isHalal, isUnknown, haramIngredients, suspiciousIngredients,
-    ingredientWarnings, explanation, analyzedByAI, requiresHalalCert,
+    ingredientWarnings, haramLabels, suspiciousLabels, labelWarnings,
+    explanation, analyzedByAI, requiresHalalCert,
     ingredients,
     keywordMatchSource,
     keywordMatchOrigins,

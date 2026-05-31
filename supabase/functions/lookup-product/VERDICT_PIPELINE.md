@@ -84,10 +84,10 @@ Do not use a state machine — each step reads the snapshot left by the previous
 
 | Step | Function | Notes |
 |------|----------|--------|
-| 0a | `createInitialState` | `keywordAnalysis(ingredients)` → `kwFirst` |
-| 0b | Initial snapshot | Non-food / halal-by-category-empty-ingredients shortcuts; else `kwFirst` verdict |
+| 0a | `createInitialState` | `keywordAnalysis(ingredients)` → `kwFirst`; `keywordAnalysis(labels)` → `kwLabels` |
+| 0b | Initial snapshot | Non-food / halal-by-category-empty-ingredients shortcuts; else `kwFirst` verdict; `haramLabels`/`suspiciousLabels` seeded from `kwLabels` |
 
-`kwFirst` is frozen for the whole run — post-rules use it for **keyword safety override** even after AI changes the snapshot.
+`kwFirst` and `kwLabels` are both frozen for the whole run — post-rules use them for **keyword safety override** even after AI changes the snapshot.
 
 ### Phase 1 — Async pipeline (`VERDICT_PIPELINE`)
 
@@ -110,6 +110,7 @@ Do not use a state machine — each step reads the snapshot left by the previous
 - `isNonFood`
 - `isHalalByCategory`
 - `kwFirst.haram.length > 0`
+- `kwLabels.haram.length > 0` ← haram label keyword found
 - `haramCategory !== null`
 - `ingredients.length === 0`
 - `ingredientSource === 'ai'`
@@ -134,8 +135,10 @@ Applied in `applyPostAnalysisRules` — **must not reorder** without updating te
 | 2 | `applyKeywordSuspiciousOverride` | Same for suspicious |
 | 3 | `applyHaramCategoryOverride` | `ctx.haramCategory` wins over AI |
 | 4 | `applyNameFallback` | If `isUnknown`, keyword-scan product name |
-| 5 | `applyHalalCertRequirement` | Animal product without halal label → `requiresHalalCert`, not halal |
-| 6 | `applySuspiciousNotHalal` | Suspicious only (no haram) → `isHalal = false` |
+| 5 | `applyLabelHaramOverride` | If `kwLabels` has haram → force not halal, populate `haramLabels`/`labelWarnings` |
+| 6 | `applyLabelSuspiciousOverride` | If `kwLabels` has suspicious and snapshot still `isHalal` → force not halal, populate `suspiciousLabels` |
+| 7 | `applyHalalCertRequirement` | Animal product without halal label → `requiresHalalCert`, not halal; skipped if `haramLabels` non-empty |
+| 8 | `applySuspiciousNotHalal` | Suspicious only (no haram ingredients or labels) → `isHalal = false` |
 
 Categories for cert: `categories.ts` (`ANIMAL_PRODUCT_CATEGORIES`, `HALAL_CERT_LABELS`, `ANIMAL_PRODUCT_NAME_TERMS`).
 

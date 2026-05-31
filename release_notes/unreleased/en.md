@@ -2,3 +2,5 @@
 - **Smarter ingredient checks** — Products with Cyrillic or other non-Latin labels now use Open Food Facts English text and taxonomy when available, so pork and similar terms are detected reliably (e.g. Bulgarian minced pork). Explanations no longer claim a haram name match when none was found.
 
 - **Result details** — When keyword matching used translated or taxonomy data, the result screen shows which source was used (label, OFF language, or taxonomy).
+
+- **Label analysis** — Product labels (e.g. 'contains pork') are now scanned for haram and suspicious keywords and shown separately on the result screen.

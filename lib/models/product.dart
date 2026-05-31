@@ -8,6 +8,9 @@ class Product {
   final List<String> haramIngredients;
   final List<String> suspiciousIngredients;
   final Map<String, String> ingredientWarnings;
+  final List<String> haramLabels;
+  final List<String> suspiciousLabels;
+  final Map<String, String> labelWarnings;
   final Map<String, String> ingredientTranslations;
 
   /// Maps ingredient text → canonical keyword (e.g. "poudre de lactosérum" → "whey").
@@ -95,6 +98,9 @@ class Product {
     required this.haramIngredients,
     required this.suspiciousIngredients,
     required this.ingredientWarnings,
+    this.haramLabels = const [],
+    this.suspiciousLabels = const [],
+    this.labelWarnings = const {},
     this.ingredientTranslations = const {},
     this.ingredientCanonicals = const {},
     required this.labels,
@@ -127,6 +133,9 @@ class Product {
     List<String>? haramIngredients,
     List<String>? suspiciousIngredients,
     Map<String, String>? ingredientWarnings,
+    List<String>? haramLabels,
+    List<String>? suspiciousLabels,
+    Map<String, String>? labelWarnings,
     Map<String, String>? ingredientTranslations,
     Map<String, String>? ingredientCanonicals,
     List<String>? labels,
@@ -157,6 +166,9 @@ class Product {
     haramIngredients: haramIngredients ?? this.haramIngredients,
     suspiciousIngredients: suspiciousIngredients ?? this.suspiciousIngredients,
     ingredientWarnings: ingredientWarnings ?? this.ingredientWarnings,
+    haramLabels: haramLabels ?? this.haramLabels,
+    suspiciousLabels: suspiciousLabels ?? this.suspiciousLabels,
+    labelWarnings: labelWarnings ?? this.labelWarnings,
     ingredientTranslations:
         ingredientTranslations ?? this.ingredientTranslations,
     ingredientCanonicals: ingredientCanonicals ?? this.ingredientCanonicals,
@@ -192,6 +204,9 @@ class Product {
     'haramIngredients': haramIngredients,
     'suspiciousIngredients': suspiciousIngredients,
     'ingredientWarnings': ingredientWarnings,
+    if (haramLabels.isNotEmpty) 'haramLabels': haramLabels,
+    if (suspiciousLabels.isNotEmpty) 'suspiciousLabels': suspiciousLabels,
+    if (labelWarnings.isNotEmpty) 'labelWarnings': labelWarnings,
     'ingredientTranslations': ingredientTranslations,
     if (ingredientCanonicals.isNotEmpty)
       'ingredientCanonicals': ingredientCanonicals,
@@ -232,6 +247,15 @@ class Product {
     ingredientWarnings: Map<String, String>.from(
       json['ingredientWarnings'] as Map,
     ),
+    haramLabels: json['haramLabels'] != null
+        ? List<String>.from(json['haramLabels'] as List)
+        : const [],
+    suspiciousLabels: json['suspiciousLabels'] != null
+        ? List<String>.from(json['suspiciousLabels'] as List)
+        : const [],
+    labelWarnings: json['labelWarnings'] != null
+        ? Map<String, String>.from(json['labelWarnings'] as Map)
+        : const {},
     ingredientTranslations: json['ingredientTranslations'] != null
         ? Map<String, String>.from(json['ingredientTranslations'] as Map)
         : const {},

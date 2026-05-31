@@ -73,7 +73,8 @@ export async function runStoredProductReanalysis(
 
   const {
     isHalal, isUnknown, haramIngredients, suspiciousIngredients,
-    ingredientWarnings, explanation, requiresHalalCert,
+    ingredientWarnings, haramLabels, suspiciousLabels, labelWarnings,
+    explanation, requiresHalalCert,
   } = verdict
 
   const productRow: ProductRow = {
@@ -102,6 +103,9 @@ export async function runStoredProductReanalysis(
     haramIngredients,
     suspiciousIngredients,
     ingredientWarnings,
+    haramLabels,
+    suspiciousLabels,
+    labelWarnings,
     explanation,
     analyzedByAI: false,
     keywordMatchSource: verdict.keywordMatchSource,
@@ -120,6 +124,9 @@ export async function runStoredProductReanalysis(
     haram_ingredients: haramIngredients,
     suspicious_ingredients: suspiciousIngredients,
     ingredient_warnings: ingredientWarnings,
+    haram_labels: haramLabels,
+    suspicious_labels: suspiciousLabels,
+    label_warnings: labelWarnings,
     labels,
     image_url: existing.image_url,
     image_front_url: existing.image_front_url,

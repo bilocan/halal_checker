@@ -318,6 +318,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get foundInIngredients => 'Found in product ingredients.';
 
   @override
+  String get flaggedLabels => 'Flagged Labels';
+
+  @override
+  String get foundInLabels => 'Found in product labels.';
+
+  @override
   String get mayBeAnimalDerivedNote => 'May be animal-derived.';
 
   @override

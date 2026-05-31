@@ -373,7 +373,8 @@ async function saveFullLookup(
 ): Promise<Response> {
   const {
     isHalal, isUnknown, haramIngredients, suspiciousIngredients,
-    ingredientWarnings, explanation, analyzedByAI, requiresHalalCert,
+    ingredientWarnings, haramLabels, suspiciousLabels, labelWarnings,
+    explanation, analyzedByAI, requiresHalalCert,
     keywordMatchSource, keywordMatchOrigins, analyzeLang, displayLang,
   } = verdict
 
@@ -401,6 +402,9 @@ async function saveFullLookup(
     haramIngredients,
     suspiciousIngredients,
     ingredientWarnings,
+    haramLabels,
+    suspiciousLabels,
+    labelWarnings,
     explanation,
     analyzedByAI,
     keywordMatchSource,
@@ -419,6 +423,9 @@ async function saveFullLookup(
     haram_ingredients: haramIngredients,
     suspicious_ingredients: suspiciousIngredients,
     ingredient_warnings: ingredientWarnings,
+    haram_labels: haramLabels,
+    suspicious_labels: suspiciousLabels,
+    label_warnings: labelWarnings,
     labels,
     image_url: images.imageUrl,
     image_front_url: images.imageFrontUrl,

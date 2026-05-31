@@ -670,6 +670,18 @@ abstract class AppLocalizations {
   /// **'Found in product ingredients.'**
   String get foundInIngredients;
 
+  /// No description provided for @flaggedLabels.
+  ///
+  /// In en, this message translates to:
+  /// **'Flagged Labels'**
+  String get flaggedLabels;
+
+  /// No description provided for @foundInLabels.
+  ///
+  /// In en, this message translates to:
+  /// **'Found in product labels.'**
+  String get foundInLabels;
+
   /// No description provided for @mayBeAnimalDerivedNote.
   ///
   /// In en, this message translates to:

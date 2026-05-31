@@ -28,6 +28,9 @@ export interface AnalysisRow {
   haramIngredients: string[]
   suspiciousIngredients: string[]
   ingredientWarnings: Record<string, string>
+  haramLabels: string[]
+  suspiciousLabels: string[]
+  labelWarnings: Record<string, string>
   explanation: string
   analyzedByAI: boolean
   keywordMatchSource?: string
@@ -69,6 +72,9 @@ export async function upsertAnalysis(supabase: SupabaseClient, row: AnalysisRow)
     haram_ingredients:      row.haramIngredients,
     suspicious_ingredients: row.suspiciousIngredients,
     ingredient_warnings:    row.ingredientWarnings,
+    haram_labels:           row.haramLabels,
+    suspicious_labels:      row.suspiciousLabels,
+    label_warnings:         row.labelWarnings,
     explanation:            row.explanation,
     analyzed_by_ai:         row.analyzedByAI,
     keyword_match_source:   row.keywordMatchSource ?? null,

@@ -323,6 +323,12 @@ class AppLocalizationsDe extends AppLocalizations {
   String get foundInIngredients => 'In Produktzutaten gefunden.';
 
   @override
+  String get flaggedLabels => 'Markierte Etiketten';
+
+  @override
+  String get foundInLabels => 'In der Produktkennzeichnung gefunden.';
+
+  @override
   String get mayBeAnimalDerivedNote => 'Kann tierischen Ursprungs sein.';
 
   @override

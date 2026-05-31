@@ -104,3 +104,48 @@ Deno.test('runStoredProductReanalysis — pork in stored list stays not halal', 
   assertEquals(body.product.haramIngredients.includes('pork'), true)
   assertEquals(body.product.analyzedByAI, false)
 })
+
+Deno.test('runStoredProductReanalysis — pork in stored labels → haramLabels populated, not halal', async () => {
+  const row = storedRow({
+    ingredients: ['water', 'salt'],
+    is_halal: true,
+    labels: ['en:pork', 'en:no-gluten'],
+  })
+  const fallback = { ...row, is_halal: false, haram_labels: ['pork'] }
+  const supabase = mockSupabase({ productsFullRow: fallback })
+
+  const res = await runStoredProductReanalysis(
+    supabase,
+    row,
+    row.barcode as string,
+    [],
+    [],
+    cors,
+  )
+  const body = await res.json()
+  assertEquals(body.product.isHalal, false)
+  assertEquals(body.product.haramLabels.includes('pork'), true)
+  assertEquals(body.product.haramIngredients.length, 0)
+  assertEquals(body.product.analyzedByAI, false)
+})
+
+Deno.test('runStoredProductReanalysis — clean labels → haramLabels empty', async () => {
+  const row = storedRow({
+    ingredients: ['water', 'salt'],
+    labels: ['en:vegan', 'en:organic'],
+  })
+  const supabase = mockSupabase({ productsFullRow: null })
+
+  const res = await runStoredProductReanalysis(
+    supabase,
+    row,
+    row.barcode as string,
+    [],
+    [],
+    cors,
+  )
+  const body = await res.json()
+  assertEquals(body.product.isHalal, true)
+  assertEquals(body.product.haramLabels.length, 0)
+  assertEquals(body.product.suspiciousLabels.length, 0)
+})

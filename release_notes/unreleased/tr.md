@@ -7,3 +7,5 @@
 - **Daha akıllı içerik kontrolü** — Kiril veya Latin dışı etiketlerde, mümkün olduğunda Open Food Facts İngilizce metni ve taksonomisi kullanılır; domuz gibi terimler güvenilir şekilde yakalanır (ör. Bulgar kıyma). Açıklamalar artık boş bir isim eşleşmesi iddia etmez.
 
 - **Sonuç ayrıntıları** — Anahtar kelime eşleşmesi çeviri veya taksonomi kullandıysa, sonuç ekranında kaynak gösterilir (etiket, OFF dili veya taksonomi).
+
+- **Etiket analizi** — Ürün etiketleri (ör. 'domuz içerir') artık haram ve şüpheli anahtar kelimeler için taranıyor ve sonuç ekranında ayrıca gösteriliyor.

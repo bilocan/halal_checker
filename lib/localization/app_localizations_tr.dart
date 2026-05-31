@@ -320,6 +320,12 @@ class AppLocalizationsTr extends AppLocalizations {
   String get foundInIngredients => 'Ürün içeriklerinde bulundu.';
 
   @override
+  String get flaggedLabels => 'İşaretli Etiketler';
+
+  @override
+  String get foundInLabels => 'Ürün etiketlerinde bulundu.';
+
+  @override
   String get mayBeAnimalDerivedNote => 'Hayvansal kaynaklı olabilir.';
 
   @override
