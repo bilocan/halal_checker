@@ -487,7 +487,19 @@ jobs:
               "https://api.appstoreconnect.apple.com/v1/appStoreVersions")
             CREATE_HTTP=$(echo "$CREATE_RESP" | tail -1)
             CREATE_BODY=$(echo "$CREATE_RESP" | sed '$d')
-            if [ "$CREATE_HTTP" -ge 400 ]; then
+            if [ "$CREATE_HTTP" -eq 409 ]; then
+              # App is in a state that blocks new version creation (e.g. another
+              # version already in WAITING_FOR_REVIEW / IN_REVIEW). Log all current
+              # versions so the issue is visible, then exit gracefully — the build
+              # is already on TestFlight and can be submitted manually.
+              echo "::warning::Cannot create version $VERSION — app has a blocking version in App Store Connect (HTTP 409)."
+              echo "::warning::Current versions:"
+              curl -gsS -H "Authorization: Bearer $JWT" \
+                "https://api.appstoreconnect.apple.com/v1/apps/$APP_ID/appStoreVersions?filter[platform]=IOS" \
+                | jq '.data[] | {version: .attributes.versionString, state: .attributes.appStoreState}' || true
+              echo "::warning::Submit for App Store review manually in App Store Connect."
+              exit 0
+            elif [ "$CREATE_HTTP" -ge 400 ]; then
               echo "::error::Failed to create App Store version (HTTP $CREATE_HTTP):"
               echo "$CREATE_BODY"
               exit 1
