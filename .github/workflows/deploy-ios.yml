@@ -457,15 +457,28 @@ jobs:
             | jq -r '.data[0].id')
           echo "App ID: $APP_ID"
 
-          # Accept PREPARE_FOR_SUBMISSION and rejected states (resubmit case)
-          VERSION_ID=$(curl -gsS \
+          # Fetch all states for this version so we can distinguish
+          # "doesn't exist" from "exists but not editable".
+          VERSION_JSON=$(curl -gsS --fail-with-body \
             -H "Authorization: Bearer $JWT" \
-            "https://api.appstoreconnect.apple.com/v1/apps/$APP_ID/appStoreVersions?filter[platform]=IOS&filter[versionString]=$VERSION" \
-            | jq -r '.data[] | select(.attributes.appStoreState | test("PREPARE_FOR_SUBMISSION|REJECTED|DEVELOPER_REJECTED")) | .id' \
-            | head -1)
+            "https://api.appstoreconnect.apple.com/v1/apps/$APP_ID/appStoreVersions?filter[platform]=IOS&filter[versionString]=$VERSION")
 
-          if [ -z "$VERSION_ID" ] || [ "$VERSION_ID" = "null" ]; then
-            echo "Version $VERSION not found in a submittable state — creating it in App Store Connect..."
+          VERSION_ID=$(echo "$VERSION_JSON" | jq -r \
+            '.data[] | select(.attributes.appStoreState | test("PREPARE_FOR_SUBMISSION|REJECTED|DEVELOPER_REJECTED")) | .id' \
+            | head -1)
+          VERSION_STATE=$(echo "$VERSION_JSON" | jq -r '.data[0].attributes.appStoreState // empty')
+
+          if [ -n "$VERSION_ID" ] && [ "$VERSION_ID" != "null" ]; then
+            echo "Found existing version $VERSION in state $VERSION_STATE (ID: $VERSION_ID)"
+          elif [ -n "$VERSION_STATE" ]; then
+            # Version exists but is already past the editable stage (e.g. WAITING_FOR_REVIEW,
+            # IN_REVIEW, PENDING_DEVELOPER_RELEASE). Don't try to create or submit again.
+            VERSION_ID=$(echo "$VERSION_JSON" | jq -r '.data[0].id')
+            echo "::warning::Version $VERSION exists in state $VERSION_STATE — already submitted or approved. Skipping submission."
+            bash ./scripts/linux/upload_appstore_whatsnew.sh "$VERSION" --version-id "$VERSION_ID" || true
+            exit 0
+          else
+            echo "Version $VERSION not found — creating it in App Store Connect..."
             CREATE_RESP=$(curl -gsS -w "\n%{http_code}" \
               -X POST \
               -H "Authorization: Bearer $JWT" \
@@ -481,8 +494,6 @@ jobs:
             fi
             VERSION_ID=$(echo "$CREATE_BODY" | jq -r '.data.id')
             echo "Created App Store version $VERSION (ID: $VERSION_ID)"
-          else
-            echo "Found existing version $VERSION (ID: $VERSION_ID)"
           fi
 
           RESPONSE=$(curl -gsS -w "\n%{http_code}" \

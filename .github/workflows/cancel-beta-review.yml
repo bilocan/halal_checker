@@ -1,0 +1,88 @@
+name: Cancel Beta Review Submission
+
+on:
+  workflow_dispatch:
+    inputs:
+      versions:
+        description: 'Comma-separated versions to cancel (e.g. 1.3.7,1.3.8)'
+        required: true
+        type: string
+
+jobs:
+  cancel:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate JWT and cancel submissions
+        env:
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APP_STORE_CONNECT_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_KEY_BASE64 }}
+          VERSIONS: ${{ inputs.versions }}
+        run: |
+          set -euo pipefail
+          pip install cryptography --quiet
+
+          KEY_FILE=$(mktemp /tmp/authkey.XXXXXX.p8)
+          echo "$APP_STORE_CONNECT_KEY_BASE64" | base64 --decode > "$KEY_FILE"
+
+          JWT=$(KEY_FILE="$KEY_FILE" python3 - <<'PYEOF'
+          import json, time, base64, os
+          from cryptography.hazmat.primitives import hashes, serialization
+          from cryptography.hazmat.primitives.asymmetric import ec
+          from cryptography.hazmat.primitives.asymmetric.utils import decode_dss_signature
+          key_id = os.environ['APP_STORE_CONNECT_KEY_ID']
+          issuer_id = os.environ['APP_STORE_CONNECT_ISSUER_ID']
+          with open(os.environ['KEY_FILE'], 'rb') as f:
+              pk = serialization.load_pem_private_key(f.read(), password=None)
+          now = int(time.time())
+          def b64u(d): return base64.urlsafe_b64encode(d if isinstance(d, bytes) else d.encode()).rstrip(b'=').decode()
+          h = b64u(json.dumps({'alg':'ES256','kid':key_id,'typ':'JWT'}, separators=(',',':')))
+          p = b64u(json.dumps({'iss':issuer_id,'iat':now,'exp':now+1200,'aud':'appstoreconnect-v1'}, separators=(',',':')))
+          msg = f'{h}.{p}'
+          r, s = decode_dss_signature(pk.sign(msg.encode(), ec.ECDSA(hashes.SHA256())))
+          print(f'{msg}.{b64u(r.to_bytes(32,"big")+s.to_bytes(32,"big"))}')
+          PYEOF
+          )
+          rm -f "$KEY_FILE"
+
+          APP_ID=$(curl -gsS --fail-with-body \
+            -H "Authorization: Bearer $JWT" \
+            "https://api.appstoreconnect.apple.com/v1/apps?filter[bundleId]=app.halalscan" \
+            | jq -r '.data[0].id')
+          echo "App ID: $APP_ID"
+
+          IFS=',' read -ra VER_LIST <<< "$VERSIONS"
+          for VERSION in "${VER_LIST[@]}"; do
+            VERSION="${VERSION// /}"
+            echo ""
+            echo "--- Processing v$VERSION ---"
+
+            BUILD_ID=$(curl -gsS \
+              -H "Authorization: Bearer $JWT" \
+              "https://api.appstoreconnect.apple.com/v1/builds?filter[app]=$APP_ID&filter[preReleaseVersion.version]=$VERSION&filter[processingState]=VALID&sort=-uploadedDate&limit=1" \
+              | jq -r '.data[0].id // empty')
+
+            if [ -z "$BUILD_ID" ]; then
+              echo "No valid build found for v$VERSION, skipping."
+              continue
+            fi
+            echo "Build ID: $BUILD_ID"
+
+            SUBMISSION_ID=$(curl -gsS \
+              -H "Authorization: Bearer $JWT" \
+              "https://api.appstoreconnect.apple.com/v1/builds/$BUILD_ID/betaAppReviewSubmission" \
+              | jq -r '.data.id // empty')
+
+            if [ -z "$SUBMISSION_ID" ]; then
+              echo "No beta review submission found for v$VERSION."
+              continue
+            fi
+            echo "Submission ID: $SUBMISSION_ID"
+
+            HTTP=$(curl -sS -o /dev/null -w "%{http_code}" -X DELETE \
+              -H "Authorization: Bearer $JWT" \
+              "https://api.appstoreconnect.apple.com/v1/betaAppReviewSubmissions/$SUBMISSION_ID")
+            [ "$HTTP" = "204" ] && echo "Cancelled successfully." || echo "Could not cancel (HTTP $HTTP)."
+          done
