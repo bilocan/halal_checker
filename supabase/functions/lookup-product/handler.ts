@@ -115,9 +115,12 @@ export async function handleLookup(
     return deps.jsonManagedProduct(existing, corsHeaders)
   }
 
-  // Unknown rows must refetch OFF (or vision) so halal-by-category can apply; stored
-  // reanalysis has no categories_tags and would stay unknown.
-  if (!fetchAiIngredients && !refetchForGeminiAuto && existing && !existing.is_unknown &&
+  // Unknown rows with OFF-source ingredients refetch OFF so halal-by-category can apply.
+  // But if ingredients came from AI or community, protect them — OFF has dummy/worse data.
+  const hasNonOffIngredients = existing?.ingredient_source === 'ai' ||
+    existing?.ingredient_source === 'community'
+  if (!fetchAiIngredients && !refetchForGeminiAuto && existing &&
+      (!existing.is_unknown || hasNonOffIngredients) &&
       (isStale(existing) || force)) {
     const reason = isStale(existing) ? 'stale (updated_at > last_analysed_at)' : 'force-refresh'
     console.log(`[${barcode}] ${reason} — re-running rules engine on stored data`)
@@ -150,9 +153,9 @@ export async function handleLookup(
 
     let pd: Record<string, unknown> | null = null
     let isNonFood = false
-    // Refetch OFF when there is no DB row, or on force refresh (even if a stale
-    // unknown row exists — otherwise we only run analyzeFromDbStub with no categories).
-    if (!existing || force) {
+    // Only fetch OFF when there is no DB row at all. Once a product exists in our DB
+    // (any ingredient source), we never overwrite it with OFF data on re-analysis.
+    if (!existing) {
       const off = await deps.fetchOpenFactsProduct(barcode)
       if (off) {
         pd = off.pd

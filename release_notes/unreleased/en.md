@@ -11,3 +11,5 @@
 - **Redesigned result screen** — verdict and product name are now combined in a compact hero card, ingredient images appear side by side, ingredients are collapsed by default showing only flagged items, and the Deep Analysis and Community Discussion cards are merged into one section.
 
 - **Scan Another fixed from history** — tapping 'Scan Another Product' now opens the scanner even when the result was opened from scan history.
+
+- **Reanalyze fix** — Re-scanning a product no longer overwrites AI-sourced ingredients with dummy data from Open Food Facts.
