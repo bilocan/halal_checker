@@ -29,8 +29,6 @@ export const HARAM_ENTRIES: KeywordEntry[] = [
   ['lard',       'Contains pork fat',
    'lard', 'schmalz', 'schweineschmalz', 'saindoux', 'strutto',
    'manteca', 'domuz yağı', 'banha'],
-  ['gelatin',    'Gelatin is typically animal-derived',
-   'gelatin', 'gelatine', 'gelatina', 'jelatin', 'gélatine'],
   ['bacon',      'Contains pork product',
    'bacon', 'speck', 'lardons', 'pancetta', 'domuz pastırması'],
   ['ham',        'Contains pork product',
@@ -44,12 +42,15 @@ export const HARAM_ENTRIES: KeywordEntry[] = [
   ['cochineal',  'Carmine/cochineal is insect-derived',
    'cochineal', 'cochenille', 'cocciniglia', 'cochinilla', 'koşnil'],
   ['e120', 'Carmine/cochineal color, animal-derived', 'e120', 'e-120'],
-  ['e441', 'Gelatin, animal-derived',       'e441', 'e-441'],
   ['e542', 'Bone phosphate, animal-derived','e542', 'e-542'],
   ['e904', 'Shellac, animal-derived',       'e904', 'e-904'],
 ]
 
 export const SUSPICIOUS_ENTRIES: KeywordEntry[] = [
+  ['gelatin', 'Gelatin source often unspecified — predominantly pork-derived in Western products',
+   'gelatin', 'gelatine', 'gelatina', 'jelatin', 'gélatine', 'želatina', 'zselatin'],
+  ['e441', 'Gelatin (E441), source often unspecified — predominantly pork-derived',
+   'e441', 'e-441'],
   ['e920', 'L-cysteine may be animal-derived',          'e920', 'e-920'],
   ['e322', 'Lecithin may be animal-derived',            'e322', 'e-322'],
   ['e471', 'Mono- and diglycerides may be animal-derived','e471','e-471'],

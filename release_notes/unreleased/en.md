@@ -4,3 +4,5 @@
 - **Result details** — When keyword matching used translated or taxonomy data, the result screen shows which source was used (label, OFF language, or taxonomy).
 
 - **Label analysis** — Product labels (e.g. 'contains pork') are now scanned for haram and suspicious keywords and shown separately on the result screen.
+
+- **Gelatin reclassified as suspicious** — Gelatin and E441 are now flagged as suspicious (requires source verification) rather than haram, since halal sources (fish, halal-certified beef) exist. Unspecified gelatin is predominantly pork-derived in Western markets — look for a halal logo or explicit source labelling.

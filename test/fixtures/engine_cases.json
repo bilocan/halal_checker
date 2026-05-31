@@ -2,13 +2,13 @@
   {
     "description": "detects gelatin",
     "ingredients": ["sugar", "water", "gelatin"],
-    "verdict": "haram",
+    "verdict": "suspicious",
     "matched_canonicals": ["gelatin"]
   },
   {
     "description": "detects gelatine (alternate spelling)",
     "ingredients": ["gelatine", "water"],
-    "verdict": "haram",
+    "verdict": "suspicious",
     "matched_canonicals": ["gelatin"]
   },
   {
@@ -72,10 +72,10 @@
     "matched_canonicals": ["rennet"]
   },
   {
-    "description": "haram beats suspicious when both present",
-    "ingredients": ["gelatin", "E471"],
+    "description": "haram beats suspicious: pork with e471",
+    "ingredients": ["pork", "E471"],
     "verdict": "haram",
-    "matched_canonicals": ["gelatin", "e471"]
+    "matched_canonicals": ["e471", "pork"]
   },
   {
     "description": "negation: ohne Schweinefleisch is clean",

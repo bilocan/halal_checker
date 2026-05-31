@@ -263,7 +263,7 @@ void main() {
 
         expect(product?.isHalal, isFalse);
         expect(product?.haramIngredients, contains('pork'));
-        expect(product?.haramIngredients, contains('gelatin'));
+        expect(product?.suspiciousIngredients, contains('gelatin'));
       },
     );
 

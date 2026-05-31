@@ -196,7 +196,7 @@ void main() {
 
       final p = await ProductService().getProduct('1000000006');
       expect(p!.isHalal, isFalse);
-      expect(p.haramIngredients, contains('gelatin'));
+      expect(p.suspiciousIngredients, contains('gelatin'));
     });
 
     test('wine ingredient → isHalal false', () async {
@@ -626,11 +626,10 @@ void main() {
       },
     );
 
-    test('haram takes priority over suspicious for same ingredient', () {
-      // gelatin is haram; it should not also appear in suspicious
+    test('gelatin is suspicious, not haram', () {
       final result = ProductService.analyzeWithKeywords(['gelatin']);
-      expect(result.haram, contains('gelatin'));
-      expect(result.suspicious, isEmpty);
+      expect(result.suspicious, contains('gelatin'));
+      expect(result.haram, isEmpty);
     });
 
     test('haram explanation mentions the ingredient', () {
@@ -792,7 +791,7 @@ void main() {
     );
 
     test(
-      'en:medicines → analyzed normally, gelatin detected as haram',
+      'en:medicines → analyzed normally, gelatin detected as suspicious',
       () async {
         ProductService().setHttpClientForTesting(
           _mockGet(
@@ -807,12 +806,12 @@ void main() {
         final p = await ProductService().getProduct('1000000035');
         expect(p!.isNonFood, isFalse);
         expect(p.isHalal, isFalse);
-        expect(p.haramIngredients, contains('gelatin'));
+        expect(p.suspiciousIngredients, contains('gelatin'));
       },
     );
 
     test(
-      'en:dietary-supplements → analyzed normally, gelatin detected as haram',
+      'en:dietary-supplements → analyzed normally, gelatin detected as suspicious',
       () async {
         ProductService().setHttpClientForTesting(
           _mockGet(
@@ -827,7 +826,7 @@ void main() {
         final p = await ProductService().getProduct('1000000036');
         expect(p!.isNonFood, isFalse);
         expect(p.isHalal, isFalse);
-        expect(p.haramIngredients, contains('gelatin'));
+        expect(p.suspiciousIngredients, contains('gelatin'));
       },
     );
   });

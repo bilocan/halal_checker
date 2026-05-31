@@ -9,3 +9,5 @@
 - **Ergebnisdetails** — Wenn die Stichwortsuche übersetzte oder Taxonomie-Daten nutzte, zeigt das Ergebnis die Quelle (Etikett, OFF-Sprache oder Taxonomie).
 
 - **Etiketten-Analyse** — Produktlabels (z.B. 'enthält Schweinefleisch') werden jetzt auf Haram- und verdächtige Schlagwörter geprüft und separat im Ergebnisbildschirm angezeigt.
+
+- **Gelatine als bedenklich eingestuft** — Gelatine und E441 werden jetzt als bedenklich (Herkunft prüfen) statt als haram eingestuft, da halal-konforme Quellen (Fisch, halal-zertifiziertes Rind) existieren. Nicht deklarierte Gelatine stammt in westlichen Märkten überwiegend vom Schwein — achten Sie auf ein Halal-Zertifizierungszeichen oder eine explizite Herkunftsangabe.

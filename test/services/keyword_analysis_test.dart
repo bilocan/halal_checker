@@ -217,7 +217,7 @@ void main() {
         'carnauba wax',
       ]);
       expect(r.isHalal, isFalse);
-      expect(r.haram, contains('gelatin'));
+      expect(r.suspicious, contains('gelatin'));
     });
 
     test('product with lard is haram', () {
@@ -270,7 +270,7 @@ void main() {
         'sitrik asit',
       ]);
       expect(r.isHalal, isFalse);
-      expect(r.haram, contains('jelatin'));
+      expect(r.suspicious, contains('jelatin'));
     });
   });
 
@@ -335,13 +335,9 @@ void main() {
     );
 
     test('mixed: both haram and suspicious ingredients coexist', () {
-      final r = ProductService.analyzeWithKeywords([
-        'gelatin',
-        'whey',
-        'sugar',
-      ]);
+      final r = ProductService.analyzeWithKeywords(['pork', 'whey', 'sugar']);
       expect(r.isHalal, isFalse);
-      expect(r.haram, contains('gelatin'));
+      expect(r.haram, contains('pork'));
       expect(r.suspicious, contains('whey'));
     });
 
