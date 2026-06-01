@@ -14,6 +14,7 @@ String _offJson({
   String name = 'Test Product',
   String ingredients = '',
   List<String> categoriesTags = const [],
+  List<String> additivesTags = const [],
   String labels = '',
   List<String> labelsTags = const [],
   String? imageUrl,
@@ -24,6 +25,7 @@ String _offJson({
     'product_name': name,
     'ingredients_text': ingredients,
     'categories_tags': categoriesTags,
+    'additives_tags': additivesTags,
     'labels': labels,
     'labels_tags': labelsTags,
   };
@@ -1053,6 +1055,469 @@ void main() {
         expect(p, isNotNull);
         expect(p!.isUnknown, isTrue);
         expect(p.isNonFood, isFalse);
+      },
+    );
+  });
+
+  // ── additive_tags analysis ────────────────────────────────────────────────
+
+  group('getProduct — additive_tags analysis', () {
+    test('en:e120-carmine → haramAdditives populated, isHalal false', () async {
+      ProductService().setHttpClientForTesting(
+        _mockGet(
+          _offJson(
+            name: 'Red Candy',
+            ingredients: 'sugar, water, citric acid',
+            additivesTags: ['en:e120-carmine'],
+          ),
+        ),
+      );
+      final p = await ProductService().getProduct('1000000060');
+      expect(p!.isHalal, isFalse);
+      expect(p.haramAdditives, isNotEmpty);
+      expect(p.haramAdditives.any((a) => a.contains('e120')), isTrue);
+      expect(p.suspiciousAdditives, isEmpty);
+    });
+
+    test(
+      'en:e120 (short form, no name suffix) → haramAdditives populated',
+      () async {
+        ProductService().setHttpClientForTesting(
+          _mockGet(
+            _offJson(
+              name: 'Pink Frosting',
+              ingredients: 'sugar, water',
+              additivesTags: ['en:e120'],
+            ),
+          ),
+        );
+        final p = await ProductService().getProduct('1000000061');
+        expect(p!.isHalal, isFalse);
+        expect(p.haramAdditives, isNotEmpty);
+      },
+    );
+
+    test('en:e542 (bone phosphate) → haramAdditives populated', () async {
+      ProductService().setHttpClientForTesting(
+        _mockGet(
+          _offJson(
+            name: 'Processed Cheese',
+            ingredients: 'cheese, water, salt',
+            additivesTags: ['en:e542'],
+          ),
+        ),
+      );
+      final p = await ProductService().getProduct('1000000062');
+      expect(p!.isHalal, isFalse);
+      expect(p.haramAdditives, isNotEmpty);
+    });
+
+    test('en:e904 (shellac) → haramAdditives populated', () async {
+      ProductService().setHttpClientForTesting(
+        _mockGet(
+          _offJson(
+            name: 'Glazed Fruit',
+            ingredients: 'fruit, glucose syrup',
+            additivesTags: ['en:e904'],
+          ),
+        ),
+      );
+      final p = await ProductService().getProduct('1000000063');
+      expect(p!.isHalal, isFalse);
+      expect(p.haramAdditives, isNotEmpty);
+    });
+
+    test(
+      'en:e471 (mono/diglycerides) → suspiciousAdditives populated, haramAdditives empty',
+      () async {
+        ProductService().setHttpClientForTesting(
+          _mockGet(
+            _offJson(
+              name: 'Bread',
+              ingredients: 'flour, water, yeast, salt',
+              additivesTags: ['en:e471'],
+            ),
+          ),
+        );
+        final p = await ProductService().getProduct('1000000064');
+        expect(p!.isHalal, isFalse);
+        expect(p.suspiciousAdditives, isNotEmpty);
+        expect(p.haramAdditives, isEmpty);
+      },
+    );
+
+    test('en:e441 (gelatin E441) → suspiciousAdditives populated', () async {
+      ProductService().setHttpClientForTesting(
+        _mockGet(
+          _offJson(
+            name: 'Marshmallows',
+            ingredients: 'sugar, glucose syrup, starch',
+            additivesTags: ['en:e441'],
+          ),
+        ),
+      );
+      final p = await ProductService().getProduct('1000000065');
+      expect(p!.isHalal, isFalse);
+      expect(p.suspiciousAdditives, isNotEmpty);
+      expect(p.haramAdditives, isEmpty);
+    });
+
+    test('en:e322 (lecithin) → suspiciousAdditives populated', () async {
+      ProductService().setHttpClientForTesting(
+        _mockGet(
+          _offJson(
+            name: 'Chocolate',
+            ingredients: 'cocoa, sugar, vanilla',
+            additivesTags: ['en:e322'],
+          ),
+        ),
+      );
+      final p = await ProductService().getProduct('1000000066');
+      expect(p!.isHalal, isFalse);
+      expect(p.suspiciousAdditives, isNotEmpty);
+    });
+
+    test('en:e920 (L-cysteine) → suspiciousAdditives populated', () async {
+      ProductService().setHttpClientForTesting(
+        _mockGet(
+          _offJson(
+            name: 'Flour Mix',
+            ingredients: 'wheat flour, water',
+            additivesTags: ['en:e920'],
+          ),
+        ),
+      );
+      final p = await ProductService().getProduct('1000000067');
+      expect(p!.isHalal, isFalse);
+      expect(p.suspiciousAdditives, isNotEmpty);
+    });
+
+    test(
+      'only halal additives (en:e100, en:e330) → isHalal true, additive lists empty',
+      () async {
+        ProductService().setHttpClientForTesting(
+          _mockGet(
+            _offJson(
+              name: 'Fruit Drink',
+              ingredients: 'water, fruit juice, sugar',
+              additivesTags: ['en:e100', 'en:e330'],
+            ),
+          ),
+        );
+        final p = await ProductService().getProduct('1000000068');
+        expect(p!.isHalal, isTrue);
+        expect(p.haramAdditives, isEmpty);
+        expect(p.suspiciousAdditives, isEmpty);
+      },
+    );
+
+    test(
+      'clean ingredient text + haram additive tag → isHalal false',
+      () async {
+        ProductService().setHttpClientForTesting(
+          _mockGet(
+            _offJson(
+              name: 'Fruit Jelly',
+              ingredients: 'glucose syrup, sugar, citric acid',
+              additivesTags: ['en:e120-carmine'],
+            ),
+          ),
+        );
+        final p = await ProductService().getProduct('1000000069');
+        expect(p!.isHalal, isFalse);
+        expect(p.haramAdditives, isNotEmpty);
+      },
+    );
+
+    test(
+      'mix of haram and suspicious additive tags → both lists populated',
+      () async {
+        ProductService().setHttpClientForTesting(
+          _mockGet(
+            _offJson(
+              name: 'Complex Product',
+              ingredients: 'flour, sugar, water',
+              additivesTags: ['en:e120-carmine', 'en:e471', 'en:e322'],
+            ),
+          ),
+        );
+        final p = await ProductService().getProduct('1000000070');
+        expect(p!.isHalal, isFalse);
+        expect(p.haramAdditives, isNotEmpty);
+        expect(p.suspiciousAdditives, isNotEmpty);
+      },
+    );
+
+    test(
+      'additive tag without lang prefix (e120-carmine) → still detected',
+      () async {
+        ProductService().setHttpClientForTesting(
+          _mockGet(
+            _offJson(
+              name: 'Red Drink',
+              ingredients: 'water, sugar',
+              additivesTags: ['e120-carmine'],
+            ),
+          ),
+        );
+        final p = await ProductService().getProduct('1000000071');
+        expect(p!.isHalal, isFalse);
+        expect(p.haramAdditives, isNotEmpty);
+      },
+    );
+
+    test(
+      'multiple haram additives → all detected, product not halal',
+      () async {
+        ProductService().setHttpClientForTesting(
+          _mockGet(
+            _offJson(
+              name: 'Multi-Haram Product',
+              ingredients: 'sugar, water',
+              additivesTags: ['en:e120-carmine', 'en:e542', 'en:e904'],
+            ),
+          ),
+        );
+        final p = await ProductService().getProduct('1000000072');
+        expect(p!.isHalal, isFalse);
+        expect(p.haramAdditives.length, greaterThanOrEqualTo(3));
+      },
+    );
+
+    test(
+      'empty additives_tags → additive lists empty, no effect on verdict',
+      () async {
+        ProductService().setHttpClientForTesting(
+          _mockGet(
+            _offJson(
+              name: 'Pure Water',
+              ingredients: 'water',
+              additivesTags: [],
+            ),
+          ),
+        );
+        final p = await ProductService().getProduct('1000000073');
+        expect(p!.isHalal, isTrue);
+        expect(p.haramAdditives, isEmpty);
+        expect(p.suspiciousAdditives, isEmpty);
+      },
+    );
+
+    test('additiveWarnings map is populated for haram additive', () async {
+      ProductService().setHttpClientForTesting(
+        _mockGet(
+          _offJson(
+            name: 'Tinted Product',
+            ingredients: 'water, sugar',
+            additivesTags: ['en:e120'],
+          ),
+        ),
+      );
+      final p = await ProductService().getProduct('1000000074');
+      expect(p!.additiveWarnings, isNotEmpty);
+      expect(p.additiveWarnings.keys.any((k) => k.contains('e120')), isTrue);
+    });
+  });
+
+  // ── categories_tags edge cases ────────────────────────────────────────────
+
+  group('getProduct — categories_tags edge cases', () {
+    test('en:spirits → isHalal false (alcohol category)', () async {
+      ProductService().setHttpClientForTesting(
+        _mockGet(
+          _offJson(
+            name: 'Vodka',
+            ingredients: 'water, ethanol',
+            categoriesTags: ['en:spirits', 'en:alcoholic-beverages'],
+          ),
+        ),
+      );
+      final p = await ProductService().getProduct('1000000080');
+      expect(p!.isHalal, isFalse);
+      expect(p.isUnknown, isFalse);
+    });
+
+    test('en:champagnes → isHalal false (alcohol category)', () async {
+      ProductService().setHttpClientForTesting(
+        _mockGet(
+          _offJson(
+            name: 'Champagne',
+            ingredients: 'wine, yeast',
+            categoriesTags: ['en:champagnes', 'en:wines'],
+          ),
+        ),
+      );
+      final p = await ProductService().getProduct('1000000081');
+      expect(p!.isHalal, isFalse);
+      expect(p.isUnknown, isFalse);
+    });
+
+    test('en:ciders → isHalal false (alcohol category)', () async {
+      ProductService().setHttpClientForTesting(
+        _mockGet(
+          _offJson(
+            name: 'Apple Cider',
+            ingredients: 'apple juice',
+            categoriesTags: ['en:ciders', 'en:alcoholic-beverages'],
+          ),
+        ),
+      );
+      final p = await ProductService().getProduct('1000000082');
+      expect(p!.isHalal, isFalse);
+      expect(p.isUnknown, isFalse);
+    });
+
+    test('en:sake → isHalal false (alcohol category)', () async {
+      ProductService().setHttpClientForTesting(
+        _mockGet(
+          _offJson(
+            name: 'Japanese Sake',
+            ingredients: 'rice, water, yeast',
+            categoriesTags: ['en:sake', 'en:alcoholic-beverages'],
+          ),
+        ),
+      );
+      final p = await ProductService().getProduct('1000000083');
+      expect(p!.isHalal, isFalse);
+      expect(p.isUnknown, isFalse);
+    });
+
+    test(
+      'en:chicken category (no halal label) → requiresHalalCert true, isHalal false',
+      () async {
+        ProductService().setHttpClientForTesting(
+          _mockGet(
+            _offJson(
+              name: 'Grilled Chicken',
+              ingredients: 'chicken',
+              categoriesTags: ['en:chicken', 'en:poultry'],
+            ),
+          ),
+        );
+        final p = await ProductService().getProduct('1000000084');
+        expect(p!.requiresHalalCert, isTrue);
+        expect(p.isHalal, isFalse);
+      },
+    );
+
+    test(
+      'en:beef category with halal label → isHalal true, requiresHalalCert false',
+      () async {
+        ProductService().setHttpClientForTesting(
+          _mockGet(
+            _offJson(
+              name: 'Halal Beef',
+              ingredients: 'beef',
+              categoriesTags: ['en:beef', 'en:meats'],
+              labelsTags: ['halal'],
+            ),
+          ),
+        );
+        final p = await ProductService().getProduct('1000000085');
+        expect(p!.isHalal, isTrue);
+        expect(p.requiresHalalCert, isFalse);
+      },
+    );
+
+    test(
+      'de:fleisch (German meat category) → requiresHalalCert true, isHalal false',
+      () async {
+        ProductService().setHttpClientForTesting(
+          _mockGet(
+            _offJson(
+              name: 'Rindergulasch',
+              ingredients: 'rindfleisch, zwiebeln, gewürze',
+              categoriesTags: ['de:fleisch', 'de:rindfleisch'],
+            ),
+          ),
+        );
+        final p = await ProductService().getProduct('1000000086');
+        expect(p!.requiresHalalCert, isTrue);
+        expect(p.isHalal, isFalse);
+      },
+    );
+
+    test(
+      'tr:tavuk (Turkish chicken category) → requiresHalalCert true, isHalal false',
+      () async {
+        ProductService().setHttpClientForTesting(
+          _mockGet(
+            _offJson(
+              name: 'Turkish Chicken',
+              ingredients: 'chicken, water, salt',
+              categoriesTags: ['tr:tavuk'],
+            ),
+          ),
+        );
+        final p = await ProductService().getProduct('1000000087');
+        expect(p!.requiresHalalCert, isTrue);
+        expect(p.isHalal, isFalse);
+      },
+    );
+
+    test(
+      'en:waters category with no ingredients → isHalal true (halal-by-category)',
+      () async {
+        ProductService().setHttpClientForTesting(
+          _mockGetWithCallback((req) async {
+            if (req.url.host == 'world.openfoodfacts.org') {
+              return http.Response(
+                _offJson(
+                  name: 'Mineral Water',
+                  ingredients: '',
+                  categoriesTags: ['en:waters', 'en:mineral-waters'],
+                ),
+                200,
+              );
+            }
+            return http.Response(_notFoundJson, 200);
+          }),
+        );
+        final p = await ProductService().getProduct('1000000088');
+        expect(p!.isHalal, isTrue);
+        expect(p.isUnknown, isFalse);
+      },
+    );
+
+    test(
+      'en:salts category with no ingredients → isHalal true (halal-by-category)',
+      () async {
+        ProductService().setHttpClientForTesting(
+          _mockGetWithCallback((req) async {
+            if (req.url.host == 'world.openfoodfacts.org') {
+              return http.Response(
+                _offJson(
+                  name: 'Sea Salt',
+                  ingredients: '',
+                  categoriesTags: ['en:salts', 'en:sea-salt'],
+                ),
+                200,
+              );
+            }
+            return http.Response(_notFoundJson, 200);
+          }),
+        );
+        final p = await ProductService().getProduct('1000000089');
+        expect(p!.isHalal, isTrue);
+        expect(p.isUnknown, isFalse);
+      },
+    );
+
+    test(
+      'haram category overrides clean ingredient analysis → isHalal false',
+      () async {
+        ProductService().setHttpClientForTesting(
+          _mockGet(
+            _offJson(
+              name: 'Fruity Beer',
+              ingredients: 'water, barley, hops, fruit extract',
+              categoriesTags: ['en:beers', 'en:alcoholic-beverages'],
+            ),
+          ),
+        );
+        final p = await ProductService().getProduct('1000000090');
+        expect(p!.isHalal, isFalse);
+        expect(p.isUnknown, isFalse);
       },
     );
   });

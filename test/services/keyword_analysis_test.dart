@@ -378,4 +378,143 @@ void main() {
       expect(r.explanation, contains('No haram'));
     });
   });
+
+  // ── additive slugs (as produced by _normalizeAdditiveTags) ──────────────────
+  //
+  // OFF tag "en:e120-carmine" normalises to slug "e120-carmine". The hyphen is a
+  // word-boundary separator so the keyword "e120" still matches it.
+
+  group('analyzeWithKeywords — additive slugs', () {
+    // ── haram slugs ──────────────────────────────────────────────────────────
+
+    test(
+      'e120-carmine slug → haram (keyword e120 matches via word boundary)',
+      () {
+        final r = ProductService.analyzeWithKeywords(['e120-carmine']);
+        expect(r.isHalal, isFalse);
+        expect(r.haram, isNotEmpty);
+      },
+    );
+
+    test('e120 slug (short form) → haram', () {
+      final r = ProductService.analyzeWithKeywords(['e120']);
+      expect(r.isHalal, isFalse);
+      expect(r.haram, contains('e120'));
+    });
+
+    test('e542 slug (bone phosphate) → haram', () {
+      final r = ProductService.analyzeWithKeywords(['e542']);
+      expect(r.isHalal, isFalse);
+      expect(r.haram, contains('e542'));
+    });
+
+    test('e904 slug (shellac) → haram', () {
+      final r = ProductService.analyzeWithKeywords(['e904']);
+      expect(r.isHalal, isFalse);
+      expect(r.haram, contains('e904'));
+    });
+
+    // ── suspicious slugs ─────────────────────────────────────────────────────
+
+    test('e471 slug (mono/diglycerides) → suspicious, not haram', () {
+      final r = ProductService.analyzeWithKeywords(['e471']);
+      expect(r.isHalal, isFalse);
+      expect(r.suspicious, contains('e471'));
+      expect(r.haram, isEmpty);
+    });
+
+    test('e441 slug (gelatin E441) → suspicious, not haram', () {
+      final r = ProductService.analyzeWithKeywords(['e441']);
+      expect(r.isHalal, isFalse);
+      expect(r.suspicious, contains('e441'));
+      expect(r.haram, isEmpty);
+    });
+
+    test('e322 slug (lecithin) → suspicious', () {
+      final r = ProductService.analyzeWithKeywords(['e322']);
+      expect(r.isHalal, isFalse);
+      expect(r.suspicious, contains('e322'));
+    });
+
+    test('e920 slug (L-cysteine) → suspicious', () {
+      final r = ProductService.analyzeWithKeywords(['e920']);
+      expect(r.isHalal, isFalse);
+      expect(r.suspicious, contains('e920'));
+    });
+
+    test('e422 slug (glycerol) → suspicious', () {
+      final r = ProductService.analyzeWithKeywords(['e422']);
+      expect(r.isHalal, isFalse);
+      expect(r.suspicious, contains('e422'));
+    });
+
+    test('e472 slug (emulsifier) → suspicious', () {
+      final r = ProductService.analyzeWithKeywords(['e472']);
+      expect(r.isHalal, isFalse);
+      expect(r.suspicious, contains('e472'));
+    });
+
+    test('e473 slug (sucrose esters) → suspicious', () {
+      final r = ProductService.analyzeWithKeywords(['e473']);
+      expect(r.isHalal, isFalse);
+      expect(r.suspicious, contains('e473'));
+    });
+
+    test('e927 slug (glycine) → suspicious', () {
+      final r = ProductService.analyzeWithKeywords(['e927']);
+      expect(r.isHalal, isFalse);
+      expect(r.suspicious, contains('e927'));
+    });
+
+    // ── halal slugs ──────────────────────────────────────────────────────────
+
+    test('e100 slug (curcumin, halal) → not flagged', () {
+      final r = ProductService.analyzeWithKeywords(['e100']);
+      expect(r.isHalal, isTrue);
+      expect(r.haram, isEmpty);
+      expect(r.suspicious, isEmpty);
+    });
+
+    test('e330 slug (citric acid, halal) → not flagged', () {
+      final r = ProductService.analyzeWithKeywords(['e330']);
+      expect(r.isHalal, isTrue);
+      expect(r.haram, isEmpty);
+      expect(r.suspicious, isEmpty);
+    });
+
+    test('e200 slug (sorbic acid, halal) → not flagged', () {
+      final r = ProductService.analyzeWithKeywords(['e200']);
+      expect(r.isHalal, isTrue);
+      expect(r.haram, isEmpty);
+      expect(r.suspicious, isEmpty);
+    });
+
+    // ── multi-slug cases ─────────────────────────────────────────────────────
+
+    test('all three haram E-numbers together → all appear in haram list', () {
+      final r = ProductService.analyzeWithKeywords(['e120', 'e542', 'e904']);
+      expect(r.isHalal, isFalse);
+      expect(r.haram, contains('e120'));
+      expect(r.haram, contains('e542'));
+      expect(r.haram, contains('e904'));
+    });
+
+    test('mix of haram and suspicious slugs → both lists populated', () {
+      final r = ProductService.analyzeWithKeywords(['e120', 'e471', 'e322']);
+      expect(r.isHalal, isFalse);
+      expect(r.haram, contains('e120'));
+      expect(r.suspicious, containsAll(['e471', 'e322']));
+    });
+
+    test('haram slug not also added to suspicious list', () {
+      final r = ProductService.analyzeWithKeywords(['e120']);
+      expect(r.haram, contains('e120'));
+      expect(r.suspicious, isNot(contains('e120')));
+    });
+
+    test('e1200 slug does not match e120 keyword (no false prefix match)', () {
+      final r = ProductService.analyzeWithKeywords(['e1200']);
+      expect(r.haram, isNot(contains('e120')));
+    });
+  });
 }

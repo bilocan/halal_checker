@@ -13,3 +13,7 @@
 - **Neuer Scan aus Verlauf repariert** — 'Weiteres Produkt scannen' öffnet jetzt den Scanner, auch wenn das Ergebnis aus dem Scanverlauf geöffnet wurde.
 
 - **Neu-Analyse-Fix** — Beim erneuten Scannen eines Produkts werden KI-ermittelte Zutaten nicht mehr durch fehlerhafte Open-Food-Facts-Daten überschrieben.
+
+- **Allergene, Zusatzstoffe & Marke im Ergebnis** — Das Ergebnisscreen zeigt nun Marke und Packungsgröße sowie einen ausklappbaren Bereich 'Allergene & Zusatzstoffe'; Chips werden farbig markiert, wenn sie einem Keyword-Treffer entsprechen.
+
+- **Zusatzstoffanalyse** — Lebensmittelzusatzstoffe (E-Nummern) werden jetzt auf Halal-Status geprüft; Haram-Zusatzstoffe (z. B. E120 Karmin, E542 Knochenposphat, E904 Schellack) und verdächtige Zusatzstoffe (z. B. E471, E441, E322) werden im Ergebnis farbig hervorgehoben.

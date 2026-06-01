@@ -133,6 +133,24 @@ export async function handleLookup(
     console.log(`[${barcode}] ${reason} — re-running rules engine on stored data`)
     const { haram: customHaramEntries, suspicious: customSuspiciousEntries } =
       await deps.loadCustomKeywords(supabase)
+    // Backfill tags during force/stale if tags_version=0 — tags patch is skipped on the
+    // normal path because force intercepts first, so we do it here before reanalysis.
+    if (!hasStoredTags && !hasNonOffIngredients && !existing.is_managed) {
+      const off = await deps.fetchOpenFactsProduct(barcode)
+      if (off?.pd) {
+        const tags = parseOffTags(off.pd)
+        await patchProductTags(supabase, barcode, tags)
+        Object.assign(existing, {
+          brand: tags.brand, quantity: tags.quantity,
+          categories_tags: tags.categoriesTags,
+          additives_tags: tags.additivesTags,
+          allergens_tags: tags.allergensTags,
+          traces_tags: tags.tracesTags,
+          tags_version: 1,
+        })
+        console.log(`[${barcode}] patched tags during ${reason}`)
+      }
+    }
     return deps.runStoredProductReanalysis(
       supabase, existing, barcode, customHaramEntries, customSuspiciousEntries, corsHeaders,
     )
@@ -275,6 +293,7 @@ export async function handleLookup(
     analyzeLang,
     name,
     labels,
+    additivesTags: offAdditivesTags,
     rawCategories,
     isNonFood,
     ingredientSource,
@@ -390,6 +409,7 @@ async function analyzeFromDbStub(
     analyzeLang: null,
     name,
     labels,
+    additivesTags: Array.isArray(existing.additives_tags) ? existing.additives_tags as string[] : [],
     rawCategories,
     isNonFood,
     ingredientSource,
@@ -435,6 +455,7 @@ async function saveFullLookup(
   const {
     isHalal, isUnknown, haramIngredients, suspiciousIngredients,
     ingredientWarnings, haramLabels, suspiciousLabels, labelWarnings,
+    haramAdditives, suspiciousAdditives, additiveWarnings,
     explanation, analyzedByAI, requiresHalalCert,
     keywordMatchSource, keywordMatchOrigins, analyzeLang, displayLang,
   } = verdict
@@ -472,6 +493,9 @@ async function saveFullLookup(
     haramLabels,
     suspiciousLabels,
     labelWarnings,
+    haramAdditives,
+    suspiciousAdditives,
+    additiveWarnings,
     explanation,
     analyzedByAI,
     keywordMatchSource,
@@ -493,6 +517,9 @@ async function saveFullLookup(
     haram_labels: haramLabels,
     suspicious_labels: suspiciousLabels,
     label_warnings: labelWarnings,
+    haram_additives: haramAdditives,
+    suspicious_additives: suspiciousAdditives,
+    additive_warnings: additiveWarnings,
     labels,
     image_url: images.imageUrl,
     image_front_url: images.imageFrontUrl,

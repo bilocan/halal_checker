@@ -1392,4 +1392,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get showLessIngredients => 'Show less';
+
+  @override
+  String get allergens => 'Allergens';
+
+  @override
+  String get additives => 'Additives';
+
+  @override
+  String get mayContain => 'May contain';
 }

@@ -13,3 +13,7 @@
 - **Scan Another fixed from history** — tapping 'Scan Another Product' now opens the scanner even when the result was opened from scan history.
 
 - **Reanalyze fix** — Re-scanning a product no longer overwrites AI-sourced ingredients with dummy data from Open Food Facts.
+
+- **Allergens, additives & brand on result screen** — the result screen now shows brand and pack size on the product card, plus a collapsible 'Allergens & Additives' section with allergen, may-contain, and additive chips; chips are highlighted when they match a keyword finding.
+
+- **Additive analysis** — food additives (E-numbers) are now analysed for halal status; haram additives (e.g. E120 carmine, E542 bone phosphate, E904 shellac) and suspicious additives (e.g. E471, E441, E322) are highlighted in colour on the result screen.

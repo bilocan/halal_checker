@@ -1393,4 +1393,13 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get showLessIngredients => 'Daha az göster';
+
+  @override
+  String get allergens => 'Alerjenler';
+
+  @override
+  String get additives => 'Katkı maddeleri';
+
+  @override
+  String get mayContain => 'İz içerebilir';
 }

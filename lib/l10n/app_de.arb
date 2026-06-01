@@ -434,5 +434,8 @@
       }
     }
   },
-  "showLessIngredients": "Weniger anzeigen"
+  "showLessIngredients": "Weniger anzeigen",
+  "allergens": "Allergene",
+  "additives": "Zusatzstoffe",
+  "mayContain": "Kann Spuren enthalten von"
 }

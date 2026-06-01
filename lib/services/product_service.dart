@@ -188,9 +188,23 @@ class ProductService {
     );
   }
 
+  static List<String> _normalizeAdditiveTags(List<String> tags) {
+    final seen = <String>{};
+    final result = <String>[];
+    for (final tag in tags) {
+      final slug = tag.contains(':') ? tag.split(':').last : tag;
+      if (slug.isNotEmpty && seen.add(slug)) result.add(slug);
+    }
+    return result;
+  }
+
   Product _applyKeywordSafety(Product product) {
     final kwCheck = analyzeWithKeywords(product.ingredients);
     final customCheck = _customKeywordAnalysis(product.ingredients);
+    final additiveSlugs = _normalizeAdditiveTags(product.additivesTags);
+    final kwAdditives = additiveSlugs.isEmpty
+        ? null
+        : analyzeWithKeywords(additiveSlugs);
     final nameCheck = product.name.trim().isEmpty
         ? null
         : analyzeWithKeywords([product.name.toLowerCase()]);
@@ -237,23 +251,53 @@ class ProductService {
       if (flaggedCheck != null) ...flaggedCheck.canonicals,
       if (nameCheck != null) ...nameCheck.canonicals,
     };
-    final isNowHalal = ProductVerdict.isHalalFromFlags(
-      haramIngredients: allHaram,
-      suspiciousIngredients: allSuspicious,
-      requiresHalalCert: product.requiresHalalCert,
-      isUnknown: product.isUnknown,
-    );
+
+    final allHaramAdditives = {
+      ...product.haramAdditives,
+      if (kwAdditives != null) ...kwAdditives.haram,
+    }.toList();
+    final allSuspiciousAdditives = {
+      ...product.suspiciousAdditives,
+      if (kwAdditives != null) ...kwAdditives.suspicious,
+    }.toList();
+    final allAdditiveWarnings = {
+      ...product.additiveWarnings,
+      if (kwAdditives != null)
+        ...kwAdditives.warnings.map(
+          (k, v) => MapEntry(k, 'Found in additives: $v'),
+        ),
+    };
+
+    final isNowHalal =
+        allHaramAdditives.isEmpty &&
+        allSuspiciousAdditives.isEmpty &&
+        ProductVerdict.isHalalFromFlags(
+          haramIngredients: allHaram,
+          suspiciousIngredients: allSuspicious,
+          requiresHalalCert: product.requiresHalalCert,
+          isUnknown: product.isUnknown,
+        );
+
+    final additivesChanged =
+        allHaramAdditives.length != product.haramAdditives.length ||
+        allSuspiciousAdditives.length != product.suspiciousAdditives.length;
 
     if (!isNowHalal && product.isHalal) {
-      final explanation = allHaram.isNotEmpty
-          ? (kwCheck.haram.isNotEmpty
-                ? kwCheck.explanation
-                : (nameCheck != null && nameCheck.haram.isNotEmpty)
-                ? nameCheck.explanation
-                : 'This product contains ingredient(s) that are not permissible: '
-                      '${customCheck.haram.join(', ')}. '
-                      'Flagged by custom keyword.')
-          : kwCheck.explanation;
+      final String explanation;
+      if (allHaramAdditives.isNotEmpty && allHaram.isEmpty) {
+        explanation =
+            'This product\'s additives indicate it contains: ${allHaramAdditives.join(', ')}.';
+      } else if (allHaram.isNotEmpty) {
+        explanation = kwCheck.haram.isNotEmpty
+            ? kwCheck.explanation
+            : (nameCheck != null && nameCheck.haram.isNotEmpty)
+            ? nameCheck.explanation
+            : 'This product contains ingredient(s) that are not permissible: '
+                  '${customCheck.haram.join(', ')}. '
+                  'Flagged by custom keyword.';
+      } else {
+        explanation = kwCheck.explanation;
+      }
       return product.copyWith(
         isHalal: false,
         haramIngredients: allHaram,
@@ -261,6 +305,9 @@ class ProductService {
         ingredientWarnings: allWarnings,
         ingredientTranslations: allTranslations,
         ingredientCanonicals: allCanonicals,
+        haramAdditives: allHaramAdditives,
+        suspiciousAdditives: allSuspiciousAdditives,
+        additiveWarnings: allAdditiveWarnings,
         explanation: explanation.isNotEmpty ? explanation : product.explanation,
       );
     }
@@ -272,12 +319,20 @@ class ProductService {
         ingredientWarnings: allWarnings,
         ingredientTranslations: allTranslations,
         ingredientCanonicals: allCanonicals,
+        haramAdditives: allHaramAdditives,
+        suspiciousAdditives: allSuspiciousAdditives,
+        additiveWarnings: allAdditiveWarnings,
       );
     }
-    if (allTranslations.isNotEmpty || allCanonicals.isNotEmpty) {
+    if (allTranslations.isNotEmpty ||
+        allCanonicals.isNotEmpty ||
+        additivesChanged) {
       return product.copyWith(
         ingredientTranslations: allTranslations,
         ingredientCanonicals: allCanonicals,
+        haramAdditives: allHaramAdditives,
+        suspiciousAdditives: allSuspiciousAdditives,
+        additiveWarnings: allAdditiveWarnings,
       );
     }
     return product;
@@ -470,6 +525,15 @@ class ProductService {
       ),
       'labelWarnings': Map<String, String>.from(
         row['label_warnings'] as Map? ?? {},
+      ),
+      'haramAdditives': List<String>.from(
+        row['haram_additives'] as List? ?? [],
+      ),
+      'suspiciousAdditives': List<String>.from(
+        row['suspicious_additives'] as List? ?? [],
+      ),
+      'additiveWarnings': Map<String, String>.from(
+        row['additive_warnings'] as Map? ?? {},
       ),
       'labels': List<String>.from(row['labels'] as List? ?? []),
       'imageUrl': row['image_url'] as String?,
