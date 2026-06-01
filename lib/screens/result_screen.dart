@@ -498,6 +498,8 @@ class _ResultScreenState extends State<ResultScreen> {
                     additivesTags: product.additivesTags,
                     haramIngredients: product.haramIngredients,
                     suspiciousIngredients: product.suspiciousIngredients,
+                    haramAdditives: product.haramAdditives,
+                    suspiciousAdditives: product.suspiciousAdditives,
                     loc: loc,
                   ),
                   const SizedBox(height: 16),

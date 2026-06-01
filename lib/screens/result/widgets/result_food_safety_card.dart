@@ -10,6 +10,8 @@ class ResultFoodSafetyCard extends StatelessWidget {
     required this.additivesTags,
     required this.haramIngredients,
     required this.suspiciousIngredients,
+    required this.haramAdditives,
+    required this.suspiciousAdditives,
     required this.loc,
   });
 
@@ -18,6 +20,8 @@ class ResultFoodSafetyCard extends StatelessWidget {
   final List<String> additivesTags;
   final List<String> haramIngredients;
   final List<String> suspiciousIngredients;
+  final List<String> haramAdditives;
+  final List<String> suspiciousAdditives;
   final AppLocalizations loc;
 
   @override
@@ -77,7 +81,7 @@ class ResultFoodSafetyCard extends StatelessWidget {
                   label: loc.additives,
                   tags: additivesTags,
                   labelFn: _parseAdditiveTag,
-                  colorFn: (_) => _neutral,
+                  colorFn: (tag) => _resolveAdditivesColor(tag),
                 ),
             ],
           ),
@@ -117,6 +121,20 @@ class ResultFoodSafetyCard extends StatelessWidget {
       (i) => i.toLowerCase().contains(name) || name.contains(i.toLowerCase()),
     );
     if (suspiciousMatch) return _suspicious;
+    return _neutral;
+  }
+
+  ({Color chipColor, Color chipBorder, Color textColor}) _resolveAdditivesColor(
+    String tag,
+  ) {
+    final slug = (tag.contains(':') ? tag.split(':').last : tag).toLowerCase();
+    bool slugMatches(String entry) {
+      final e = entry.toLowerCase();
+      return e == slug || slug.startsWith('$e-') || e.startsWith('$slug-');
+    }
+
+    if (haramAdditives.any(slugMatches)) return _haram;
+    if (suspiciousAdditives.any(slugMatches)) return _suspicious;
     return _neutral;
   }
 

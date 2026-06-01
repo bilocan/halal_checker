@@ -65,6 +65,7 @@ export async function runStoredProductReanalysis(
     analyzeLang,
     name,
     labels,
+    additivesTags: Array.isArray(existing.additives_tags) ? existing.additives_tags as string[] : [],
     rawCategories,
     isNonFood,
     ingredientSource,
@@ -79,6 +80,7 @@ export async function runStoredProductReanalysis(
   const {
     isHalal, isUnknown, haramIngredients, suspiciousIngredients,
     ingredientWarnings, haramLabels, suspiciousLabels, labelWarnings,
+    haramAdditives, suspiciousAdditives, additiveWarnings,
     explanation, requiresHalalCert,
   } = verdict
 
@@ -117,6 +119,9 @@ export async function runStoredProductReanalysis(
     haramLabels,
     suspiciousLabels,
     labelWarnings,
+    haramAdditives,
+    suspiciousAdditives,
+    additiveWarnings,
     explanation,
     analyzedByAI: false,
     keywordMatchSource: verdict.keywordMatchSource,
@@ -138,6 +143,9 @@ export async function runStoredProductReanalysis(
     haram_labels: haramLabels,
     suspicious_labels: suspiciousLabels,
     label_warnings: labelWarnings,
+    haram_additives: haramAdditives,
+    suspicious_additives: suspiciousAdditives,
+    additive_warnings: additiveWarnings,
     labels,
     image_url: existing.image_url,
     image_front_url: existing.image_front_url,
