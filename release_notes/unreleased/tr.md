@@ -15,3 +15,5 @@
 - **Yeniden analiz düzeltmesi** — Bir ürünü yeniden tararken, yapay zekâ kaynaklı içerikler artık Open Food Facts'teki sahte verilerle ezilmiyor.
 
 - **Alerjenler, katkı maddeleri ve marka sonuç ekranında** — Sonuç ekranında artık ürün kartında marka ve paket boyutu, ayrıca katlanabilir 'Alerjenler & Katkı Maddeleri' bölümü gösteriliyor; bir anahtar kelime eşleşmesiyle uyuşan chipler renklendirilir.
+
+- **Katkı maddesi analizi** — Gıda katkı maddeleri (E numaraları) artık helal durumu açısından analiz ediliyor; haram katkı maddeleri (ör. E120 karmin, E542 kemik fosfatı, E904 şellak) ve şüpheli katkı maddeleri (ör. E471, E441, E322) sonuç ekranında renkle vurgulanıyor.
