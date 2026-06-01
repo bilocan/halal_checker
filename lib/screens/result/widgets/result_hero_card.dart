@@ -117,6 +117,17 @@ class ResultHeroCard extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
+                if (product.brand.isNotEmpty || product.quantity.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 3),
+                    child: Text(
+                      [
+                        if (product.brand.isNotEmpty) product.brand,
+                        if (product.quantity.isNotEmpty) product.quantity,
+                      ].join(' · '),
+                      style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                    ),
+                  ),
                 const SizedBox(height: 6),
                 CopyBarcodeRow(barcode: barcode, onCopy: onCopyBarcode),
                 if (chips.isNotEmpty) ...[

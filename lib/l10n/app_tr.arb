@@ -434,5 +434,8 @@
       }
     }
   },
-  "showLessIngredients": "Daha az göster"
+  "showLessIngredients": "Daha az göster",
+  "allergens": "Alerjenler",
+  "additives": "Katkı maddeleri",
+  "mayContain": "İz içerebilir"
 }

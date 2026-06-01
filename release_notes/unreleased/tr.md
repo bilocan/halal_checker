@@ -13,3 +13,5 @@
 - **Geçmişten Yeni Tarama düzeltildi** — 'Başka Ürün Tara' butonu, sonuç tarama geçmişinden açılmış olsa bile artık tarayıcıyı açıyor.
 
 - **Yeniden analiz düzeltmesi** — Bir ürünü yeniden tararken, yapay zekâ kaynaklı içerikler artık Open Food Facts'teki sahte verilerle ezilmiyor.
+
+- **Alerjenler, katkı maddeleri ve marka sonuç ekranında** — Sonuç ekranında artık ürün kartında marka ve paket boyutu, ayrıca katlanabilir 'Alerjenler & Katkı Maddeleri' bölümü gösteriliyor; bir anahtar kelime eşleşmesiyle uyuşan chipler renklendirilir.

@@ -555,5 +555,8 @@
       }
     }
   },
-  "showLessIngredients": "Show less"
+  "showLessIngredients": "Show less",
+  "allergens": "Allergens",
+  "additives": "Additives",
+  "mayContain": "May contain"
 }

@@ -1413,4 +1413,13 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get showLessIngredients => 'Weniger anzeigen';
+
+  @override
+  String get allergens => 'Allergene';
+
+  @override
+  String get additives => 'Zusatzstoffe';
+
+  @override
+  String get mayContain => 'Kann Spuren enthalten von';
 }

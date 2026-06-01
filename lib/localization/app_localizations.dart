@@ -2619,6 +2619,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Show less'**
   String get showLessIngredients;
+
+  /// No description provided for @allergens.
+  ///
+  /// In en, this message translates to:
+  /// **'Allergens'**
+  String get allergens;
+
+  /// No description provided for @additives.
+  ///
+  /// In en, this message translates to:
+  /// **'Additives'**
+  String get additives;
+
+  /// No description provided for @mayContain.
+  ///
+  /// In en, this message translates to:
+  /// **'May contain'**
+  String get mayContain;
 }
 
 class _AppLocalizationsDelegate

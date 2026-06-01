@@ -13,3 +13,5 @@
 - **Neuer Scan aus Verlauf repariert** — 'Weiteres Produkt scannen' öffnet jetzt den Scanner, auch wenn das Ergebnis aus dem Scanverlauf geöffnet wurde.
 
 - **Neu-Analyse-Fix** — Beim erneuten Scannen eines Produkts werden KI-ermittelte Zutaten nicht mehr durch fehlerhafte Open-Food-Facts-Daten überschrieben.
+
+- **Allergene, Zusatzstoffe & Marke im Ergebnis** — Das Ergebnisscreen zeigt nun Marke und Packungsgröße sowie einen ausklappbaren Bereich 'Allergene & Zusatzstoffe'; Chips werden farbig markiert, wenn sie einem Keyword-Treffer entsprechen.

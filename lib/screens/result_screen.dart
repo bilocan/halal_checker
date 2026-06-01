@@ -31,6 +31,7 @@ import 'result/widgets/result_ingredients_section.dart';
 import 'result/widgets/result_not_found_body.dart';
 import 'result/widgets/result_note_card.dart';
 import 'result/widgets/result_product_images.dart';
+import 'result/widgets/result_food_safety_card.dart';
 import 'result/widgets/result_transparency_card.dart';
 
 class ResultScreen extends StatefulWidget {
@@ -489,6 +490,15 @@ class _ResultScreenState extends State<ResultScreen> {
                         _controller.isFetchingAiIngredients,
                     onRequestAiIngredients: _requestAiIngredients,
                     onRefreshProduct: _refreshProductData,
+                  ),
+                  const SizedBox(height: 16),
+                  ResultFoodSafetyCard(
+                    allergensTags: product.allergensTags,
+                    tracesTags: product.tracesTags,
+                    additivesTags: product.additivesTags,
+                    haramIngredients: product.haramIngredients,
+                    suspiciousIngredients: product.suspiciousIngredients,
+                    loc: loc,
                   ),
                   const SizedBox(height: 16),
                   ResultTransparencyCard(product: product, loc: loc),

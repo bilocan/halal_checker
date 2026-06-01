@@ -13,3 +13,5 @@
 - **Scan Another fixed from history** — tapping 'Scan Another Product' now opens the scanner even when the result was opened from scan history.
 
 - **Reanalyze fix** — Re-scanning a product no longer overwrites AI-sourced ingredients with dummy data from Open Food Facts.
+
+- **Allergens, additives & brand on result screen** — the result screen now shows brand and pack size on the product card, plus a collapsible 'Allergens & Additives' section with allergen, may-contain, and additive chips; chips are highlighted when they match a keyword finding.
