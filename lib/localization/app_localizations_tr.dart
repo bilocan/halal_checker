@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -236,16 +237,16 @@ class AppLocalizationsTr extends AppLocalizations {
   String get vegan => 'Vegan';
 
   @override
-  String get halal => 'HELAL';
+  String get halal => '✅ Sorun bulunmadı';
 
   @override
-  String get notHalal => 'HARAM';
+  String get notHalal => '❌ Haram içerik tespit edildi';
 
   @override
-  String get suspiciousVerdict => '⚠️ KONTROL';
+  String get suspiciousVerdict => '⚠️ Şüpheli içerik tespit edildi';
 
   @override
-  String get suspiciousResult => 'KONTROL';
+  String get suspiciousResult => 'Şüpheli içerik tespit edildi';
 
   @override
   String get lastScanned => 'Son tarama';
@@ -611,7 +612,7 @@ class AppLocalizationsTr extends AppLocalizations {
       'Bu ürün, hayvansal kaynaklı veya alkol içerikli olabilecek bir veya daha fazla içerik barındırmaktadır. Ayrıntılar için işaretlenen içerikleri inceleyin.';
 
   @override
-  String get unknown => '? BİLİNMİYOR';
+  String get unknown => '? Veri bulunamadı';
 
   @override
   String get noCert => '⚠️ SERTİFİKA YOK';

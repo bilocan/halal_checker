@@ -45,10 +45,10 @@ class ResultStatus {
     final label = switch (outcome) {
       ProductOutcome.nonFood => loc.nonFood,
       ProductOutcome.unknown => loc.unknown,
-      ProductOutcome.haram => '❌ ${loc.notHalal}',
+      ProductOutcome.haram => loc.notHalal,
       ProductOutcome.suspicious => loc.suspiciousVerdict,
       ProductOutcome.noCert => loc.noCert,
-      ProductOutcome.halal => '✅ ${loc.halal}',
+      ProductOutcome.halal => loc.halal,
     };
 
     final resultLabel = switch (outcome) {

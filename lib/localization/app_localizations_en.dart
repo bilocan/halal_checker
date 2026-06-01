@@ -234,16 +234,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get vegan => 'Vegan';
 
   @override
-  String get halal => 'HALAL';
+  String get halal => '✅ Nothing flagged';
 
   @override
-  String get notHalal => 'HARAM';
+  String get notHalal => '❌ Haram ingredients detected';
 
   @override
-  String get suspiciousVerdict => '⚠️ VERIFY';
+  String get suspiciousVerdict => '⚠️ Suspicious ingredients found';
 
   @override
-  String get suspiciousResult => 'VERIFY';
+  String get suspiciousResult => 'Suspicious ingredients found';
 
   @override
   String get lastScanned => 'Last scanned';
@@ -612,7 +612,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'This product contains one or more ingredients that may be animal-derived or alcohol-related. Review the flagged ingredients below for details.';
 
   @override
-  String get unknown => '? UNKNOWN';
+  String get unknown => '? No data found';
 
   @override
   String get noCert => '⚠️ NO CERT';
