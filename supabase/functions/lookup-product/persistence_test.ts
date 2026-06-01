@@ -32,6 +32,9 @@ const analysisRow: AnalysisRow = {
   haramLabels: [],
   suspiciousLabels: [],
   labelWarnings: {},
+  haramAdditives: [],
+  suspiciousAdditives: [],
+  additiveWarnings: {},
   explanation: 'Fallback explanation.',
   analyzedByAI: false,
 }

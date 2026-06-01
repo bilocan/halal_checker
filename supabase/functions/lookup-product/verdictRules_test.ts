@@ -30,6 +30,7 @@ function baseCtx(overrides: Partial<VerdictContext> = {}): VerdictContext {
     ingredientSource: 'off',
     haramCategory: null,
     isHalalByCategory: false,
+    additivesTags: [],
     customHaramEntries: [],
     customSuspiciousEntries: [],
     imageIngredientsUrl: '',
@@ -47,6 +48,9 @@ function aiSaysHalalSnapshot(overrides: Partial<VerdictSnapshot> = {}): VerdictS
     haramLabels: [],
     suspiciousLabels: [],
     labelWarnings: {},
+    haramAdditives: [],
+    suspiciousAdditives: [],
+    additiveWarnings: {},
     explanation: 'AI incorrectly marked this as halal.',
     ...overrides,
   }
@@ -210,6 +214,9 @@ Deno.test('postRules — Cyrillic label pork skips empty name fallback', () => {
     haramLabels: [],
     suspiciousLabels: [],
     labelWarnings: {},
+    haramAdditives: [],
+    suspiciousAdditives: [],
+    additiveWarnings: {},
     explanation: kwFirst.explanation,
   }, ctx, kwFirst)
 
@@ -232,6 +239,9 @@ Deno.test('postRules — name fallback when unknown and name contains haram term
     haramLabels: [],
     suspiciousLabels: [],
     labelWarnings: {},
+    haramAdditives: [],
+    suspiciousAdditives: [],
+    additiveWarnings: {},
     explanation: 'No ingredients listed.',
   }, ctx, kwFirst)
 
