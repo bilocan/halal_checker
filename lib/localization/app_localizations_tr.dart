@@ -1,6 +1,5 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
-
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -237,16 +236,16 @@ class AppLocalizationsTr extends AppLocalizations {
   String get vegan => 'Vegan';
 
   @override
-  String get halal => '✅ Sorun bulunmadı';
+  String get halal => 'HELAL';
 
   @override
-  String get notHalal => '❌ Haram içerik tespit edildi';
+  String get notHalal => 'HARAM';
 
   @override
-  String get suspiciousVerdict => '⚠️ Şüpheli içerik tespit edildi';
+  String get suspiciousVerdict => '⚠️ KONTROL';
 
   @override
-  String get suspiciousResult => 'Şüpheli içerik tespit edildi';
+  String get suspiciousResult => 'KONTROL';
 
   @override
   String get lastScanned => 'Son tarama';
@@ -612,7 +611,30 @@ class AppLocalizationsTr extends AppLocalizations {
       'Bu ürün, hayvansal kaynaklı veya alkol içerikli olabilecek bir veya daha fazla içerik barındırmaktadır. Ayrıntılar için işaretlenen içerikleri inceleyin.';
 
   @override
-  String get unknown => '? Veri bulunamadı';
+  String explanationHaramWithIngredients(String ingredients) {
+    return 'Bu ürün izin verilmeyen içerik(ler) içeriyor: $ingredients. Ayrıntılar için aşağıdaki işaretli içerikleri inceleyin.';
+  }
+
+  @override
+  String explanationHaramAdditives(String additives) {
+    return 'Bu ürünün katkı maddeleri şunları içerdiğini gösteriyor: $additives. Ayrıntılar için aşağıdaki işaretli öğeleri inceleyin.';
+  }
+
+  @override
+  String explanationHaramCategory(String category) {
+    return 'Bu ürün izin verilmeyen bir kategoriye ait: $category.';
+  }
+
+  @override
+  String get explanationHalalInherentCategory =>
+      'Bu ürün doğası gereği helal bir kategoridedir (ör. su, tuz). Zararlı içerik beklenmez.';
+
+  @override
+  String get explanationUnanalyzableLanguage =>
+      'İçerikler analiz edemediğimiz bir dilde. Helal durumu belirlenemiyor — lütfen ambalajı doğrudan kontrol edin.';
+
+  @override
+  String get unknown => '? BİLİNMİYOR';
 
   @override
   String get noCert => '⚠️ SERTİFİKA YOK';

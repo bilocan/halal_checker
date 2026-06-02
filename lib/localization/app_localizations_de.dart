@@ -237,16 +237,16 @@ class AppLocalizationsDe extends AppLocalizations {
   String get vegan => 'Vegan';
 
   @override
-  String get halal => '✅ Nichts gefunden';
+  String get halal => 'HALAL';
 
   @override
-  String get notHalal => '❌ Haram-Zutaten gefunden';
+  String get notHalal => 'HARAM';
 
   @override
-  String get suspiciousVerdict => '⚠️ Verdächtige Zutaten gefunden';
+  String get suspiciousVerdict => '⚠️ PRÜFEN';
 
   @override
-  String get suspiciousResult => 'Verdächtige Zutaten gefunden';
+  String get suspiciousResult => 'PRÜFEN';
 
   @override
   String get lastScanned => 'Zuletzt gescannt';
@@ -617,7 +617,30 @@ class AppLocalizationsDe extends AppLocalizations {
       'Dieses Produkt enthält eine oder mehrere Zutaten, die tierischen Ursprungs oder alkoholbezogen sein könnten. Prüfen Sie die markierten Zutaten.';
 
   @override
-  String get unknown => '? Keine Daten gefunden';
+  String explanationHaramWithIngredients(String ingredients) {
+    return 'Dieses Produkt enthält nicht zulässige Zutat(en): $ingredients. Prüfen Sie die markierten Zutaten unten.';
+  }
+
+  @override
+  String explanationHaramAdditives(String additives) {
+    return 'Die Zusatzstoffe dieses Produkts deuten darauf hin, dass es Folgendes enthält: $additives. Prüfen Sie die markierten Einträge unten.';
+  }
+
+  @override
+  String explanationHaramCategory(String category) {
+    return 'Dieses Produkt gehört zu einer nicht zulässigen Kategorie: $category.';
+  }
+
+  @override
+  String get explanationHalalInherentCategory =>
+      'Dieses Produkt gehört zu einer grundsätzlich halal Kategorie (z. B. Wasser, Salz). Keine bedenklichen Inhaltsstoffe erwartet.';
+
+  @override
+  String get explanationUnanalyzableLanguage =>
+      'Die Zutaten sind in einer Sprache, die wir nicht analysieren können. Der Halal-Status kann nicht bestimmt werden — bitte prüfen Sie die Verpackung direkt.';
+
+  @override
+  String get unknown => '? UNBEKANNT';
 
   @override
   String get noCert => '⚠️ KEIN ZERTIFIKAT';

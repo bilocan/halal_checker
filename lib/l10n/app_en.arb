@@ -219,6 +219,26 @@
     }
   },
   "explanationHaram": "This product contains one or more ingredients that may be animal-derived or alcohol-related. Review the flagged ingredients below for details.",
+  "explanationHaramWithIngredients": "This product contains ingredient(s) that are not permissible: {ingredients}. Review the flagged ingredients below for details.",
+  "@explanationHaramWithIngredients": {
+    "placeholders": {
+      "ingredients": { "type": "String" }
+    }
+  },
+  "explanationHaramAdditives": "This product's additives indicate it contains: {additives}. Review the flagged items below for details.",
+  "@explanationHaramAdditives": {
+    "placeholders": {
+      "additives": { "type": "String" }
+    }
+  },
+  "explanationHaramCategory": "This product belongs to a category that is not permissible: {category}.",
+  "@explanationHaramCategory": {
+    "placeholders": {
+      "category": { "type": "String" }
+    }
+  },
+  "explanationHalalInherentCategory": "This product is in an inherently halal category (e.g. water, salt). No harmful ingredients expected.",
+  "explanationUnanalyzableLanguage": "Ingredients are in a language we cannot analyze. Halal status cannot be determined — check the packaging directly.",
   "unknown": "? UNKNOWN",
   "noCert": "⚠️ NO CERT",
   "explanationUnknown": "No ingredient data was found for this product. Halal status cannot be determined — check the packaging directly.",
