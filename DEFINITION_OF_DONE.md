@@ -33,7 +33,7 @@ Use `format_dart` script, not `dart format .` (breaks on Windows when `build/` h
 | # | Item | Action |
 |---|------|--------|
 | 4 | Release notes | Run `add_release_note` — **en + de + tr + ar** (see [Release notes](#release-notes)) |
-| 4b | Obsidian release log | Append bullet(s) to `C:\Users\Hamza\Documents\Pers\AI\obsidian\halalscan\halalscan\05 - Releases\unreleased.md`; include internal/non-user-visible changes too. When a version ships, rename to `<version>.md`. |
+| 4b | Obsidian release log | Append bullet(s) to `C:\Users\Hamza\Documents\Pers\AI\obsidian\halalscan\05 - Releases\unreleased.md`; include internal/non-user-visible changes too. When a version ships, rename to `<version>.md`. |
 | 5 | PR template | Confirm release-notes checkboxes if opening a PR |
 
 Skip 4 for internal-only work (CI, refactors, tests-only, docs-only, dependency pins).
@@ -96,7 +96,7 @@ Execute in order:
   --ar "**العنوان** — العربية."
 ```
 
-2b. **Obsidian release log (4b)** — **always** (user-visible and internal): append to `C:\Users\Hamza\Documents\Pers\AI\obsidian\halalscan\halalscan\05 - Releases\unreleased.md`. Use `## What's new` for user-visible and `## Internal changes` for non-visible work. On version bump, rename `unreleased.md` to `<version>.md`.
+2b. **Obsidian release log (4b)** — **always** (user-visible and internal): append to `C:\Users\Hamza\Documents\Pers\AI\obsidian\halalscan\05 - Releases\unreleased.md`. Use `## What's new` for user-visible and `## Internal changes` for non-visible work. On version bump, rename `unreleased.md` to `<version>.md`.
 3. **Reply** — post checklist (pass / fail / skipped / N/A per applicable item). Include English release-note bullet when item 4 applied.
 4. **Suggested commit** — copy-paste-ready message under `## Suggested commit` (see [Commit messages](#commit-messages)). Do not commit unless asked.
 5. **Remind** — any remaining items (5–11) that apply. Offer to commit if 1–3 passed.

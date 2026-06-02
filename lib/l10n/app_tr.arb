@@ -442,5 +442,8 @@
   "showLessIngredients": "Daha az göster",
   "allergens": "Alerjenler",
   "additives": "Katkı maddeleri",
-  "mayContain": "İz içerebilir"
+  "mayContain": "İz içerebilir",
+  "findings": "Bulgular",
+  "seeFullDetails": "Tüm detayları gör",
+  "fullDetailsTitle": "Tam Detaylar"
 }

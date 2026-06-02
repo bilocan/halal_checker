@@ -24,6 +24,8 @@ class ResultIngredientsSection extends StatefulWidget {
     required this.isFetchingAiIngredients,
     required this.onRequestAiIngredients,
     required this.onRefreshProduct,
+    this.initialShowAll = false,
+    this.showFlaggedSection = true,
   });
 
   final Product product;
@@ -39,6 +41,8 @@ class ResultIngredientsSection extends StatefulWidget {
   final bool isFetchingAiIngredients;
   final VoidCallback onRequestAiIngredients;
   final VoidCallback onRefreshProduct;
+  final bool initialShowAll;
+  final bool showFlaggedSection;
 
   @override
   State<ResultIngredientsSection> createState() =>
@@ -46,7 +50,13 @@ class ResultIngredientsSection extends StatefulWidget {
 }
 
 class _ResultIngredientsSectionState extends State<ResultIngredientsSection> {
-  bool _showAll = false;
+  late bool _showAll;
+
+  @override
+  void initState() {
+    super.initState();
+    _showAll = widget.initialShowAll;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -121,29 +131,33 @@ class _ResultIngredientsSectionState extends State<ResultIngredientsSection> {
             onContributed: widget.onRefreshProduct,
           ),
         ] else ...[
-          // Flagged summary always visible — anchors the toggle button position
-          ResultFlaggedIngredientLists(
-            product: product,
-            showTranslated: widget.showTranslated,
-            languageCode: widget.languageCode,
-            loc: loc,
-          ),
-          if (!hasFlagged) ...[
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Icon(
-                  Icons.check_circle_outline,
-                  color: Colors.green.shade600,
-                  size: 16,
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  loc.transparentNoMatches,
-                  style: TextStyle(color: Colors.green.shade700, fontSize: 13),
-                ),
-              ],
+          if (widget.showFlaggedSection) ...[
+            ResultFlaggedIngredientLists(
+              product: product,
+              showTranslated: widget.showTranslated,
+              languageCode: widget.languageCode,
+              loc: loc,
             ),
+            if (!hasFlagged) ...[
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Icon(
+                    Icons.check_circle_outline,
+                    color: Colors.green.shade600,
+                    size: 16,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    loc.transparentNoMatches,
+                    style: TextStyle(
+                      color: Colors.green.shade700,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ],
           const SizedBox(height: 12),
           // Toggle button stays in the same position in both states

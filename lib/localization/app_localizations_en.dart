@@ -1424,4 +1424,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mayContain => 'May contain';
+
+  @override
+  String get findings => 'Findings';
+
+  @override
+  String get seeFullDetails => 'See full details';
+
+  @override
+  String get fullDetailsTitle => 'Full Details';
 }

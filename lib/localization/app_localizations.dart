@@ -2667,6 +2667,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'May contain'**
   String get mayContain;
+
+  /// No description provided for @findings.
+  ///
+  /// In en, this message translates to:
+  /// **'Findings'**
+  String get findings;
+
+  /// No description provided for @seeFullDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'See full details'**
+  String get seeFullDetails;
+
+  /// No description provided for @fullDetailsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Full Details'**
+  String get fullDetailsTitle;
 }
 
 class _AppLocalizationsDelegate

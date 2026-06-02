@@ -1445,4 +1445,13 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get mayContain => 'Kann Spuren enthalten von';
+
+  @override
+  String get findings => 'Befunde';
+
+  @override
+  String get seeFullDetails => 'Alle Details anzeigen';
+
+  @override
+  String get fullDetailsTitle => 'Vollständige Details';
 }

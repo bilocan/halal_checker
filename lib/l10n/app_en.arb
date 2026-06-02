@@ -578,5 +578,8 @@
   "showLessIngredients": "Show less",
   "allergens": "Allergens",
   "additives": "Additives",
-  "mayContain": "May contain"
+  "mayContain": "May contain",
+  "findings": "Findings",
+  "seeFullDetails": "See full details",
+  "fullDetailsTitle": "Full Details"
 }

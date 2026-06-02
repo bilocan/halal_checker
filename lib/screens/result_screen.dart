@@ -25,6 +25,7 @@ import 'result/debug/local_db_debug_dialog.dart';
 import 'result/result_controller.dart';
 import 'result/widgets/result_bottom_nav.dart';
 import 'result/widgets/result_community_section.dart';
+import 'result/widgets/result_flagged_ingredient_lists.dart';
 import 'result/widgets/result_footer_actions.dart';
 import 'result/widgets/result_hero_card.dart';
 import 'result/widgets/result_ingredients_section.dart';
@@ -58,6 +59,7 @@ class _ResultScreenState extends State<ResultScreen> {
   ProductImageType? _uploadingImageType;
   bool _showTranslated = false;
   bool _noteExpanded = false;
+  bool _detailsExpanded = false;
   final _noteController = TextEditingController();
 
   @override
@@ -67,6 +69,14 @@ class _ResultScreenState extends State<ResultScreen> {
       barcode: widget.barcode,
       product: widget.product,
     );
+    final p = widget.product;
+    if (p != null) {
+      _detailsExpanded =
+          p.haramIngredients.isNotEmpty ||
+          p.suspiciousIngredients.isNotEmpty ||
+          p.haramLabels.isNotEmpty ||
+          p.suspiciousLabels.isNotEmpty;
+    }
     _controller.loadAll().then((_) {
       if (!mounted) return;
       _noteController.text = _controller.note;
@@ -455,6 +465,7 @@ class _ResultScreenState extends State<ResultScreen> {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   const SizedBox(height: 20),
+                  // Tier 1 — always visible
                   ResultHeroCard(
                     product: product,
                     barcode: barcode,
@@ -470,13 +481,230 @@ class _ResultScreenState extends State<ResultScreen> {
                     onUpload: _uploadProductImage,
                   ),
                   const SizedBox(height: 16),
+                  // Tier 2 — one tap to expand
+                  _buildTier2(product, loc, languageCode),
+                  const SizedBox(height: 16),
+                  // Tier 3 — full details in bottom sheet
+                  _buildSeeFullDetailsButton(
+                    context,
+                    product,
+                    loc,
+                    languageCode,
+                  ),
+                  const SizedBox(height: 16),
+                  ResultCommunitySection(
+                    loc: loc,
+                    analysis: _controller.analysis,
+                    isRequestingAnalysis: _controller.isRequestingAnalysis,
+                    discussionCount: _controller.discussions.length,
+                    onRequestAnalysis: _requestAnalysis,
+                    onOpenAnalysis: _openDeepAnalysis,
+                    onOpenDiscussion: _openDiscussion,
+                  ),
+                  const SizedBox(height: 16),
+                  ResultNoteCard(
+                    loc: loc,
+                    note: _controller.note,
+                    isFlagged: _controller.isFlagged,
+                    isExpanded: _noteExpanded,
+                    noteController: _noteController,
+                    onToggleExpanded: () =>
+                        setState(() => _noteExpanded = !_noteExpanded),
+                    onToggleFlag: _toggleFlag,
+                    onSave: _saveNote,
+                  ),
+                  const SizedBox(height: 24),
+                  ResultFooterActions(
+                    loc: loc,
+                    onScanAnother: () => Navigator.pop(context, 'scan_another'),
+                    onFeedback: () => _onFeedbackTap(context),
+                    onReport: () => _showReportDialog(context, product),
+                  ),
+                  const SizedBox(height: 24),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+      bottomNavigationBar: _buildBottomNav(loc),
+    );
+  }
+
+  Widget _buildTier2(
+    Product product,
+    AppLocalizations loc,
+    String languageCode,
+  ) {
+    final hasFlagged =
+        product.haramIngredients.isNotEmpty ||
+        product.suspiciousIngredients.isNotEmpty ||
+        product.haramLabels.isNotEmpty ||
+        product.suspiciousLabels.isNotEmpty;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        InkWell(
+          onTap: () => setState(() => _detailsExpanded = !_detailsExpanded),
+          borderRadius: BorderRadius.circular(8),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Row(
+              children: [
+                Text(
+                  loc.findings,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey.shade900,
+                  ),
+                ),
+                const Spacer(),
+                Icon(
+                  _detailsExpanded ? Icons.expand_less : Icons.expand_more,
+                  color: Colors.grey.shade600,
+                ),
+              ],
+            ),
+          ),
+        ),
+        AnimatedSize(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeInOut,
+          child: _detailsExpanded
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const SizedBox(height: 8),
+                    ResultFlaggedIngredientLists(
+                      product: product,
+                      showTranslated: _showTranslated,
+                      languageCode: languageCode,
+                      loc: loc,
+                    ),
+                    if (!hasFlagged) ...[
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.check_circle_outline,
+                            color: Colors.green.shade600,
+                            size: 16,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            loc.transparentNoMatches,
+                            style: TextStyle(
+                              color: Colors.green.shade700,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
+                )
+              : const SizedBox.shrink(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSeeFullDetailsButton(
+    BuildContext context,
+    Product product,
+    AppLocalizations loc,
+    String languageCode,
+  ) {
+    return SizedBox(
+      width: double.infinity,
+      child: FilledButton.icon(
+        onPressed: () =>
+            _showFullDetailsSheet(context, product, loc, languageCode),
+        icon: const Icon(Icons.article_outlined, size: 16),
+        label: Text(loc.seeFullDetails),
+        style: FilledButton.styleFrom(
+          backgroundColor: kGreenSurface,
+          foregroundColor: kGreen,
+          padding: const EdgeInsets.symmetric(vertical: 12),
+        ),
+      ),
+    );
+  }
+
+  void _showFullDetailsSheet(
+    BuildContext context,
+    Product product,
+    AppLocalizations loc,
+    String languageCode,
+  ) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => DraggableScrollableSheet(
+        initialChildSize: 0.8,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        expand: false,
+        builder: (_, scrollController) => StatefulBuilder(
+          builder: (sheetContext, setSheetState) => SingleChildScrollView(
+            controller: scrollController,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  Text(
+                    loc.fullDetailsTitle,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  ResultFlaggedIngredientLists(
+                    product: product,
+                    showTranslated: _showTranslated,
+                    languageCode: languageCode,
+                    loc: loc,
+                  ),
+                  const SizedBox(height: 16),
+                  ResultFoodSafetyCard(
+                    allergensTags: product.allergensTags,
+                    tracesTags: product.tracesTags,
+                    additivesTags: product.additivesTags,
+                    haramIngredients: product.haramIngredients,
+                    suspiciousIngredients: product.suspiciousIngredients,
+                    haramAdditives: product.haramAdditives,
+                    suspiciousAdditives: product.suspiciousAdditives,
+                    loc: loc,
+                    initiallyExpanded: true,
+                  ),
+                  const SizedBox(height: 16),
                   ResultIngredientsSection(
                     product: product,
                     loc: loc,
                     showTranslated: _showTranslated,
                     languageCode: languageCode,
-                    onToggleTranslation: () =>
-                        setState(() => _showTranslated = !_showTranslated),
+                    onToggleTranslation: () {
+                      setState(() => _showTranslated = !_showTranslated);
+                      setSheetState(() {});
+                    },
                     onCopyIngredients: () => _copyToClipboard(
                       product.ingredients.join(', '),
                       loc.ingredients,
@@ -490,56 +718,17 @@ class _ResultScreenState extends State<ResultScreen> {
                         _controller.isFetchingAiIngredients,
                     onRequestAiIngredients: _requestAiIngredients,
                     onRefreshProduct: _refreshProductData,
-                  ),
-                  const SizedBox(height: 16),
-                  ResultFoodSafetyCard(
-                    allergensTags: product.allergensTags,
-                    tracesTags: product.tracesTags,
-                    additivesTags: product.additivesTags,
-                    haramIngredients: product.haramIngredients,
-                    suspiciousIngredients: product.suspiciousIngredients,
-                    haramAdditives: product.haramAdditives,
-                    suspiciousAdditives: product.suspiciousAdditives,
-                    loc: loc,
+                    initialShowAll: true,
+                    showFlaggedSection: false,
                   ),
                   const SizedBox(height: 16),
                   ResultTransparencyCard(product: product, loc: loc),
-                  const SizedBox(height: 16),
-                  ResultNoteCard(
-                    loc: loc,
-                    note: _controller.note,
-                    isFlagged: _controller.isFlagged,
-                    isExpanded: _noteExpanded,
-                    noteController: _noteController,
-                    onToggleExpanded: () =>
-                        setState(() => _noteExpanded = !_noteExpanded),
-                    onToggleFlag: _toggleFlag,
-                    onSave: _saveNote,
-                  ),
-                  const SizedBox(height: 16),
-                  ResultCommunitySection(
-                    loc: loc,
-                    analysis: _controller.analysis,
-                    isRequestingAnalysis: _controller.isRequestingAnalysis,
-                    discussionCount: _controller.discussions.length,
-                    onRequestAnalysis: _requestAnalysis,
-                    onOpenAnalysis: _openDeepAnalysis,
-                    onOpenDiscussion: _openDiscussion,
-                  ),
-                  const SizedBox(height: 24),
-                  ResultFooterActions(
-                    loc: loc,
-                    onScanAnother: () => Navigator.pop(context, 'scan_another'),
-                    onFeedback: () => _onFeedbackTap(context),
-                    onReport: () => _showReportDialog(context, product),
-                  ),
                 ],
               ),
             ),
-          );
-        },
+          ),
+        ),
       ),
-      bottomNavigationBar: _buildBottomNav(loc),
     );
   }
 

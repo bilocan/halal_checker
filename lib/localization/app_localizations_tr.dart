@@ -617,7 +617,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String explanationHaramAdditives(String additives) {
-    return 'Bu ürünün katkı maddeleri şunları içerdiğini gösteriyor: $additives. Ayrıntılar için aşağıdaki işaretli öğeleri inceleyin.';
+    return 'Bu ürünün izin verilmeyen katkı maddeleri içeriyor: $additives. Ayrıntılar için aşağıdaki işaretli öğeleri inceleyin.';
   }
 
   @override
@@ -1425,4 +1425,13 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get mayContain => 'İz içerebilir';
+
+  @override
+  String get findings => 'Bulgular';
+
+  @override
+  String get seeFullDetails => 'Tüm detayları gör';
+
+  @override
+  String get fullDetailsTitle => 'Tam Detaylar';
 }
