@@ -617,6 +617,29 @@ class AppLocalizationsDe extends AppLocalizations {
       'Dieses Produkt enthält eine oder mehrere Zutaten, die tierischen Ursprungs oder alkoholbezogen sein könnten. Prüfen Sie die markierten Zutaten.';
 
   @override
+  String explanationHaramWithIngredients(String ingredients) {
+    return 'Dieses Produkt enthält nicht zulässige Zutat(en): $ingredients. Prüfen Sie die markierten Zutaten unten.';
+  }
+
+  @override
+  String explanationHaramAdditives(String additives) {
+    return 'Die Zusatzstoffe dieses Produkts deuten darauf hin, dass es Folgendes enthält: $additives. Prüfen Sie die markierten Einträge unten.';
+  }
+
+  @override
+  String explanationHaramCategory(String category) {
+    return 'Dieses Produkt gehört zu einer nicht zulässigen Kategorie: $category.';
+  }
+
+  @override
+  String get explanationHalalInherentCategory =>
+      'Dieses Produkt gehört zu einer grundsätzlich halal Kategorie (z. B. Wasser, Salz). Keine bedenklichen Inhaltsstoffe erwartet.';
+
+  @override
+  String get explanationUnanalyzableLanguage =>
+      'Die Zutaten sind in einer Sprache, die wir nicht analysieren können. Der Halal-Status kann nicht bestimmt werden — bitte prüfen Sie die Verpackung direkt.';
+
+  @override
   String get unknown => '? UNBEKANNT';
 
   @override
@@ -1422,4 +1445,13 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get mayContain => 'Kann Spuren enthalten von';
+
+  @override
+  String get findings => 'Befunde';
+
+  @override
+  String get seeFullDetails => 'Alle Details anzeigen';
+
+  @override
+  String get fullDetailsTitle => 'Vollständige Details';
 }

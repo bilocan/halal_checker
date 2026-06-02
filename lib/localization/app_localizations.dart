@@ -1198,6 +1198,36 @@ abstract class AppLocalizations {
   /// **'This product contains one or more ingredients that may be animal-derived or alcohol-related. Review the flagged ingredients below for details.'**
   String get explanationHaram;
 
+  /// No description provided for @explanationHaramWithIngredients.
+  ///
+  /// In en, this message translates to:
+  /// **'This product contains ingredient(s) that are not permissible: {ingredients}. Review the flagged ingredients below for details.'**
+  String explanationHaramWithIngredients(String ingredients);
+
+  /// No description provided for @explanationHaramAdditives.
+  ///
+  /// In en, this message translates to:
+  /// **'This product\'s additives indicate it contains: {additives}. Review the flagged items below for details.'**
+  String explanationHaramAdditives(String additives);
+
+  /// No description provided for @explanationHaramCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'This product belongs to a category that is not permissible: {category}.'**
+  String explanationHaramCategory(String category);
+
+  /// No description provided for @explanationHalalInherentCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'This product is in an inherently halal category (e.g. water, salt). No harmful ingredients expected.'**
+  String get explanationHalalInherentCategory;
+
+  /// No description provided for @explanationUnanalyzableLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'Ingredients are in a language we cannot analyze. Halal status cannot be determined — check the packaging directly.'**
+  String get explanationUnanalyzableLanguage;
+
   /// No description provided for @unknown.
   ///
   /// In en, this message translates to:
@@ -2637,6 +2667,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'May contain'**
   String get mayContain;
+
+  /// No description provided for @findings.
+  ///
+  /// In en, this message translates to:
+  /// **'Findings'**
+  String get findings;
+
+  /// No description provided for @seeFullDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'See full details'**
+  String get seeFullDetails;
+
+  /// No description provided for @fullDetailsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Full Details'**
+  String get fullDetailsTitle;
 }
 
 class _AppLocalizationsDelegate

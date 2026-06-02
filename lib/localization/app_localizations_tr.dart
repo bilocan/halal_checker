@@ -611,6 +611,29 @@ class AppLocalizationsTr extends AppLocalizations {
       'Bu ürün, hayvansal kaynaklı veya alkol içerikli olabilecek bir veya daha fazla içerik barındırmaktadır. Ayrıntılar için işaretlenen içerikleri inceleyin.';
 
   @override
+  String explanationHaramWithIngredients(String ingredients) {
+    return 'Bu ürün izin verilmeyen içerik(ler) içeriyor: $ingredients. Ayrıntılar için aşağıdaki işaretli içerikleri inceleyin.';
+  }
+
+  @override
+  String explanationHaramAdditives(String additives) {
+    return 'Bu ürünün izin verilmeyen katkı maddeleri içeriyor: $additives. Ayrıntılar için aşağıdaki işaretli öğeleri inceleyin.';
+  }
+
+  @override
+  String explanationHaramCategory(String category) {
+    return 'Bu ürün izin verilmeyen bir kategoriye ait: $category.';
+  }
+
+  @override
+  String get explanationHalalInherentCategory =>
+      'Bu ürün doğası gereği helal bir kategoridedir (ör. su, tuz). Zararlı içerik beklenmez.';
+
+  @override
+  String get explanationUnanalyzableLanguage =>
+      'İçerikler analiz edemediğimiz bir dilde. Helal durumu belirlenemiyor — lütfen ambalajı doğrudan kontrol edin.';
+
+  @override
   String get unknown => '? BİLİNMİYOR';
 
   @override
@@ -1402,4 +1425,13 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get mayContain => 'İz içerebilir';
+
+  @override
+  String get findings => 'Bulgular';
+
+  @override
+  String get seeFullDetails => 'Tüm detayları gör';
+
+  @override
+  String get fullDetailsTitle => 'Tam Detaylar';
 }

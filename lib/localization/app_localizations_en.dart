@@ -612,6 +612,29 @@ class AppLocalizationsEn extends AppLocalizations {
       'This product contains one or more ingredients that may be animal-derived or alcohol-related. Review the flagged ingredients below for details.';
 
   @override
+  String explanationHaramWithIngredients(String ingredients) {
+    return 'This product contains ingredient(s) that are not permissible: $ingredients. Review the flagged ingredients below for details.';
+  }
+
+  @override
+  String explanationHaramAdditives(String additives) {
+    return 'This product\'s additives indicate it contains: $additives. Review the flagged items below for details.';
+  }
+
+  @override
+  String explanationHaramCategory(String category) {
+    return 'This product belongs to a category that is not permissible: $category.';
+  }
+
+  @override
+  String get explanationHalalInherentCategory =>
+      'This product is in an inherently halal category (e.g. water, salt). No harmful ingredients expected.';
+
+  @override
+  String get explanationUnanalyzableLanguage =>
+      'Ingredients are in a language we cannot analyze. Halal status cannot be determined — check the packaging directly.';
+
+  @override
   String get unknown => '? UNKNOWN';
 
   @override
@@ -1401,4 +1424,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mayContain => 'May contain';
+
+  @override
+  String get findings => 'Findings';
+
+  @override
+  String get seeFullDetails => 'See full details';
+
+  @override
+  String get fullDetailsTitle => 'Full Details';
 }

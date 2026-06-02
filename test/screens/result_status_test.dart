@@ -43,4 +43,68 @@ void main() {
     expect(status.resultLabel, loc.suspiciousResult);
     expect(status.explanation, loc.explanationSuspiciousOnly('e471'));
   });
+
+  test('stored English explanation is not shown when localized copy exists', () {
+    final loc = AppLocalizationsEn();
+    final product = Product(
+      barcode: '1',
+      name: 'Test',
+      ingredients: const ['water'],
+      isHalal: true,
+      haramIngredients: const [],
+      suspiciousIngredients: const [],
+      ingredientWarnings: const {},
+      labels: const [],
+      explanation:
+          'No haram or suspicious ingredients detected. Assessed by keyword matching.',
+      analysisMethod: 'keyword',
+    );
+
+    final status = ResultStatus.from(product, loc);
+
+    expect(status.explanation, loc.explanationClean);
+    expect(status.explanation, isNot(contains('Assessed by keyword')));
+  });
+
+  test('haram product lists flagged ingredients in localized explanation', () {
+    final loc = AppLocalizationsEn();
+    final product = Product(
+      barcode: '2',
+      name: 'Spam',
+      ingredients: const ['Pork with Ham'],
+      isHalal: false,
+      haramIngredients: const ['Pork with Ham'],
+      suspiciousIngredients: const [],
+      ingredientWarnings: const {},
+      labels: const [],
+      explanation: 'English-only stored explanation',
+    );
+
+    final status = ResultStatus.from(product, loc);
+
+    expect(
+      status.explanation,
+      loc.explanationHaramWithIngredients('Pork with Ham'),
+    );
+  });
+
+  test('unanalyzable language uses localized unknown explanation', () {
+    final loc = AppLocalizationsEn();
+    final product = Product(
+      barcode: '3',
+      name: 'Test',
+      ingredients: const ['不明'],
+      isHalal: false,
+      isUnknown: true,
+      haramIngredients: const [],
+      suspiciousIngredients: const [],
+      ingredientWarnings: const {},
+      labels: const [],
+      keywordMatchSource: 'unanalyzable',
+    );
+
+    final status = ResultStatus.from(product, loc);
+
+    expect(status.explanation, loc.explanationUnanalyzableLanguage);
+  });
 }

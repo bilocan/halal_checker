@@ -13,6 +13,7 @@ class ResultFoodSafetyCard extends StatelessWidget {
     required this.haramAdditives,
     required this.suspiciousAdditives,
     required this.loc,
+    this.initiallyExpanded = false,
   });
 
   final List<String> allergensTags;
@@ -23,6 +24,7 @@ class ResultFoodSafetyCard extends StatelessWidget {
   final List<String> haramAdditives;
   final List<String> suspiciousAdditives;
   final AppLocalizations loc;
+  final bool initiallyExpanded;
 
   @override
   Widget build(BuildContext context) {
@@ -41,6 +43,7 @@ class ResultFoodSafetyCard extends StatelessWidget {
     return Card(
       margin: EdgeInsets.zero,
       child: ExpansionTile(
+        initiallyExpanded: initiallyExpanded,
         leading: const Icon(Icons.health_and_safety_outlined),
         title: Text(
           '${loc.allergens} & ${loc.additives}',

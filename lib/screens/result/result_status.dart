@@ -4,6 +4,7 @@ import '../../app_colors.dart';
 import '../../localization/app_localizations.dart';
 import '../../models/product.dart';
 import '../../services/product_verdict.dart';
+import 'product_explanation.dart';
 
 /// Visual and textual halal verdict derived from a [Product].
 class ResultStatus {
@@ -45,10 +46,10 @@ class ResultStatus {
     final label = switch (outcome) {
       ProductOutcome.nonFood => loc.nonFood,
       ProductOutcome.unknown => loc.unknown,
-      ProductOutcome.haram => '❌ ${loc.notHalal}',
+      ProductOutcome.haram => loc.notHalal,
       ProductOutcome.suspicious => loc.suspiciousVerdict,
       ProductOutcome.noCert => loc.noCert,
-      ProductOutcome.halal => '✅ ${loc.halal}',
+      ProductOutcome.halal => loc.halal,
     };
 
     final resultLabel = switch (outcome) {
@@ -60,13 +61,11 @@ class ResultStatus {
       ProductOutcome.halal => loc.halal,
     };
 
-    final explanation = product.isNonFood
-        ? loc.explanationNonFood
-        : product.requiresHalalCert && outcome == ProductOutcome.noCert
-        ? loc.explanationNoCert
-        : product.explanation.isNotEmpty
-        ? product.explanation
-        : defaultExplanation(product, outcome, loc);
+    final explanation = localizedProductExplanation(
+      product: product,
+      outcome: outcome,
+      loc: loc,
+    );
 
     return ResultStatus(
       color: color,
@@ -76,24 +75,4 @@ class ResultStatus {
       resultLabel: resultLabel,
     );
   }
-}
-
-String defaultExplanation(
-  Product product,
-  ProductOutcome outcome,
-  AppLocalizations loc,
-) {
-  return switch (outcome) {
-    ProductOutcome.unknown => loc.explanationUnknown,
-    ProductOutcome.haram => loc.explanationHaram,
-    ProductOutcome.suspicious => loc.explanationSuspiciousOnly(
-      [
-        ...product.suspiciousIngredients,
-        ...product.suspiciousLabels,
-      ].join(', '),
-    ),
-    ProductOutcome.halal => loc.explanationClean,
-    ProductOutcome.noCert => loc.explanationNoCert,
-    ProductOutcome.nonFood => loc.explanationNonFood,
-  };
 }

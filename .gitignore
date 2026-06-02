@@ -57,3 +57,5 @@ app.*.map.json
 supabase/.temp/
 pubspec.lock
 dart_defines.local.json
+.claude/CLAUDE.local.md
+.claude/settings.local.json

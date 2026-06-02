@@ -220,6 +220,12 @@ void main() {
       'e927',
       'e422',
       'e441',
+      'e481',
+      'e482',
+      'e570',
+      'e572',
+      'e631',
+      'e635',
     ]) {
       test(
         'suspiciousVariants["$key"] contains "${key.replaceFirst('e', 'e-')}"',
