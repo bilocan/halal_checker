@@ -174,9 +174,10 @@ Transparency fields: `keyword_match_source`, `keyword_match_origins`, `analyze_l
 
 | Secret / flag | Effect |
 |---------------|--------|
+| `AI_VERDICT_ENABLED=true` | Enable Gemini + Claude text verdict (`stepTieredTextAi`); **unset = disabled** |
 | `CLAUDE_ENABLED=false` (default in repo) | Skip Claude text + vision |
 | `CLAUDE_API_KEY` | Required for Claude paths when enabled |
-| `GEMINI_ENABLED` / `GEMINI_API_KEY` | Gemini text AI + ingredient web lookup |
+| `GEMINI_ENABLED` / `GEMINI_API_KEY` | Gemini ingredient web lookup; also gates Gemini text verdict when `AI_VERDICT_ENABLED=true` |
 | `GEMINI_LOOKUP_EMPTY_OFF` | Auto Gemini ingredients when OFF empty (see `ingredient_lookup_gate.ts`) |
 
 **Gemini ingredient web lookup (shared):** `_shared/gemini_ingredient_lookup.ts` — model, system prompt, and `generateContent` body used by `lookup-product` (Flutter) and `admin-gemini-ingredient-lookup` (web admin probe). Request contract: `_shared/gemini_ingredient_lookup_test.ts` (no API calls in CI).
