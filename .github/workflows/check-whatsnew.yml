@@ -1,0 +1,70 @@
+name: Check App Store What's New
+
+# Runs on every push/PR that touches release_notes/ to verify
+# the What's New text is valid before a real deploy.
+# Uses --dry-run: reads files and checks formatting, zero API calls.
+
+on:
+  push:
+    paths:
+      - 'release_notes/**'
+  pull_request:
+    paths:
+      - 'release_notes/**'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to check (e.g. 1.3.12) — defaults to latest shipped'
+        required: false
+        type: string
+
+jobs:
+  check-whatsnew:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve version
+        id: version
+        run: |
+          if [ -n "${{ inputs.version }}" ]; then
+            echo "name=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
+          else
+            # Use the latest versioned folder in release_notes/ (exclude unreleased)
+            VERSION=$(ls release_notes/ | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1)
+            echo "name=$VERSION" >> "$GITHUB_OUTPUT"
+            echo "Using latest version: $VERSION"
+          fi
+
+      - name: Dry-run What's New preparation
+        run: |
+          VERSION="${{ steps.version.outputs.name }}"
+          echo "Checking release notes for v$VERSION..."
+          bash ./scripts/linux/upload_appstore_whatsnew.sh "$VERSION" --dry-run
+
+      - name: Show prepared texts
+        run: |
+          echo "=== Prepared App Store What's New texts ==="
+          for f in build/appstore-whatsnew/*.txt; do
+            locale=$(basename "$f" .txt)
+            chars=$(wc -m < "$f")
+            echo ""
+            echo "── $locale ($chars chars) ──"
+            cat "$f"
+          done
+
+      - name: Verify all 4 locales present
+        run: |
+          VERSION="${{ steps.version.outputs.name }}"
+          missing=()
+          for locale in en-US de-DE tr ar-SA; do
+            if [ ! -f "build/appstore-whatsnew/$locale.txt" ]; then
+              missing+=("$locale")
+            fi
+          done
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::error::Missing What's New for locales: ${missing[*]}"
+            echo "Add bullets to release_notes/$VERSION/{en,de,tr,ar}.md"
+            exit 1
+          fi
+          echo "All 4 locales present ✅"
