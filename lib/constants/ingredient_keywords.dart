@@ -45,6 +45,12 @@ class IngredientKeywords {
     'e473': 'Sucrose esters may be animal-derived',
     'e927': 'Glycine may be animal-derived',
     'e422': 'Glycerol may be animal-derived',
+    'e481': 'Sodium stearoyl lactylate may be animal-derived',
+    'e482': 'Calcium stearoyl lactylate may be animal-derived',
+    'e570': 'Fatty acids (E570) may be animal-derived',
+    'e572': 'Magnesium stearate may be animal-derived',
+    'e631': 'Disodium inosinate (E631) may be derived from fish or meat',
+    'e635': 'Disodium ribonucleotides (E635) may be derived from fish or meat',
     'rennet': 'Rennet may be animal-derived',
     'whey': 'Whey is a dairy ingredient — source verification recommended.',
     'l-cysteine': 'L-cysteine may be animal-derived',
@@ -150,6 +156,12 @@ class IngredientKeywords {
     'e473': ['e473', 'e-473'],
     'e927': ['e927', 'e-927'],
     'e422': ['e422', 'e-422'],
+    'e481': ['e481', 'e-481'],
+    'e482': ['e482', 'e-482'],
+    'e570': ['e570', 'e-570'],
+    'e572': ['e572', 'e-572'],
+    'e631': ['e631', 'e-631'],
+    'e635': ['e635', 'e-635'],
     'rennet': [
       'rennet', 'lab', 'labferment', 'présure', 'caglio', 'cuajo',
       'peynir mayası', 'stremsel',
@@ -423,6 +435,24 @@ class IngredientKeywords {
     },
     'e422': {
       'en': ['e422', 'e-422'],
+    },
+    'e481': {
+      'en': ['e481', 'e-481'],
+    },
+    'e482': {
+      'en': ['e482', 'e-482'],
+    },
+    'e570': {
+      'en': ['e570', 'e-570'],
+    },
+    'e572': {
+      'en': ['e572', 'e-572'],
+    },
+    'e631': {
+      'en': ['e631', 'e-631'],
+    },
+    'e635': {
+      'en': ['e635', 'e-635'],
     },
     'rennet': {
       'en': ['rennet'],

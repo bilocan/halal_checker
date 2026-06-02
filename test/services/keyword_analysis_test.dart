@@ -125,6 +125,39 @@ void main() {
     test('does not match e1200 as e120', () {
       expect(ProductService.matchesKeyword('e1200', 'e120'), isFalse);
     });
+    test('matches e481', () {
+      expect(ProductService.matchesKeyword('e481', 'e481'), isTrue);
+    });
+    test('matches e-481 with hyphen', () {
+      expect(ProductService.matchesKeyword('e-481', 'e481'), isTrue);
+    });
+    test('matches e482', () {
+      expect(ProductService.matchesKeyword('e482', 'e482'), isTrue);
+    });
+    test('matches e570', () {
+      expect(ProductService.matchesKeyword('e570', 'e570'), isTrue);
+    });
+    test('matches e-570 with hyphen', () {
+      expect(ProductService.matchesKeyword('e-570', 'e570'), isTrue);
+    });
+    test('matches e572', () {
+      expect(ProductService.matchesKeyword('e572', 'e572'), isTrue);
+    });
+    test('matches e631', () {
+      expect(ProductService.matchesKeyword('e631', 'e631'), isTrue);
+    });
+    test('matches e-631 with hyphen', () {
+      expect(ProductService.matchesKeyword('e-631', 'e631'), isTrue);
+    });
+    test('matches e635', () {
+      expect(ProductService.matchesKeyword('e635', 'e635'), isTrue);
+    });
+    test('matches e-635 with hyphen', () {
+      expect(ProductService.matchesKeyword('e-635', 'e635'), isTrue);
+    });
+    test('does not match e5700 as e570', () {
+      expect(ProductService.matchesKeyword('e5700', 'e570'), isFalse);
+    });
   });
 
   group('matchesKeyword — suspicious', () {
@@ -251,6 +284,38 @@ void main() {
       ]);
       expect(r.isHalal, isFalse);
       expect(r.haram, contains('e120'));
+    });
+
+    test('crisp ingredients with e631 and e635 are flagged suspicious', () {
+      final r = ProductService.analyzeWithKeywords([
+        'potato',
+        'sunflower oil',
+        'salt',
+        'e631',
+        'e635',
+      ]);
+      expect(r.isHalal, isFalse);
+      expect(r.suspicious, containsAll(['e631', 'e635']));
+    });
+
+    test('product with e481 and e570 are flagged suspicious', () {
+      final r = ProductService.analyzeWithKeywords([
+        'wheat flour',
+        'water',
+        'e481',
+        'e570',
+      ]);
+      expect(r.isHalal, isFalse);
+      expect(r.suspicious, containsAll(['e481', 'e570']));
+    });
+
+    test('hyphenated e-631 and e-635 are flagged suspicious', () {
+      final r = ProductService.analyzeWithKeywords([
+        'potato',
+        'e-631',
+        'e-635',
+      ]);
+      expect(r.suspicious, containsAll(['e-631', 'e-635']));
     });
 
     test('German pork ingredient is flagged', () {
