@@ -237,16 +237,16 @@ class AppLocalizationsDe extends AppLocalizations {
   String get vegan => 'Vegan';
 
   @override
-  String get halal => 'HALAL';
+  String get halal => 'Nichts beanstandet';
 
   @override
-  String get notHalal => 'HARAM';
+  String get notHalal => 'Haram-Zutaten gefunden';
 
   @override
-  String get suspiciousVerdict => '⚠️ PRÜFEN';
+  String get suspiciousVerdict => 'Verdächtige Zutaten gefunden';
 
   @override
-  String get suspiciousResult => 'PRÜFEN';
+  String get suspiciousResult => 'Verdächtige Zutaten gefunden';
 
   @override
   String get lastScanned => 'Zuletzt gescannt';
