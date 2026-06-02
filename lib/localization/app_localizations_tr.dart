@@ -236,16 +236,16 @@ class AppLocalizationsTr extends AppLocalizations {
   String get vegan => 'Vegan';
 
   @override
-  String get halal => 'HELAL';
+  String get halal => 'Sorun bulunamadı';
 
   @override
-  String get notHalal => 'HARAM';
+  String get notHalal => 'Haram içerik tespit edildi';
 
   @override
-  String get suspiciousVerdict => '⚠️ KONTROL';
+  String get suspiciousVerdict => 'Şüpheli içerik tespit edildi';
 
   @override
-  String get suspiciousResult => 'KONTROL';
+  String get suspiciousResult => 'Şüpheli içerik tespit edildi';
 
   @override
   String get lastScanned => 'Son tarama';

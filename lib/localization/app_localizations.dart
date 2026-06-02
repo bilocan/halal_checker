@@ -517,25 +517,25 @@ abstract class AppLocalizations {
   /// No description provided for @halal.
   ///
   /// In en, this message translates to:
-  /// **'HALAL'**
+  /// **'Nothing flagged'**
   String get halal;
 
   /// No description provided for @notHalal.
   ///
   /// In en, this message translates to:
-  /// **'HARAM'**
+  /// **'Haram ingredients detected'**
   String get notHalal;
 
   /// No description provided for @suspiciousVerdict.
   ///
   /// In en, this message translates to:
-  /// **'⚠️ VERIFY'**
+  /// **'Suspicious ingredients found'**
   String get suspiciousVerdict;
 
   /// No description provided for @suspiciousResult.
   ///
   /// In en, this message translates to:
-  /// **'VERIFY'**
+  /// **'Suspicious ingredients found'**
   String get suspiciousResult;
 
   /// No description provided for @lastScanned.

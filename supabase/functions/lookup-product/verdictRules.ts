@@ -91,6 +91,7 @@ interface VerdictState {
 type AsyncVerdictStep = (state: VerdictState) => Promise<VerdictState>
 
 interface AiEnv {
+  aiVerdictEnabled: boolean
   geminiEnabled: boolean
   claudeEnabled: boolean
   geminiKey: string | undefined
@@ -258,6 +259,7 @@ function withAnalyzedByAI(state: VerdictState, ai: AiVerdict): VerdictState {
 
 function readAiEnv(): AiEnv {
   return {
+    aiVerdictEnabled: Deno.env.get('AI_VERDICT_ENABLED') === 'true',
     geminiEnabled: Deno.env.get('GEMINI_ENABLED') !== 'false',
     claudeEnabled: Deno.env.get('CLAUDE_ENABLED') !== 'false',
     geminiKey: Deno.env.get('GEMINI_API_KEY'),
@@ -294,6 +296,11 @@ async function stepTieredTextAi(state: VerdictState): Promise<VerdictState> {
   const env = readAiEnv()
   const { barcode } = state.ctx
   let next = state
+
+  if (!env.aiVerdictEnabled) {
+    console.log(`[${barcode}] AI verdict: skipped — AI_VERDICT_ENABLED not set to true`)
+    return state
+  }
 
   if (!env.geminiEnabled) {
     console.log(`[${barcode}] Gemini: skipped — disabled by GEMINI_ENABLED=false`)
