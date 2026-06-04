@@ -51,6 +51,27 @@ All three files are **gitignored**; copy from the matching `*.example.json` in t
 
 Full testing setup (E2E Docker stack, barcodes, CI secrets): [TESTING.md](TESTING.md).
 
+### Claude Code + Obsidian vault
+
+The team uses an Obsidian vault as a second brain (bug log, decisions, roadmap). When you work in this repo with Claude Code, link your local copy of the vault so Claude automatically follows the vault's rules (bug logging, decisions, trigger phrases).
+
+Create `.claude/CLAUDE.local.md` in the repo root (gitignored — each developer sets their own path):
+
+```markdown
+## Second brain (Obsidian vault)
+@/absolute/path/to/your/halalscan-vault/CLAUDE.md
+```
+
+Example on Windows:
+```markdown
+## Second brain (Obsidian vault)
+@C:\Users\YourName\Documents\halalscan\CLAUDE.md
+```
+
+The `@` import pulls the vault's `CLAUDE.md` into every Claude Code session in this repo. Claude can then read and write vault files directly (bug notes, decisions, release entries) using the path it derives from the import.
+
+If you don't have the vault, ask the team for access or skip this step — it only affects AI-assisted workflows.
+
 ### Local configuration
 
 **App (production Supabase project):**

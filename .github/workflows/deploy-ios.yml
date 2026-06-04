@@ -473,6 +473,92 @@ jobs:
             fi
           fi
 
+      - name: Link build to App Store version
+        env:
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APP_STORE_CONNECT_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_KEY_BASE64 }}
+        run: |
+          set -euo pipefail
+          pip install cryptography --quiet 2>/dev/null
+
+          VERSION="${{ needs.build-and-upload.outputs.version-name }}"
+          KEY_FILE=$(mktemp /tmp/authkey.XXXXXX.p8)
+          echo "$APP_STORE_CONNECT_KEY_BASE64" | base64 --decode > "$KEY_FILE"
+
+          JWT=$(KEY_FILE="$KEY_FILE" python3 - <<'PYEOF'
+          import json, time, base64, os
+          from cryptography.hazmat.primitives import hashes, serialization
+          from cryptography.hazmat.primitives.asymmetric import ec
+          from cryptography.hazmat.primitives.asymmetric.utils import decode_dss_signature
+          key_id = os.environ['APP_STORE_CONNECT_KEY_ID']
+          issuer_id = os.environ['APP_STORE_CONNECT_ISSUER_ID']
+          with open(os.environ['KEY_FILE'], 'rb') as f:
+              pk = serialization.load_pem_private_key(f.read(), password=None)
+          now = int(time.time())
+          def b64u(d): return base64.urlsafe_b64encode(d if isinstance(d, bytes) else d.encode()).rstrip(b'=').decode()
+          h = b64u(json.dumps({'alg':'ES256','kid':key_id,'typ':'JWT'}, separators=(',',':')))
+          p = b64u(json.dumps({'iss':issuer_id,'iat':now,'exp':now+1200,'aud':'appstoreconnect-v1'}, separators=(',',':')))
+          msg = f'{h}.{p}'
+          r, s = decode_dss_signature(pk.sign(msg.encode(), ec.ECDSA(hashes.SHA256())))
+          print(f'{msg}.{b64u(r.to_bytes(32,"big")+s.to_bytes(32,"big"))}')
+          PYEOF
+          )
+          rm -f "$KEY_FILE"
+
+          APP_ID=$(curl -gsS --fail-with-body \
+            -H "Authorization: Bearer $JWT" \
+            "https://api.appstoreconnect.apple.com/v1/apps?filter[bundleId]=app.halalscan" \
+            | jq -r '.data[0].id')
+
+          VERSION_ID=$(curl -gsS --fail-with-body \
+            -H "Authorization: Bearer $JWT" \
+            "https://api.appstoreconnect.apple.com/v1/apps/$APP_ID/appStoreVersions?filter[platform]=IOS&filter[versionString]=$VERSION" \
+            | jq -r '.data[0].id')
+
+          if [ -z "$VERSION_ID" ] || [ "$VERSION_ID" = "null" ]; then
+            echo "::error::App Store version $VERSION not found — cannot link build."
+            exit 1
+          fi
+
+          # Build had plenty of time to process during Gate 1 manual approval; poll
+          # briefly just in case.
+          BUILD_ID=""
+          for i in $(seq 1 10); do
+            BUILD_ID=$(curl -gsS \
+              -H "Authorization: Bearer $JWT" \
+              "https://api.appstoreconnect.apple.com/v1/builds?filter[app]=$APP_ID&filter[preReleaseVersion.version]=$VERSION&filter[processingState]=VALID&sort=-uploadedDate&limit=1" \
+              | jq -r '.data[0].id // empty')
+            if [ -n "$BUILD_ID" ]; then
+              echo "Found valid build $BUILD_ID for v$VERSION."
+              break
+            fi
+            echo "Waiting for valid build... (attempt $i/10)"
+            sleep 15
+          done
+
+          if [ -z "$BUILD_ID" ]; then
+            echo "::error::No valid build found for v$VERSION. Upload to TestFlight may have failed."
+            exit 1
+          fi
+
+          PATCH_RESP=$(curl -gsS -w "\n%{http_code}" \
+            -X PATCH \
+            -H "Authorization: Bearer $JWT" \
+            -H "Content-Type: application/json" \
+            -d "{\"data\":{\"type\":\"appStoreVersions\",\"id\":\"$VERSION_ID\",\"relationships\":{\"build\":{\"data\":{\"type\":\"builds\",\"id\":\"$BUILD_ID\"}}}}}" \
+            "https://api.appstoreconnect.apple.com/v1/appStoreVersions/$VERSION_ID")
+          PATCH_HTTP=$(echo "$PATCH_RESP" | tail -1)
+          PATCH_BODY=$(echo "$PATCH_RESP" | sed '$d')
+
+          if [ "$PATCH_HTTP" -ge 200 ] && [ "$PATCH_HTTP" -lt 300 ]; then
+            echo "Build $BUILD_ID linked to App Store version $VERSION."
+          else
+            echo "::error::Failed to link build to App Store version (HTTP $PATCH_HTTP):"
+            echo "$PATCH_BODY"
+            exit 1
+          fi
+
       - name: Upload App Store What's New
         env:
           APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
