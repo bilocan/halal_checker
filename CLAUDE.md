@@ -29,6 +29,8 @@ Move to `02 - Dev/Bugs/Resolved/` only after the user confirms it works in produ
 
 **When a product decision is made:** capture it in `01 - Product/Decisions/`.
 
+**On `debrief`:** follow the vault `CLAUDE.md` debrief flow — end the reply with a **suggested vault commit** (`docs: …`) when vault notes changed; do not commit unless asked.
+
 ## Task done (Claude Code + Cursor)
 
 When the user says **task done** / **done** / **finish**: follow **[DEFINITION_OF_DONE.md](DEFINITION_OF_DONE.md)** in full. For user-visible work you **must** write release notes — run `add_release_note` or edit `release_notes/unreleased/{en,de,tr,ar}.md`. Consolidating docs into one file does **not** remove that step.
