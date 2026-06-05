@@ -1196,6 +1196,36 @@ class AppLocalizationsDe extends AppLocalizations {
       'Automatische KI-Zutatensuche deaktiviert';
 
   @override
+  String get closedBetaBannerTitle =>
+      'Geschlossener Beta-Test — hilf uns testen';
+
+  @override
+  String get closedBetaBannerSubtitle =>
+      'Dein Feedback hilft uns, in Google Play live zu gehen. Bitte teste diese Abläufe und melde Fehler.';
+
+  @override
+  String get closedBetaBannerTasks =>
+      '• Barcode scannen (Tag 1)\n• Ergebnis öffnen und Zutaten lesen (Tag 3)\n• Am Tag 7 erneut scannen\n• Feedback über dieses Banner oder Über uns senden';
+
+  @override
+  String get sendBetaFeedback => 'Beta-Feedback senden';
+
+  @override
+  String get closedBetaBannerAdminTitle =>
+      'Geschlossener-Beta-Banner auf Startseite';
+
+  @override
+  String get closedBetaBannerAdminDescription =>
+      'Zeigt Android-Testern ein ausblendbares Checklisten-Banner auf dem Start-Tab (iOS unverändert).';
+
+  @override
+  String get closedBetaBannerEnabled => 'Geschlossener-Beta-Banner aktiviert';
+
+  @override
+  String get closedBetaBannerDisabled =>
+      'Geschlossener-Beta-Banner deaktiviert';
+
+  @override
   String get systemSettingsLoadFailed =>
       'Systemeinstellungen konnten nicht geladen werden';
 

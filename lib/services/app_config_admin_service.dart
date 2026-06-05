@@ -7,6 +7,7 @@ import 'auth_service.dart';
 /// Superadmin-only runtime flags in `app_config` (via RPC).
 class AppConfigAdminService {
   static const geminiLookupEmptyOffKey = 'gemini_lookup_empty_off';
+  static const closedBetaBannerKey = 'closed_beta_banner';
 
   static bool _supabaseAvailable = AppConfig.hasSupabase;
 
@@ -19,10 +20,18 @@ class AppConfigAdminService {
   @visibleForTesting
   static Future<bool> Function(bool enabled)? fakeSetGeminiLookupEmptyOff;
 
+  @visibleForTesting
+  static Future<bool?> Function()? fakeFetchClosedBetaBanner;
+
+  @visibleForTesting
+  static Future<bool> Function(bool enabled)? fakeSetClosedBetaBanner;
+
   static void resetTestOverrides() {
     fakeIsSuperAdmin = null;
     fakeFetchGeminiLookupEmptyOff = null;
     fakeSetGeminiLookupEmptyOff = null;
+    fakeFetchClosedBetaBanner = null;
+    fakeSetClosedBetaBanner = null;
     _supabaseAvailable = AppConfig.hasSupabase;
   }
 
@@ -80,6 +89,48 @@ class AppConfigAdminService {
       return true;
     } catch (e) {
       debugPrint('[AppConfigAdminService] setGeminiLookupEmptyOff: $e');
+      return false;
+    }
+  }
+
+  static Future<bool?> fetchClosedBetaBanner() async {
+    if (fakeFetchClosedBetaBanner != null) {
+      return fakeFetchClosedBetaBanner!();
+    }
+    if (!_supabaseAvailable) return null;
+    try {
+      final row = await Supabase.instance.client
+          .from('app_config')
+          .select('value')
+          .eq('key', closedBetaBannerKey)
+          .maybeSingle();
+      if (row == null) return false;
+      return row['value'] == 'true';
+    } catch (e) {
+      debugPrint('[AppConfigAdminService] fetchClosedBetaBanner: $e');
+      return null;
+    }
+  }
+
+  static Future<bool> setClosedBetaBanner(bool enabled) async {
+    if (!_supabaseAvailable && fakeSetClosedBetaBanner == null) {
+      return false;
+    }
+    if (!await _isSuperAdmin()) return false;
+    if (fakeSetClosedBetaBanner != null) {
+      return fakeSetClosedBetaBanner!(enabled);
+    }
+    try {
+      await Supabase.instance.client.rpc(
+        'set_superadmin_app_config_flag',
+        params: {
+          'p_key': closedBetaBannerKey,
+          'p_value': enabled ? 'true' : 'false',
+        },
+      );
+      return true;
+    } catch (e) {
+      debugPrint('[AppConfigAdminService] setClosedBetaBanner: $e');
       return false;
     }
   }

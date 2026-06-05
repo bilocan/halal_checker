@@ -9,12 +9,14 @@ import '../../../config.dart';
 import '../../../integration_test_keys.dart';
 import '../../../localization/app_localizations.dart';
 import '../../../models/product.dart';
+import '../../../services/beta_program_service.dart';
 import '../../../services/database_service.dart';
 import '../../../services/product_verdict.dart';
 import '../../../services/ingredient_sanitizer.dart';
 import '../../../services/ocr_service.dart';
 import '../../../services/product_service.dart';
 import '../../../utils/image_crop_helper.dart';
+import '../../../widgets/closed_beta_banner.dart';
 import '../../batch_scan_screen.dart';
 import '../../home_screen.dart';
 import '../../result_screen.dart';
@@ -34,12 +36,15 @@ class StartHomeTab extends StatefulWidget {
     ProductService? productService,
     this.loadRecentScans,
     this.enableSwipeToDelete = true,
-  }) : _productService = productService;
+    BetaProgramService? betaProgramService,
+  }) : _productService = productService,
+       _betaProgramService = betaProgramService;
 
   final bool canBatchImport;
   final ValueChanged<Locale>? onLocaleChanged;
   final ProductService? _productService;
   final LoadRecentScans? loadRecentScans;
+  final BetaProgramService? _betaProgramService;
 
   /// When false, list rows omit [Dismissible] (avoids timer hangs in widget tests).
   final bool enableSwipeToDelete;
@@ -53,10 +58,14 @@ class _StartHomeTabState extends State<StartHomeTab>
   ProductService get _productService =>
       widget._productService ?? ProductService();
 
+  BetaProgramService get _betaProgramService =>
+      widget._betaProgramService ?? BetaProgramService();
+
   List<Map<String, dynamic>> _recentScans = [];
   bool _isLoading = true;
   bool _isLoadingProduct = false;
   bool _showFlaggedOnly = false;
+  bool _showBetaBanner = false;
   String? _loadError;
 
   @override
@@ -64,6 +73,17 @@ class _StartHomeTabState extends State<StartHomeTab>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _loadRecentScans(initial: true);
+    unawaited(_loadBetaBanner());
+  }
+
+  Future<void> _loadBetaBanner() async {
+    final show = await _betaProgramService.shouldShowHomeBanner();
+    if (mounted) setState(() => _showBetaBanner = show);
+  }
+
+  Future<void> _dismissBetaBanner() async {
+    await BetaProgramService.dismissBanner();
+    if (mounted) setState(() => _showBetaBanner = false);
   }
 
   @override
@@ -76,6 +96,7 @@ class _StartHomeTabState extends State<StartHomeTab>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       unawaited(_loadRecentScans());
+      unawaited(_loadBetaBanner());
     }
   }
 
@@ -328,6 +349,10 @@ class _StartHomeTabState extends State<StartHomeTab>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                if (_showBetaBanner) ...[
+                  ClosedBetaBanner(onDismiss: _dismissBetaBanner),
+                  const SizedBox(height: 16),
+                ],
                 Text(
                   loc.lastResults,
                   style: const TextStyle(

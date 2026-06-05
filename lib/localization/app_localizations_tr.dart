@@ -1180,6 +1180,33 @@ class AppLocalizationsTr extends AppLocalizations {
       'Otomatik Gemini içerik araması kapalı';
 
   @override
+  String get closedBetaBannerTitle => 'Kapalı beta — teste yardım et';
+
+  @override
+  String get closedBetaBannerSubtitle =>
+      'Geri bildiriminiz Google Play\'de yayına çıkmamıza yardımcı olur. Bu akışları deneyin ve sorunları bildirin.';
+
+  @override
+  String get closedBetaBannerTasks =>
+      '• Barkod tara (1. gün)\n• Sonuç aç ve içerikleri oku (3. gün)\n• 7. gün tekrar tara\n• Bu banner veya Hakkında\'dan geri bildirim gönder';
+
+  @override
+  String get sendBetaFeedback => 'Beta geri bildirimi gönder';
+
+  @override
+  String get closedBetaBannerAdminTitle => 'Kapalı beta ana sayfa banner\'ı';
+
+  @override
+  String get closedBetaBannerAdminDescription =>
+      'Android kapalı test kullanıcılarına ana sekmede kapatılabilir banner gösterir (iOS etkilenmez).';
+
+  @override
+  String get closedBetaBannerEnabled => 'Kapalı beta banner açık';
+
+  @override
+  String get closedBetaBannerDisabled => 'Kapalı beta banner kapalı';
+
+  @override
   String get systemSettingsLoadFailed => 'Sistem ayarları yüklenemedi';
 
   @override

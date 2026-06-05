@@ -2218,6 +2218,54 @@ abstract class AppLocalizations {
   /// **'Auto Gemini ingredient lookup disabled'**
   String get geminiLookupEmptyOffDisabled;
 
+  /// No description provided for @closedBetaBannerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Closed beta — help us test'**
+  String get closedBetaBannerTitle;
+
+  /// No description provided for @closedBetaBannerSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your feedback helps us reach production on Google Play. Please try these flows and report anything broken.'**
+  String get closedBetaBannerSubtitle;
+
+  /// No description provided for @closedBetaBannerTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'• Scan a barcode (day 1)\n• Open a result and read ingredients (day 3)\n• Scan again on day 7\n• Send feedback from this banner or About'**
+  String get closedBetaBannerTasks;
+
+  /// No description provided for @sendBetaFeedback.
+  ///
+  /// In en, this message translates to:
+  /// **'Send beta feedback'**
+  String get sendBetaFeedback;
+
+  /// No description provided for @closedBetaBannerAdminTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Closed beta home banner'**
+  String get closedBetaBannerAdminTitle;
+
+  /// No description provided for @closedBetaBannerAdminDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Show a dismissible checklist banner on the Android home tab for Play closed testers (iOS is unaffected).'**
+  String get closedBetaBannerAdminDescription;
+
+  /// No description provided for @closedBetaBannerEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Closed beta banner enabled'**
+  String get closedBetaBannerEnabled;
+
+  /// No description provided for @closedBetaBannerDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Closed beta banner disabled'**
+  String get closedBetaBannerDisabled;
+
   /// No description provided for @systemSettingsLoadFailed.
   ///
   /// In en, this message translates to:

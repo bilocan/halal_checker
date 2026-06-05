@@ -15,6 +15,7 @@ class SystemSettingsTabState extends State<SystemSettingsTab> {
   bool _loading = true;
   bool _saving = false;
   bool _geminiLookupEmptyOff = false;
+  bool _closedBetaBanner = false;
   String? _error;
 
   @override
@@ -28,14 +29,16 @@ class SystemSettingsTabState extends State<SystemSettingsTab> {
       _loading = true;
       _error = null;
     });
-    final value = await AppConfigAdminService.fetchGeminiLookupEmptyOff();
+    final gemini = await AppConfigAdminService.fetchGeminiLookupEmptyOff();
+    final betaBanner = await AppConfigAdminService.fetchClosedBetaBanner();
     if (!mounted) return;
     setState(() {
       _loading = false;
-      if (value == null) {
+      if (gemini == null || betaBanner == null) {
         _error = AppLocalizations.of(context).systemSettingsLoadFailed;
       } else {
-        _geminiLookupEmptyOff = value;
+        _geminiLookupEmptyOff = gemini;
+        _closedBetaBanner = betaBanner;
       }
     });
   }
@@ -60,6 +63,31 @@ class SystemSettingsTabState extends State<SystemSettingsTab> {
           value
               ? AppLocalizations.of(context).geminiLookupEmptyOffEnabled
               : AppLocalizations.of(context).geminiLookupEmptyOffDisabled,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _onClosedBetaBannerToggle(bool value) async {
+    setState(() => _saving = true);
+    final ok = await AppConfigAdminService.setClosedBetaBanner(value);
+    if (!mounted) return;
+    setState(() => _saving = false);
+    if (!ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppLocalizations.of(context).systemSettingsSaveFailed),
+        ),
+      );
+      return;
+    }
+    setState(() => _closedBetaBanner = value);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          value
+              ? AppLocalizations.of(context).closedBetaBannerEnabled
+              : AppLocalizations.of(context).closedBetaBannerDisabled,
         ),
       ),
     );
@@ -109,6 +137,23 @@ class SystemSettingsTabState extends State<SystemSettingsTab> {
                     Icons.auto_awesome_outlined,
                     color: Color(0xFF7C3AED),
                   ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Card(
+          child: SwitchListTile(
+            title: Text(loc.closedBetaBannerAdminTitle),
+            subtitle: Text(loc.closedBetaBannerAdminDescription),
+            value: _closedBetaBanner,
+            onChanged: _saving ? null : _onClosedBetaBannerToggle,
+            activeThumbColor: kGreen,
+            secondary: _saving
+                ? const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.science_outlined, color: kGreenDark),
           ),
         ),
       ],
