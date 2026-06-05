@@ -95,6 +95,13 @@ const FATTY_ALCOHOL_PREFIX = /\b(cetyl|stearyl|behenyl|lauryl|myristyl|arachidyl
 // Used to suppress false positives like "enthält keine Zutaten vom Schwein".
 const NEGATION_WORDS = /\b(?:keine?|nicht|ohne|frei\s+von|sans|pas|geen|zonder|vrij\s+van|no|not|without|free\s+from|free\s+of|senza|sin|içermez|içermemektedir|neobsahuje|bez|nema|nem|mentes)\b/i
 
+// Microbial / vegetable / fermentation-produced rennet — explicit non-animal source.
+const HALAL_RENNET_SOURCE = /\b(?:mikrobiel\w*|mikrobial|mikrobiyal|microbial|microbien\w*|microbienne|microbico|microbiano|microbiële|pflanzlich\w*|vegetable|vegetal|végétal\w*|vegetarisch\w*|plant\w*|non-animal|fermentation\s+produced)\s+(?:lab(?:ferment)?|rennet|présure|caglio|cuajo|stremsel|peynir\s+mayası|sirilo|oltóanyag|syřidlo)\b|\b(?:fermentation[- ]?produced\s+)?chymosin\b|\bfpc\b/i
+
+function isHalalRennetSource(chunk: string): boolean {
+  return HALAL_RENNET_SOURCE.test(chunk)
+}
+
 function escape(s: string) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') }
 
 // Unicode-aware word boundaries covering basic Latin + extended Latin (À-ɏ, U+00C0-U+024F).
@@ -191,6 +198,13 @@ function keywordSinglePass(
     if (foundHaram) continue
     for (const entry of allSuspicious) {
       const matchedVariant = (entry.slice(2) as string[]).find(v => matchesVariant(lower, v))
+      if (
+        matchedVariant &&
+        entry[0] === 'rennet' &&
+        isHalalRennetSource(lower)
+      ) {
+        continue
+      }
       if (matchedVariant && !isNegated(lower, matchedVariant)) {
         warnings[ing] = entry[1]
         suspicious.push(ing)

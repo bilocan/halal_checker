@@ -152,6 +152,9 @@ class HalalRulesEngine {
   }
 
   bool matchesKeyword(String value, String keyword) {
+    if (keyword == 'rennet' && IngredientKeywords.isHalalRennetSource(value)) {
+      return false;
+    }
     final variants =
         rules.haramVariants[keyword] ??
         rules.suspiciousVariants[keyword] ??
@@ -194,6 +197,11 @@ class HalalRulesEngine {
 
       for (final entry in rules.suspicious.entries) {
         final variant = _matchingVariant(lower, entry.key);
+        if (variant != null &&
+            entry.key == 'rennet' &&
+            IngredientKeywords.isHalalRennetSource(lower)) {
+          continue;
+        }
         if (variant != null && !_isNegated(lower, variant)) {
           warnings[ingredient] = entry.value;
           canonicals[ingredient] = entry.key;

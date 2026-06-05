@@ -204,6 +204,18 @@ Deno.test('unicode boundary — standalone rum is still haram', () => {
   assertEquals(r.isHalal, false)
 })
 
+Deno.test('keywordAnalysis — mikrobielles Lab not suspicious (rennet safelist)', () => {
+  const r = keywordAnalysis(['Milch', 'mikrobielles Lab', 'Salz'])
+  assertEquals(r.isHalal, true)
+  assertEquals(r.suspicious.length, 0)
+})
+
+Deno.test('keywordAnalysis — bare Lab stays suspicious', () => {
+  const r = keywordAnalysis(['Milch', 'Lab', 'Salz'])
+  assertEquals(r.isHalal, false)
+  assertEquals(r.suspicious.includes('Lab'), true)
+})
+
 // ── community ingredient source ───────────────────────────────────────────────
 
 Deno.test('withCommunitySource — overrides OFF source when approved list exists', () => {

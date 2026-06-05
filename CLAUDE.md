@@ -6,11 +6,16 @@ Agent checklist: [AGENTS.md](AGENTS.md). **Definition of done (Cursor + Claude C
 
 The team's second brain is the **HalalScan Obsidian vault** — configured as an additional working directory in Claude Code, so it is always accessible alongside this repo.
 
-**When a bug is reported or fixed:** create a note in `02 - Dev/Bugs/` using this template:
+**When a bug is reported or fixed:**
+1. Create a note in `02 - Dev/Bugs/` using this template
+2. Add a row to the vault **[[Bug Tracker]]** (`02 - Dev/Bugs/Bug Tracker.md`) under the matching status section
+3. Update summary counts on the tracker and [[Dashboard]] when status changes
+
 ```
 # Bug: <short title>
 
 **Captured:** YYYY-MM-DD
+**Status:** Open | Fix implemented | Resolved
 **File:** <affected file or workflow>
 **Priority:** High / Medium / Low
 
@@ -19,7 +24,8 @@ The team's second brain is the **HalalScan Obsidian vault** — configured as an
 ## Fix — implemented / pending
 ## Related
 ```
-Move to `02 - Dev/Bugs/Resolved/` only after the user confirms it works in production.
+
+Move to `02 - Dev/Bugs/Resolved/` only after the user confirms it works in production; then set **Status:** Resolved and move the tracker row to **Resolved**.
 
 **When a product decision is made:** capture it in `01 - Product/Decisions/`.
 

@@ -548,6 +548,24 @@ class IngredientKeywords {
     caseSensitive: false,
   );
 
+  /// Microbial / vegetable / fermentation-produced rennet — source is explicit on pack.
+  /// Suppresses suspicious [rennet] when bare `lab` / `rennet` would otherwise match.
+  static final RegExp halalRennetSource = RegExp(
+    r'\b(?:'
+    r'mikrobiel\w*|mikrobial|mikrobiyal|microbial|microbien\w*|microbienne|'
+    r'microbico|microbiano|microbiële|pflanzlich\w*|vegetable|vegetal|'
+    r'végétal\w*|vegetarisch\w*|plant\w*|non-animal|fermentation\s+produced'
+    r')\s+(?:'
+    r'lab(?:ferment)?|rennet|présure|caglio|cuajo|stremsel|peynir\s+mayası|'
+    r'sirilo|oltóanyag|syřidlo'
+    r')\b|'
+    r'\b(?:fermentation[- ]?produced\s+)?chymosin\b|\bfpc\b',
+    caseSensitive: false,
+  );
+
+  static bool isHalalRennetSource(String text) =>
+      halalRennetSource.hasMatch(text);
+
   /// True when [text] declares zero alcohol for [variant] (e.g. "0% alcohol").
   static bool isZeroPercentAlcoholDeclaration(String text, String variant) {
     final v = RegExp.escape(variant);
