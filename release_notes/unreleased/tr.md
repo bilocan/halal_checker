@@ -6,3 +6,4 @@
 - **Aroma / aroma uyarıları** — Belirsiz aroma ve aroma maddeleri artık yalnızca hayvansal kaynak değil, alkolle ekstraksiyon ihtimalini de belirtiyor. Vegan etiketli ürünlerde hayvansal kaynak varsayılmıyor; alkol içeriği yine de ekarte edilemiyor.
 
 - **Sonuç ekranı senkronu** — Şüpheli içerik banner'ı ve bulgular artık sunucu analiziyle uyumlu; aroma için yalnızca hayvansal kaynak değil, alkolle ekstraksiyon da belirtiliyor. Yeniden taramada güncel veritabanı sonucu, eski yerel önbellek yerine kullanılıyor.
+- **Kapalı beta banner (Android)** — Kapalı Android test kullanıcıları ana ekranda kapatılabilir kontrol listesi banner'ı ve e-posta geri bildirimi görür; süper admin Admin → Ayarlar'dan açar (iOS etkilenmez).

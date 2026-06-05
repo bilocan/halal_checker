@@ -1179,6 +1179,33 @@ class AppLocalizationsEn extends AppLocalizations {
       'Auto Gemini ingredient lookup disabled';
 
   @override
+  String get closedBetaBannerTitle => 'Closed beta — help us test';
+
+  @override
+  String get closedBetaBannerSubtitle =>
+      'Your feedback helps us reach production on Google Play. Please try these flows and report anything broken.';
+
+  @override
+  String get closedBetaBannerTasks =>
+      '• Scan a barcode (day 1)\n• Open a result and read ingredients (day 3)\n• Scan again on day 7\n• Send feedback from this banner or About';
+
+  @override
+  String get sendBetaFeedback => 'Send beta feedback';
+
+  @override
+  String get closedBetaBannerAdminTitle => 'Closed beta home banner';
+
+  @override
+  String get closedBetaBannerAdminDescription =>
+      'Show a dismissible checklist banner on the Android home tab for Play closed testers (iOS is unaffected).';
+
+  @override
+  String get closedBetaBannerEnabled => 'Closed beta banner enabled';
+
+  @override
+  String get closedBetaBannerDisabled => 'Closed beta banner disabled';
+
+  @override
   String get systemSettingsLoadFailed => 'Could not load system settings';
 
   @override

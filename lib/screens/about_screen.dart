@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -6,7 +7,9 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../app_colors.dart';
 import '../localization/app_localizations.dart';
+import '../services/beta_program_service.dart';
 import '../services/version_service.dart';
+import '../utils/beta_feedback_mailto.dart';
 import '../widgets/halal_scan_logo.dart';
 
 class AboutScreen extends StatefulWidget {
@@ -22,11 +25,18 @@ class _AboutScreenState extends State<AboutScreen> {
   bool _checkingUpdate = false;
   StoreVersionInfo? _storeInfo;
   bool _checked = false;
+  bool _betaFeedbackEnabled = false;
 
   @override
   void initState() {
     super.initState();
     _loadVersion();
+    unawaited(_loadBetaFeedback());
+  }
+
+  Future<void> _loadBetaFeedback() async {
+    final enabled = await BetaProgramService().fetchBannerEnabled();
+    if (mounted) setState(() => _betaFeedbackEnabled = enabled);
   }
 
   Future<void> _loadVersion() async {
@@ -169,6 +179,25 @@ class _AboutScreenState extends State<AboutScreen> {
               ),
             ),
           const SizedBox(height: 8),
+          if (_betaFeedbackEnabled)
+            ElevatedButton.icon(
+              onPressed: () async {
+                final uri = await buildBetaFeedbackMailto();
+                if (!context.mounted) return;
+                await launchUrl(uri, mode: LaunchMode.externalApplication);
+              },
+              icon: const Icon(Icons.mail_outline),
+              label: Text(loc.sendBetaFeedback),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: kGreenDark,
+                foregroundColor: Colors.white,
+                minimumSize: const Size(double.infinity, 50),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          if (_betaFeedbackEnabled) const SizedBox(height: 8),
           TextButton(
             onPressed: () => launchUrl(
               Uri.parse(
