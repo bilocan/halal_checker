@@ -147,6 +147,14 @@ class FoodCategories {
     'en:vegetarian',
   };
 
+  /// Vegan-only labels — used when animal-derived suspicion should be waived
+  /// (vegetarian still allows dairy/egg and does not qualify).
+  static const Set<String> veganOnlyLabels = {
+    'vegan',
+    'vegan certified',
+    'en:vegan',
+  };
+
   static const Set<String> veganOrVegetarianNameTerms = {'vegan', 'vegetarian'};
 
   // Terms used to detect animal/meat products from the product name alone,

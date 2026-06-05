@@ -1,3 +1,5 @@
+import 'food_categories.dart';
+
 class IngredientKeywords {
   IngredientKeywords._();
 
@@ -54,8 +56,10 @@ class IngredientKeywords {
     'rennet': 'Rennet may be animal-derived',
     'whey': 'Whey is a dairy ingredient — source verification recommended.',
     'l-cysteine': 'L-cysteine may be animal-derived',
-    'natural flavour': 'Natural flavor may include animal-derived extracts',
-    'flavouring': 'Aroma / Flavouring — source often unknown.',
+    'natural flavour':
+        'Natural flavour may include animal-derived extracts or be extracted with alcohol.',
+    'flavouring':
+        'Aroma / flavouring — source may be animal-derived or extracted with alcohol.',
     'enzymes': 'Enzymes may be extracted from animal sources',
     'glycerol': 'Glycerol may be animal-derived',
   };
@@ -627,5 +631,106 @@ class IngredientKeywords {
     final byLocale = localizedReasons[canonical];
     if (byLocale == null) return null;
     return byLocale[languageCode] ?? byLocale['en'];
+  }
+
+  /// Suspicious canonicals where animal source and alcohol extraction both apply.
+  static const Set<String> flavouringAromaCanonicals = {
+    'flavouring',
+    'natural flavour',
+  };
+
+  static const String _veganFlavouringWarning =
+      'Vegan-certified (non-animal); alcohol used in extraction cannot be ruled out.';
+
+  /// True when OFF labels or product name indicate vegan (not merely vegetarian).
+  static bool hasVeganLabelEvidence(List<String> labels, String name) {
+    final nameLower = name.toLowerCase();
+    if (nameLower.contains('vegan')) return true;
+    return labels.any((l) {
+      final lower = l.toLowerCase();
+      return FoodCategories.veganOnlyLabels.contains(lower) ||
+          (lower.contains('vegan') && !lower.contains('non-vegan'));
+    });
+  }
+
+  /// Rewrites flavouring warnings and rebuilds the suspicious-only explanation
+  /// when a vegan label is present.
+  static ({Map<String, String> warnings, String explanation})
+  adjustFlavouringForVegan({
+    required List<String> suspicious,
+    required Map<String, String> warnings,
+    required Map<String, String> canonicals,
+    required List<String> labels,
+    required String productName,
+  }) {
+    final vegan = hasVeganLabelEvidence(labels, productName);
+    final updatedWarnings = Map<String, String>.from(warnings);
+    if (vegan) {
+      for (final ing in suspicious) {
+        final canonical = canonicals[ing];
+        if (canonical != null &&
+            flavouringAromaCanonicals.contains(canonical)) {
+          updatedWarnings[ing] = _veganFlavouringWarning;
+        }
+      }
+    }
+    return (
+      warnings: updatedWarnings,
+      explanation: buildSuspiciousExplanation(
+        suspicious: suspicious,
+        canonicals: canonicals,
+        labels: labels,
+        productName: productName,
+      ),
+    );
+  }
+
+  /// Builds the keyword explanation when only suspicious ingredients are flagged.
+  static String buildSuspiciousExplanation({
+    required List<String> suspicious,
+    required Map<String, String> canonicals,
+    required List<String> labels,
+    required String productName,
+  }) {
+    if (suspicious.isEmpty) return '';
+
+    final vegan = hasVeganLabelEvidence(labels, productName);
+    final flavouring = <String>[];
+    final other = <String>[];
+    for (final ing in suspicious) {
+      final canonical = canonicals[ing];
+      if (canonical != null && flavouringAromaCanonicals.contains(canonical)) {
+        flavouring.add(ing);
+      } else {
+        other.add(ing);
+      }
+    }
+
+    if (vegan && flavouring.isNotEmpty && other.isEmpty) {
+      return 'No definitively haram ingredients found. Product is vegan-certified; '
+          'flagged aroma/flavouring is non-animal per certification, but alcohol '
+          'content cannot be ruled out: ${flavouring.join(', ')}. '
+          'Assessed by keyword matching.';
+    }
+    if (vegan && flavouring.isNotEmpty && other.isNotEmpty) {
+      return 'No definitively haram ingredients found. Product is vegan-certified; '
+          'flagged aroma/flavouring is non-animal per certification, but alcohol '
+          'content cannot be ruled out: ${flavouring.join(', ')}. '
+          'The following may still be animal-derived: ${other.join(', ')}. '
+          'Assessed by keyword matching.';
+    }
+    if (flavouring.isNotEmpty && other.isEmpty) {
+      return 'No definitively haram ingredients found, but the following may be '
+          'animal-derived or extracted with alcohol: ${flavouring.join(', ')}. '
+          'Assessed by keyword matching.';
+    }
+    if (flavouring.isNotEmpty && other.isNotEmpty) {
+      return 'No definitively haram ingredients found. The following may be '
+          'animal-derived or extracted with alcohol: ${flavouring.join(', ')}. '
+          'The following may be animal-derived: ${other.join(', ')}. '
+          'Assessed by keyword matching.';
+    }
+    return 'No definitively haram ingredients found, but the following may be '
+        'animal-derived: ${suspicious.join(', ')}. Assessed by keyword matching.';
   }
 }

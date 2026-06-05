@@ -276,10 +276,18 @@ class HalalRulesEngine {
         .map((m) => m.value)
         .toList();
     if (suspicious.isNotEmpty) {
-      return 'No definitively haram ingredients were found, but the following '
-          'may be animal-derived and require verification: '
-          '${suspicious.join(', ')}. '
-          'Assessed by keyword matching.';
+      final canonicals = {
+        for (final m in matches.where(
+          (m) => m.verdict == HalalRuleVerdict.suspicious,
+        ))
+          m.value: m.canonical,
+      };
+      return IngredientKeywords.buildSuspiciousExplanation(
+        suspicious: suspicious,
+        canonicals: canonicals,
+        labels: const [],
+        productName: '',
+      );
     }
 
     if (ingredients.isEmpty) {

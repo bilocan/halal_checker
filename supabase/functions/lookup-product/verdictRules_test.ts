@@ -497,6 +497,46 @@ Deno.test('computeVerdict — clean labels → haramLabels and suspiciousLabels 
   assertEquals(result.suspiciousLabels.length, 0)
 })
 
+Deno.test('computeVerdict — Aroma + en:vegan → not halal, vegan explanation, alcohol unclear', async () => {
+  const result = await computeVerdict(baseCtx({
+    barcode: '9100000976259',
+    name: 'Chocolate Chip Cookies',
+    ingredients: ['Weizenmehl', 'Zucker', 'Aroma'],
+    labels: ['en:vegan'],
+  }))
+  assertEquals(result.isHalal, false)
+  assertEquals(result.suspiciousIngredients, ['Aroma'])
+  assertEquals(result.haramIngredients.length, 0)
+  assertMatch(result.explanation, /vegan-certified/i)
+  assertMatch(result.explanation, /non-animal per certification/i)
+  assertMatch(result.explanation, /alcohol content cannot be ruled out/i)
+  assertMatch(result.ingredientWarnings['Aroma'] ?? '', /Vegan-certified/i)
+  assertMatch(result.ingredientWarnings['Aroma'] ?? '', /alcohol used in extraction/i)
+})
+
+Deno.test('computeVerdict — Aroma + vegetarian only → still animal-derived wording', async () => {
+  const result = await computeVerdict(baseCtx({
+    ingredients: ['flour', 'Aroma'],
+    labels: ['en:vegetarian'],
+  }))
+  assertEquals(result.isHalal, false)
+  assertMatch(result.explanation, /animal-derived or extracted with alcohol/i)
+  assertEquals(result.explanation.includes('vegan-certified'), false)
+})
+
+Deno.test('computeVerdict — vegan + Aroma + glycerol → split flavouring vs other suspicious', async () => {
+  const result = await computeVerdict(baseCtx({
+    ingredients: ['sugar', 'Aroma', 'glycerol'],
+    labels: ['en:vegan'],
+  }))
+  assertEquals(result.isHalal, false)
+  assertEquals(result.suspiciousIngredients.includes('Aroma'), true)
+  assertEquals(result.suspiciousIngredients.includes('glycerol'), true)
+  assertMatch(result.explanation, /non-animal per certification/i)
+  assertMatch(result.explanation, /alcohol content cannot be ruled out/i)
+  assertMatch(result.explanation, /may still be animal-derived: glycerol/i)
+})
+
 // ── postRules — label analysis ───────────────────────────────────────────────
 
 Deno.test('postRules — label haram override wins over AI halal snapshot', () => {

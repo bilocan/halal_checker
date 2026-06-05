@@ -212,6 +212,8 @@ class OffFetcher {
         sources: resolved.sources,
         displayIngredients: ingredients,
         analyzeLang: resolved.analyzeLang,
+        labels: labels,
+        productName: name,
       );
 
       // When no ingredient data at all, check the product name itself.

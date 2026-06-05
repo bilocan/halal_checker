@@ -640,9 +640,9 @@ void main() {
       expect(result.explanation, contains('not permissible'));
     });
 
-    test('suspicious-only explanation mentions verification', () {
+    test('suspicious-only explanation mentions animal-derived check', () {
       final result = ProductService.analyzeWithKeywords(['whey', 'water']);
-      expect(result.explanation, contains('verification'));
+      expect(result.explanation, contains('may be animal-derived'));
     });
 
     test('clean ingredients explanation confirms no haram detected', () {

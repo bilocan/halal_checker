@@ -92,5 +92,35 @@ void main() {
       expect(result.keywordMatchSource, 'unanalyzable');
       expect(result.haram, isEmpty);
     });
+
+    test(
+      'vegan label + natürliches aroma → not halal, alcohol still unclear',
+      () {
+        final result = analyzeIngredientsFromSources(
+          engine: engine,
+          sources: const [
+            IngredientAnalysisSource(
+              key: 'primary',
+              ingredients: ['Weizenmehl', 'Zucker', 'natürliches aroma'],
+            ),
+          ],
+          displayIngredients: ['Weizenmehl', 'Zucker', 'natürliches aroma'],
+          labels: ['en:vegan'],
+          productName: 'Chocolate Chip Cookies',
+        );
+
+        expect(result.isHalal, isFalse);
+        expect(result.suspicious, contains('natürliches aroma'));
+        expect(result.explanation, contains('vegan-certified'));
+        expect(
+          result.explanation,
+          contains('alcohol content cannot be ruled out'),
+        );
+        expect(
+          result.warnings['natürliches aroma'],
+          contains('alcohol used in extraction'),
+        );
+      },
+    );
   });
 }

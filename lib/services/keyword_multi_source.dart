@@ -1,3 +1,4 @@
+import '../constants/ingredient_keywords.dart';
 import 'ingredient_resolution.dart';
 import 'halal_rules_engine.dart';
 
@@ -35,6 +36,8 @@ KeywordMultiSourceResult analyzeIngredientsFromSources({
   required List<IngredientAnalysisSource> sources,
   required List<String> displayIngredients,
   String? analyzeLang,
+  List<String> labels = const [],
+  String productName = '',
 }) {
   final haram = <String>[];
   final suspicious = <String>[];
@@ -99,9 +102,22 @@ KeywordMultiSourceResult analyzeIngredientsFromSources({
   final explanation = _buildExplanation(
     haram,
     suspicious,
+    canonicals,
     displayIngredients.isEmpty,
     isUnanalyzableLanguage,
+    labels: labels,
+    productName: productName,
   );
+
+  final veganAdjusted = suspicious.isEmpty
+      ? null
+      : IngredientKeywords.adjustFlavouringForVegan(
+          suspicious: suspicious,
+          warnings: warnings,
+          canonicals: canonicals,
+          labels: labels,
+          productName: productName,
+        );
 
   final keywordMatchSource = isUnanalyzableLanguage
       ? 'unanalyzable'
@@ -112,10 +128,12 @@ KeywordMultiSourceResult analyzeIngredientsFromSources({
     isUnknown: isUnknown,
     haram: haram,
     suspicious: suspicious,
-    warnings: warnings,
+    warnings: veganAdjusted?.warnings ?? warnings,
     translations: translations,
     canonicals: canonicals,
-    explanation: explanation,
+    explanation: haram.isNotEmpty
+        ? explanation
+        : (veganAdjusted?.explanation ?? explanation),
     keywordMatchSource: keywordMatchSource,
     keywordMatchOrigins: matchOrigins,
     analyzeLang: analyzeLang,
@@ -125,16 +143,23 @@ KeywordMultiSourceResult analyzeIngredientsFromSources({
 String _buildExplanation(
   List<String> haram,
   List<String> suspicious,
+  Map<String, String> canonicals,
   bool noIngredients,
-  bool isUnanalyzableLanguage,
-) {
+  bool isUnanalyzableLanguage, {
+  List<String> labels = const [],
+  String productName = '',
+}) {
   if (haram.isNotEmpty) {
     return 'This product contains ingredient(s) that are not permissible: '
         '${haram.join(', ')}. Assessed by keyword matching.';
   }
   if (suspicious.isNotEmpty) {
-    return 'No definitively haram ingredients found, but the following may be '
-        'animal-derived: ${suspicious.join(', ')}. Assessed by keyword matching.';
+    return IngredientKeywords.buildSuspiciousExplanation(
+      suspicious: suspicious,
+      canonicals: canonicals,
+      labels: labels,
+      productName: productName,
+    );
   }
   if (isUnanalyzableLanguage) {
     return 'Ingredients are in a language we cannot analyze. Halal status cannot '

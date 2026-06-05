@@ -137,8 +137,11 @@ Applied in `applyPostAnalysisRules` — **must not reorder** without updating te
 | 4 | `applyNameFallback` | If `isUnknown`, keyword-scan product name |
 | 5 | `applyLabelHaramOverride` | If `kwLabels` has haram → force not halal, populate `haramLabels`/`labelWarnings`; explanation = label text when no ingredient haram, else ingredient explanation + label note appended |
 | 6 | `applyLabelSuspiciousOverride` | Always merges `suspiciousLabels`/`labelWarnings` from `kwLabels`; if snapshot still `isHalal` → force not halal, set label-based explanation (defers when ingredient flags present); if already not halal → appends suspicious-label note to existing explanation |
-| 7 | `applyHalalCertRequirement` | Animal product without halal label → `requiresHalalCert`, not halal; skipped if `haramLabels` non-empty |
-| 8 | `applySuspiciousNotHalal` | Suspicious only (no haram ingredients or labels) → `isHalal = false` |
+| 7 | `applyAdditivesHaramOverride` | Merges haram additive keyword matches into snapshot |
+| 8 | `applyAdditivesSuspiciousOverride` | Merges suspicious additive keyword matches into snapshot |
+| 9 | `applyVeganFlavouringAdjustment` | When vegan label evidence (`en:vegan`, etc.): rewrites `flavouring` / `natural flavour` warnings and suspicious-only explanation — non-animal per certification, alcohol extraction still unclear. Does not change `isHalal`. Vegetarian labels do not qualify. |
+| 10 | `applyHalalCertRequirement` | Animal product without halal label → `requiresHalalCert`, not halal; skipped if `haramLabels` non-empty |
+| 11 | `applySuspiciousNotHalal` | Suspicious only (no haram ingredients or labels) → `isHalal = false` |
 
 Categories for cert: `categories.ts` (`ANIMAL_PRODUCT_CATEGORIES`, `HALAL_CERT_LABELS`, `ANIMAL_PRODUCT_NAME_TERMS`).
 

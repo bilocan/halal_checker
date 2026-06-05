@@ -72,11 +72,11 @@ export const SUSPICIOUS_ENTRIES: KeywordEntry[] = [
    'suero de leche', 'peynir suyu', 'wei'],
   ['l-cysteine', 'L-cysteine may be animal-derived',
    'l-cysteine', 'l-cystein', 'l-cystéine', 'l-cisteina', 'l-sistein'],
-  ['natural flavour', 'Natural flavor may include animal-derived extracts',
+  ['natural flavour', 'Natural flavour may include animal-derived extracts or be extracted with alcohol.',
    'natural flavour', 'natural flavor', 'natürliches aroma',
    'natürliche aromen', 'arôme naturel', 'aroma naturale',
    'aroma natural', 'doğal aroma', 'natuurlijk aroma'],
-  ['flavouring', 'Aroma / Flavouring — source often unknown.',
+  ['flavouring', 'Aroma / flavouring — source may be animal-derived or extracted with alcohol.',
    'flavouring', 'flavoring', 'aroma', 'arôme', 'smaakstof'],
   ['enzymes', 'Enzymes may be extracted from animal sources',
    'enzymes', 'enzyme', 'enzimi', 'enzimas', 'enzim', 'enzymen'],
@@ -148,6 +148,7 @@ import {
   combineMatchSourceKeys,
   isAnalyzableScript,
 } from './ingredientResolution.ts'
+import { buildSuspiciousExplanation } from './flavouringVerdict.ts'
 
 export interface KeywordResult {
   isHalal: boolean
@@ -155,6 +156,8 @@ export interface KeywordResult {
   haram: string[]
   suspicious: string[]
   warnings: Record<string, string>
+  /** Flagged ingredient → suspicious canonical (e.g. flavouring, natural flavour). */
+  canonicals?: Record<string, string>
   explanation: string
   /** Which ingredient source(s) produced keyword matches (primary, off_en, off_taxonomy, …). */
   keywordMatchSource?: string
@@ -168,6 +171,7 @@ interface SinglePassResult {
   haram: string[]
   suspicious: string[]
   warnings: Record<string, string>
+  canonicals: Record<string, string>
   origins: Record<string, string>
 }
 
@@ -178,6 +182,7 @@ function keywordSinglePass(
   allSuspicious: KeywordEntry[],
 ): SinglePassResult {
   const warnings: Record<string, string> = {}
+  const canonicals: Record<string, string> = {}
   const haram: string[] = []
   const suspicious: string[] = []
   const origins: Record<string, string> = {}
@@ -207,6 +212,7 @@ function keywordSinglePass(
       }
       if (matchedVariant && !isNegated(lower, matchedVariant)) {
         warnings[ing] = entry[1]
+        canonicals[ing] = entry[0]
         suspicious.push(ing)
         origins[ing] = sourceKey
         break
@@ -214,20 +220,23 @@ function keywordSinglePass(
     }
   }
 
-  return { haram, suspicious, warnings, origins }
+  return { haram, suspicious, warnings, canonicals, origins }
 }
 
 function buildKeywordExplanation(
   haram: string[],
   suspicious: string[],
+  canonicals: Record<string, string>,
   isUnknown: boolean,
   isUnanalyzableLanguage: boolean,
+  labels: string[],
+  productName: string,
 ): string {
   if (haram.length > 0) {
     return `This product contains ingredient(s) that are not permissible: ${haram.join(', ')}. Assessed by keyword matching.`
   }
   if (suspicious.length > 0) {
-    return `No definitively haram ingredients found, but the following may be animal-derived: ${suspicious.join(', ')}. Assessed by keyword matching.`
+    return buildSuspiciousExplanation(suspicious, canonicals, labels, productName)
   }
   if (isUnanalyzableLanguage) {
     return 'Ingredients are in a language we cannot analyze. Halal status cannot be determined — check the packaging directly.'
@@ -266,6 +275,7 @@ export function keywordAnalysisFromSources(
   const haram: string[] = []
   const suspicious: string[] = []
   const warnings: Record<string, string> = {}
+  const canonicals: Record<string, string> = {}
   const matchOrigins: Record<string, string> = {}
   const matchedSourceKeys: string[] = []
 
@@ -299,6 +309,7 @@ export function keywordAnalysisFromSources(
       }
       matchOrigins[ing] = pass.origins[ing] ?? source.key
       warnings[ing] = pass.warnings[ing] ?? warnings[ing] ?? ''
+      if (pass.canonicals[ing]) canonicals[ing] = pass.canonicals[ing]
     }
   }
 
@@ -319,8 +330,11 @@ export function keywordAnalysisFromSources(
   const explanation = buildKeywordExplanation(
     haram,
     suspicious,
+    canonicals,
     displayIngredients.length === 0,
     isUnanalyzableLanguage,
+    [],
+    '',
   )
 
   const keywordMatchSource = isUnanalyzableLanguage
@@ -333,6 +347,7 @@ export function keywordAnalysisFromSources(
     haram,
     suspicious,
     warnings,
+    canonicals: Object.keys(canonicals).length > 0 ? canonicals : undefined,
     explanation,
     keywordMatchSource,
     keywordMatchOrigins: Object.keys(matchOrigins).length > 0 ? matchOrigins : undefined,

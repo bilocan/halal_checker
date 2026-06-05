@@ -23,7 +23,7 @@ void main() {
       expect(result.isHalal, isFalse);
       expect(result.haram, isEmpty);
       expect(result.suspicious, contains('e471'));
-      expect(result.explanation, contains('require verification'));
+      expect(result.explanation, contains('may be animal-derived'));
     });
 
     test('keeps alcohol-free and fatty alcohol out of haram matches', () {
@@ -204,9 +204,9 @@ void main() {
       expect(result.explanation, contains('not permissible'));
     });
 
-    test('suspicious-only explanation mentions verification needed', () {
+    test('suspicious-only explanation mentions animal-derived check', () {
       final result = engine.analyzeIngredients(['e471']);
-      expect(result.explanation, contains('require verification'));
+      expect(result.explanation, contains('may be animal-derived'));
     });
 
     test('clean list explanation says no haram detected', () {

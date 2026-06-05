@@ -282,6 +282,16 @@ class ProductService {
         allHaramAdditives.length != product.haramAdditives.length ||
         allSuspiciousAdditives.length != product.suspiciousAdditives.length;
 
+    final veganFlavouring = allHaram.isEmpty && allSuspicious.isNotEmpty
+        ? IngredientKeywords.adjustFlavouringForVegan(
+            suspicious: allSuspicious,
+            warnings: allWarnings,
+            canonicals: allCanonicals,
+            labels: product.labels,
+            productName: product.name,
+          )
+        : null;
+
     if (!isNowHalal && product.isHalal) {
       final String explanation;
       if (allHaramAdditives.isNotEmpty && allHaram.isEmpty) {
@@ -296,13 +306,13 @@ class ProductService {
                   '${customCheck.haram.join(', ')}. '
                   'Flagged by custom keyword.';
       } else {
-        explanation = kwCheck.explanation;
+        explanation = veganFlavouring?.explanation ?? kwCheck.explanation;
       }
       return product.copyWith(
         isHalal: false,
         haramIngredients: allHaram,
         suspiciousIngredients: allSuspicious,
-        ingredientWarnings: allWarnings,
+        ingredientWarnings: veganFlavouring?.warnings ?? allWarnings,
         ingredientTranslations: allTranslations,
         ingredientCanonicals: allCanonicals,
         haramAdditives: allHaramAdditives,
@@ -316,7 +326,8 @@ class ProductService {
       return product.copyWith(
         isHalal: isNowHalal,
         suspiciousIngredients: allSuspicious,
-        ingredientWarnings: allWarnings,
+        ingredientWarnings: veganFlavouring?.warnings ?? allWarnings,
+        explanation: veganFlavouring?.explanation ?? product.explanation,
         ingredientTranslations: allTranslations,
         ingredientCanonicals: allCanonicals,
         haramAdditives: allHaramAdditives,
@@ -371,6 +382,8 @@ class ProductService {
       ],
       displayIngredients: product.ingredients,
       analyzeLang: product.analyzeLang,
+      labels: product.labels,
+      productName: product.name,
     );
     final customResult = _customKeywordAnalysis(product.ingredients);
     final allHaram = {...kwResult.haram, ...customResult.haram}.toList();

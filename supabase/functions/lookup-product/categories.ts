@@ -55,6 +55,11 @@ export const HALAL_CERT_LABELS = new Set([
   'muslim consumer group',
 ])
 
+/** Vegan-only OFF labels — vegetarian does not waive animal-derived suspicion. */
+export const VEGAN_ONLY_LABELS = new Set([
+  'vegan', 'vegan certified', 'en:vegan',
+])
+
 export const ANIMAL_PRODUCT_NAME_TERMS = new Set([
   // German / Austrian
   'fleisch', 'faschiertes', 'hackfleisch', 'geschnetzeltes', 'schnitzel',
