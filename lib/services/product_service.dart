@@ -143,6 +143,16 @@ class ProductService {
     return analysed == null || analysed.isBefore(p.updatedAt!);
   }
 
+  /// True when [dbProduct] was analysed after [cached] (e.g. edge re-analysis).
+  static bool _isDbAnalysisNewerThanCache(Product cached, Product? dbProduct) {
+    if (dbProduct == null) return false;
+    final dbAt = dbProduct.lastAnalysedAt;
+    if (dbAt == null) return false;
+    final cacheAt = cached.lastAnalysedAt;
+    if (cacheAt == null) return true;
+    return dbAt.isAfter(cacheAt);
+  }
+
   // Returns true only when the ingredient text doesn't already contain the
   // canonical keyword — i.e. a translation label would actually add information.
   static ({
@@ -724,19 +734,15 @@ class ProductService {
             await _cache.saveProduct(barcode, safe);
             return safe;
           }
-          if (!_isStale(dbProduct)) {
-            final merged = _mergeApprovedImages(cached, dbProduct);
+          if (!_isStale(dbProduct) &&
+              !_isDbAnalysisNewerThanCache(cached, dbProduct)) {
+            final merged = _applyKeywordSafety(
+              _mergeApprovedImages(cached, dbProduct),
+            );
             // Tags not yet populated (pre-migration row): fall through to EF
             // so it re-fetches OFF and writes tags_version=1.
             if (merged.tagsPopulated) {
-              // Backfill ingredientCanonicals for products cached before that
-              // field was introduced (they have warnings but empty canonicals).
-              if (merged.ingredientCanonicals.isEmpty &&
-                  merged.ingredientWarnings.isNotEmpty) {
-                final safe = _applyKeywordSafety(merged);
-                await _cache.saveProduct(barcode, safe);
-                return safe;
-              }
+              await _cache.saveProduct(barcode, merged);
               return merged;
             }
           }

@@ -23,6 +23,7 @@ const _kAnonKey = 'test_anon_key';
 const _kAnalysed = '2026-01-01T01:00:00.000Z'; // last_analysed_at
 const _kUpdated = '2026-01-01T02:00:00.000Z'; // updated_at — newer → stale
 const _kFresh = '2026-01-01T00:00:00.000Z'; // updated_at — older → fresh
+const _kOlderAnalysed = '2025-12-01T01:00:00.000Z'; // cache behind shared DB
 
 // ── fixture builders ──────────────────────────────────────────────────────────
 
@@ -38,6 +39,7 @@ Map<String, dynamic> _dbRow({
   List<dynamic> suspiciousIngredients = const [],
   bool isManaged = false,
   bool isStale = false, // true = updated_at > last_analysed_at
+  String? lastAnalysedAt,
 }) => {
   'barcode': barcode,
   'name': name,
@@ -58,7 +60,7 @@ Map<String, dynamic> _dbRow({
   'requires_halal_cert': false,
   'is_managed': isManaged,
   'fetched_at': _kFresh,
-  'last_analysed_at': _kAnalysed,
+  'last_analysed_at': lastAnalysedAt ?? _kAnalysed,
   'updated_at': isStale ? _kUpdated : _kFresh, // _kUpdated > _kAnalysed → stale
   'tags_version': 1,
 };
@@ -445,6 +447,46 @@ void main() {
       expect(p, isNotNull);
       expect(p!.isManaged, isTrue);
       expect(efCalled, isFalse);
+    });
+
+    // Shared DB re-analysis newer than local cache → DB served (Step 2).
+    test('cached product + DB newer analysis → DB returned, no EF', () async {
+      final cachedProduct = Product(
+        barcode: _kBarcode,
+        name: 'Cached Product',
+        ingredients: const ['Aroma'],
+        isHalal: false,
+        haramIngredients: const [],
+        suspiciousIngredients: const ['Aroma'],
+        ingredientWarnings: const {},
+        labels: const [],
+        lastAnalysedAt: DateTime.parse(_kOlderAnalysed),
+        updatedAt: DateTime.parse(_kFresh),
+        tagsPopulated: true,
+      );
+      await CacheService().saveProduct(_kBarcode, cachedProduct);
+
+      var efCalled = false;
+      ProductService().setHttpClientForTesting(
+        _makeClient(
+          dbRow: _dbRow(
+            isHalal: false,
+            isStale: false,
+            suspiciousIngredients: const ['alcohol extract'],
+            lastAnalysedAt: _kAnalysed,
+          ),
+          onRequest: (req) {
+            if (req.method == 'POST') efCalled = true;
+          },
+        ),
+      );
+
+      final p = await ProductService().getProduct(_kBarcode);
+
+      expect(p, isNotNull);
+      expect(efCalled, isFalse);
+      expect(p!.suspiciousIngredients, contains('alcohol extract'));
+      expect(p.suspiciousIngredients, isNot(contains('Aroma')));
     });
 
     // Local cache with fresh DB row → cache served (Step 1).

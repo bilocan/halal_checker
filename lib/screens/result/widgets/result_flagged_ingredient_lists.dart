@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../constants/ingredient_keywords.dart';
 import '../../../localization/app_localizations.dart';
 import '../../../models/product.dart';
 import '../ingredient_display.dart';
@@ -155,12 +156,18 @@ class _FlaggedListTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final warning = warnings[ingredient];
     final canonical = product.ingredientCanonicals[ingredient];
-    final displayWarning = localizedIngredientWarning(
-      ingredient: ingredient,
-      canonical: canonical,
-      warning: warning,
-      languageCode: languageCode,
-    );
+    final displayWarning =
+        localizedIngredientWarning(
+          ingredient: ingredient,
+          canonical: canonical,
+          warning: warning,
+          languageCode: languageCode,
+        ) ??
+        _fallbackSuspiciousWarning(
+          canonical: canonical,
+          languageCode: languageCode,
+          loc: loc,
+        );
 
     return ListTile(
       leading: icon,
@@ -170,8 +177,21 @@ class _FlaggedListTile extends StatelessWidget {
         showTranslated: showTranslated,
         languageCode: languageCode,
       ),
-      subtitle: SelectableText(displayWarning ?? fallbackWarning),
+      subtitle: SelectableText(displayWarning),
       dense: true,
     );
   }
+}
+
+String _fallbackSuspiciousWarning({
+  required String? canonical,
+  required String languageCode,
+  required AppLocalizations loc,
+}) {
+  if (canonical != null &&
+      IngredientKeywords.flavouringAromaCanonicals.contains(canonical)) {
+    return IngredientKeywords.localizedReason('flavouring', languageCode) ??
+        loc.mayBeAnimalDerivedNote;
+  }
+  return loc.mayBeAnimalDerivedNote;
 }

@@ -44,6 +44,29 @@ void main() {
     expect(status.explanation, loc.explanationSuspiciousOnly('e471'));
   });
 
+  test('suspicious aroma uses flavouring explanation with alcohol wording', () {
+    final loc = AppLocalizationsEn();
+    final product = Product(
+      barcode: '9100000976259',
+      name: 'Chocolate Chip Cookies',
+      ingredients: const ['Aroma'],
+      isHalal: false,
+      haramIngredients: const [],
+      suspiciousIngredients: const ['Aroma'],
+      ingredientWarnings: const {},
+      ingredientCanonicals: const {'Aroma': 'flavouring'},
+      labels: const [],
+    );
+
+    final status = ResultStatus.from(product, loc);
+
+    expect(
+      status.explanation,
+      loc.explanationSuspiciousFlavouringOnly('Aroma'),
+    );
+    expect(status.explanation, contains('alcohol'));
+  });
+
   test('stored English explanation is not shown when localized copy exists', () {
     final loc = AppLocalizationsEn();
     final product = Product(

@@ -198,7 +198,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get flaggedIngredients => 'Markierte Zutaten';
 
   @override
-  String get mayBeAnimalDerived => 'Kann tierischen Ursprungs sein';
+  String get mayBeAnimalDerived => 'Überprüfung empfohlen';
 
   @override
   String get communityFeedback => 'Community-Feedback';
@@ -329,7 +329,8 @@ class AppLocalizationsDe extends AppLocalizations {
   String get foundInLabels => 'In der Produktkennzeichnung gefunden.';
 
   @override
-  String get mayBeAnimalDerivedNote => 'Kann tierischen Ursprungs sein.';
+  String get mayBeAnimalDerivedNote =>
+      'Herkunft kann tierisch sein oder Alkoholextraktion betreffen.';
 
   @override
   String get couldNotLoadFeedback => 'Feedback konnte nicht geladen werden.';
@@ -507,7 +508,8 @@ class AppLocalizationsDe extends AppLocalizations {
       'In den verfügbaren Bildern wurde keine Zutatenliste gefunden. Bitte fotografieren Sie das Zutatenetikett.';
 
   @override
-  String get viewAllCheckedKeywords => 'View all checked keywords';
+  String get viewAllCheckedKeywords =>
+      'Alle geprüften Schlüsselwörter anzeigen';
 
   @override
   String get haramKeywordsChecked => 'Haram-Zutaten, die wir prüfen';
@@ -610,6 +612,32 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String explanationSuspiciousOnly(String ingredients) {
     return 'Keine eindeutig verbotenen Zutaten gefunden, aber $ingredients könnten tierischen Ursprungs sein. Dies ist eine automatische Bewertung anhand des Zutatentexts.';
+  }
+
+  @override
+  String explanationSuspiciousFlavouringOnly(String ingredients) {
+    return 'Keine eindeutig verbotenen Zutaten gefunden, aber $ingredients könnten tierischen Ursprungs sein oder mit Alkohol extrahiert worden sein. Dies ist eine automatische Bewertung anhand des Zutatentexts.';
+  }
+
+  @override
+  String explanationSuspiciousFlavouringAndOther(
+    String flavouring,
+    String other,
+  ) {
+    return 'Keine eindeutig verbotenen Zutaten gefunden. $flavouring könnte tierischen Ursprungs sein oder mit Alkohol extrahiert worden sein; $other könnte weiterhin tierischen Ursprungs sein. Dies ist eine automatische Bewertung anhand des Zutatentexts.';
+  }
+
+  @override
+  String explanationSuspiciousVeganFlavouringOnly(String ingredients) {
+    return 'Keine eindeutig verbotenen Zutaten gefunden. Das Produkt ist vegan-zertifiziert; markiertes Aroma ist laut Zertifizierung nicht tierisch, aber Alkoholgehalt kann nicht ausgeschlossen werden: $ingredients. Dies ist eine automatische Bewertung anhand des Zutatentexts.';
+  }
+
+  @override
+  String explanationSuspiciousVeganFlavouringAndOther(
+    String flavouring,
+    String other,
+  ) {
+    return 'Keine eindeutig verbotenen Zutaten gefunden. Das Produkt ist vegan-zertifiziert; markiertes Aroma ist laut Zertifizierung nicht tierisch, aber Alkoholgehalt kann nicht ausgeschlossen werden: $flavouring. Folgende Zutaten könnten weiterhin tierischen Ursprungs sein: $other. Dies ist eine automatische Bewertung anhand des Zutatentexts.';
   }
 
   @override

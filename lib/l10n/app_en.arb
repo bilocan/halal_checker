@@ -62,7 +62,7 @@
   "additionalImages": "Additional Images",
   "ingredients": "Ingredients",
   "flaggedIngredients": "Flagged Ingredients",
-  "mayBeAnimalDerived": "May Be Animal-Derived",
+  "mayBeAnimalDerived": "Needs Verification",
   "communityFeedback": "Community Feedback",
   "noFeedbackYet": "No feedback yet. Be the first to share your thoughts!",
   "provideFeedback": "Provide Feedback",
@@ -118,7 +118,7 @@
   "foundInIngredients": "Found in product ingredients.",
   "flaggedLabels": "Flagged Labels",
   "foundInLabels": "Found in product labels.",
-  "mayBeAnimalDerivedNote": "May be animal-derived.",
+  "mayBeAnimalDerivedNote": "Source may be animal-derived or involve alcohol extraction.",
   "couldNotLoadFeedback": "Could not load feedback.",
   "couldNotSubmitFeedback": "Could not submit feedback.",
   "couldNotSubmitReply": "Could not submit reply.",
@@ -216,6 +216,32 @@
   "@explanationSuspiciousOnly": {
     "placeholders": {
       "ingredients": { "type": "String" }
+    }
+  },
+  "explanationSuspiciousFlavouringOnly": "No definitely haram ingredients found, but {ingredients} may be animal-derived or extracted with alcohol. This is an automated assessment based on ingredient text.",
+  "@explanationSuspiciousFlavouringOnly": {
+    "placeholders": {
+      "ingredients": { "type": "String" }
+    }
+  },
+  "explanationSuspiciousFlavouringAndOther": "No definitely haram ingredients found. {flavouring} may be animal-derived or extracted with alcohol; {other} may still be animal-derived. This is an automated assessment based on ingredient text.",
+  "@explanationSuspiciousFlavouringAndOther": {
+    "placeholders": {
+      "flavouring": { "type": "String" },
+      "other": { "type": "String" }
+    }
+  },
+  "explanationSuspiciousVeganFlavouringOnly": "No definitely haram ingredients found. This product is vegan-certified; flagged aroma/flavouring is non-animal per certification, but alcohol content cannot be ruled out: {ingredients}. This is an automated assessment based on ingredient text.",
+  "@explanationSuspiciousVeganFlavouringOnly": {
+    "placeholders": {
+      "ingredients": { "type": "String" }
+    }
+  },
+  "explanationSuspiciousVeganFlavouringAndOther": "No definitely haram ingredients found. This product is vegan-certified; flagged aroma/flavouring is non-animal per certification, but alcohol content cannot be ruled out: {flavouring}. The following may still be animal-derived: {other}. This is an automated assessment based on ingredient text.",
+  "@explanationSuspiciousVeganFlavouringAndOther": {
+    "placeholders": {
+      "flavouring": { "type": "String" },
+      "other": { "type": "String" }
     }
   },
   "explanationHaram": "This product contains one or more ingredients that may be animal-derived or alcohol-related. Review the flagged ingredients below for details.",
