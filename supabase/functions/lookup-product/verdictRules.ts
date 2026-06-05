@@ -11,6 +11,7 @@ import {
 import {
   analyzeWithGemini, analyzeWithClaude, analyzeWithClaudeVision, type AiVerdict,
 } from './ai.ts'
+import { adjustFlavouringForVegan } from './flavouringVerdict.ts'
 
 export interface VerdictContext {
   barcode: string
@@ -116,6 +117,7 @@ const POST_ANALYSIS_RULES: PostRule[] = [
   applyLabelSuspiciousOverride,
   applyAdditivesHaramOverride,
   applyAdditivesSuspiciousOverride,
+  applyVeganFlavouringAdjustment,
 ]
 
 const VERDICT_PIPELINE: AsyncVerdictStep[] = [
@@ -533,6 +535,27 @@ function applyAdditivesHaramOverride(snapshot: VerdictSnapshot, { kwAdditives }:
     haramAdditives: mergedHaram,
     additiveWarnings: { ...snapshot.additiveWarnings, ...kwAdditives.warnings },
     explanation,
+  }
+}
+
+function applyVeganFlavouringAdjustment(
+  snapshot: VerdictSnapshot,
+  { ctx, kwFirst }: PostRuleContext,
+): VerdictSnapshot {
+  if (snapshot.haramIngredients.length > 0 || snapshot.suspiciousIngredients.length === 0) {
+    return snapshot
+  }
+  const adjusted = adjustFlavouringForVegan({
+    suspicious: snapshot.suspiciousIngredients,
+    warnings: snapshot.ingredientWarnings,
+    canonicals: kwFirst.canonicals ?? {},
+    labels: ctx.labels,
+    productName: ctx.name,
+  })
+  return {
+    ...snapshot,
+    ingredientWarnings: { ...snapshot.ingredientWarnings, ...adjusted.warnings },
+    explanation: adjusted.explanation,
   }
 }
 

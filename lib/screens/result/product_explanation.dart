@@ -1,4 +1,5 @@
 import '../../constants/food_categories.dart';
+import '../../constants/ingredient_keywords.dart';
 import '../../localization/app_localizations.dart';
 import '../../models/product.dart';
 import '../../services/product_verdict.dart';
@@ -25,18 +26,59 @@ String localizedProductExplanation({
           ? loc.explanationUnanalyzableLanguage
           : loc.explanationUnknown,
     ProductOutcome.haram => _haramExplanation(product, loc),
-    ProductOutcome.suspicious => loc.explanationSuspiciousOnly(
-      [
-        ...product.suspiciousIngredients,
-        ...product.suspiciousLabels,
-      ].join(', '),
-    ),
+    ProductOutcome.suspicious => _localizedSuspiciousExplanation(product, loc),
     ProductOutcome.halal =>
       _isHalalInherentCategory(product)
           ? loc.explanationHalalInherentCategory
           : loc.explanationClean,
     ProductOutcome.noCert => loc.explanationNoCert,
   };
+}
+
+String _localizedSuspiciousExplanation(Product product, AppLocalizations loc) {
+  final suspicious = [
+    ...product.suspiciousIngredients,
+    ...product.suspiciousLabels,
+  ];
+  if (suspicious.isEmpty) return loc.explanationSuspiciousOnly('');
+
+  final canonicals = product.ingredientCanonicals;
+  final flavouring = <String>[];
+  final other = <String>[];
+  for (final ing in suspicious) {
+    final canonical = canonicals[ing];
+    if (canonical != null &&
+        IngredientKeywords.flavouringAromaCanonicals.contains(canonical)) {
+      flavouring.add(ing);
+    } else {
+      other.add(ing);
+    }
+  }
+
+  final vegan = IngredientKeywords.hasVeganLabelEvidence(
+    product.labels,
+    product.name,
+  );
+
+  if (vegan && flavouring.isNotEmpty && other.isEmpty) {
+    return loc.explanationSuspiciousVeganFlavouringOnly(flavouring.join(', '));
+  }
+  if (vegan && flavouring.isNotEmpty && other.isNotEmpty) {
+    return loc.explanationSuspiciousVeganFlavouringAndOther(
+      flavouring.join(', '),
+      other.join(', '),
+    );
+  }
+  if (flavouring.isNotEmpty && other.isEmpty) {
+    return loc.explanationSuspiciousFlavouringOnly(flavouring.join(', '));
+  }
+  if (flavouring.isNotEmpty && other.isNotEmpty) {
+    return loc.explanationSuspiciousFlavouringAndOther(
+      flavouring.join(', '),
+      other.join(', '),
+    );
+  }
+  return loc.explanationSuspiciousOnly(suspicious.join(', '));
 }
 
 String _haramExplanation(Product product, AppLocalizations loc) {

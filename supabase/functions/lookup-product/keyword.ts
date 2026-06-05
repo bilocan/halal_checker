@@ -72,11 +72,11 @@ export const SUSPICIOUS_ENTRIES: KeywordEntry[] = [
    'suero de leche', 'peynir suyu', 'wei'],
   ['l-cysteine', 'L-cysteine may be animal-derived',
    'l-cysteine', 'l-cystein', 'l-cystéine', 'l-cisteina', 'l-sistein'],
-  ['natural flavour', 'Natural flavor may include animal-derived extracts',
+  ['natural flavour', 'Natural flavour may include animal-derived extracts or be extracted with alcohol.',
    'natural flavour', 'natural flavor', 'natürliches aroma',
    'natürliche aromen', 'arôme naturel', 'aroma naturale',
    'aroma natural', 'doğal aroma', 'natuurlijk aroma'],
-  ['flavouring', 'Aroma / Flavouring — source often unknown.',
+  ['flavouring', 'Aroma / flavouring — source may be animal-derived or extracted with alcohol.',
    'flavouring', 'flavoring', 'aroma', 'arôme', 'smaakstof'],
   ['enzymes', 'Enzymes may be extracted from animal sources',
    'enzymes', 'enzyme', 'enzimi', 'enzimas', 'enzim', 'enzymen'],
@@ -94,6 +94,13 @@ const FATTY_ALCOHOL_PREFIX = /\b(cetyl|stearyl|behenyl|lauryl|myristyl|arachidyl
 // Negation words across all supported languages (EN/DE/FR/NL/IT/ES/TR/CS/SR/HU).
 // Used to suppress false positives like "enthält keine Zutaten vom Schwein".
 const NEGATION_WORDS = /\b(?:keine?|nicht|ohne|frei\s+von|sans|pas|geen|zonder|vrij\s+van|no|not|without|free\s+from|free\s+of|senza|sin|içermez|içermemektedir|neobsahuje|bez|nema|nem|mentes)\b/i
+
+// Microbial / vegetable / fermentation-produced rennet — explicit non-animal source.
+const HALAL_RENNET_SOURCE = /\b(?:mikrobiel\w*|mikrobial|mikrobiyal|microbial|microbien\w*|microbienne|microbico|microbiano|microbiële|pflanzlich\w*|vegetable|vegetal|végétal\w*|vegetarisch\w*|plant\w*|non-animal|fermentation\s+produced)\s+(?:lab(?:ferment)?|rennet|présure|caglio|cuajo|stremsel|peynir\s+mayası|sirilo|oltóanyag|syřidlo)\b|\b(?:fermentation[- ]?produced\s+)?chymosin\b|\bfpc\b/i
+
+function isHalalRennetSource(chunk: string): boolean {
+  return HALAL_RENNET_SOURCE.test(chunk)
+}
 
 function escape(s: string) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') }
 
@@ -141,6 +148,7 @@ import {
   combineMatchSourceKeys,
   isAnalyzableScript,
 } from './ingredientResolution.ts'
+import { buildSuspiciousExplanation } from './flavouringVerdict.ts'
 
 export interface KeywordResult {
   isHalal: boolean
@@ -148,6 +156,8 @@ export interface KeywordResult {
   haram: string[]
   suspicious: string[]
   warnings: Record<string, string>
+  /** Flagged ingredient → suspicious canonical (e.g. flavouring, natural flavour). */
+  canonicals?: Record<string, string>
   explanation: string
   /** Which ingredient source(s) produced keyword matches (primary, off_en, off_taxonomy, …). */
   keywordMatchSource?: string
@@ -161,6 +171,7 @@ interface SinglePassResult {
   haram: string[]
   suspicious: string[]
   warnings: Record<string, string>
+  canonicals: Record<string, string>
   origins: Record<string, string>
 }
 
@@ -171,6 +182,7 @@ function keywordSinglePass(
   allSuspicious: KeywordEntry[],
 ): SinglePassResult {
   const warnings: Record<string, string> = {}
+  const canonicals: Record<string, string> = {}
   const haram: string[] = []
   const suspicious: string[] = []
   const origins: Record<string, string> = {}
@@ -191,8 +203,16 @@ function keywordSinglePass(
     if (foundHaram) continue
     for (const entry of allSuspicious) {
       const matchedVariant = (entry.slice(2) as string[]).find(v => matchesVariant(lower, v))
+      if (
+        matchedVariant &&
+        entry[0] === 'rennet' &&
+        isHalalRennetSource(lower)
+      ) {
+        continue
+      }
       if (matchedVariant && !isNegated(lower, matchedVariant)) {
         warnings[ing] = entry[1]
+        canonicals[ing] = entry[0]
         suspicious.push(ing)
         origins[ing] = sourceKey
         break
@@ -200,20 +220,23 @@ function keywordSinglePass(
     }
   }
 
-  return { haram, suspicious, warnings, origins }
+  return { haram, suspicious, warnings, canonicals, origins }
 }
 
 function buildKeywordExplanation(
   haram: string[],
   suspicious: string[],
+  canonicals: Record<string, string>,
   isUnknown: boolean,
   isUnanalyzableLanguage: boolean,
+  labels: string[],
+  productName: string,
 ): string {
   if (haram.length > 0) {
     return `This product contains ingredient(s) that are not permissible: ${haram.join(', ')}. Assessed by keyword matching.`
   }
   if (suspicious.length > 0) {
-    return `No definitively haram ingredients found, but the following may be animal-derived: ${suspicious.join(', ')}. Assessed by keyword matching.`
+    return buildSuspiciousExplanation(suspicious, canonicals, labels, productName)
   }
   if (isUnanalyzableLanguage) {
     return 'Ingredients are in a language we cannot analyze. Halal status cannot be determined — check the packaging directly.'
@@ -252,6 +275,7 @@ export function keywordAnalysisFromSources(
   const haram: string[] = []
   const suspicious: string[] = []
   const warnings: Record<string, string> = {}
+  const canonicals: Record<string, string> = {}
   const matchOrigins: Record<string, string> = {}
   const matchedSourceKeys: string[] = []
 
@@ -285,6 +309,7 @@ export function keywordAnalysisFromSources(
       }
       matchOrigins[ing] = pass.origins[ing] ?? source.key
       warnings[ing] = pass.warnings[ing] ?? warnings[ing] ?? ''
+      if (pass.canonicals[ing]) canonicals[ing] = pass.canonicals[ing]
     }
   }
 
@@ -305,8 +330,11 @@ export function keywordAnalysisFromSources(
   const explanation = buildKeywordExplanation(
     haram,
     suspicious,
+    canonicals,
     displayIngredients.length === 0,
     isUnanalyzableLanguage,
+    [],
+    '',
   )
 
   const keywordMatchSource = isUnanalyzableLanguage
@@ -319,6 +347,7 @@ export function keywordAnalysisFromSources(
     haram,
     suspicious,
     warnings,
+    canonicals: Object.keys(canonicals).length > 0 ? canonicals : undefined,
     explanation,
     keywordMatchSource,
     keywordMatchOrigins: Object.keys(matchOrigins).length > 0 ? matchOrigins : undefined,

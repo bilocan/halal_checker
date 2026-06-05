@@ -72,6 +72,12 @@
     "matched_canonicals": ["rennet"]
   },
   {
+    "description": "mikrobielles Lab not suspicious — microbial rennet explicit",
+    "ingredients": ["Milch", "mikrobielles Lab", "Salz"],
+    "verdict": "halal",
+    "matched_canonicals": []
+  },
+  {
     "description": "haram beats suspicious: pork with e471",
     "ingredients": ["pork", "E471"],
     "verdict": "haram",

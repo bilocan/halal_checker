@@ -2,6 +2,35 @@
 
 Agent checklist: [AGENTS.md](AGENTS.md). **Definition of done (Cursor + Claude Code):** [DEFINITION_OF_DONE.md](DEFINITION_OF_DONE.md) — edit only that file when changing done steps. Cursor rules in `.cursor/rules/` point there.
 
+## Vault — always log bugs and decisions
+
+The team's second brain is the **HalalScan Obsidian vault** — configured as an additional working directory in Claude Code, so it is always accessible alongside this repo.
+
+**When a bug is reported or fixed:**
+1. Create a note in `02 - Dev/Bugs/` using this template
+2. Add a row to the vault **[[Bug Tracker]]** (`02 - Dev/Bugs/Bug Tracker.md`) under the matching status section
+3. Update summary counts on the tracker and [[Dashboard]] when status changes
+
+```
+# Bug: <short title>
+
+**Captured:** YYYY-MM-DD
+**Status:** Open | Fix implemented | Resolved
+**File:** <affected file or workflow>
+**Priority:** High / Medium / Low
+
+## Symptoms
+## Root cause
+## Fix — implemented / pending
+## Related
+```
+
+Move to `02 - Dev/Bugs/Resolved/` only after the user confirms it works in production; then set **Status:** Resolved and move the tracker row to **Resolved**.
+
+**When a product decision is made:** capture it in `01 - Product/Decisions/`.
+
+**On `debrief`:** follow the vault `CLAUDE.md` debrief flow — end with **copy-paste commit message(s) only** (vault `docs: …` and/or `halal_checker` when code changed); **no `git` commands** in the reply; do not commit unless asked.
+
 ## Task done (Claude Code + Cursor)
 
 When the user says **task done** / **done** / **finish**: follow **[DEFINITION_OF_DONE.md](DEFINITION_OF_DONE.md)** in full. For user-visible work you **must** write release notes — run `add_release_note` or edit `release_notes/unreleased/{en,de,tr,ar}.md`. Consolidating docs into one file does **not** remove that step.

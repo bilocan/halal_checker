@@ -439,7 +439,7 @@ abstract class AppLocalizations {
   /// No description provided for @mayBeAnimalDerived.
   ///
   /// In en, this message translates to:
-  /// **'May Be Animal-Derived'**
+  /// **'Needs Verification'**
   String get mayBeAnimalDerived;
 
   /// No description provided for @communityFeedback.
@@ -685,7 +685,7 @@ abstract class AppLocalizations {
   /// No description provided for @mayBeAnimalDerivedNote.
   ///
   /// In en, this message translates to:
-  /// **'May be animal-derived.'**
+  /// **'Source may be animal-derived or involve alcohol extraction.'**
   String get mayBeAnimalDerivedNote;
 
   /// No description provided for @couldNotLoadFeedback.
@@ -1191,6 +1191,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No definitely haram ingredients found, but {ingredients} may be animal-derived. This is an automated assessment based on ingredient text.'**
   String explanationSuspiciousOnly(String ingredients);
+
+  /// No description provided for @explanationSuspiciousFlavouringOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'No definitely haram ingredients found, but {ingredients} may be animal-derived or extracted with alcohol. This is an automated assessment based on ingredient text.'**
+  String explanationSuspiciousFlavouringOnly(String ingredients);
+
+  /// No description provided for @explanationSuspiciousFlavouringAndOther.
+  ///
+  /// In en, this message translates to:
+  /// **'No definitely haram ingredients found. {flavouring} may be animal-derived or extracted with alcohol; {other} may still be animal-derived. This is an automated assessment based on ingredient text.'**
+  String explanationSuspiciousFlavouringAndOther(
+    String flavouring,
+    String other,
+  );
+
+  /// No description provided for @explanationSuspiciousVeganFlavouringOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'No definitely haram ingredients found. This product is vegan-certified; flagged aroma/flavouring is non-animal per certification, but alcohol content cannot be ruled out: {ingredients}. This is an automated assessment based on ingredient text.'**
+  String explanationSuspiciousVeganFlavouringOnly(String ingredients);
+
+  /// No description provided for @explanationSuspiciousVeganFlavouringAndOther.
+  ///
+  /// In en, this message translates to:
+  /// **'No definitely haram ingredients found. This product is vegan-certified; flagged aroma/flavouring is non-animal per certification, but alcohol content cannot be ruled out: {flavouring}. The following may still be animal-derived: {other}. This is an automated assessment based on ingredient text.'**
+  String explanationSuspiciousVeganFlavouringAndOther(
+    String flavouring,
+    String other,
+  );
 
   /// No description provided for @explanationHaram.
   ///

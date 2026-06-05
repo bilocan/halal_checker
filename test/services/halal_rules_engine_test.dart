@@ -23,7 +23,7 @@ void main() {
       expect(result.isHalal, isFalse);
       expect(result.haram, isEmpty);
       expect(result.suspicious, contains('e471'));
-      expect(result.explanation, contains('require verification'));
+      expect(result.explanation, contains('may be animal-derived'));
     });
 
     test('keeps alcohol-free and fatty alcohol out of haram matches', () {
@@ -93,6 +93,35 @@ void main() {
           expect(result.haram, contains('schweinefleisch'));
         },
       );
+    });
+
+    group('rennet — halal source qualifiers', () {
+      test('mikrobielles Lab is not suspicious (barcode 9100000727240)', () {
+        final result = engine.analyzeIngredients([
+          'Milch',
+          'mikrobielles Lab',
+          'Salz',
+        ]);
+        expect(result.verdict, HalalRuleVerdict.halal);
+        expect(result.suspicious, isEmpty);
+      });
+
+      test('bare Lab stays suspicious', () {
+        final result = engine.analyzeIngredients(['Milch', 'Lab', 'Salz']);
+        expect(result.verdict, HalalRuleVerdict.suspicious);
+        expect(result.suspicious, contains('Lab'));
+      });
+
+      test('microbial rennet is not suspicious', () {
+        final result = engine.analyzeIngredients(['microbial rennet']);
+        expect(result.verdict, HalalRuleVerdict.halal);
+        expect(result.suspicious, isEmpty);
+      });
+
+      test('matchesKeyword rennet false for mikrobielles lab', () {
+        expect(engine.matchesKeyword('mikrobielles lab', 'rennet'), isFalse);
+        expect(engine.matchesKeyword('Lab', 'rennet'), isTrue);
+      });
     });
   });
 
@@ -175,9 +204,9 @@ void main() {
       expect(result.explanation, contains('not permissible'));
     });
 
-    test('suspicious-only explanation mentions verification needed', () {
+    test('suspicious-only explanation mentions animal-derived check', () {
       final result = engine.analyzeIngredients(['e471']);
-      expect(result.explanation, contains('require verification'));
+      expect(result.explanation, contains('may be animal-derived'));
     });
 
     test('clean list explanation says no haram detected', () {

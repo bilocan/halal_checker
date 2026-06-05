@@ -152,6 +152,9 @@ class HalalRulesEngine {
   }
 
   bool matchesKeyword(String value, String keyword) {
+    if (keyword == 'rennet' && IngredientKeywords.isHalalRennetSource(value)) {
+      return false;
+    }
     final variants =
         rules.haramVariants[keyword] ??
         rules.suspiciousVariants[keyword] ??
@@ -194,6 +197,11 @@ class HalalRulesEngine {
 
       for (final entry in rules.suspicious.entries) {
         final variant = _matchingVariant(lower, entry.key);
+        if (variant != null &&
+            entry.key == 'rennet' &&
+            IngredientKeywords.isHalalRennetSource(lower)) {
+          continue;
+        }
         if (variant != null && !_isNegated(lower, variant)) {
           warnings[ingredient] = entry.value;
           canonicals[ingredient] = entry.key;
@@ -268,10 +276,18 @@ class HalalRulesEngine {
         .map((m) => m.value)
         .toList();
     if (suspicious.isNotEmpty) {
-      return 'No definitively haram ingredients were found, but the following '
-          'may be animal-derived and require verification: '
-          '${suspicious.join(', ')}. '
-          'Assessed by keyword matching.';
+      final canonicals = {
+        for (final m in matches.where(
+          (m) => m.verdict == HalalRuleVerdict.suspicious,
+        ))
+          m.value: m.canonical,
+      };
+      return IngredientKeywords.buildSuspiciousExplanation(
+        suspicious: suspicious,
+        canonicals: canonicals,
+        labels: const [],
+        productName: '',
+      );
     }
 
     if (ingredients.isEmpty) {

@@ -197,7 +197,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get flaggedIngredients => 'İşaretli İçindekiler';
 
   @override
-  String get mayBeAnimalDerived => 'Hayvansal Kaynaklı Olabilir';
+  String get mayBeAnimalDerived => 'Doğrulanması Gereken İçerikler';
 
   @override
   String get communityFeedback => 'Topluluk Geri Bildirimi';
@@ -326,7 +326,8 @@ class AppLocalizationsTr extends AppLocalizations {
   String get foundInLabels => 'Ürün etiketlerinde bulundu.';
 
   @override
-  String get mayBeAnimalDerivedNote => 'Hayvansal kaynaklı olabilir.';
+  String get mayBeAnimalDerivedNote =>
+      'Kaynak hayvansal olabilir veya alkolle ekstraksiyon içerebilir.';
 
   @override
   String get couldNotLoadFeedback => 'Geri bildirim yüklenemedi.';
@@ -503,7 +504,8 @@ class AppLocalizationsTr extends AppLocalizations {
       'Mevcut görsellerde içerik listesi bulunamadı. Lütfen içerik etiketinin fotoğrafını çekin.';
 
   @override
-  String get viewAllCheckedKeywords => 'View all checked keywords';
+  String get viewAllCheckedKeywords =>
+      'Kontrol edilen tüm anahtar kelimeleri görüntüle';
 
   @override
   String get haramKeywordsChecked => 'Kontrol Ettiğimiz Haram İçerikler';
@@ -604,6 +606,32 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String explanationSuspiciousOnly(String ingredients) {
     return 'Kesinlikle haram içerik bulunamadı, ancak $ingredients hayvansal kaynaklı olabilir. Bu, içerik metnine dayalı otomatik bir değerlendirmedir.';
+  }
+
+  @override
+  String explanationSuspiciousFlavouringOnly(String ingredients) {
+    return 'Kesinlikle haram içerik bulunamadı, ancak $ingredients hayvansal kaynaklı olabilir veya alkolle ekstrakte edilmiş olabilir. Bu, içerik metnine dayalı otomatik bir değerlendirmedir.';
+  }
+
+  @override
+  String explanationSuspiciousFlavouringAndOther(
+    String flavouring,
+    String other,
+  ) {
+    return 'Kesinlikle haram içerik bulunamadı. $flavouring hayvansal kaynaklı olabilir veya alkolle ekstrakte edilmiş olabilir; $other hâlâ hayvansal kaynaklı olabilir. Bu, içerik metnine dayalı otomatik bir değerlendirmedir.';
+  }
+
+  @override
+  String explanationSuspiciousVeganFlavouringOnly(String ingredients) {
+    return 'Kesinlikle haram içerik bulunamadı. Ürün vegan sertifikalıdır; işaretlenen aroma hayvansal değildir, ancak alkol içeriği ekarte edilemez: $ingredients. Bu, içerik metnine dayalı otomatik bir değerlendirmedir.';
+  }
+
+  @override
+  String explanationSuspiciousVeganFlavouringAndOther(
+    String flavouring,
+    String other,
+  ) {
+    return 'Kesinlikle haram içerik bulunamadı. Ürün vegan sertifikalıdır; işaretlenen aroma hayvansal değildir, ancak alkol içeriği ekarte edilemez: $flavouring. Aşağıdakiler hâlâ hayvansal kaynaklı olabilir: $other. Bu, içerik metnine dayalı otomatik bir değerlendirmedir.';
   }
 
   @override

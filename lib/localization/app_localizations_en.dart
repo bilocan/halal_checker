@@ -194,7 +194,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get flaggedIngredients => 'Flagged Ingredients';
 
   @override
-  String get mayBeAnimalDerived => 'May Be Animal-Derived';
+  String get mayBeAnimalDerived => 'Needs Verification';
 
   @override
   String get communityFeedback => 'Community Feedback';
@@ -324,7 +324,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get foundInLabels => 'Found in product labels.';
 
   @override
-  String get mayBeAnimalDerivedNote => 'May be animal-derived.';
+  String get mayBeAnimalDerivedNote =>
+      'Source may be animal-derived or involve alcohol extraction.';
 
   @override
   String get couldNotLoadFeedback => 'Could not load feedback.';
@@ -605,6 +606,32 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String explanationSuspiciousOnly(String ingredients) {
     return 'No definitely haram ingredients found, but $ingredients may be animal-derived. This is an automated assessment based on ingredient text.';
+  }
+
+  @override
+  String explanationSuspiciousFlavouringOnly(String ingredients) {
+    return 'No definitely haram ingredients found, but $ingredients may be animal-derived or extracted with alcohol. This is an automated assessment based on ingredient text.';
+  }
+
+  @override
+  String explanationSuspiciousFlavouringAndOther(
+    String flavouring,
+    String other,
+  ) {
+    return 'No definitely haram ingredients found. $flavouring may be animal-derived or extracted with alcohol; $other may still be animal-derived. This is an automated assessment based on ingredient text.';
+  }
+
+  @override
+  String explanationSuspiciousVeganFlavouringOnly(String ingredients) {
+    return 'No definitely haram ingredients found. This product is vegan-certified; flagged aroma/flavouring is non-animal per certification, but alcohol content cannot be ruled out: $ingredients. This is an automated assessment based on ingredient text.';
+  }
+
+  @override
+  String explanationSuspiciousVeganFlavouringAndOther(
+    String flavouring,
+    String other,
+  ) {
+    return 'No definitely haram ingredients found. This product is vegan-certified; flagged aroma/flavouring is non-animal per certification, but alcohol content cannot be ruled out: $flavouring. The following may still be animal-derived: $other. This is an automated assessment based on ingredient text.';
   }
 
   @override
