@@ -1,7 +1,8 @@
 // Deno unit tests for lookup-product gates, community, and keyword regressions.
-// Run with: deno test supabase/functions/lookup-product/index_test.ts
+// Run with: deno test --allow-env supabase/functions/lookup-product/index_test.ts
 
 import { assertEquals, assertMatch } from 'https://deno.land/std@0.224.0/assert/mod.ts'
+import negationCasesJson from '../../../test/fixtures/negation_cases.json' with { type: 'json' }
 import { withCommunitySource } from './community.ts'
 import { toProduct } from './db.ts'
 import {
@@ -216,13 +217,13 @@ Deno.test('negation — actual pork still flagged', () => {
 })
 
 // Shared negation fixture — keep in sync with test/fixtures/negation_cases.json
-const negationCasesPath = new URL('../../../test/fixtures/negation_cases.json', import.meta.url)
-const negationCases: Array<{
+type NegationCase = {
   description: string
   ingredients: string[]
   verdict: string
   matched_canonicals?: string[]
-}> = JSON.parse(await Deno.readTextFile(negationCasesPath))
+}
+const negationCases = negationCasesJson as NegationCase[]
 
 function verdictFromKeywordResult(r: ReturnType<typeof keywordAnalysis>): string {
   if (r.haram.length > 0) return 'haram'
