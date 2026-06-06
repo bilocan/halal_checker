@@ -6,3 +6,5 @@
 - **Aroma / flavouring warnings** — Vague aroma and flavouring flags now note that alcohol may be used in extraction, not only animal-derived sources. Vegan-labelled products get an updated explanation: animal origin is not assumed, but alcohol content still cannot be ruled out.
 - **Result screen sync** — Suspicious-ingredient banners and findings now match server analysis and mention alcohol extraction for aroma/flavouring, not only animal origin. Rescans pick up newer shared-database results instead of stale local cache.
 - **Closed beta banner (Android)** — Closed testers on Android see a dismissible home checklist with a feedback email link; superadmin enables in Admin → Settings (iOS unaffected).
+
+- **Closed beta banner without sign-in** — The home checklist banner now appears for signed-out Android users when the admin flag is on; no account required to see Play test guidance.

@@ -7,3 +7,5 @@
 
 - **Sonuç ekranı senkronu** — Şüpheli içerik banner'ı ve bulgular artık sunucu analiziyle uyumlu; aroma için yalnızca hayvansal kaynak değil, alkolle ekstraksiyon da belirtiliyor. Yeniden taramada güncel veritabanı sonucu, eski yerel önbellek yerine kullanılıyor.
 - **Kapalı beta banner (Android)** — Kapalı Android test kullanıcıları ana ekranda kapatılabilir kontrol listesi banner'ı ve e-posta geri bildirimi görür; süper admin Admin → Ayarlar'dan açar (iOS etkilenmez).
+
+- **Kapalı beta banner — oturum açmadan** — Admin bayrağı açıkken ana sayfa kontrol listesi artık oturum açmadan da görünür.

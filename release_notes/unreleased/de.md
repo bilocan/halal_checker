@@ -7,3 +7,5 @@
 
 - **Ergebnisbildschirm-Sync** — Banner und Hinweise zu verdächtigen Zutaten entsprechen jetzt der Server-Analyse und nennen bei Aroma/Aromen auch Alkoholextraktion, nicht nur tierische Herkunft. Beim erneuten Scannen werden neuere Datenbank-Ergebnisse statt veraltetem lokalem Cache geladen.
 - **Geschlossener-Beta-Banner (Android)** — Geschlossene Android-Tester sehen ein ausblendbares Checklisten-Banner auf dem Startbildschirm mit E-Mail-Feedback; Superadmin aktiviert unter Admin → Einstellungen (iOS unverändert).
+
+- **Geschlossener-Beta-Banner ohne Anmeldung** — Das Checklisten-Banner erscheint jetzt auch ohne Konto, wenn der Admin-Schalter aktiv ist.
