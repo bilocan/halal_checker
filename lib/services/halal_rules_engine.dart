@@ -85,12 +85,25 @@ class HalalRulesEngine {
   static bool isFattyAlcohol(String ingredient) =>
       IngredientKeywords.fattyAlcoholPrefix.hasMatch(ingredient);
 
-  // Negation words in DE/FR/NL/EN/IT/ES/TR/CS/SR — word-boundary aware.
+  // Pre-negation words in DE/FR/NL/EN/IT/ES/TR/CS/SR — word-boundary aware.
   // Used to suppress false positives like "enthält keine Zutaten vom Schwein".
   static final RegExp _negationWord = RegExp(
     r'\b(?:keine?|nicht|ohne|frei\s+von|sans|pas|geen|zonder|vrij\s+van|'
-    r'no|not|without|free\s+from|free\s+of|senza|sin|içermez|içermemektedir|'
+    r'no|not|without|free\s+from|free\s+of|senza|sin|'
+    r'içermez|içermemektedir|icermez|icermemektedir|'
     r'neobsahuje|bez|nema|nem|mentes)\b',
+    caseSensitive: false,
+  );
+
+  // Post-negation: absence markers after the keyword (EN/DE/TR trailing forms).
+  // e.g. "domuz yağı ve katkıları yoktur", "gelatin-free", "schweinefrei".
+  static final RegExp _postNegationWord = RegExp(
+    r'(?:'
+    r'[-](?:free|frei)\b'
+    r'|\b(?:free|frei|yoktur|yok|bulunmamaktadır|bulunmamaktadir|bulunmaz|'
+    r'içermez|içermemektedir|icermez|icermemektedir)\b'
+    r'|e?frei\b'
+    r')',
     caseSensitive: false,
   );
 
@@ -106,22 +119,28 @@ class HalalRulesEngine {
     return null;
   }
 
-  // True when the [variant] match in [chunkLower] is preceded by a negation word,
-  // meaning the sentence explicitly states the ingredient is absent.
+  // True when the [variant] match in [chunkLower] is preceded or followed by a
+  // negation marker, meaning the sentence explicitly states the ingredient is absent.
   static bool _isNegated(String chunkLower, String variant) {
-    final int idx;
+    final int start;
+    final int end;
     if (variant.contains(' ')) {
-      idx = chunkLower.indexOf(variant.toLowerCase());
+      final lower = variant.toLowerCase();
+      start = chunkLower.indexOf(lower);
+      if (start < 0) return false;
+      end = start + lower.length;
     } else {
       final escaped = RegExp.escape(variant);
       final m = RegExp(
         '${IngredientKeywords.wPre}$escaped${IngredientKeywords.wPost}',
         caseSensitive: false,
       ).firstMatch(chunkLower);
-      idx = m?.start ?? -1;
+      if (m == null) return false;
+      start = m.start;
+      end = m.end;
     }
-    if (idx < 0) return false;
-    return _negationWord.hasMatch(chunkLower.substring(0, idx));
+    if (_negationWord.hasMatch(chunkLower.substring(0, start))) return true;
+    return _postNegationWord.hasMatch(chunkLower.substring(end));
   }
 
   /// Ignores hyphens so label spellings like "mono- und" and "mono und" match.

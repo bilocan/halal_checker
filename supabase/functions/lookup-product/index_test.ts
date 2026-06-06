@@ -1,7 +1,8 @@
 // Deno unit tests for lookup-product gates, community, and keyword regressions.
-// Run with: deno test supabase/functions/lookup-product/index_test.ts
+// Run with: deno test --allow-env supabase/functions/lookup-product/index_test.ts
 
 import { assertEquals, assertMatch } from 'https://deno.land/std@0.224.0/assert/mod.ts'
+import negationCasesJson from '../../../test/fixtures/negation_cases.json' with { type: 'json' }
 import { withCommunitySource } from './community.ts'
 import { toProduct } from './db.ts'
 import {
@@ -183,6 +184,27 @@ Deno.test('negation — TR içermez: içermez pork → halal', () => {
   assertEquals(r.isHalal, true)
 })
 
+Deno.test('negation — TR yoktur: domuz yağı ve katkıları yoktur → halal', () => {
+  const r = keywordAnalysis(['domuz yağı ve katkıları yoktur'])
+  assertEquals(r.isHalal, true)
+  assertEquals(r.haram.length, 0)
+})
+
+Deno.test('negation — TR ASCII icermez: domuz icermez → halal', () => {
+  const r = keywordAnalysis(['domuz icermez'])
+  assertEquals(r.isHalal, true)
+})
+
+Deno.test('negation — EN trailing free: pork free → halal', () => {
+  const r = keywordAnalysis(['pork free'])
+  assertEquals(r.isHalal, true)
+})
+
+Deno.test('negation — DE compound frei: schweinefrei → halal', () => {
+  const r = keywordAnalysis(['schweinefrei'])
+  assertEquals(r.isHalal, true)
+})
+
 Deno.test('negation — HU nem: nem tartalmaz schwein → halal', () => {
   const r = keywordAnalysis(['nem tartalmaz schwein'])
   assertEquals(r.isHalal, true)
@@ -193,6 +215,33 @@ Deno.test('negation — actual pork still flagged', () => {
   assertEquals(r.isHalal, false)
   assertEquals(r.haram, ['pork fat'])
 })
+
+// Shared negation fixture — keep in sync with test/fixtures/negation_cases.json
+type NegationCase = {
+  description: string
+  ingredients: string[]
+  verdict: string
+  matched_canonicals?: string[]
+}
+const negationCases = negationCasesJson as NegationCase[]
+
+function verdictFromKeywordResult(r: ReturnType<typeof keywordAnalysis>): string {
+  if (r.haram.length > 0) return 'haram'
+  if (r.suspicious.length > 0) return 'suspicious'
+  return 'halal'
+}
+
+for (const c of negationCases) {
+  Deno.test(`negation fixture — ${c.description}`, () => {
+    const r = keywordAnalysis(c.ingredients)
+    assertEquals(verdictFromKeywordResult(r), c.verdict)
+    if (c.verdict === 'halal') {
+      assertEquals(r.isHalal, true)
+      assertEquals(r.haram.length, 0)
+      assertEquals(r.suspicious.length, 0)
+    }
+  })
+}
 
 Deno.test('unicode boundary — lactosérum does not false-positive on "rum"', () => {
   const r = keywordAnalysis(['poudre de lactosérum (lait)'])

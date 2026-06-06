@@ -24,6 +24,8 @@ jobs:
   manage:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+
       - name: Generate JWT
         id: jwt
         env:
@@ -117,16 +119,6 @@ jobs:
               fi
 
             elif [ "$ACTION" = "expire" ]; then
-              HTTP=$(curl -sS -o /dev/null -w "%{http_code}" \
-                -X PATCH \
-                -H "Authorization: Bearer $JWT" \
-                -H "Content-Type: application/json" \
-                -d "{\"data\":{\"type\":\"builds\",\"id\":\"$BUILD_ID\",\"attributes\":{\"expired\":true}}}" \
-                "https://api.appstoreconnect.apple.com/v1/builds/$BUILD_ID")
-              if [ "$HTTP" -ge 200 ] && [ "$HTTP" -lt 300 ]; then
-                echo "Build expired — removed from TestFlight."
-              else
-                echo "::warning::Could not expire build (HTTP $HTTP)."
-              fi
+              JWT="$JWT" APP_ID="$APP_ID" bash scripts/ci/expire_testflight_versions.sh "$VERSION"
             fi
           done

@@ -1,0 +1,284 @@
+[
+  {
+    "description": "pre-DE: keine (barcode 8690766143732 regression)",
+    "ingredients": ["enthält keine zutaten vom schwein"],
+    "verdict": "halal",
+    "matched_canonicals": []
+  },
+  {
+    "description": "pre-DE: nicht",
+    "ingredients": ["nicht schwein"],
+    "verdict": "halal",
+    "matched_canonicals": []
+  },
+  {
+    "description": "pre-DE: ohne",
+    "ingredients": ["ohne Schweinefleisch"],
+    "verdict": "halal",
+    "matched_canonicals": []
+  },
+  {
+    "description": "pre-DE: frei von",
+    "ingredients": ["frei von schwein"],
+    "verdict": "halal",
+    "matched_canonicals": []
+  },
+  {
+    "description": "pre-FR: pas",
+    "ingredients": ["ne contient pas d'ingrédients provenant de porc"],
+    "verdict": "halal",
+    "matched_canonicals": []
+  },
+  {
+    "description": "pre-FR: sans",
+    "ingredients": ["sans porc"],
+    "verdict": "halal",
+    "matched_canonicals": []
+  },
+  {
+    "description": "pre-NL: geen",
+    "ingredients": ["bevat geen varkensvlees"],
+    "verdict": "halal",
+    "matched_canonicals": []
+  },
+  {
+    "description": "pre-NL: zonder",
+    "ingredients": ["zonder varkensvlees"],
+    "verdict": "halal",
+    "matched_canonicals": []
+  },
+  {
+    "description": "pre-NL: vrij van",
+    "ingredients": ["vrij van varkensvlees"],
+    "verdict": "halal",
+    "matched_canonicals": []
+  },
+  {
+    "description": "pre-EN: no",
+    "ingredients": ["contains no pork"],
+    "verdict": "halal",
+    "matched_canonicals": []
+  },
+  {
+    "description": "pre-EN: not",
+    "ingredients": ["not pork"],
+    "verdict": "halal",
+    "matched_canonicals": []
+  },
+  {
+    "description": "pre-EN: without",
+    "ingredients": ["made without alcohol"],
+    "verdict": "halal",
+    "matched_canonicals": []
+  },
+  {
+    "description": "pre-EN: free from",
+    "ingredients": ["free from pork"],
+    "verdict": "halal",
+    "matched_canonicals": []
+  },
+  {
+    "description": "pre-EN: free of",
+    "ingredients": ["free of pork"],
+    "verdict": "halal",
+    "matched_canonicals": []
+  },
+  {
+    "description": "pre-IT: senza (haram keyword)",
+    "ingredients": ["senza maiale"],
+    "verdict": "halal",
+    "matched_canonicals": []
+  },
+  {
+    "description": "pre-IT: senza (suspicious keyword)",
+    "ingredients": ["senza gelatina"],
+    "verdict": "halal",
+    "matched_canonicals": []
+  },
+  {
+    "description": "pre-ES: sin (haram keyword)",
+    "ingredients": ["sin cerdo"],
+    "verdict": "halal",
+    "matched_canonicals": []
+  },
+  {
+    "description": "pre-ES: sin (suspicious keyword)",
+    "ingredients": ["sin alcohol"],
+    "verdict": "halal",
+    "matched_canonicals": []
+  },
+  {
+    "description": "pre-TR: içermez before keyword",
+    "ingredients": ["içermez domuz"],
+    "verdict": "halal",
+    "matched_canonicals": []
+  },
+  {
+    "description": "pre-TR: icermez before keyword (ASCII)",
+    "ingredients": ["icermez domuz"],
+    "verdict": "halal",
+    "matched_canonicals": []
+  },
+  {
+    "description": "pre-TR: içermemektedir before keyword",
+    "ingredients": ["içermemektedir domuz"],
+    "verdict": "halal",
+    "matched_canonicals": []
+  },
+  {
+    "description": "pre-TR: icermemektedir before keyword (ASCII)",
+    "ingredients": ["icermemektedir domuz"],
+    "verdict": "halal",
+    "matched_canonicals": []
+  },
+  {
+    "description": "pre-HU: nem",
+    "ingredients": ["nem tartalmaz schwein"],
+    "verdict": "halal",
+    "matched_canonicals": []
+  },
+  {
+    "description": "pre-HU: mentes",
+    "ingredients": ["mentes schwein"],
+    "verdict": "halal",
+    "matched_canonicals": []
+  },
+  {
+    "description": "pre-CS/SR: bez",
+    "ingredients": ["bez schwein"],
+    "verdict": "halal",
+    "matched_canonicals": []
+  },
+  {
+    "description": "pre-CS: neobsahuje",
+    "ingredients": ["neobsahuje schwein"],
+    "verdict": "halal",
+    "matched_canonicals": []
+  },
+  {
+    "description": "pre-SR: nema",
+    "ingredients": ["nema schwein"],
+    "verdict": "halal",
+    "matched_canonicals": []
+  },
+  {
+    "description": "post-TR: yoktur (barcode 8696362804718 regression)",
+    "ingredients": ["domuz yağı ve katkıları yoktur"],
+    "verdict": "halal",
+    "matched_canonicals": []
+  },
+  {
+    "description": "post-TR: yoktur ASCII label spelling",
+    "ingredients": ["domuz yaği ve katkilari yoktur"],
+    "verdict": "halal",
+    "matched_canonicals": []
+  },
+  {
+    "description": "post-TR: yok",
+    "ingredients": ["domuz yok"],
+    "verdict": "halal",
+    "matched_canonicals": []
+  },
+  {
+    "description": "post-TR: içermez after keyword",
+    "ingredients": ["domuz içermez"],
+    "verdict": "halal",
+    "matched_canonicals": []
+  },
+  {
+    "description": "post-TR: icermez after keyword (ASCII)",
+    "ingredients": ["domuz icermez"],
+    "verdict": "halal",
+    "matched_canonicals": []
+  },
+  {
+    "description": "post-TR: içermemektedir after keyword",
+    "ingredients": ["domuz içermemektedir"],
+    "verdict": "halal",
+    "matched_canonicals": []
+  },
+  {
+    "description": "post-TR: icermemektedir after keyword (ASCII)",
+    "ingredients": ["domuz icermemektedir"],
+    "verdict": "halal",
+    "matched_canonicals": []
+  },
+  {
+    "description": "post-TR: bulunmaz",
+    "ingredients": ["domuz bulunmaz"],
+    "verdict": "halal",
+    "matched_canonicals": []
+  },
+  {
+    "description": "post-TR: bulunmamaktadır",
+    "ingredients": ["domuz bulunmamaktadır"],
+    "verdict": "halal",
+    "matched_canonicals": []
+  },
+  {
+    "description": "post-TR: bulunmamaktadir (ASCII)",
+    "ingredients": ["domuz bulunmamaktadir"],
+    "verdict": "halal",
+    "matched_canonicals": []
+  },
+  {
+    "description": "post-EN: trailing free",
+    "ingredients": ["pork free"],
+    "verdict": "halal",
+    "matched_canonicals": []
+  },
+  {
+    "description": "post-EN: hyphen -free (haram keyword)",
+    "ingredients": ["alcohol-free toner base"],
+    "verdict": "halal",
+    "matched_canonicals": []
+  },
+  {
+    "description": "post-EN: hyphen -free (suspicious keyword)",
+    "ingredients": ["gelatin-free"],
+    "verdict": "halal",
+    "matched_canonicals": []
+  },
+  {
+    "description": "post-EN: trailing free (suspicious keyword)",
+    "ingredients": ["alcohol free"],
+    "verdict": "halal",
+    "matched_canonicals": []
+  },
+  {
+    "description": "post-DE: schweinefrei compound",
+    "ingredients": ["schweinefrei"],
+    "verdict": "halal",
+    "matched_canonicals": []
+  },
+  {
+    "description": "post-DE: schweinfrei",
+    "ingredients": ["schweinfrei"],
+    "verdict": "halal",
+    "matched_canonicals": []
+  },
+  {
+    "description": "control: real pork DE still haram",
+    "ingredients": ["schweinefleisch"],
+    "verdict": "haram",
+    "matched_canonicals": ["pork"]
+  },
+  {
+    "description": "control: real pork EN still haram",
+    "ingredients": ["pork fat", "salt"],
+    "verdict": "haram",
+    "matched_canonicals": ["pork"]
+  },
+  {
+    "description": "control: real pork TR still haram",
+    "ingredients": ["domuz eti"],
+    "verdict": "haram",
+    "matched_canonicals": ["pork"]
+  },
+  {
+    "description": "control: negation in one chunk does not suppress real match in another",
+    "ingredients": ["enthält keine zutaten vom schwein", "schweinefleisch"],
+    "verdict": "haram",
+    "matched_canonicals": ["pork"]
+  }
+]

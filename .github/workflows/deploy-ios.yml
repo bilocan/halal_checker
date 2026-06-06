@@ -55,8 +55,9 @@ on:
 #
 #   App Store Connect prerequisite:
 #     Create the app (bundle ID: app.halalscan) and fill in all metadata
-#     (screenshots, description, etc.) before approving Gate 1. The version
-#     must be in "Prepare for Submission" state for the submit step to succeed.
+#     (screenshots, description, etc.) before approving Gate 1. Gate 1 auto-creates
+#     the target version; stale Prepare-for-Submission drafts are expired on
+#     TestFlight and removed via API before create (see cancel-beta-review expire).
 # ──────────────────────────────────────────────────────────────────────────────
 
 jobs:
@@ -410,6 +411,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Ensure App Store version exists
+        id: ensure-version
         env:
           APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
           APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
@@ -442,36 +444,126 @@ jobs:
           )
           rm -f "$KEY_FILE"
 
+          list_versions() {
+            curl -gsS -H "Authorization: Bearer $JWT" \
+              "https://api.appstoreconnect.apple.com/v1/apps/$APP_ID/appStoreVersions?filter[platform]=IOS&limit=20" \
+              | jq '.data[] | {id: .id, version: .attributes.versionString, state: .attributes.appStoreState}'
+          }
+
+          fetch_version_id() {
+            curl -gsS --fail-with-body \
+              -H "Authorization: Bearer $JWT" \
+              "https://api.appstoreconnect.apple.com/v1/apps/$APP_ID/appStoreVersions?filter[platform]=IOS&filter[versionString]=$VERSION&limit=1" \
+              | jq -r '.data[0].id // empty'
+          }
+
+          clear_stale_prepare_versions() {
+            local stale_versions stale_ids stale_id stale_ver
+            stale_versions=$(curl -gsS --fail-with-body \
+              -H "Authorization: Bearer $JWT" \
+              "https://api.appstoreconnect.apple.com/v1/apps/$APP_ID/appStoreVersions?filter[platform]=IOS&filter[appStoreState]=PREPARE_FOR_SUBMISSION&limit=20" \
+              | jq -r --arg target "$VERSION" \
+                '[.data[] | select(.attributes.versionString != $target) | .attributes.versionString] | join(",")')
+            if [ -z "$stale_versions" ]; then
+              return 0
+            fi
+            echo "Clearing stale Prepare for Submission versions: $stale_versions"
+            JWT="$JWT" APP_ID="$APP_ID" bash scripts/ci/expire_testflight_versions.sh "$stale_versions"
+
+            stale_ids=$(curl -gsS --fail-with-body \
+              -H "Authorization: Bearer $JWT" \
+              "https://api.appstoreconnect.apple.com/v1/apps/$APP_ID/appStoreVersions?filter[platform]=IOS&filter[appStoreState]=PREPARE_FOR_SUBMISSION&limit=20" \
+              | jq -r --arg target "$VERSION" '.data[] | select(.attributes.versionString != $target) | .id')
+            while IFS= read -r stale_id; do
+              [ -n "$stale_id" ] || continue
+              stale_ver=$(curl -gsS --fail-with-body \
+                -H "Authorization: Bearer $JWT" \
+                "https://api.appstoreconnect.apple.com/v1/appStoreVersions/$stale_id" \
+                | jq -r '.data.attributes.versionString // empty')
+              echo "Deleting App Store version $stale_ver (ID: $stale_id)..."
+              DELETE_HTTP=$(curl -sS -o /dev/null -w "%{http_code}" -X DELETE \
+                -H "Authorization: Bearer $JWT" \
+                "https://api.appstoreconnect.apple.com/v1/appStoreVersions/$stale_id")
+              if [ "$DELETE_HTTP" = "204" ] || [ "$DELETE_HTTP" = "200" ]; then
+                echo "Deleted App Store version $stale_ver."
+              else
+                echo "::warning::Could not delete App Store version $stale_ver (HTTP $DELETE_HTTP)."
+              fi
+            done <<< "$stale_ids"
+          }
+
+          create_app_store_version() {
+            echo "Creating App Store version $VERSION..." >&2
+            CREATE_RESP=$(curl -gsS -w "\n%{http_code}" \
+              -X POST \
+              -H "Authorization: Bearer $JWT" \
+              -H "Content-Type: application/json" \
+              -d "{\"data\":{\"type\":\"appStoreVersions\",\"attributes\":{\"platform\":\"IOS\",\"versionString\":\"$VERSION\",\"releaseType\":\"MANUAL\"},\"relationships\":{\"app\":{\"data\":{\"type\":\"apps\",\"id\":\"$APP_ID\"}}}}}" \
+              "https://api.appstoreconnect.apple.com/v1/appStoreVersions")
+            CREATE_HTTP=$(echo "$CREATE_RESP" | tail -1)
+            CREATE_BODY=$(echo "$CREATE_RESP" | sed '$d')
+            printf '%s\n' "$CREATE_HTTP"
+            printf '%s\n' "$CREATE_BODY"
+          }
+
           APP_ID=$(curl -gsS --fail-with-body \
             -H "Authorization: Bearer $JWT" \
             "https://api.appstoreconnect.apple.com/v1/apps?filter[bundleId]=app.halalscan" \
             | jq -r '.data[0].id')
 
-          VERSION_JSON=$(curl -gsS --fail-with-body \
-            -H "Authorization: Bearer $JWT" \
-            "https://api.appstoreconnect.apple.com/v1/apps/$APP_ID/appStoreVersions?filter[platform]=IOS&filter[versionString]=$VERSION")
-
-          VERSION_STATE=$(echo "$VERSION_JSON" | jq -r '.data[0].attributes.appStoreState // empty')
-
-          if [ -n "$VERSION_STATE" ]; then
-            echo "Version $VERSION already exists in state: $VERSION_STATE"
-          else
-            echo "Creating App Store version $VERSION..."
-            CREATE_RESP=$(curl -gsS -w "\n%{http_code}" \
-              -X POST \
+          VERSION_ID=$(fetch_version_id)
+          if [ -n "$VERSION_ID" ]; then
+            VERSION_STATE=$(curl -gsS --fail-with-body \
               -H "Authorization: Bearer $JWT" \
-              -H "Content-Type: application/json" \
-              -d "{\"data\":{\"type\":\"appStoreVersions\",\"attributes\":{\"platform\":\"IOS\",\"versionString\":\"$VERSION\"},\"relationships\":{\"app\":{\"data\":{\"type\":\"apps\",\"id\":\"$APP_ID\"}}}}}" \
-              "https://api.appstoreconnect.apple.com/v1/appStoreVersions")
-            CREATE_HTTP=$(echo "$CREATE_RESP" | tail -1)
-            CREATE_BODY=$(echo "$CREATE_RESP" | sed '$d')
+              "https://api.appstoreconnect.apple.com/v1/appStoreVersions/$VERSION_ID" \
+              | jq -r '.data.attributes.appStoreState // empty')
+            echo "Version $VERSION already exists in state: $VERSION_STATE (ID: $VERSION_ID)"
+          else
+            clear_stale_prepare_versions
+
+            CREATE_RESULT=$(create_app_store_version)
+            CREATE_HTTP=$(echo "$CREATE_RESULT" | head -1)
+            CREATE_BODY=$(echo "$CREATE_RESULT" | tail -n +2 | head -1)
             if [ "$CREATE_HTTP" -ge 400 ]; then
-              echo "::warning::Could not create version $VERSION (HTTP $CREATE_HTTP) — may already exist in a non-editable state."
-              echo "$CREATE_BODY" | jq '.errors[0].detail' 2>/dev/null || echo "$CREATE_BODY"
-            else
-              echo "Created App Store version $VERSION."
+              echo "Create failed (HTTP $CREATE_HTTP) — clearing stale versions and retrying..."
+              echo "$CREATE_BODY" | jq '.errors[] | {code, detail, title}' 2>/dev/null || echo "$CREATE_BODY"
+              clear_stale_prepare_versions
+              sleep 3
+              CREATE_RESULT=$(create_app_store_version)
+              CREATE_HTTP=$(echo "$CREATE_RESULT" | head -1)
+              CREATE_BODY=$(echo "$CREATE_RESULT" | tail -n +2 | head -1)
+            fi
+            if [ "$CREATE_HTTP" -ge 400 ]; then
+              echo "::error::Could not create App Store version $VERSION (HTTP $CREATE_HTTP):"
+              echo "$CREATE_BODY" | jq '.errors[] | {code, detail, title}' 2>/dev/null || echo "$CREATE_BODY"
+              echo "Current iOS App Store versions:"
+              list_versions
+              exit 1
+            fi
+            VERSION_ID=$(echo "$CREATE_BODY" | jq -r '.data.id // empty')
+            echo "Created App Store version $VERSION (ID: $VERSION_ID)."
+
+            # ASC can take a moment to index a newly created version.
+            if [ -z "$VERSION_ID" ]; then
+              for i in $(seq 1 12); do
+                VERSION_ID=$(fetch_version_id)
+                if [ -n "$VERSION_ID" ]; then
+                  echo "Resolved version ID after create (attempt $i)."
+                  break
+                fi
+                echo "Waiting for version $VERSION to appear... (attempt $i/12)"
+                sleep 5
+              done
             fi
           fi
+
+          if [ -z "$VERSION_ID" ]; then
+            echo "::error::App Store version $VERSION not found after ensure step."
+            list_versions
+            exit 1
+          fi
+
+          echo "version_id=$VERSION_ID" >> "$GITHUB_OUTPUT"
 
       - name: Link build to App Store version
         env:
@@ -511,13 +603,20 @@ jobs:
             "https://api.appstoreconnect.apple.com/v1/apps?filter[bundleId]=app.halalscan" \
             | jq -r '.data[0].id')
 
-          VERSION_ID=$(curl -gsS --fail-with-body \
-            -H "Authorization: Bearer $JWT" \
-            "https://api.appstoreconnect.apple.com/v1/apps/$APP_ID/appStoreVersions?filter[platform]=IOS&filter[versionString]=$VERSION" \
-            | jq -r '.data[0].id')
+          VERSION_ID="${{ steps.ensure-version.outputs.version_id }}"
+          if [ -z "$VERSION_ID" ] || [ "$VERSION_ID" = "null" ]; then
+            VERSION_ID=$(curl -gsS --fail-with-body \
+              -H "Authorization: Bearer $JWT" \
+              "https://api.appstoreconnect.apple.com/v1/apps/$APP_ID/appStoreVersions?filter[platform]=IOS&filter[versionString]=$VERSION&limit=1" \
+              | jq -r '.data[0].id // empty')
+          fi
 
           if [ -z "$VERSION_ID" ] || [ "$VERSION_ID" = "null" ]; then
             echo "::error::App Store version $VERSION not found — cannot link build."
+            echo "Create version $VERSION in App Store Connect (Prepare for Submission), or check the ensure-version step logs."
+            curl -gsS -H "Authorization: Bearer $JWT" \
+              "https://api.appstoreconnect.apple.com/v1/apps/$APP_ID/appStoreVersions?filter[platform]=IOS&limit=20" \
+              | jq '.data[] | {id: .id, version: .attributes.versionString, state: .attributes.appStoreState}'
             exit 1
           fi
 

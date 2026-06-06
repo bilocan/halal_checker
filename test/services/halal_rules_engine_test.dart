@@ -93,6 +93,39 @@ void main() {
           expect(result.haram, contains('schweinefleisch'));
         },
       );
+
+      // Regression: barcode 8696362804718 — "domuz yağı ve katkıları yoktur".
+      test('Turkish "yoktur" after keyword suppresses haram match', () {
+        final result = engine.analyzeIngredients([
+          'domuz yağı ve katkıları yoktur',
+        ]);
+        expect(result.verdict, HalalRuleVerdict.halal);
+        expect(result.haram, isEmpty);
+      });
+
+      test('Turkish ASCII "icermez" after keyword suppresses haram match', () {
+        final result = engine.analyzeIngredients(['domuz icermez']);
+        expect(result.verdict, HalalRuleVerdict.halal);
+        expect(result.haram, isEmpty);
+      });
+
+      test('Turkish "içermez" before keyword suppresses haram match', () {
+        final result = engine.analyzeIngredients(['içermez domuz']);
+        expect(result.verdict, HalalRuleVerdict.halal);
+        expect(result.haram, isEmpty);
+      });
+
+      test('English trailing "free" suppresses haram match', () {
+        final result = engine.analyzeIngredients(['pork free']);
+        expect(result.verdict, HalalRuleVerdict.halal);
+        expect(result.haram, isEmpty);
+      });
+
+      test('German compound "-frei" suppresses haram match', () {
+        final result = engine.analyzeIngredients(['schweinefrei']);
+        expect(result.verdict, HalalRuleVerdict.halal);
+        expect(result.haram, isEmpty);
+      });
     });
 
     group('rennet — halal source qualifiers', () {
