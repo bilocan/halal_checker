@@ -33,7 +33,7 @@ Use `format_dart` script, not `dart format .` (breaks on Windows when `build/` h
 | # | Item | Action |
 |---|------|--------|
 | 4 | Release notes | Run `add_release_note` — **en + de + tr + ar** (see [Release notes](#release-notes)) |
-| 4b | Obsidian release log | Append bullet(s) to `C:\Users\Hamza\Documents\Pers\AI\obsidian\halalscan\05 - Releases\unreleased.md`; include internal/non-user-visible changes too. When a version ships, rename to `<version>.md`. |
+| 4b | Obsidian release log | Append to `C:\Users\Hamza\Documents\Pers\AI\obsidian\halalscan\05 - Releases\unreleased.md` (user-visible + internal). **On task done / debrief:** run **ship check** (below) — if a version shipped, finalize vault release notes; do not only append. |
 | 5 | PR template | Confirm release-notes checkboxes if opening a PR |
 
 Skip 4 for internal-only work (CI, refactors, tests-only, docs-only, dependency pins).
@@ -96,7 +96,17 @@ Execute in order:
   --ar "**العنوان** — العربية."
 ```
 
-2b. **Obsidian release log (4b)** — **always** (user-visible and internal): append to `C:\Users\Hamza\Documents\Pers\AI\obsidian\halalscan\05 - Releases\unreleased.md`. Use `## What's new` for user-visible and `## Internal changes` for non-visible work. On version bump, rename `unreleased.md` to `<version>.md`.
+2b. **Obsidian release log (4b)** — **always** append session bullets to `C:\Users\Hamza\Documents\Pers\AI\obsidian\halalscan\05 - Releases\unreleased.md` (`## What's new` / `## Internal changes`).
+
+2c. **Vault ship check (4b finalize)** — **always** on task done and debrief (even for internal-only sessions). Run if **any** is true: user said they released/shipped; `pubspec.yaml` `version:` is newer than the latest `05 - Releases/<version>.md` in the vault; GitHub latest release tag is newer than vault.
+
+When triggered, **finalize** (do not stop at append):
+1. Create `05 - Releases/<version>.md` from current `unreleased.md` (+ GitHub release body if useful).
+2. Reset `unreleased.md` — keep only not-yet-shipped items; `Related` → last shipped version.
+3. Update `00 - Home/Dashboard.md` (Last change, next actions).
+4. Update `02 - Dev/Bugs/Bug Tracker.md` (and bug notes) — shipped version + prod-verify rows.
+
+Vault debrief detail: `halalscan/CLAUDE.md` → `debrief`.
 3. **Reply** — post checklist (pass / fail / skipped / N/A per applicable item). Include English release-note bullet when item 4 applied.
 4. **Suggested commit** — copy-paste-ready message under `## Suggested commit` (see [Commit messages](#commit-messages)). Do not commit unless asked.
 5. **Remind** — any remaining items (5–11) that apply. Offer to commit if 1–3 passed.
@@ -113,7 +123,7 @@ Execute in order:
 | 2 | Analyze | … |
 | 3 | Unit tests | … |
 | 4 | Release notes | done / N/A |
-| 4b | Obsidian release log | done (always) |
+| 4b | Obsidian release log | done (append + ship check) |
 | … | (other applicable rows) | … |
 
 ## Release note

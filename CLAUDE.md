@@ -29,7 +29,7 @@ Move to `02 - Dev/Bugs/Resolved/` only after the user confirms it works in produ
 
 **When a product decision is made:** capture it in `01 - Product/Decisions/`.
 
-**On `debrief`:** follow the vault `CLAUDE.md` debrief flow — end with **copy-paste commit message(s) only** (vault `docs: …` and/or `halal_checker` when code changed); **no `git` commands** in the reply; do not commit unless asked.
+**On `debrief`:** follow the vault `CLAUDE.md` debrief flow — include **vault ship check** ([DEFINITION_OF_DONE.md](DEFINITION_OF_DONE.md) step 2c) when `pubspec.yaml` or GitHub is ahead of vault release notes. End with **copy-paste commit message(s) only** (vault `docs: …` and/or `halal_checker` when code changed); **no `git` commands** in the reply; do not commit unless asked.
 
 ## Task done (Claude Code + Cursor)
 
