@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:halal_checker/screens/start/widgets/start_home_tab.dart';
+import 'package:halal_checker/services/beta_program_service.dart';
 import 'package:halal_checker/services/database_service.dart';
+import 'package:halal_checker/widgets/closed_beta_banner.dart';
 import '../helpers/database_test_setup.dart';
 import '../helpers/test_app.dart';
 
@@ -49,6 +52,10 @@ Future<void> pumpStartHomeTab(
 /// pending timers when combined with sqflite FFI under the test binding.
 void main() {
   setUpAll(initTestDatabase);
+
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+  });
 
   setUp(clearTestScans);
 
@@ -130,5 +137,30 @@ void main() {
 
     expect(find.text('Plain'), findsNothing);
     expect(find.text('Flagged'), findsOneWidget);
+  });
+
+  testWidgets('shows closed beta banner when enabled and user not signed in', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(800, 1200));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await pumpStartHomeTab(
+      tester,
+      homeTab: StartHomeTab(
+        canBatchImport: false,
+        loadRecentScans: () async => <Map<String, dynamic>>[],
+        betaProgramService: BetaProgramService(
+          fetchConfigValue: (_) async => 'true',
+        ),
+      ),
+    );
+    await tester.runAsync(() async {
+      await Future<void>.delayed(Duration.zero);
+    });
+    await tester.pump();
+
+    expect(find.byType(ClosedBetaBanner), findsOneWidget);
+    expect(find.text('Closed beta — help us test'), findsOneWidget);
   });
 }

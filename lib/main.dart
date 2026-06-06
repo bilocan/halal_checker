@@ -51,7 +51,7 @@ void main() async {
     };
   }
 
-  await AuthService.initializeIfSessionExists();
+  await AuthService.ensureInitialized();
   try {
     await DatabaseService.instance.ensureInitialized();
   } catch (e, stack) {

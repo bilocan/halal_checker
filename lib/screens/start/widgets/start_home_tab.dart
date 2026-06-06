@@ -1,14 +1,17 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show AuthState;
 
 import '../../../app_colors.dart';
 import '../../../config.dart';
 import '../../../integration_test_keys.dart';
 import '../../../localization/app_localizations.dart';
 import '../../../models/product.dart';
+import '../../../services/auth_service.dart';
 import '../../../services/beta_program_service.dart';
 import '../../../services/database_service.dart';
 import '../../../services/product_verdict.dart';
@@ -67,17 +70,31 @@ class _StartHomeTabState extends State<StartHomeTab>
   bool _showFlaggedOnly = false;
   bool _showBetaBanner = false;
   String? _loadError;
+  StreamSubscription<AuthState>? _authSubscription;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _loadRecentScans(initial: true);
+    _scheduleBetaBannerLoads();
+    _authSubscription = AuthService.authStateChanges.listen((_) {
+      unawaited(_loadBetaBanner());
+    });
+  }
+
+  void _scheduleBetaBannerLoads() {
     unawaited(_loadBetaBanner());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(_loadBetaBanner());
+    });
   }
 
   Future<void> _loadBetaBanner() async {
     final show = await _betaProgramService.shouldShowHomeBanner();
+    if (kDebugMode) {
+      debugPrint('[StartHomeTab] beta banner show=$show');
+    }
     if (mounted) setState(() => _showBetaBanner = show);
   }
 
@@ -88,6 +105,7 @@ class _StartHomeTabState extends State<StartHomeTab>
 
   @override
   void dispose() {
+    _authSubscription?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
