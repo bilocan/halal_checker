@@ -91,9 +91,12 @@ const ALCOHOL_FAMILY = new Set([
 
 const FATTY_ALCOHOL_PREFIX = /\b(cetyl|stearyl|behenyl|lauryl|myristyl|arachidyl|oleyl|cetostearyl|lanolin|isostearyl|octyldodecyl|decyl)\s+/i
 
-// Negation words across all supported languages (EN/DE/FR/NL/IT/ES/TR/CS/SR/HU).
+// Pre-negation words across all supported languages (EN/DE/FR/NL/IT/ES/TR/CS/SR/HU).
 // Used to suppress false positives like "enthält keine Zutaten vom Schwein".
-const NEGATION_WORDS = /\b(?:keine?|nicht|ohne|frei\s+von|sans|pas|geen|zonder|vrij\s+van|no|not|without|free\s+from|free\s+of|senza|sin|içermez|içermemektedir|neobsahuje|bez|nema|nem|mentes)\b/i
+const NEGATION_WORDS = /\b(?:keine?|nicht|ohne|frei\s+von|sans|pas|geen|zonder|vrij\s+van|no|not|without|free\s+from|free\s+of|senza|sin|içermez|içermemektedir|icermez|icermemektedir|neobsahuje|bez|nema|nem|mentes)\b/i
+
+// Post-negation: absence markers after the keyword (EN/DE/TR trailing forms).
+const POST_NEGATION_WORDS = /(?:[-](?:free|frei)\b|\b(?:free|frei|yoktur|yok|bulunmamaktadır|bulunmamaktadir|bulunmaz|içermez|içermemektedir|icermez|icermemektedir)\b|e?frei\b)/i
 
 // Microbial / vegetable / fermentation-produced rennet — explicit non-animal source.
 const HALAL_RENNET_SOURCE = /\b(?:mikrobiel\w*|mikrobial|mikrobiyal|microbial|microbien\w*|microbienne|microbico|microbiano|microbiële|pflanzlich\w*|vegetable|vegetal|végétal\w*|vegetarisch\w*|plant\w*|non-animal|fermentation\s+produced)\s+(?:lab(?:ferment)?|rennet|présure|caglio|cuajo|stremsel|peynir\s+mayası|sirilo|oltóanyag|syřidlo)\b|\b(?:fermentation[- ]?produced\s+)?chymosin\b|\bfpc\b/i
@@ -128,19 +131,26 @@ function matchesVariant(ingredient: string, variant: string): boolean {
   return new RegExp(`${wPre}${escape(variant)}${wPost}`, 'i').test(ingredient)
 }
 
-// True when the matched variant is preceded by a negation word in the same
-// ingredient chunk, e.g. "enthält keine Zutaten vom Schwein" → negated.
+// True when the matched variant is preceded or followed by a negation marker in
+// the same ingredient chunk, e.g. "enthält keine Zutaten vom Schwein" or
+// "domuz yağı ve katkıları yoktur" → negated.
 function isNegated(chunk: string, variant: string): boolean {
   const lower = chunk.toLowerCase()
-  let idx: number
+  let start: number
+  let end: number
   if (variant.includes(' ')) {
-    idx = lower.indexOf(variant.toLowerCase())
+    const v = variant.toLowerCase()
+    start = lower.indexOf(v)
+    if (start < 0) return false
+    end = start + v.length
   } else {
     const m = new RegExp(`${wPre}${escape(variant)}${wPost}`, 'i').exec(lower)
-    idx = m ? m.index : -1
+    if (!m) return false
+    start = m.index
+    end = m.index + m[0].length
   }
-  if (idx < 0) return false
-  return NEGATION_WORDS.test(lower.substring(0, idx))
+  if (NEGATION_WORDS.test(lower.substring(0, start))) return true
+  return POST_NEGATION_WORDS.test(lower.substring(end))
 }
 
 import type { IngredientAnalysisSource } from './ingredientResolution.ts'

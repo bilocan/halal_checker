@@ -183,6 +183,27 @@ Deno.test('negation — TR içermez: içermez pork → halal', () => {
   assertEquals(r.isHalal, true)
 })
 
+Deno.test('negation — TR yoktur: domuz yağı ve katkıları yoktur → halal', () => {
+  const r = keywordAnalysis(['domuz yağı ve katkıları yoktur'])
+  assertEquals(r.isHalal, true)
+  assertEquals(r.haram.length, 0)
+})
+
+Deno.test('negation — TR ASCII icermez: domuz icermez → halal', () => {
+  const r = keywordAnalysis(['domuz icermez'])
+  assertEquals(r.isHalal, true)
+})
+
+Deno.test('negation — EN trailing free: pork free → halal', () => {
+  const r = keywordAnalysis(['pork free'])
+  assertEquals(r.isHalal, true)
+})
+
+Deno.test('negation — DE compound frei: schweinefrei → halal', () => {
+  const r = keywordAnalysis(['schweinefrei'])
+  assertEquals(r.isHalal, true)
+})
+
 Deno.test('negation — HU nem: nem tartalmaz schwein → halal', () => {
   const r = keywordAnalysis(['nem tartalmaz schwein'])
   assertEquals(r.isHalal, true)
@@ -193,6 +214,33 @@ Deno.test('negation — actual pork still flagged', () => {
   assertEquals(r.isHalal, false)
   assertEquals(r.haram, ['pork fat'])
 })
+
+// Shared negation fixture — keep in sync with test/fixtures/negation_cases.json
+const negationCasesPath = new URL('../../../test/fixtures/negation_cases.json', import.meta.url)
+const negationCases: Array<{
+  description: string
+  ingredients: string[]
+  verdict: string
+  matched_canonicals?: string[]
+}> = JSON.parse(await Deno.readTextFile(negationCasesPath))
+
+function verdictFromKeywordResult(r: ReturnType<typeof keywordAnalysis>): string {
+  if (r.haram.length > 0) return 'haram'
+  if (r.suspicious.length > 0) return 'suspicious'
+  return 'halal'
+}
+
+for (const c of negationCases) {
+  Deno.test(`negation fixture — ${c.description}`, () => {
+    const r = keywordAnalysis(c.ingredients)
+    assertEquals(verdictFromKeywordResult(r), c.verdict)
+    if (c.verdict === 'halal') {
+      assertEquals(r.isHalal, true)
+      assertEquals(r.haram.length, 0)
+      assertEquals(r.suspicious.length, 0)
+    }
+  })
+}
 
 Deno.test('unicode boundary — lactosérum does not false-positive on "rum"', () => {
   const r = keywordAnalysis(['poudre de lactosérum (lait)'])
