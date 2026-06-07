@@ -1207,6 +1207,19 @@ class AppLocalizationsTr extends AppLocalizations {
   String get closedBetaBannerDisabled => 'Kapalı beta banner kapalı';
 
   @override
+  String get deepAnalysisAdminTitle => 'Detaylı analiz';
+
+  @override
+  String get deepAnalysisAdminDescription =>
+      'Sonuç ekranında detaylı analiz ve Admin onaylarında Analiz kuyruğunu gösterir. Kapalıyken yeni analiz kuyruğa alınamaz.';
+
+  @override
+  String get deepAnalysisEnabled => 'Detaylı analiz açık';
+
+  @override
+  String get deepAnalysisDisabled => 'Detaylı analiz kapalı';
+
+  @override
   String get systemSettingsLoadFailed => 'Sistem ayarları yüklenemedi';
 
   @override

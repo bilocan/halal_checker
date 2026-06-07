@@ -6,6 +6,7 @@
 // Auth: must be a user with role='admin' in the profiles table.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { isDeepAnalysisEnabled } from '../_shared/deep_analysis_gate.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -230,6 +231,10 @@ Deno.serve(async (req) => {
     .maybeSingle()
 
   if (profile?.role !== 'admin') return json({ error: 'Forbidden — admin only' }, 403)
+
+  if (!(await isDeepAnalysisEnabled(adminClient))) {
+    return json({ error: 'Deep analysis is disabled' }, 403)
+  }
 
   // ── parse body ────────────────────────────────────────────────────────────────
   let limit = DEFAULT_BATCH_LIMIT

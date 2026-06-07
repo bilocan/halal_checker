@@ -2266,6 +2266,30 @@ abstract class AppLocalizations {
   /// **'Closed beta banner disabled'**
   String get closedBetaBannerDisabled;
 
+  /// No description provided for @deepAnalysisAdminTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Deep Analysis'**
+  String get deepAnalysisAdminTitle;
+
+  /// No description provided for @deepAnalysisAdminDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Show per-ingredient Deep Analysis on the result screen and the Analysis queue in Admin approvals. When off, users cannot queue new analyses.'**
+  String get deepAnalysisAdminDescription;
+
+  /// No description provided for @deepAnalysisEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Deep Analysis enabled'**
+  String get deepAnalysisEnabled;
+
+  /// No description provided for @deepAnalysisDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Deep Analysis disabled'**
+  String get deepAnalysisDisabled;
+
   /// No description provided for @systemSettingsLoadFailed.
   ///
   /// In en, this message translates to:

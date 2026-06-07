@@ -51,5 +51,27 @@ void main() {
       expect(await AppConfigAdminService.setClosedBetaBanner(true), isTrue);
       expect(saved, isTrue);
     });
+
+    test('fetchDeepAnalysisEnabled returns fake value', () async {
+      AppConfigAdminService.fakeFetchDeepAnalysisEnabled = () async => true;
+      expect(await AppConfigAdminService.fetchDeepAnalysisEnabled(), isTrue);
+    });
+
+    test('setDeepAnalysisEnabled rejects when not superadmin', () async {
+      AppConfigAdminService.fakeIsSuperAdmin = () async => false;
+      AppConfigAdminService.fakeSetDeepAnalysisEnabled = (_) async => true;
+      expect(await AppConfigAdminService.setDeepAnalysisEnabled(true), isFalse);
+    });
+
+    test('setDeepAnalysisEnabled succeeds for superadmin fake', () async {
+      var saved = false;
+      AppConfigAdminService.fakeIsSuperAdmin = () async => true;
+      AppConfigAdminService.fakeSetDeepAnalysisEnabled = (enabled) async {
+        saved = enabled;
+        return true;
+      };
+      expect(await AppConfigAdminService.setDeepAnalysisEnabled(true), isTrue);
+      expect(saved, isTrue);
+    });
   });
 }

@@ -1206,6 +1206,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get closedBetaBannerDisabled => 'Closed beta banner disabled';
 
   @override
+  String get deepAnalysisAdminTitle => 'Deep Analysis';
+
+  @override
+  String get deepAnalysisAdminDescription =>
+      'Show per-ingredient Deep Analysis on the result screen and the Analysis queue in Admin approvals. When off, users cannot queue new analyses.';
+
+  @override
+  String get deepAnalysisEnabled => 'Deep Analysis enabled';
+
+  @override
+  String get deepAnalysisDisabled => 'Deep Analysis disabled';
+
+  @override
   String get systemSettingsLoadFailed => 'Could not load system settings';
 
   @override

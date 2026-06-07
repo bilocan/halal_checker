@@ -8,6 +8,7 @@ import 'auth_service.dart';
 class AppConfigAdminService {
   static const geminiLookupEmptyOffKey = 'gemini_lookup_empty_off';
   static const closedBetaBannerKey = 'closed_beta_banner';
+  static const deepAnalysisEnabledKey = 'deep_analysis_enabled';
 
   static bool _supabaseAvailable = AppConfig.hasSupabase;
 
@@ -26,12 +27,20 @@ class AppConfigAdminService {
   @visibleForTesting
   static Future<bool> Function(bool enabled)? fakeSetClosedBetaBanner;
 
+  @visibleForTesting
+  static Future<bool?> Function()? fakeFetchDeepAnalysisEnabled;
+
+  @visibleForTesting
+  static Future<bool> Function(bool enabled)? fakeSetDeepAnalysisEnabled;
+
   static void resetTestOverrides() {
     fakeIsSuperAdmin = null;
     fakeFetchGeminiLookupEmptyOff = null;
     fakeSetGeminiLookupEmptyOff = null;
     fakeFetchClosedBetaBanner = null;
     fakeSetClosedBetaBanner = null;
+    fakeFetchDeepAnalysisEnabled = null;
+    fakeSetDeepAnalysisEnabled = null;
     _supabaseAvailable = AppConfig.hasSupabase;
   }
 
@@ -131,6 +140,48 @@ class AppConfigAdminService {
       return true;
     } catch (e) {
       debugPrint('[AppConfigAdminService] setClosedBetaBanner: $e');
+      return false;
+    }
+  }
+
+  static Future<bool?> fetchDeepAnalysisEnabled() async {
+    if (fakeFetchDeepAnalysisEnabled != null) {
+      return fakeFetchDeepAnalysisEnabled!();
+    }
+    if (!_supabaseAvailable) return null;
+    try {
+      final row = await Supabase.instance.client
+          .from('app_config')
+          .select('value')
+          .eq('key', deepAnalysisEnabledKey)
+          .maybeSingle();
+      if (row == null) return false;
+      return row['value'] == 'true';
+    } catch (e) {
+      debugPrint('[AppConfigAdminService] fetchDeepAnalysisEnabled: $e');
+      return null;
+    }
+  }
+
+  static Future<bool> setDeepAnalysisEnabled(bool enabled) async {
+    if (!_supabaseAvailable && fakeSetDeepAnalysisEnabled == null) {
+      return false;
+    }
+    if (!await _isSuperAdmin()) return false;
+    if (fakeSetDeepAnalysisEnabled != null) {
+      return fakeSetDeepAnalysisEnabled!(enabled);
+    }
+    try {
+      await Supabase.instance.client.rpc(
+        'set_superadmin_app_config_flag',
+        params: {
+          'p_key': deepAnalysisEnabledKey,
+          'p_value': enabled ? 'true' : 'false',
+        },
+      );
+      return true;
+    } catch (e) {
+      debugPrint('[AppConfigAdminService] setDeepAnalysisEnabled: $e');
       return false;
     }
   }

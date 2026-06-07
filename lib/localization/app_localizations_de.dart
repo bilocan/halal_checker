@@ -1226,6 +1226,19 @@ class AppLocalizationsDe extends AppLocalizations {
       'Geschlossener-Beta-Banner deaktiviert';
 
   @override
+  String get deepAnalysisAdminTitle => 'Detailanalyse';
+
+  @override
+  String get deepAnalysisAdminDescription =>
+      'Zeigt die Detailanalyse pro Zutat auf dem Ergebnisbildschirm und die Analyse-Warteschlange in Admin-Freigaben. Aus = keine neuen Analysen.';
+
+  @override
+  String get deepAnalysisEnabled => 'Detailanalyse aktiviert';
+
+  @override
+  String get deepAnalysisDisabled => 'Detailanalyse deaktiviert';
+
+  @override
   String get systemSettingsLoadFailed =>
       'Systemeinstellungen konnten nicht geladen werden';
 

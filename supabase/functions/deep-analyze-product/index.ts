@@ -6,6 +6,7 @@
 // Auth: any signed-in user
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { isDeepAnalysisEnabled } from '../_shared/deep_analysis_gate.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -37,6 +38,10 @@ Deno.serve(async (req) => {
   if (authError || !user) return json({ error: 'Unauthorized' }, 401)
 
   const adminClient = createClient(supabaseUrl, supabaseServiceRoleKey)
+
+  if (!(await isDeepAnalysisEnabled(adminClient))) {
+    return json({ error: 'Deep analysis is disabled' }, 403)
+  }
 
   // ── ensure profile exists ────────────────────────────────────────────────────
   // The trigger auto-creates profiles only for new sign-ups, so users who

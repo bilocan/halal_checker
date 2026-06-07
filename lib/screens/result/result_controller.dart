@@ -12,6 +12,7 @@ import '../../services/auth_service.dart';
 import '../../services/cache_service.dart';
 import '../../services/community_service.dart';
 import '../../services/database_service.dart';
+import '../../services/deep_analysis_feature_service.dart';
 import '../../services/feedback_service.dart';
 import '../../services/product_service.dart';
 import '../../services/product_verdict.dart';
@@ -24,9 +25,12 @@ class ResultController extends ChangeNotifier {
     FeedbackService? feedbackService,
     ProductService? productService,
     AnalysisService? analysisService,
+    DeepAnalysisFeatureService? deepAnalysisFeatureService,
   }) : _feedbackService = feedbackService ?? FeedbackService(),
        _productService = productService ?? ProductService(),
-       _analysisService = analysisService ?? AnalysisService();
+       _analysisService = analysisService ?? AnalysisService(),
+       _deepAnalysisFeatureService =
+           deepAnalysisFeatureService ?? DeepAnalysisFeatureService();
 
   final String barcode;
   final Product? product;
@@ -34,6 +38,7 @@ class ResultController extends ChangeNotifier {
   final FeedbackService _feedbackService;
   final ProductService _productService;
   final AnalysisService _analysisService;
+  final DeepAnalysisFeatureService _deepAnalysisFeatureService;
 
   ProductService get productService => _productService;
 
@@ -52,17 +57,25 @@ class ResultController extends ChangeNotifier {
   bool isAdmin = false;
   ProductAnalysis? analysis;
   bool isRequestingAnalysis = false;
+  bool deepAnalysisEnabled = false;
 
   Future<void> loadAll() async {
     try {
-      await Future.wait([
+      deepAnalysisEnabled = await _deepAnalysisFeatureService.isEnabled();
+      notifyListeners();
+      final tasks = <Future<void>>[
         loadFeedbacks(),
         loadNote(),
         loadDiscussions(),
         loadAiRequestStatus(),
         loadAdminStatus(),
-        loadAnalysis(),
-      ]);
+      ];
+      if (deepAnalysisEnabled) {
+        tasks.add(loadAnalysis());
+      } else {
+        analysis = null;
+      }
+      await Future.wait(tasks);
     } on Object catch (e, stack) {
       debugPrint('[ResultController] loadAll error: $e\n$stack');
     }
@@ -147,6 +160,7 @@ class ResultController extends ChangeNotifier {
 
   /// Returns updated analysis, or null on failure. Caller handles auth UI.
   Future<ProductAnalysis?> requestDeepAnalysis() async {
+    if (!deepAnalysisEnabled) return null;
     if (AuthService.currentUser == null) return null;
     isRequestingAnalysis = true;
     notifyListeners();

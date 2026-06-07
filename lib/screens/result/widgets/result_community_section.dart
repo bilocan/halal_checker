@@ -7,6 +7,7 @@ class ResultCommunitySection extends StatelessWidget {
   const ResultCommunitySection({
     super.key,
     required this.loc,
+    required this.showDeepAnalysis,
     required this.analysis,
     required this.isRequestingAnalysis,
     required this.discussionCount,
@@ -16,6 +17,7 @@ class ResultCommunitySection extends StatelessWidget {
   });
 
   final AppLocalizations loc;
+  final bool showDeepAnalysis;
   final ProductAnalysis? analysis;
   final bool isRequestingAnalysis;
   final int discussionCount;
@@ -25,6 +27,54 @@ class ResultCommunitySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (!showDeepAnalysis) {
+      return Card(
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: onOpenDiscussion,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.forum_outlined,
+                  color: Colors.blue.shade700,
+                  size: 26,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        loc.communityDiscussion,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                          color: Colors.blue.shade700,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        discussionCount == 0
+                            ? loc.noDiscussionsYet
+                            : '$discussionCount discussion${discussionCount == 1 ? '' : 's'}',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(Icons.chevron_right, color: Colors.grey.shade400),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     final analysisStatusColor = switch (analysis?.status) {
       AnalysisStatus.resolved => Colors.green.shade700,
       AnalysisStatus.aiDone ||
