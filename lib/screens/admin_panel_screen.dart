@@ -459,6 +459,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
 
   Widget _buildAnalysisBody() {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _buildHeader(),
         _buildFilterRow(),
