@@ -184,6 +184,7 @@ class _ResultScreenState extends State<ResultScreen> {
   }
 
   Future<void> _requestAnalysis() async {
+    if (!_controller.deepAnalysisEnabled) return;
     if (AuthService.currentUser == null) {
       await showSignInRequiredSheet(context);
       return;
@@ -219,6 +220,7 @@ class _ResultScreenState extends State<ResultScreen> {
   }
 
   void _openDeepAnalysis() {
+    if (!_controller.deepAnalysisEnabled) return;
     final analysis = _controller.analysis;
     if (analysis == null) return;
     Navigator.push(
@@ -494,6 +496,7 @@ class _ResultScreenState extends State<ResultScreen> {
                   const SizedBox(height: 16),
                   ResultCommunitySection(
                     loc: loc,
+                    showDeepAnalysis: _controller.deepAnalysisEnabled,
                     analysis: _controller.analysis,
                     isRequestingAnalysis: _controller.isRequestingAnalysis,
                     discussionCount: _controller.discussions.length,

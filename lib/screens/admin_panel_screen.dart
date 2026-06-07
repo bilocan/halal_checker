@@ -5,6 +5,7 @@ import '../localization/app_localizations.dart';
 import '../localization/format_relative_time.dart';
 import '../models/product_analysis.dart';
 import '../services/analysis_service.dart';
+import '../services/deep_analysis_feature_service.dart';
 import 'admin/ai_approval_tab.dart';
 import 'admin/ingredient_contribution_tab.dart';
 import 'admin/ingredient_report_tab.dart';
@@ -47,6 +48,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
   int _reportBadge = 0;
   int _aiRequestBadge = 0;
   bool _isSuperAdmin = false;
+  bool _deepAnalysisEnabled = false;
 
   // ── GlobalKeys for imperative refresh from AppBar ─────────────────────────
   final _photosKey = GlobalKey<PhotoApprovalTabState>();
@@ -59,15 +61,42 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
 
   int get _approvalsBadge {
     var total = _photoBadge + _contributionBadge + _aiRequestBadge;
-    if (_pendingCount > 0) total += _pendingCount;
+    if (_deepAnalysisEnabled && _pendingCount > 0) total += _pendingCount;
     return total;
+  }
+
+  List<int> get _visibleApprovalSubTabs => _deepAnalysisEnabled
+      ? [_subAnalysis, _subPhotos, _subContributions, _subAiLookup]
+      : [_subPhotos, _subContributions, _subAiLookup];
+
+  int get _currentLogicalSubTab {
+    final tabs = _visibleApprovalSubTabs;
+    if (tabs.isEmpty) return _subPhotos;
+    final idx = _approvalsSubTabIndex.clamp(0, tabs.length - 1);
+    return tabs[idx];
   }
 
   @override
   void initState() {
     super.initState();
-    _load();
+    _initApprovals();
     _loadSuperAdmin();
+  }
+
+  Future<void> _initApprovals() async {
+    final enabled = await DeepAnalysisFeatureService().isEnabled();
+    if (!mounted) return;
+    setState(() {
+      _deepAnalysisEnabled = enabled;
+      if (!enabled) {
+        _approvalsSubTabIndex = 0;
+        _analyses = [];
+        _loading = false;
+      }
+    });
+    if (enabled) {
+      await _load();
+    }
   }
 
   Future<void> _loadSuperAdmin() async {
@@ -182,7 +211,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
         foregroundColor: Colors.white,
         actions: [
           if (_tabIndex == _tabApprovals &&
-              _approvalsSubTabIndex == _subAnalysis &&
+              _currentLogicalSubTab == _subAnalysis &&
               _selected.isNotEmpty)
             TextButton.icon(
               onPressed: _running ? null : () => _run(ids: _selected.toList()),
@@ -193,24 +222,24 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
               ),
             ),
           if (_tabIndex == _tabApprovals &&
-              _approvalsSubTabIndex == _subAnalysis)
+              _currentLogicalSubTab == _subAnalysis)
             IconButton(
               icon: const Icon(Icons.refresh),
               onPressed: _loading ? null : _load,
             ),
-          if (_tabIndex == _tabApprovals && _approvalsSubTabIndex == _subPhotos)
+          if (_tabIndex == _tabApprovals && _currentLogicalSubTab == _subPhotos)
             IconButton(
               icon: const Icon(Icons.refresh),
               onPressed: () => _photosKey.currentState?.refresh(),
             ),
           if (_tabIndex == _tabApprovals &&
-              _approvalsSubTabIndex == _subContributions)
+              _currentLogicalSubTab == _subContributions)
             IconButton(
               icon: const Icon(Icons.refresh),
               onPressed: () => _ingredientsKey.currentState?.refresh(),
             ),
           if (_tabIndex == _tabApprovals &&
-              _approvalsSubTabIndex == _subAiLookup)
+              _currentLogicalSubTab == _subAiLookup)
             IconButton(
               icon: const Icon(Icons.refresh),
               onPressed: () => _aiRequestsKey.currentState?.refresh(),
@@ -296,30 +325,43 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
       children: [
         _buildApprovalsSubTabBar(loc),
         Expanded(
-          child: IndexedStack(
-            index: _approvalsSubTabIndex,
-            children: [
-              _buildAnalysisBody(),
-              PhotoApprovalTab(
-                key: _photosKey,
-                onCountChanged: (n) => setState(() => _photoBadge = n),
-              ),
-              IngredientContributionTab(
-                key: _ingredientsKey,
-                onCountChanged: (n) => setState(() => _contributionBadge = n),
-              ),
-              AiApprovalTab(
-                key: _aiRequestsKey,
-                onCountChanged: (n) => setState(() => _aiRequestBadge = n),
-              ),
-            ],
-          ),
+          child: switch (_currentLogicalSubTab) {
+            _subAnalysis => _buildAnalysisBody(),
+            _subPhotos => PhotoApprovalTab(
+              key: _photosKey,
+              onCountChanged: (n) => setState(() => _photoBadge = n),
+            ),
+            _subContributions => IngredientContributionTab(
+              key: _ingredientsKey,
+              onCountChanged: (n) => setState(() => _contributionBadge = n),
+            ),
+            _ => AiApprovalTab(
+              key: _aiRequestsKey,
+              onCountChanged: (n) => setState(() => _aiRequestBadge = n),
+            ),
+          },
         ),
       ],
     );
   }
 
   Widget _buildApprovalsSubTabBar(AppLocalizations loc) {
+    final tabs = <({String label, int? badge})>[
+      if (_deepAnalysisEnabled)
+        (
+          label: loc.analysisTab,
+          badge: _pendingCount > 0 ? _pendingCount : null,
+        ),
+      (label: loc.photosTab, badge: _photoBadge > 0 ? _photoBadge : null),
+      (
+        label: loc.ingredientContributionsTab,
+        badge: _contributionBadge > 0 ? _contributionBadge : null,
+      ),
+      (
+        label: loc.aiIngredientsLookupTab,
+        badge: _aiRequestBadge > 0 ? _aiRequestBadge : null,
+      ),
+    ];
     return Container(
       decoration: BoxDecoration(
         border: Border(bottom: BorderSide(color: Colors.grey.shade300)),
@@ -328,26 +370,12 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
         scrollDirection: Axis.horizontal,
         child: Row(
           children: [
-            _subTabButton(
-              label: loc.analysisTab,
-              index: _subAnalysis,
-              badge: _pendingCount > 0 ? _pendingCount : null,
-            ),
-            _subTabButton(
-              label: loc.photosTab,
-              index: _subPhotos,
-              badge: _photoBadge > 0 ? _photoBadge : null,
-            ),
-            _subTabButton(
-              label: loc.ingredientContributionsTab,
-              index: _subContributions,
-              badge: _contributionBadge > 0 ? _contributionBadge : null,
-            ),
-            _subTabButton(
-              label: loc.aiIngredientsLookupTab,
-              index: _subAiLookup,
-              badge: _aiRequestBadge > 0 ? _aiRequestBadge : null,
-            ),
+            for (var i = 0; i < tabs.length; i++)
+              _subTabButton(
+                label: tabs[i].label,
+                visibleIndex: i,
+                badge: tabs[i].badge,
+              ),
           ],
         ),
       ),
@@ -403,12 +431,12 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
 
   Widget _subTabButton({
     required String label,
-    required int index,
+    required int visibleIndex,
     int? badge,
   }) {
-    final selected = _approvalsSubTabIndex == index;
+    final selected = _approvalsSubTabIndex == visibleIndex;
     return InkWell(
-      onTap: () => setState(() => _approvalsSubTabIndex = index),
+      onTap: () => setState(() => _approvalsSubTabIndex = visibleIndex),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(

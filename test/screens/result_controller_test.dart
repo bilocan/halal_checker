@@ -10,6 +10,7 @@ import 'package:halal_checker/screens/result/result_controller.dart';
 import 'package:halal_checker/services/ai_ingredient_request_service.dart';
 import 'package:halal_checker/services/auth_service.dart';
 import 'package:halal_checker/services/database_service.dart';
+import 'package:halal_checker/services/deep_analysis_feature_service.dart';
 import 'package:halal_checker/services/product_service.dart';
 import '../helpers/database_test_setup.dart';
 import '../helpers/stub_feedback_service.dart';
@@ -29,12 +30,16 @@ void main() {
     Product? product,
     StubFeedbackService? feedbackService,
     StubResultAnalysisService? analysisService,
+    DeepAnalysisFeatureService? deepAnalysisFeatureService,
   }) {
     return ResultController(
       barcode: barcode,
       product: product,
       feedbackService: feedbackService,
       analysisService: analysisService,
+      deepAnalysisFeatureService:
+          deepAnalysisFeatureService ??
+          DeepAnalysisFeatureService(fetchConfigValue: (_) async => 'true'),
     );
   }
 
@@ -138,6 +143,18 @@ void main() {
         expect(c.isRequestingAnalysis, isFalse);
       },
     );
+
+    test('requestDeepAnalysis returns null when feature disabled', () async {
+      final c = controller(
+        deepAnalysisFeatureService: DeepAnalysisFeatureService(
+          fetchConfigValue: (_) async => 'false',
+        ),
+      );
+      c.deepAnalysisEnabled = false;
+
+      expect(await c.requestDeepAnalysis(), isNull);
+      expect(c.isRequestingAnalysis, isFalse);
+    });
 
     group('requestAiIngredients', () {
       const barcode = '1234567890123';

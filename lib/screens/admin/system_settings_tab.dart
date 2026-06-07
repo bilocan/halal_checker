@@ -16,6 +16,7 @@ class SystemSettingsTabState extends State<SystemSettingsTab> {
   bool _saving = false;
   bool _geminiLookupEmptyOff = false;
   bool _closedBetaBanner = false;
+  bool _deepAnalysisEnabled = false;
   String? _error;
 
   @override
@@ -31,14 +32,16 @@ class SystemSettingsTabState extends State<SystemSettingsTab> {
     });
     final gemini = await AppConfigAdminService.fetchGeminiLookupEmptyOff();
     final betaBanner = await AppConfigAdminService.fetchClosedBetaBanner();
+    final deepAnalysis = await AppConfigAdminService.fetchDeepAnalysisEnabled();
     if (!mounted) return;
     setState(() {
       _loading = false;
-      if (gemini == null || betaBanner == null) {
+      if (gemini == null || betaBanner == null || deepAnalysis == null) {
         _error = AppLocalizations.of(context).systemSettingsLoadFailed;
       } else {
         _geminiLookupEmptyOff = gemini;
         _closedBetaBanner = betaBanner;
+        _deepAnalysisEnabled = deepAnalysis;
       }
     });
   }
@@ -88,6 +91,31 @@ class SystemSettingsTabState extends State<SystemSettingsTab> {
           value
               ? AppLocalizations.of(context).closedBetaBannerEnabled
               : AppLocalizations.of(context).closedBetaBannerDisabled,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _onDeepAnalysisToggle(bool value) async {
+    setState(() => _saving = true);
+    final ok = await AppConfigAdminService.setDeepAnalysisEnabled(value);
+    if (!mounted) return;
+    setState(() => _saving = false);
+    if (!ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppLocalizations.of(context).systemSettingsSaveFailed),
+        ),
+      );
+      return;
+    }
+    setState(() => _deepAnalysisEnabled = value);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          value
+              ? AppLocalizations.of(context).deepAnalysisEnabled
+              : AppLocalizations.of(context).deepAnalysisDisabled,
         ),
       ),
     );
@@ -154,6 +182,23 @@ class SystemSettingsTabState extends State<SystemSettingsTab> {
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : const Icon(Icons.science_outlined, color: kGreenDark),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Card(
+          child: SwitchListTile(
+            title: Text(loc.deepAnalysisAdminTitle),
+            subtitle: Text(loc.deepAnalysisAdminDescription),
+            value: _deepAnalysisEnabled,
+            onChanged: _saving ? null : _onDeepAnalysisToggle,
+            activeThumbColor: kGreen,
+            secondary: _saving
+                ? const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : Icon(Icons.biotech_outlined, color: Colors.purple.shade700),
           ),
         ),
       ],
