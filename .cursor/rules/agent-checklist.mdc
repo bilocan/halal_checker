@@ -22,3 +22,10 @@ alwaysApply: true
 - Minimal diff; match local naming and structure.
 - Never commit or push unless the user explicitly asks.
 - For multi-file or architectural changes, prefer Plan mode first, then implement.
+
+## Vault (plans & product docs)
+
+- **Implementation plans and feature specs** → Obsidian vault `01 - Product/Features/` (not `halal_checker/docs/`).
+- Vault path: `C:\Users\Hamza\Documents\Pers\AI\obsidian\halalscan\`
+- **Decisions** → `01 - Product/Decisions/`; link Asana + [[Roadmap]] when relevant.
+- See vault `CLAUDE.md` for debrief, bugs, release log.
