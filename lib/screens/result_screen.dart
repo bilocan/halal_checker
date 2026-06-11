@@ -265,6 +265,12 @@ class _ResultScreenState extends State<ResultScreen> {
       return;
     }
     final loc = AppLocalizations.of(context);
+    if (_controller.hasPendingPhotoForType(type.name)) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(loc.photoAlreadyPending)));
+      return;
+    }
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
       builder: (_) => SafeArea(
@@ -307,10 +313,16 @@ class _ResultScreenState extends State<ResultScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        contentPadding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+        title: Text(loc.uploadProductPhoto),
         content: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            Text(
+              loc.photoSubmitReviewHint,
+              style: TextStyle(color: Colors.grey.shade700, fontSize: 13),
+            ),
+            const SizedBox(height: 12),
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
               child: Image.file(photoFile, fit: BoxFit.contain),
@@ -340,13 +352,31 @@ class _ResultScreenState extends State<ResultScreen> {
     );
     if (!mounted) return;
     setState(() => _uploadingImageType = null);
+    if (success) {
+      await _controller.loadPhotoSubmissionStatus();
+      if (ProductImageService.lastUploadAutoApproved) {
+        final refreshed = await _controller.refreshProduct();
+        if (!mounted) return;
+        if (refreshed != null) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (_) =>
+                  ResultScreen(product: refreshed, barcode: widget.barcode),
+            ),
+          );
+          return;
+        }
+      }
+    }
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
           success
               ? (ProductImageService.lastUploadAutoApproved
                     ? loc.photoUploadedLive
-                    : loc.photoUploaded)
+                    : loc.photoUploadedReviewNote)
               : loc.photoUploadFailed,
         ),
       ),
@@ -486,6 +516,8 @@ class _ResultScreenState extends State<ResultScreen> {
                     product: product,
                     loc: loc,
                     uploadingImageType: _uploadingImageType,
+                    pendingForType: (type) =>
+                        _controller.pendingPhotoForType(type.name),
                     onUpload: _uploadProductImage,
                   ),
                   const SizedBox(height: 16),

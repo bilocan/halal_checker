@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../../models/ai_ingredient_request.dart';
 import '../../models/community.dart';
 import '../../models/feedback.dart';
+import '../../models/photo_submission.dart';
 import '../../models/product.dart';
 import '../../models/product_analysis.dart';
 import '../../models/review_status.dart';
@@ -14,6 +15,7 @@ import '../../services/community_service.dart';
 import '../../services/database_service.dart';
 import '../../services/deep_analysis_feature_service.dart';
 import '../../services/feedback_service.dart';
+import '../../services/product_image_service.dart';
 import '../../services/product_service.dart';
 import '../../services/product_verdict.dart';
 
@@ -48,6 +50,7 @@ class ResultController extends ChangeNotifier {
   bool isRefreshing = false;
   bool isFetchingAiIngredients = false;
   ReviewStatus? aiRequestStatus;
+  Map<String, PhotoSubmission> photoPendingByType = {};
 
   /// Set after an admin auto-approved request and a successful AI fetch.
   Product? aiRefreshedProduct;
@@ -68,6 +71,7 @@ class ResultController extends ChangeNotifier {
         loadNote(),
         loadDiscussions(),
         loadAiRequestStatus(),
+        loadPhotoSubmissionStatus(),
         loadAdminStatus(),
       ];
       if (deepAnalysisEnabled) {
@@ -102,6 +106,34 @@ class ResultController extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  Future<void> loadPhotoSubmissionStatus() async {
+    if (AuthService.currentUser == null) {
+      photoPendingByType = {};
+      notifyListeners();
+      return;
+    }
+    try {
+      final rows = await ProductImageService.getSubmissionsForBarcode(barcode);
+      final pending = <String, PhotoSubmission>{};
+      for (final row in rows) {
+        final submission = PhotoSubmission.fromJson(row);
+        if (submission.status != ReviewStatus.pending) continue;
+        pending.putIfAbsent(submission.imageType, () => submission);
+      }
+      photoPendingByType = pending;
+    } catch (_) {
+      photoPendingByType = {};
+    } finally {
+      notifyListeners();
+    }
+  }
+
+  PhotoSubmission? pendingPhotoForType(String imageType) =>
+      photoPendingByType[imageType];
+
+  bool hasPendingPhotoForType(String imageType) =>
+      photoPendingByType.containsKey(imageType);
 
   Future<void> loadNote() async {
     final data = await DatabaseService.instance.getScanNote(barcode);

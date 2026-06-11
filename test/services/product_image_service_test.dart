@@ -25,6 +25,17 @@ void main() {
       expect(await ProductImageService.getSubmissions(), isEmpty);
     });
 
+    test('getMySubmissions returns empty when no supabase', () async {
+      expect(await ProductImageService.getMySubmissions(), isEmpty);
+    });
+
+    test('getSubmissionsForBarcode returns empty when no supabase', () async {
+      expect(
+        await ProductImageService.getSubmissionsForBarcode('123'),
+        isEmpty,
+      );
+    });
+
     test('updateSubmissionStatus returns false', () async {
       expect(
         await ProductImageService.updateSubmissionStatus(1, 'approved'),
@@ -241,6 +252,38 @@ void main() {
 
       expect(capturedPayload?.containsKey('status'), isFalse);
       expect(ProductImageService.lastUploadAutoApproved, isFalse);
+    });
+
+    test('getMySubmissions uses fake when set', () async {
+      ProductImageService.fakeGetMySubmissions = () async => [
+        {
+          'id': 1,
+          'barcode': '123',
+          'status': 'pending',
+          'image_type': 'front',
+          'public_url': 'https://example.com/a.jpg',
+        },
+      ];
+      final rows = await ProductImageService.getMySubmissions();
+      expect(rows, hasLength(1));
+      expect(rows.first['barcode'], '123');
+    });
+
+    test('getSubmissionsForBarcode uses fake when set', () async {
+      ProductImageService.fakeGetSubmissionsForBarcode = (barcode) async {
+        expect(barcode, '999');
+        return [
+          {
+            'id': 2,
+            'barcode': barcode,
+            'status': 'pending',
+            'image_type': 'ingredients',
+            'public_url': 'https://example.com/b.jpg',
+          },
+        ];
+      };
+      final rows = await ProductImageService.getSubmissionsForBarcode('999');
+      expect(rows.single['image_type'], 'ingredients');
     });
 
     test('uploadImage omits blank product name from payload', () async {
