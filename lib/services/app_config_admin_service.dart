@@ -9,6 +9,8 @@ class AppConfigAdminService {
   static const geminiLookupEmptyOffKey = 'gemini_lookup_empty_off';
   static const closedBetaBannerKey = 'closed_beta_banner';
   static const deepAnalysisEnabledKey = 'deep_analysis_enabled';
+  static const photoSubmissionsAutoApproveKey =
+      'photo_submissions_auto_approve';
 
   static bool _supabaseAvailable = AppConfig.hasSupabase;
 
@@ -33,6 +35,13 @@ class AppConfigAdminService {
   @visibleForTesting
   static Future<bool> Function(bool enabled)? fakeSetDeepAnalysisEnabled;
 
+  @visibleForTesting
+  static Future<bool?> Function()? fakeFetchPhotoSubmissionsAutoApprove;
+
+  @visibleForTesting
+  static Future<bool> Function(bool enabled)?
+  fakeSetPhotoSubmissionsAutoApprove;
+
   static void resetTestOverrides() {
     fakeIsSuperAdmin = null;
     fakeFetchGeminiLookupEmptyOff = null;
@@ -41,6 +50,8 @@ class AppConfigAdminService {
     fakeSetClosedBetaBanner = null;
     fakeFetchDeepAnalysisEnabled = null;
     fakeSetDeepAnalysisEnabled = null;
+    fakeFetchPhotoSubmissionsAutoApprove = null;
+    fakeSetPhotoSubmissionsAutoApprove = null;
     _supabaseAvailable = AppConfig.hasSupabase;
   }
 
@@ -182,6 +193,50 @@ class AppConfigAdminService {
       return true;
     } catch (e) {
       debugPrint('[AppConfigAdminService] setDeepAnalysisEnabled: $e');
+      return false;
+    }
+  }
+
+  static Future<bool?> fetchPhotoSubmissionsAutoApprove() async {
+    if (fakeFetchPhotoSubmissionsAutoApprove != null) {
+      return fakeFetchPhotoSubmissionsAutoApprove!();
+    }
+    if (!_supabaseAvailable) return null;
+    try {
+      final row = await Supabase.instance.client
+          .from('app_config')
+          .select('value')
+          .eq('key', photoSubmissionsAutoApproveKey)
+          .maybeSingle();
+      if (row == null) return false;
+      return row['value'] == 'true';
+    } catch (e) {
+      debugPrint(
+        '[AppConfigAdminService] fetchPhotoSubmissionsAutoApprove: $e',
+      );
+      return null;
+    }
+  }
+
+  static Future<bool> setPhotoSubmissionsAutoApprove(bool enabled) async {
+    if (!_supabaseAvailable && fakeSetPhotoSubmissionsAutoApprove == null) {
+      return false;
+    }
+    if (!await _isSuperAdmin()) return false;
+    if (fakeSetPhotoSubmissionsAutoApprove != null) {
+      return fakeSetPhotoSubmissionsAutoApprove!(enabled);
+    }
+    try {
+      await Supabase.instance.client.rpc(
+        'set_superadmin_app_config_flag',
+        params: {
+          'p_key': photoSubmissionsAutoApproveKey,
+          'p_value': enabled ? 'true' : 'false',
+        },
+      );
+      return true;
+    } catch (e) {
+      debugPrint('[AppConfigAdminService] setPhotoSubmissionsAutoApprove: $e');
       return false;
     }
   }

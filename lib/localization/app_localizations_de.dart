@@ -185,6 +185,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get photoUploaded => 'Foto eingereicht — vielen Dank!';
 
   @override
+  String get photoUploadedLive => 'Foto veröffentlicht — vielen Dank!';
+
+  @override
   String get photoUploadFailed =>
       'Foto konnte nicht hochgeladen werden. Bitte erneut versuchen.';
 
@@ -1237,6 +1240,26 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get deepAnalysisDisabled => 'Detailanalyse deaktiviert';
+
+  @override
+  String get photoSubmissionsAutoApproveAdminTitle =>
+      'Fotos automatisch freigeben';
+
+  @override
+  String get photoSubmissionsAutoApproveAdminDescription =>
+      'Wenn aktiv, werden Nutzer-Fotos sofort live geschaltet — ohne Admin-Warteschlange.';
+
+  @override
+  String get photoSubmissionsAutoApproveEnabled =>
+      'Foto-Auto-Freigabe aktiviert';
+
+  @override
+  String get photoSubmissionsAutoApproveDisabled =>
+      'Foto-Auto-Freigabe deaktiviert';
+
+  @override
+  String get photoSubmissionsAutoApproveQueueEmpty =>
+      'Auto-Freigabe ist aktiv — keine Foto-Warteschlange.';
 
   @override
   String get systemSettingsLoadFailed =>

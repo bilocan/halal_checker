@@ -6,6 +6,7 @@ import '../localization/format_relative_time.dart';
 import '../models/product_analysis.dart';
 import '../services/analysis_service.dart';
 import '../services/deep_analysis_feature_service.dart';
+import '../services/photo_submission_config_service.dart';
 import 'admin/ai_approval_tab.dart';
 import 'admin/ingredient_contribution_tab.dart';
 import 'admin/ingredient_report_tab.dart';
@@ -49,6 +50,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
   int _aiRequestBadge = 0;
   bool _isSuperAdmin = false;
   bool _deepAnalysisEnabled = false;
+  bool _photoAutoApproveEnabled = false;
 
   // ── GlobalKeys for imperative refresh from AppBar ─────────────────────────
   final _photosKey = GlobalKey<PhotoApprovalTabState>();
@@ -60,14 +62,19 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
   int get _settingsTabIndex => _tabSettings;
 
   int get _approvalsBadge {
-    var total = _photoBadge + _contributionBadge + _aiRequestBadge;
+    var total = _contributionBadge + _aiRequestBadge;
+    if (!_photoAutoApproveEnabled) total += _photoBadge;
     if (_deepAnalysisEnabled && _pendingCount > 0) total += _pendingCount;
     return total;
   }
 
-  List<int> get _visibleApprovalSubTabs => _deepAnalysisEnabled
-      ? [_subAnalysis, _subPhotos, _subContributions, _subAiLookup]
-      : [_subPhotos, _subContributions, _subAiLookup];
+  List<int> get _visibleApprovalSubTabs {
+    final tabs = <int>[];
+    if (_deepAnalysisEnabled) tabs.add(_subAnalysis);
+    if (!_photoAutoApproveEnabled) tabs.add(_subPhotos);
+    tabs.addAll([_subContributions, _subAiLookup]);
+    return tabs;
+  }
 
   int get _currentLogicalSubTab {
     final tabs = _visibleApprovalSubTabs;
@@ -85,13 +92,19 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
 
   Future<void> _initApprovals() async {
     final enabled = await DeepAnalysisFeatureService().isEnabled();
+    final photoAuto = await PhotoSubmissionConfigService()
+        .isAutoApproveEnabled();
     if (!mounted) return;
     setState(() {
       _deepAnalysisEnabled = enabled;
+      _photoAutoApproveEnabled = photoAuto;
       if (!enabled) {
         _approvalsSubTabIndex = 0;
         _analyses = [];
         _loading = false;
+      }
+      if (photoAuto) {
+        _photoBadge = 0;
       }
     });
     if (enabled) {
@@ -269,7 +282,11 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
                   key: _reportsKey,
                   onCountChanged: (n) => setState(() => _reportBadge = n),
                 ),
-                if (_isSuperAdmin) SystemSettingsTab(key: _settingsKey),
+                if (_isSuperAdmin)
+                  SystemSettingsTab(
+                    key: _settingsKey,
+                    onFlagsChanged: _initApprovals,
+                  ),
               ],
             ),
           ),
@@ -329,6 +346,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
             _subAnalysis => _buildAnalysisBody(),
             _subPhotos => PhotoApprovalTab(
               key: _photosKey,
+              autoApproveEnabled: _photoAutoApproveEnabled,
               onCountChanged: (n) => setState(() => _photoBadge = n),
             ),
             _subContributions => IngredientContributionTab(
@@ -352,7 +370,8 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
           label: loc.analysisTab,
           badge: _pendingCount > 0 ? _pendingCount : null,
         ),
-      (label: loc.photosTab, badge: _photoBadge > 0 ? _photoBadge : null),
+      if (!_photoAutoApproveEnabled)
+        (label: loc.photosTab, badge: _photoBadge > 0 ? _photoBadge : null),
       (
         label: loc.ingredientContributionsTab,
         badge: _contributionBadge > 0 ? _contributionBadge : null,

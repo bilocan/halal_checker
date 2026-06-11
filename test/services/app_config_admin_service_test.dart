@@ -73,5 +73,45 @@ void main() {
       expect(await AppConfigAdminService.setDeepAnalysisEnabled(true), isTrue);
       expect(saved, isTrue);
     });
+
+    test('fetchPhotoSubmissionsAutoApprove returns fake value', () async {
+      AppConfigAdminService.fakeFetchPhotoSubmissionsAutoApprove = () async =>
+          true;
+      expect(
+        await AppConfigAdminService.fetchPhotoSubmissionsAutoApprove(),
+        isTrue,
+      );
+    });
+
+    test(
+      'setPhotoSubmissionsAutoApprove rejects when not superadmin',
+      () async {
+        AppConfigAdminService.fakeIsSuperAdmin = () async => false;
+        AppConfigAdminService.fakeSetPhotoSubmissionsAutoApprove = (_) async =>
+            true;
+        expect(
+          await AppConfigAdminService.setPhotoSubmissionsAutoApprove(true),
+          isFalse,
+        );
+      },
+    );
+
+    test(
+      'setPhotoSubmissionsAutoApprove succeeds for superadmin fake',
+      () async {
+        var saved = false;
+        AppConfigAdminService.fakeIsSuperAdmin = () async => true;
+        AppConfigAdminService.fakeSetPhotoSubmissionsAutoApprove =
+            (enabled) async {
+              saved = enabled;
+              return true;
+            };
+        expect(
+          await AppConfigAdminService.setPhotoSubmissionsAutoApprove(true),
+          isTrue,
+        );
+        expect(saved, isTrue);
+      },
+    );
   });
 }

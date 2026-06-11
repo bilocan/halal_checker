@@ -412,6 +412,12 @@ abstract class AppLocalizations {
   /// **'Photo submitted — thank you!'**
   String get photoUploaded;
 
+  /// No description provided for @photoUploadedLive.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo published — thank you!'**
+  String get photoUploadedLive;
+
   /// No description provided for @photoUploadFailed.
   ///
   /// In en, this message translates to:
@@ -2289,6 +2295,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Deep Analysis disabled'**
   String get deepAnalysisDisabled;
+
+  /// No description provided for @photoSubmissionsAutoApproveAdminTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-approve photo submissions'**
+  String get photoSubmissionsAutoApproveAdminTitle;
+
+  /// No description provided for @photoSubmissionsAutoApproveAdminDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'When on, user photo uploads skip the admin queue and go live on the product immediately.'**
+  String get photoSubmissionsAutoApproveAdminDescription;
+
+  /// No description provided for @photoSubmissionsAutoApproveEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo auto-approve enabled'**
+  String get photoSubmissionsAutoApproveEnabled;
+
+  /// No description provided for @photoSubmissionsAutoApproveDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo auto-approve disabled'**
+  String get photoSubmissionsAutoApproveDisabled;
+
+  /// No description provided for @photoSubmissionsAutoApproveQueueEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-approve is on — no photo approval queue.'**
+  String get photoSubmissionsAutoApproveQueueEmpty;
 
   /// No description provided for @systemSettingsLoadFailed.
   ///

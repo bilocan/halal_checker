@@ -342,7 +342,13 @@ class _ResultScreenState extends State<ResultScreen> {
     setState(() => _uploadingImageType = null);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(success ? loc.photoUploaded : loc.photoUploadFailed),
+        content: Text(
+          success
+              ? (ProductImageService.lastUploadAutoApproved
+                    ? loc.photoUploadedLive
+                    : loc.photoUploaded)
+              : loc.photoUploadFailed,
+        ),
       ),
     );
   }

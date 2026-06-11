@@ -184,6 +184,9 @@ class AppLocalizationsTr extends AppLocalizations {
   String get photoUploaded => 'Fotoğraf gönderildi — teşekkürler!';
 
   @override
+  String get photoUploadedLive => 'Fotoğraf yayınlandı — teşekkürler!';
+
+  @override
   String get photoUploadFailed =>
       'Fotoğraf yüklenemedi. Lütfen tekrar deneyin.';
 
@@ -1218,6 +1221,24 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get deepAnalysisDisabled => 'Detaylı analiz kapalı';
+
+  @override
+  String get photoSubmissionsAutoApproveAdminTitle =>
+      'Fotoğrafları otomatik onayla';
+
+  @override
+  String get photoSubmissionsAutoApproveAdminDescription =>
+      'Açıkken kullanıcı fotoğrafları admin kuyruğunu atlayıp üründe hemen yayınlanır.';
+
+  @override
+  String get photoSubmissionsAutoApproveEnabled => 'Foto otomatik onay açık';
+
+  @override
+  String get photoSubmissionsAutoApproveDisabled => 'Foto otomatik onay kapalı';
+
+  @override
+  String get photoSubmissionsAutoApproveQueueEmpty =>
+      'Otomatik onay açık — fotoğraf onay kuyruğu yok.';
 
   @override
   String get systemSettingsLoadFailed => 'Sistem ayarları yüklenemedi';
