@@ -119,7 +119,7 @@ void main() {
       expect(p!.haramIngredients, isEmpty);
     });
 
-    test('alcohol-free label is not flagged as haram', () async {
+    test('alcohol-free EU label is flagged as haram', () async {
       ProductService().setHttpClientForTesting(
         _mockGet(
           _offJson(
@@ -130,7 +130,7 @@ void main() {
       );
 
       final p = await ProductService().getProduct('1000000004');
-      expect(p!.haramIngredients, isEmpty);
+      expect(p!.haramIngredients, isNotEmpty);
     });
 
     test(
@@ -553,10 +553,10 @@ void main() {
       expect(ProductService.matchesKeyword('e-120', 'e120'), isTrue);
     });
 
-    test('alcohol-free is not matched by alcohol keyword', () {
+    test('alcohol-free EU label is matched by alcohol keyword', () {
       expect(
         ProductService.matchesKeyword('malt (alcohol-free)', 'alcohol'),
-        isFalse,
+        isTrue,
       );
     });
 

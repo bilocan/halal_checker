@@ -228,10 +228,10 @@
     "matched_canonicals": []
   },
   {
-    "description": "post-EN: hyphen -free (haram keyword)",
+    "description": "post-EN: alcohol-free EU label is not negation",
     "ingredients": ["alcohol-free toner base"],
-    "verdict": "halal",
-    "matched_canonicals": []
+    "verdict": "haram",
+    "matched_canonicals": ["alcohol"]
   },
   {
     "description": "post-EN: hyphen -free (suspicious keyword)",
@@ -240,10 +240,10 @@
     "matched_canonicals": []
   },
   {
-    "description": "post-EN: trailing free (suspicious keyword)",
+    "description": "post-EN: alcohol free EU label is not negation",
     "ingredients": ["alcohol free"],
-    "verdict": "halal",
-    "matched_canonicals": []
+    "verdict": "haram",
+    "matched_canonicals": ["alcohol"]
   },
   {
     "description": "post-DE: schweinefrei compound",

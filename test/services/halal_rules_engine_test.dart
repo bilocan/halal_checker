@@ -26,14 +26,16 @@ void main() {
       expect(result.explanation, contains('may be animal-derived'));
     });
 
-    test('keeps alcohol-free and fatty alcohol out of haram matches', () {
-      final result = engine.analyzeIngredients([
+    test('flags alcohol-free labels as haram but keeps fatty alcohol safe', () {
+      final alcoholFree = engine.analyzeIngredients([
         'malt extract alcohol-free',
-        'cetyl alcohol',
       ]);
+      expect(alcoholFree.haram, isNotEmpty);
+      expect(alcoholFree.verdict, HalalRuleVerdict.haram);
 
-      expect(result.haram, isEmpty);
-      expect(result.verdict, HalalRuleVerdict.halal);
+      final fatty = engine.analyzeIngredients(['cetyl alcohol']);
+      expect(fatty.haram, isEmpty);
+      expect(fatty.verdict, HalalRuleVerdict.halal);
     });
 
     test('0% alcohol declaration with halal ingredients is halal', () {
@@ -42,6 +44,18 @@ void main() {
       expect(result.verdict, HalalRuleVerdict.halal);
       expect(result.isHalal, isTrue);
       expect(result.haram, isEmpty);
+    });
+
+    test('EU alkoholfrei and trace alcohol disclosures are haram', () {
+      for (final ingredient in [
+        'alkoholfrei aromatisiert',
+        'Alkoholgehalt <0,5%',
+        'contains 0,3% alcohol',
+        'malt (alcohol-free)',
+      ]) {
+        final result = engine.analyzeIngredients([ingredient]);
+        expect(result.verdict, HalalRuleVerdict.haram, reason: ingredient);
+      }
     });
 
     group('negation suppression', () {
@@ -338,8 +352,9 @@ void main() {
       expect(engine.matchesKeyword('cetyl alcohol', 'alcohol'), isFalse);
     });
 
-    test('respects alcohol-free exclusion', () {
-      expect(engine.matchesKeyword('malt alcohol-free', 'alcohol'), isFalse);
+    test('flags alcohol-free labels', () {
+      expect(engine.matchesKeyword('malt alcohol-free', 'alcohol'), isTrue);
+      expect(engine.matchesKeyword('alkoholfrei', 'alcohol'), isTrue);
     });
 
     test('respects 0% alcohol declaration exclusion', () {
