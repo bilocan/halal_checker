@@ -121,7 +121,11 @@ class HalalRulesEngine {
 
   // True when the [variant] match in [chunkLower] is preceded or followed by a
   // negation marker, meaning the sentence explicitly states the ingredient is absent.
-  static bool _isNegated(String chunkLower, String variant) {
+  static bool _isNegated(
+    String chunkLower,
+    String variant, {
+    required String canonical,
+  }) {
     final int start;
     final int end;
     if (variant.contains(' ')) {
@@ -140,6 +144,12 @@ class HalalRulesEngine {
       end = m.end;
     }
     if (_negationWord.hasMatch(chunkLower.substring(0, start))) return true;
+    // EU "alcohol-free" / alkoholfrei labels are not reliable absence claims.
+    if (canonical == 'alcohol' ||
+        canonical == 'ethanol' ||
+        IngredientKeywords.alcoholFamily.contains(variant.toLowerCase())) {
+      return false;
+    }
     return _postNegationWord.hasMatch(chunkLower.substring(end));
   }
 
@@ -159,8 +169,10 @@ class HalalRulesEngine {
       if (IngredientKeywords.isZeroPercentAlcoholDeclaration(value, variant)) {
         return false;
       }
+      if (IngredientKeywords.isEuAlcoholFreeLabel(value)) return true;
+      if (IngredientKeywords.hasDeclaredNonZeroAlcohol(value)) return true;
       return RegExp(
-        '${IngredientKeywords.wPre}$escaped${IngredientKeywords.wPost}(?![-\\s]*free)',
+        '${IngredientKeywords.wPre}$escaped${IngredientKeywords.wPost}',
         caseSensitive: false,
       ).hasMatch(value);
     }
@@ -193,7 +205,8 @@ class HalalRulesEngine {
       var matchedHaram = false;
       for (final entry in rules.haram.entries) {
         final variant = _matchingVariant(lower, entry.key);
-        if (variant != null && !_isNegated(lower, variant)) {
+        if (variant != null &&
+            !_isNegated(lower, variant, canonical: entry.key)) {
           warnings[ingredient] = entry.value;
           canonicals[ingredient] = entry.key;
           if (_needsTranslation(ingredient, entry.key)) {
@@ -221,7 +234,8 @@ class HalalRulesEngine {
             IngredientKeywords.isHalalRennetSource(lower)) {
           continue;
         }
-        if (variant != null && !_isNegated(lower, variant)) {
+        if (variant != null &&
+            !_isNegated(lower, variant, canonical: entry.key)) {
           warnings[ingredient] = entry.value;
           canonicals[ingredient] = entry.key;
           if (_needsTranslation(ingredient, entry.key)) {

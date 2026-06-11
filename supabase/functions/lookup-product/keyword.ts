@@ -91,6 +91,34 @@ const ALCOHOL_FAMILY = new Set([
 
 const FATTY_ALCOHOL_PREFIX = /\b(cetyl|stearyl|behenyl|lauryl|myristyl|arachidyl|oleyl|cetostearyl|lanolin|isostearyl|octyldodecyl|decyl)\s+/i
 
+// EU marketing labels that allow trace alcohol up to <0,5% — not halal-safe.
+const EU_ALCOHOL_FREE_LABEL = /\b(?:alkoholfrei|alkohol[-\s]?frei|alcool[-\s]?frei|alcohol[-\s]?free|alcoholfree|alcoholvrij|alkols[üu]z|analcolic[oa]|non[-\s]?alcoholic)\b/i
+
+const ALCOHOL_PERCENT_CONTEXT = /(?:alkoholgehalt|alcohol\s+content|teneur\s+en\s+alcool|contenuto\s+alcolico|gehalt\s+an\s+alkohol|contenido\s+de\s+alcohol|\b(?:alkohol|alcohol|alcool|alcol|alkol|ethanol|éthanol|äthanol)\b)/i
+
+function isEuAlcoholFreeLabel(text: string): boolean {
+  return EU_ALCOHOL_FREE_LABEL.test(text)
+}
+
+function isExplicitZeroPercent(whole: number, fracDigits: string | undefined): boolean {
+  if (whole !== 0) return false
+  if (!fracDigits || fracDigits.length === 0) return true
+  return fracDigits.replace(/0/g, '') === ''
+}
+
+function hasDeclaredNonZeroAlcohol(text: string): boolean {
+  const lower = text.toLowerCase()
+  const percentRe = /(?:[<≤]\s*)?(\d+)(?:([.,])(\d+))?\s*%\s*(?:vol\.?|abv)?/gi
+  let m: RegExpExecArray | null
+  while ((m = percentRe.exec(lower)) !== null) {
+    const whole = parseInt(m[1], 10)
+    const frac = m[3]
+    if (isExplicitZeroPercent(whole, frac)) continue
+    if (ALCOHOL_PERCENT_CONTEXT.test(lower)) return true
+  }
+  return /\b(?!0(?:[.,]0+)?\s*%)(\d+(?:[.,]\d+)?)\s*%\s*(?:alkohol|alcohol|alcool|alcol|alkol|ethanol|äthanol|éthanol)\b/i.test(lower)
+}
+
 // Pre-negation words across all supported languages (EN/DE/FR/NL/IT/ES/TR/CS/SR/HU).
 // Used to suppress false positives like "enthält keine Zutaten vom Schwein".
 const NEGATION_WORDS = /\b(?:keine?|nicht|ohne|frei\s+von|sans|pas|geen|zonder|vrij\s+van|no|not|without|free\s+from|free\s+of|senza|sin|içermez|içermemektedir|icermez|icermemektedir|neobsahuje|bez|nema|nem|mentes)\b/i
@@ -126,7 +154,9 @@ function matchesVariant(ingredient: string, variant: string): boolean {
   if (ALCOHOL_FAMILY.has(variant)) {
     if (FATTY_ALCOHOL_PREFIX.test(ingredient)) return false
     if (isZeroPercentAlcoholDeclaration(ingredient, variant)) return false
-    return new RegExp(`${wPre}${escape(variant)}${wPost}(?![-\\s]*free)`, 'i').test(ingredient)
+    if (isEuAlcoholFreeLabel(ingredient)) return true
+    if (hasDeclaredNonZeroAlcohol(ingredient)) return true
+    return new RegExp(`${wPre}${escape(variant)}${wPost}`, 'i').test(ingredient)
   }
   return new RegExp(`${wPre}${escape(variant)}${wPost}`, 'i').test(ingredient)
 }
@@ -134,7 +164,7 @@ function matchesVariant(ingredient: string, variant: string): boolean {
 // True when the matched variant is preceded or followed by a negation marker in
 // the same ingredient chunk, e.g. "enthält keine Zutaten vom Schwein" or
 // "domuz yağı ve katkıları yoktur" → negated.
-function isNegated(chunk: string, variant: string): boolean {
+function isNegated(chunk: string, variant: string, canonical?: string): boolean {
   const lower = chunk.toLowerCase()
   let start: number
   let end: number
@@ -150,6 +180,13 @@ function isNegated(chunk: string, variant: string): boolean {
     end = m.index + m[0].length
   }
   if (NEGATION_WORDS.test(lower.substring(0, start))) return true
+  if (
+    canonical === 'alcohol' ||
+    canonical === 'ethanol' ||
+    ALCOHOL_FAMILY.has(variant)
+  ) {
+    return false
+  }
   return POST_NEGATION_WORDS.test(lower.substring(end))
 }
 
@@ -202,7 +239,7 @@ function keywordSinglePass(
     let foundHaram = false
     for (const entry of allHaram) {
       const matchedVariant = (entry.slice(2) as string[]).find(v => matchesVariant(lower, v))
-      if (matchedVariant && !isNegated(lower, matchedVariant)) {
+      if (matchedVariant && !isNegated(lower, matchedVariant, entry[0])) {
         warnings[ing] = entry[1]
         haram.push(ing)
         origins[ing] = sourceKey
@@ -220,7 +257,7 @@ function keywordSinglePass(
       ) {
         continue
       }
-      if (matchedVariant && !isNegated(lower, matchedVariant)) {
+      if (matchedVariant && !isNegated(lower, matchedVariant, entry[0])) {
         warnings[ing] = entry[1]
         canonicals[ing] = entry[0]
         suspicious.push(ing)

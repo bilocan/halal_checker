@@ -1,0 +1,50 @@
+[
+  {
+    "description": "alcohol-free label flagged as haram",
+    "ingredients": ["malt extract (alcohol-free)"],
+    "verdict": "haram",
+    "matched_canonicals": ["alcohol"]
+  },
+  {
+    "description": "German alkoholfrei flagged as haram",
+    "ingredients": ["Zutaten: Wasser, alkoholfrei aromatisiert"],
+    "verdict": "haram",
+    "matched_canonicals": ["alcohol"]
+  },
+  {
+    "description": "Alkoholgehalt <0,5% flagged as haram",
+    "ingredients": ["Alkoholgehalt <0,5%"],
+    "verdict": "haram",
+    "matched_canonicals": ["alcohol"]
+  },
+  {
+    "description": "0,3% alcohol trace flagged as haram",
+    "ingredients": ["contains 0,3% alcohol"],
+    "verdict": "haram",
+    "matched_canonicals": ["alcohol"]
+  },
+  {
+    "description": "0% alcohol declaration still halal",
+    "ingredients": ["sugar", "0% alcohol"],
+    "verdict": "halal",
+    "matched_canonicals": []
+  },
+  {
+    "description": "cetyl alcohol still halal",
+    "ingredients": ["cetyl alcohol"],
+    "verdict": "halal",
+    "matched_canonicals": []
+  },
+  {
+    "description": "sin alcohol pre-negation still halal",
+    "ingredients": ["sin alcohol"],
+    "verdict": "halal",
+    "matched_canonicals": []
+  },
+  {
+    "description": "ohne alkohol pre-negation still halal",
+    "ingredients": ["ohne alkohol"],
+    "verdict": "halal",
+    "matched_canonicals": []
+  }
+]

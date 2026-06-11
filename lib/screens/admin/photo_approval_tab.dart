@@ -12,7 +12,13 @@ import '../../services/product_image_service.dart';
 
 class PhotoApprovalTab extends StatefulWidget {
   final void Function(int count) onCountChanged;
-  const PhotoApprovalTab({super.key, required this.onCountChanged});
+  final bool autoApproveEnabled;
+
+  const PhotoApprovalTab({
+    super.key,
+    required this.onCountChanged,
+    this.autoApproveEnabled = false,
+  });
 
   @override
   State<PhotoApprovalTab> createState() => PhotoApprovalTabState();
@@ -26,7 +32,25 @@ class PhotoApprovalTabState extends State<PhotoApprovalTab> {
   @override
   void initState() {
     super.initState();
-    _load();
+    if (!widget.autoApproveEnabled) {
+      _load();
+    } else {
+      widget.onCountChanged(0);
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant PhotoApprovalTab oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.autoApproveEnabled && !oldWidget.autoApproveEnabled) {
+      setState(() {
+        _photos = [];
+        _loading = false;
+      });
+      widget.onCountChanged(0);
+    } else if (!widget.autoApproveEnabled && oldWidget.autoApproveEnabled) {
+      _load();
+    }
   }
 
   void refresh() => _load();
@@ -63,6 +87,26 @@ class PhotoApprovalTabState extends State<PhotoApprovalTab> {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context);
+    if (widget.autoApproveEnabled) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.flash_auto_outlined,
+              size: 56,
+              color: Colors.grey.shade400,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              loc.photoSubmissionsAutoApproveQueueEmpty,
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey.shade500),
+            ),
+          ],
+        ),
+      );
+    }
     if (_loading) return const Center(child: CircularProgressIndicator());
     if (_photos.isEmpty) {
       return Center(

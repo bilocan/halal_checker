@@ -76,11 +76,11 @@ void main() {
     test('matches ethanol', () {
       expect(ProductService.matchesKeyword('ethanol', 'ethanol'), isTrue);
     });
-    test('does not match alcohol-free', () {
-      expect(ProductService.matchesKeyword('alcohol-free', 'alcohol'), isFalse);
+    test('matches alcohol-free EU labels', () {
+      expect(ProductService.matchesKeyword('alcohol-free', 'alcohol'), isTrue);
     });
-    test('does not match alcohol free (space)', () {
-      expect(ProductService.matchesKeyword('alcohol free', 'alcohol'), isFalse);
+    test('matches alcohol free (space)', () {
+      expect(ProductService.matchesKeyword('alcohol free', 'alcohol'), isTrue);
     });
     test('does not match 0% alcohol declaration', () {
       expect(ProductService.matchesKeyword('0% alcohol', 'alcohol'), isFalse);
@@ -417,13 +417,13 @@ void main() {
       expect(r.suspicious, contains('glycerin'));
     });
 
-    test('alcohol-free label is not flagged', () {
+    test('alcohol-free EU label is flagged', () {
       final r = ProductService.analyzeWithKeywords([
         'water',
         'citrus extract (alcohol-free)',
         'fruit juice',
       ]);
-      expect(r.haram, isEmpty);
+      expect(r.haram, isNotEmpty);
     });
   });
 

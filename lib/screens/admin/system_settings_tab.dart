@@ -5,7 +5,9 @@ import '../../localization/app_localizations.dart';
 import '../../services/app_config_admin_service.dart';
 
 class SystemSettingsTab extends StatefulWidget {
-  const SystemSettingsTab({super.key});
+  const SystemSettingsTab({super.key, this.onFlagsChanged});
+
+  final VoidCallback? onFlagsChanged;
 
   @override
   State<SystemSettingsTab> createState() => SystemSettingsTabState();
@@ -17,6 +19,7 @@ class SystemSettingsTabState extends State<SystemSettingsTab> {
   bool _geminiLookupEmptyOff = false;
   bool _closedBetaBanner = false;
   bool _deepAnalysisEnabled = false;
+  bool _photoSubmissionsAutoApprove = false;
   String? _error;
 
   @override
@@ -33,15 +36,21 @@ class SystemSettingsTabState extends State<SystemSettingsTab> {
     final gemini = await AppConfigAdminService.fetchGeminiLookupEmptyOff();
     final betaBanner = await AppConfigAdminService.fetchClosedBetaBanner();
     final deepAnalysis = await AppConfigAdminService.fetchDeepAnalysisEnabled();
+    final photoAutoApprove =
+        await AppConfigAdminService.fetchPhotoSubmissionsAutoApprove();
     if (!mounted) return;
     setState(() {
       _loading = false;
-      if (gemini == null || betaBanner == null || deepAnalysis == null) {
+      if (gemini == null ||
+          betaBanner == null ||
+          deepAnalysis == null ||
+          photoAutoApprove == null) {
         _error = AppLocalizations.of(context).systemSettingsLoadFailed;
       } else {
         _geminiLookupEmptyOff = gemini;
         _closedBetaBanner = betaBanner;
         _deepAnalysisEnabled = deepAnalysis;
+        _photoSubmissionsAutoApprove = photoAutoApprove;
       }
     });
   }
@@ -60,6 +69,7 @@ class SystemSettingsTabState extends State<SystemSettingsTab> {
       return;
     }
     setState(() => _geminiLookupEmptyOff = value);
+    widget.onFlagsChanged?.call();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
@@ -85,6 +95,7 @@ class SystemSettingsTabState extends State<SystemSettingsTab> {
       return;
     }
     setState(() => _closedBetaBanner = value);
+    widget.onFlagsChanged?.call();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
@@ -110,12 +121,43 @@ class SystemSettingsTabState extends State<SystemSettingsTab> {
       return;
     }
     setState(() => _deepAnalysisEnabled = value);
+    widget.onFlagsChanged?.call();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
           value
               ? AppLocalizations.of(context).deepAnalysisEnabled
               : AppLocalizations.of(context).deepAnalysisDisabled,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _onPhotoSubmissionsAutoApproveToggle(bool value) async {
+    setState(() => _saving = true);
+    final ok = await AppConfigAdminService.setPhotoSubmissionsAutoApprove(
+      value,
+    );
+    if (!mounted) return;
+    setState(() => _saving = false);
+    if (!ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppLocalizations.of(context).systemSettingsSaveFailed),
+        ),
+      );
+      return;
+    }
+    setState(() => _photoSubmissionsAutoApprove = value);
+    widget.onFlagsChanged?.call();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          value
+              ? AppLocalizations.of(context).photoSubmissionsAutoApproveEnabled
+              : AppLocalizations.of(
+                  context,
+                ).photoSubmissionsAutoApproveDisabled,
         ),
       ),
     );
@@ -199,6 +241,26 @@ class SystemSettingsTabState extends State<SystemSettingsTab> {
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : Icon(Icons.biotech_outlined, color: Colors.purple.shade700),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Card(
+          child: SwitchListTile(
+            title: Text(loc.photoSubmissionsAutoApproveAdminTitle),
+            subtitle: Text(loc.photoSubmissionsAutoApproveAdminDescription),
+            value: _photoSubmissionsAutoApprove,
+            onChanged: _saving ? null : _onPhotoSubmissionsAutoApproveToggle,
+            activeThumbColor: kGreen,
+            secondary: _saving
+                ? const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : Icon(
+                    Icons.photo_camera_outlined,
+                    color: Colors.blue.shade700,
+                  ),
           ),
         ),
       ],

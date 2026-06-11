@@ -182,6 +182,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get photoUploaded => 'Photo submitted — thank you!';
 
   @override
+  String get photoUploadedLive => 'Photo published — thank you!';
+
+  @override
   String get photoUploadFailed => 'Could not upload photo. Please try again.';
 
   @override
@@ -1217,6 +1220,25 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deepAnalysisDisabled => 'Deep Analysis disabled';
+
+  @override
+  String get photoSubmissionsAutoApproveAdminTitle =>
+      'Auto-approve photo submissions';
+
+  @override
+  String get photoSubmissionsAutoApproveAdminDescription =>
+      'When on, user photo uploads skip the admin queue and go live on the product immediately.';
+
+  @override
+  String get photoSubmissionsAutoApproveEnabled => 'Photo auto-approve enabled';
+
+  @override
+  String get photoSubmissionsAutoApproveDisabled =>
+      'Photo auto-approve disabled';
+
+  @override
+  String get photoSubmissionsAutoApproveQueueEmpty =>
+      'Auto-approve is on — no photo approval queue.';
 
   @override
   String get systemSettingsLoadFailed => 'Could not load system settings';

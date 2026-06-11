@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../config.dart';
 import 'auth_service.dart';
+import 'photo_submission_config_service.dart';
 
 enum ProductImageType { front, ingredients, nutrition }
 
@@ -26,9 +27,19 @@ class ProductImageService {
   /// Last upload failure message (debug / support). Cleared on success.
   static String? debugLastUploadError;
 
+  /// True when the last successful [uploadImage] was auto-approved (global flag).
+  static bool lastUploadAutoApproved = false;
+
   /// Shown in debug UI when [uploadImage] fails.
   static String? get uploadFailureDetail =>
       kDebugMode ? debugLastUploadError : null;
+
+  static Future<bool> _isAutoApproveEnabled() async {
+    if (fakeIsAutoApproveEnabled != null) {
+      return fakeIsAutoApproveEnabled!();
+    }
+    return PhotoSubmissionConfigService().isAutoApproveEnabled();
+  }
 
   @visibleForTesting
   static Future<List<Map<String, dynamic>>> Function(String)?
@@ -70,6 +81,9 @@ class ProductImageService {
   fakeInsertSubmission;
 
   @visibleForTesting
+  static Future<bool> Function()? fakeIsAutoApproveEnabled;
+
+  @visibleForTesting
   static Future<void> Function(int id, String status)?
   fakePerformSubmissionStatusUpdate;
 
@@ -90,6 +104,8 @@ class ProductImageService {
     fakeGetPublicUrl = null;
     fakeInsertSubmission = null;
     fakePerformSubmissionStatusUpdate = null;
+    fakeIsAutoApproveEnabled = null;
+    lastUploadAutoApproved = false;
   }
 
   /// Uploads [imageFile] to the `product-images` storage bucket and records
@@ -121,6 +137,7 @@ class ProductImageService {
 
     try {
       debugLastUploadError = null;
+      lastUploadAutoApproved = false;
       final bytes = fakeReadImageBytes != null
           ? await fakeReadImageBytes!(imageFile)
           : await imageFile.readAsBytes();
@@ -150,6 +167,7 @@ class ProductImageService {
           ? fakeGetPublicUrl!(path)
           : _db.storage.from('product-images').getPublicUrl(path);
 
+      final autoApprove = await _isAutoApproveEnabled();
       final payload = {
         'barcode': barcode,
         'image_type': type.value,
@@ -158,7 +176,9 @@ class ProductImageService {
         'submitted_by': uid,
         if (productName != null && productName.isNotEmpty)
           'product_name': productName,
+        if (autoApprove) 'status': 'approved',
       };
+      lastUploadAutoApproved = autoApprove;
 
       if (fakeInsertSubmission != null) {
         await fakeInsertSubmission!(payload);

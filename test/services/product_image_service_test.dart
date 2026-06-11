@@ -195,6 +195,54 @@ void main() {
       expect(capturedPayload?['submitted_by'], 'test-uid');
     });
 
+    test(
+      'uploadImage inserts approved status when auto-approve flag is on',
+      () async {
+        AuthService.setCurrentUserForTesting(fakeUser);
+        Map<String, dynamic>? capturedPayload;
+        ProductImageService.fakeIsAutoApproveEnabled = () async => true;
+        ProductImageService.fakeReadImageBytes = (_) async =>
+            Uint8List.fromList([1, 2, 3]);
+        ProductImageService.fakeUploadBinary = (_, _, _) async {};
+        ProductImageService.fakeGetPublicUrl = (path) =>
+            'https://example.com/$path';
+        ProductImageService.fakeInsertSubmission = (payload) async {
+          capturedPayload = payload;
+        };
+
+        final ok = await ProductImageService.uploadImage(
+          barcode: '1234567890123',
+          imageFile: File.fromUri(Uri.parse('file:///tmp/front.jpg')),
+        );
+
+        expect(ok, isTrue);
+        expect(capturedPayload?['status'], 'approved');
+        expect(ProductImageService.lastUploadAutoApproved, isTrue);
+      },
+    );
+
+    test('uploadImage omits status when auto-approve flag is off', () async {
+      AuthService.setCurrentUserForTesting(fakeUser);
+      Map<String, dynamic>? capturedPayload;
+      ProductImageService.fakeIsAutoApproveEnabled = () async => false;
+      ProductImageService.fakeReadImageBytes = (_) async =>
+          Uint8List.fromList([1]);
+      ProductImageService.fakeUploadBinary = (_, _, _) async {};
+      ProductImageService.fakeGetPublicUrl = (path) =>
+          'https://example.com/$path';
+      ProductImageService.fakeInsertSubmission = (payload) async {
+        capturedPayload = payload;
+      };
+
+      await ProductImageService.uploadImage(
+        barcode: '1234567890123',
+        imageFile: File.fromUri(Uri.parse('file:///tmp/front.jpg')),
+      );
+
+      expect(capturedPayload?.containsKey('status'), isFalse);
+      expect(ProductImageService.lastUploadAutoApproved, isFalse);
+    });
+
     test('uploadImage omits blank product name from payload', () async {
       AuthService.setCurrentUserForTesting(fakeUser);
       Map<String, dynamic>? capturedPayload;

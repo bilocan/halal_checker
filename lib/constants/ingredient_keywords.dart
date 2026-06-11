@@ -530,7 +530,61 @@ class IngredientKeywords {
     },
   };
 
-  // All alcohol-family terms — these get the "alcohol-free" exclusion applied.
+  // EU marketing labels that allow trace alcohol up to <0,5% — not halal-safe.
+  static final RegExp euAlcoholFreeLabel = RegExp(
+    r'\b(?:'
+    r'alkoholfrei|alkohol[-\s]?frei|'
+    r'alcool[-\s]?frei|'
+    r'alcohol[-\s]?free|alcoholfree|'
+    r'alcoholvrij|'
+    r'alkols[üu]z|'
+    r'analcolic[oa]|'
+    r'non[-\s]?alcoholic'
+    r')\b',
+    caseSensitive: false,
+  );
+
+  static bool isEuAlcoholFreeLabel(String text) =>
+      euAlcoholFreeLabel.hasMatch(text);
+
+  /// Alcohol-related wording near a percentage (same ingredient chunk).
+  static final RegExp _alcoholPercentContext = RegExp(
+    r'(?:alkoholgehalt|alcohol\s+content|teneur\s+en\s+alcool|'
+    r'contenuto\s+alcolico|gehalt\s+an\s+alkohol|contenido\s+de\s+alcohol|'
+    r'\b(?:alkohol|alcohol|alcool|alcol|alkol|ethanol|éthanol|äthanol)\b)',
+    caseSensitive: false,
+  );
+
+  static bool _isExplicitZeroPercent(int whole, String? fracDigits) {
+    if (whole != 0) return false;
+    if (fracDigits == null || fracDigits.isEmpty) return true;
+    return fracDigits.replaceAll('0', '').isEmpty;
+  }
+
+  /// True when [text] declares alcohol above 0% (e.g. Alkoholgehalt <0,5%, 0,3% alcohol).
+  static bool hasDeclaredNonZeroAlcohol(String text) {
+    final lower = text.toLowerCase();
+
+    final percentRe = RegExp(
+      r'(?:[<≤]\s*)?(\d+)(?:([.,])(\d+))?\s*%\s*(?:vol\.?|abv)?',
+      caseSensitive: false,
+    );
+    for (final m in percentRe.allMatches(lower)) {
+      final whole = int.parse(m.group(1)!);
+      final frac = m.group(3);
+      if (_isExplicitZeroPercent(whole, frac)) continue;
+      if (_alcoholPercentContext.hasMatch(lower)) return true;
+    }
+
+    return RegExp(
+      r'\b(?!0(?:[.,]0+)?\s*%)(\d+(?:[.,]\d+)?)\s*%\s*(?:'
+      r'alkohol|alcohol|alcool|alcol|alkol|ethanol|äthanol|éthanol'
+      r')\b',
+      caseSensitive: false,
+    ).hasMatch(lower);
+  }
+
+  // All alcohol-family terms — fatty-alcohol and 0% exclusions apply separately.
   static const Set<String> alcoholFamily = {
     'alcohol',
     'alkohol',

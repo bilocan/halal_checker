@@ -3,6 +3,7 @@
 
 import { assertEquals, assertMatch } from 'https://deno.land/std@0.224.0/assert/mod.ts'
 import negationCasesJson from '../../../test/fixtures/negation_cases.json' with { type: 'json' }
+import alcoholTraceCasesJson from '../../../test/fixtures/alcohol_trace_cases.json' with { type: 'json' }
 import { withCommunitySource } from './community.ts'
 import { toProduct } from './db.ts'
 import {
@@ -137,9 +138,22 @@ Deno.test('keywordAnalysis — cetyl alcohol not flagged as haram', () => {
   assertEquals(r.haram.length, 0)
 })
 
-Deno.test('keywordAnalysis — alcohol-free not flagged as haram', () => {
+Deno.test('keywordAnalysis — alcohol-free EU label flagged as haram', () => {
   const r = keywordAnalysis(['malt (alcohol-free)'])
-  assertEquals(r.haram.length, 0)
+  assertEquals(r.haram.length, 1)
+  assertEquals(r.isHalal, false)
+})
+
+Deno.test('keywordAnalysis — alkoholfrei and trace alcohol flagged as haram', () => {
+  for (const ing of [
+    'alkoholfrei aromatisiert',
+    'Alkoholgehalt <0,5%',
+    'contains 0,3% alcohol',
+  ]) {
+    const r = keywordAnalysis([ing])
+    assertEquals(r.haram.length, 1, ing)
+    assertEquals(r.isHalal, false, ing)
+  }
 })
 
 Deno.test('keywordAnalysis — 0% alcohol declaration not flagged as haram', () => {
@@ -240,6 +254,21 @@ for (const c of negationCases) {
       assertEquals(r.haram.length, 0)
       assertEquals(r.suspicious.length, 0)
     }
+  })
+}
+
+type AlcoholTraceCase = {
+  description: string
+  ingredients: string[]
+  verdict: string
+  matched_canonicals?: string[]
+}
+const alcoholTraceCases = alcoholTraceCasesJson as AlcoholTraceCase[]
+
+for (const c of alcoholTraceCases) {
+  Deno.test(`alcohol trace fixture — ${c.description}`, () => {
+    const r = keywordAnalysis(c.ingredients)
+    assertEquals(verdictFromKeywordResult(r), c.verdict, c.description)
   })
 }
 

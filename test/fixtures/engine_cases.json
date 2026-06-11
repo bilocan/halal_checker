@@ -96,10 +96,10 @@
     "matched_canonicals": []
   },
   {
-    "description": "alcohol-free excluded",
+    "description": "alcohol-free EU label flagged as haram",
     "ingredients": ["aqua", "alcohol-free toner base"],
-    "verdict": "halal",
-    "matched_canonicals": []
+    "verdict": "haram",
+    "matched_canonicals": ["alcohol"]
   },
   {
     "description": "0% alcohol declaration with sugar is halal",

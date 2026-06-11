@@ -86,6 +86,39 @@ void main() {
     });
   });
 
+  group('IngredientKeywords — EU alcohol trace detection', () {
+    test('isEuAlcoholFreeLabel matches alkoholfrei', () {
+      expect(
+        IngredientKeywords.isEuAlcoholFreeLabel('alkoholfrei aromatisiert'),
+        isTrue,
+      );
+    });
+    test('isEuAlcoholFreeLabel matches alcohol-free', () {
+      expect(
+        IngredientKeywords.isEuAlcoholFreeLabel('malt (alcohol-free)'),
+        isTrue,
+      );
+    });
+    test('hasDeclaredNonZeroAlcohol matches Alkoholgehalt <0,5%', () {
+      expect(
+        IngredientKeywords.hasDeclaredNonZeroAlcohol('Alkoholgehalt <0,5%'),
+        isTrue,
+      );
+    });
+    test('hasDeclaredNonZeroAlcohol matches 0,3% alcohol', () {
+      expect(
+        IngredientKeywords.hasDeclaredNonZeroAlcohol('contains 0,3% alcohol'),
+        isTrue,
+      );
+    });
+    test('hasDeclaredNonZeroAlcohol ignores 0% alcohol', () {
+      expect(
+        IngredientKeywords.hasDeclaredNonZeroAlcohol('sugar, 0% alcohol'),
+        isFalse,
+      );
+    });
+  });
+
   // ── alcoholFamily ───────────────────────────────────────────────────────────
 
   group('IngredientKeywords — alcoholFamily', () {
