@@ -283,34 +283,40 @@ void main() {
         },
       );
 
-      test('updateSubmissionStatus rejects a submission', () async {
-        await SupabaseIntegrationHelper.signInTestUser();
-        tempDir = await Directory.systemTemp.createTemp('halal_img_test_');
-        imageFile = File('${tempDir!.path}/label.jpg')
-          ..writeAsBytesSync(_minimalJpeg);
+      if (SupabaseIntegrationHelper.hasTestAdmin) {
+        test('updateSubmissionStatus rejects a submission', () async {
+          await SupabaseIntegrationHelper.signInTestUser();
+          tempDir = await Directory.systemTemp.createTemp('halal_img_test_');
+          imageFile = File('${tempDir!.path}/label.jpg')
+            ..writeAsBytesSync(_minimalJpeg);
 
-        final uploaded = await ProductImageService.uploadImage(
-          barcode: barcode!,
-          imageFile: imageFile!,
-        );
-        expect(uploaded, isTrue);
+          final uploaded = await ProductImageService.uploadImage(
+            barcode: barcode!,
+            imageFile: imageFile!,
+          );
+          expect(uploaded, isTrue);
 
-        final rows = await ProductImageService.getSubmissions(
-          status: 'pending',
-        );
-        final id = rows.firstWhere((r) => r['barcode'] == barcode)['id'] as int;
+          final rows = await ProductImageService.getSubmissions(
+            status: 'pending',
+          );
+          final id =
+              rows.firstWhere((r) => r['barcode'] == barcode)['id'] as int;
 
-        final updated = await ProductImageService.updateSubmissionStatus(
-          id,
-          'rejected',
-        );
-        expect(updated, isTrue);
+          await SupabaseIntegrationHelper.signOut();
+          await SupabaseIntegrationHelper.signInTestAdmin();
 
-        final rejected = await ProductImageService.getSubmissions(
-          status: 'rejected',
-        );
-        expect(rejected.any((r) => r['id'] == id), isTrue);
-      });
+          final updated = await ProductImageService.updateSubmissionStatus(
+            id,
+            'rejected',
+          );
+          expect(updated, isTrue);
+
+          final rejected = await ProductImageService.getSubmissions(
+            status: 'rejected',
+          );
+          expect(rejected.any((r) => r['id'] == id), isTrue);
+        });
+      }
     });
   }
 }
