@@ -8,6 +8,7 @@ import '../../../services/auth_service.dart';
 import '../../../services/profile_service.dart';
 import '../../../widgets/change_username_sheet.dart';
 import '../../../widgets/sign_in_sheet.dart';
+import '../../my_contributions_screen.dart';
 
 /// App-bar auth control: sign-in button or signed-in account menu.
 class StartAuthAppBarAction extends StatefulWidget {
@@ -71,6 +72,16 @@ class _StartAuthAppBarActionState extends State<StartAuthAppBarAction> {
         return PopupMenuButton<String>(
           offset: const Offset(0, 40),
           onSelected: (value) async {
+            if (value == 'contributions') {
+              if (!context.mounted) return;
+              await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const MyContributionsScreen(),
+                ),
+              );
+              return;
+            }
             if (value == 'username') {
               final updated = await showChangeUsernameSheet(context);
               if (updated == true && mounted) await _loadProfile();
@@ -109,6 +120,16 @@ class _StartAuthAppBarActionState extends State<StartAuthAppBarAction> {
                         ),
                       ),
                     ],
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'contributions',
+                child: Row(
+                  children: [
+                    const Icon(Icons.photo_library_outlined, size: 18),
+                    const SizedBox(width: 8),
+                    Text(loc.myContributions),
                   ],
                 ),
               ),

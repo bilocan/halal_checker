@@ -188,8 +188,23 @@ class AppLocalizationsDe extends AppLocalizations {
   String get photoUploadedLive => 'Foto veröffentlicht — vielen Dank!';
 
   @override
+  String get photoUploadedReviewNote =>
+      'Foto eingereicht — nach Freigabe erscheint es am Produkt.';
+
+  @override
   String get photoUploadFailed =>
       'Foto konnte nicht hochgeladen werden. Bitte erneut versuchen.';
+
+  @override
+  String get photoPendingReview => 'Wartet auf Freigabe';
+
+  @override
+  String get photoAlreadyPending =>
+      'Für dieses Bild wartet bereits ein Foto auf Freigabe.';
+
+  @override
+  String get photoSubmitReviewHint =>
+      'Dein Foto wird von unserem Team geprüft, bevor es am Produkt erscheint.';
 
   @override
   String get additionalImages => 'Zusätzliche Bilder';
@@ -1387,6 +1402,15 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get filterApproved => 'Genehmigt';
+
+  @override
+  String get filterRejected => 'Abgelehnt';
+
+  @override
+  String get myContributions => 'Meine Beiträge';
+
+  @override
+  String get noPhotoContributions => 'Noch keine Fotobeiträge.';
 
   @override
   String get filterAll => 'Alle';

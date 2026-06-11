@@ -5,3 +5,7 @@
 - **EU-Alkoholfrei-Kennzeichnung** - Produkte mit alkoholfrei oder alcohol-free (auch Spuren unter 0,5 Prozent) werden jetzt als nicht halal markiert; echte 0-Prozent-Angaben und Fettalkohole bleiben ausgenommen.
 
 - **Foto-Auto-Freigabe (Superadmin)** - Superadmins koennen in Admin-Systemeinstellungen die Auto-Freigabe aktivieren; Nutzer-Fotos werden sofort veroeffentlicht, ohne manuelle Pruefung.
+
+- **Foto-Einreichung** — Nach dem Hochladen zeigt der Ergebnisbildschirm den Freigabe-Status; doppelte Uploads für dasselbe Bild sind blockiert.
+
+- **Meine Beiträge** — Angemeldete Nutzer sehen alle Fotoeinreichungen und ihren Status im Konto-Menü.

@@ -418,11 +418,35 @@ abstract class AppLocalizations {
   /// **'Photo published — thank you!'**
   String get photoUploadedLive;
 
+  /// No description provided for @photoUploadedReviewNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo submitted for review — we\'ll update the product after approval.'**
+  String get photoUploadedReviewNote;
+
   /// No description provided for @photoUploadFailed.
   ///
   /// In en, this message translates to:
   /// **'Could not upload photo. Please try again.'**
   String get photoUploadFailed;
+
+  /// No description provided for @photoPendingReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending review'**
+  String get photoPendingReview;
+
+  /// No description provided for @photoAlreadyPending.
+  ///
+  /// In en, this message translates to:
+  /// **'You already have a photo waiting for review on this slot.'**
+  String get photoAlreadyPending;
+
+  /// No description provided for @photoSubmitReviewHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Your photo will be reviewed by our team before it appears on the product.'**
+  String get photoSubmitReviewHint;
 
   /// No description provided for @additionalImages.
   ///
@@ -2541,6 +2565,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Approved'**
   String get filterApproved;
+
+  /// No description provided for @filterRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Rejected'**
+  String get filterRejected;
+
+  /// No description provided for @myContributions.
+  ///
+  /// In en, this message translates to:
+  /// **'My contributions'**
+  String get myContributions;
+
+  /// No description provided for @noPhotoContributions.
+  ///
+  /// In en, this message translates to:
+  /// **'No photo contributions yet.'**
+  String get noPhotoContributions;
 
   /// No description provided for @filterAll.
   ///

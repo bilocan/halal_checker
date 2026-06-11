@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../../app_colors.dart';
 import '../../../localization/app_localizations.dart';
+import '../../../models/photo_submission.dart';
 import '../../../models/product.dart';
 import '../../../services/product_image_service.dart';
 
@@ -15,12 +16,17 @@ class ResultProductImages extends StatelessWidget {
     required this.loc,
     required this.uploadingImageType,
     required this.onUpload,
+    this.pendingForType,
   });
 
   final Product product;
   final AppLocalizations loc;
   final ProductImageType? uploadingImageType;
   final void Function(ProductImageType type) onUpload;
+  final PhotoSubmission? Function(ProductImageType type)? pendingForType;
+
+  PhotoSubmission? _pending(ProductImageType type) =>
+      pendingForType?.call(type);
 
   static String thumbnailUrl(String url) => url.replaceAll('.400.', '.200.');
 
@@ -101,12 +107,14 @@ class ResultProductImages extends StatelessWidget {
             product: product,
             loc: loc,
             uploading: uploadingImageType == ProductImageType.front,
+            pending: _pending(ProductImageType.front),
             onUpload: () => onUpload(ProductImageType.front),
           )
         else
           _FrontPlaceholder(
             loc: loc,
             uploading: uploadingImageType == ProductImageType.front,
+            pending: _pending(ProductImageType.front),
             onUpload: () => onUpload(ProductImageType.front),
           ),
         if (!product.isNonFood) ...[
@@ -120,6 +128,7 @@ class ResultProductImages extends StatelessWidget {
                   label: loc.ingredients,
                   type: ProductImageType.ingredients,
                   uploadingImageType: uploadingImageType,
+                  pending: _pending(ProductImageType.ingredients),
                   onUpload: onUpload,
                 ),
               ),
@@ -130,6 +139,7 @@ class ResultProductImages extends StatelessWidget {
                   label: loc.nutritionLabel,
                   type: ProductImageType.nutrition,
                   uploadingImageType: uploadingImageType,
+                  pending: _pending(ProductImageType.nutrition),
                   onUpload: onUpload,
                 ),
               ),

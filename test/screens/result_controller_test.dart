@@ -11,6 +11,7 @@ import 'package:halal_checker/services/ai_ingredient_request_service.dart';
 import 'package:halal_checker/services/auth_service.dart';
 import 'package:halal_checker/services/database_service.dart';
 import 'package:halal_checker/services/deep_analysis_feature_service.dart';
+import 'package:halal_checker/services/product_image_service.dart';
 import 'package:halal_checker/services/product_service.dart';
 import '../helpers/database_test_setup.dart';
 import '../helpers/stub_feedback_service.dart';
@@ -273,6 +274,62 @@ void main() {
         await c.requestAiIngredients();
 
         expect(c.isFetchingAiIngredients, isFalse);
+      });
+    });
+
+    group('loadPhotoSubmissionStatus', () {
+      const barcode = '1234567890123';
+      const fakeUser = User(
+        id: 'test-uid',
+        appMetadata: {},
+        userMetadata: {},
+        aud: 'authenticated',
+        createdAt: '2024-01-01T00:00:00',
+        isAnonymous: false,
+      );
+
+      tearDown(() {
+        ProductImageService.resetForTesting();
+        AuthService.resetForTesting();
+      });
+
+      test('clears pending map when user is not signed in', () async {
+        final c = controller(barcode: barcode);
+        await c.loadPhotoSubmissionStatus();
+        expect(c.photoPendingByType, isEmpty);
+      });
+
+      test('maps pending submissions by image type', () async {
+        AuthService.setCurrentUserForTesting(fakeUser);
+        ProductImageService.fakeGetSubmissionsForBarcode = (bc) async {
+          expect(bc, barcode);
+          return [
+            {
+              'id': 1,
+              'barcode': barcode,
+              'image_type': 'front',
+              'status': 'pending',
+              'public_url': 'https://example.com/front.jpg',
+            },
+            {
+              'id': 2,
+              'barcode': barcode,
+              'image_type': 'ingredients',
+              'status': 'approved',
+              'public_url': 'https://example.com/ing.jpg',
+            },
+          ];
+        };
+
+        final c = controller(barcode: barcode);
+        await c.loadPhotoSubmissionStatus();
+
+        expect(c.hasPendingPhotoForType('front'), isTrue);
+        expect(c.hasPendingPhotoForType('ingredients'), isFalse);
+        expect(
+          c.pendingPhotoForType('front')?.submittedUrl,
+          'https://example.com/front.jpg',
+        );
       });
     });
   });

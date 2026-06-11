@@ -88,6 +88,13 @@ class ProductImageService {
   fakePerformSubmissionStatusUpdate;
 
   @visibleForTesting
+  static Future<List<Map<String, dynamic>>> Function(String barcode)?
+  fakeGetSubmissionsForBarcode;
+
+  @visibleForTesting
+  static Future<List<Map<String, dynamic>>> Function()? fakeGetMySubmissions;
+
+  @visibleForTesting
   static void enableForTesting() => _supabaseAvailable = true;
 
   @visibleForTesting
@@ -105,6 +112,8 @@ class ProductImageService {
     fakeInsertSubmission = null;
     fakePerformSubmissionStatusUpdate = null;
     fakeIsAutoApproveEnabled = null;
+    fakeGetSubmissionsForBarcode = null;
+    fakeGetMySubmissions = null;
     lastUploadAutoApproved = false;
   }
 
@@ -264,6 +273,51 @@ class ProductImageService {
       }).toList();
     } catch (e) {
       debugPrint('getSubmissions error: $e');
+      return [];
+    }
+  }
+
+  /// Current user's submissions for [barcode], newest first.
+  static Future<List<Map<String, dynamic>>> getSubmissionsForBarcode(
+    String barcode,
+  ) async {
+    if (fakeGetSubmissionsForBarcode != null) {
+      return fakeGetSubmissionsForBarcode!(barcode);
+    }
+    if (!_supabaseAvailable) return [];
+    await AuthService.ensureInitialized();
+    final uid = AuthService.currentUser?.id;
+    if (uid == null) return [];
+    try {
+      final rows = await _db
+          .from('product_image_submissions')
+          .select()
+          .eq('barcode', barcode)
+          .eq('submitted_by', uid)
+          .order('created_at', ascending: false);
+      return List<Map<String, dynamic>>.from(rows);
+    } catch (e) {
+      debugPrint('getSubmissionsForBarcode error: $e');
+      return [];
+    }
+  }
+
+  /// Current user's photo submissions across all products, newest first.
+  static Future<List<Map<String, dynamic>>> getMySubmissions() async {
+    if (fakeGetMySubmissions != null) return fakeGetMySubmissions!();
+    if (!_supabaseAvailable) return [];
+    await AuthService.ensureInitialized();
+    final uid = AuthService.currentUser?.id;
+    if (uid == null) return [];
+    try {
+      final rows = await _db
+          .from('product_image_submissions')
+          .select()
+          .eq('submitted_by', uid)
+          .order('created_at', ascending: false);
+      return List<Map<String, dynamic>>.from(rows);
+    } catch (e) {
+      debugPrint('getMySubmissions error: $e');
       return [];
     }
   }

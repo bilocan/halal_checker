@@ -187,8 +187,23 @@ class AppLocalizationsTr extends AppLocalizations {
   String get photoUploadedLive => 'Fotoğraf yayınlandı — teşekkürler!';
 
   @override
+  String get photoUploadedReviewNote =>
+      'Fotoğraf incelemeye gönderildi — onaydan sonra üründe görünecek.';
+
+  @override
   String get photoUploadFailed =>
       'Fotoğraf yüklenemedi. Lütfen tekrar deneyin.';
+
+  @override
+  String get photoPendingReview => 'İnceleme bekliyor';
+
+  @override
+  String get photoAlreadyPending =>
+      'Bu alan için zaten incelemede bir fotoğrafınız var.';
+
+  @override
+  String get photoSubmitReviewHint =>
+      'Fotoğrafınız üründe görünmeden önce ekibimiz tarafından incelenecek.';
 
   @override
   String get additionalImages => 'Ek Görseller';
@@ -1362,6 +1377,15 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get filterApproved => 'Onaylandı';
+
+  @override
+  String get filterRejected => 'Reddedildi';
+
+  @override
+  String get myContributions => 'Katkılarım';
+
+  @override
+  String get noPhotoContributions => 'Henüz fotoğraf katkınız yok.';
 
   @override
   String get filterAll => 'Tümü';
