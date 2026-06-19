@@ -2854,6 +2854,18 @@ abstract class AppLocalizations {
   /// **'Findings'**
   String get findings;
 
+  /// No description provided for @relatedGuides.
+  ///
+  /// In en, this message translates to:
+  /// **'Related guides'**
+  String get relatedGuides;
+
+  /// No description provided for @readGuide.
+  ///
+  /// In en, this message translates to:
+  /// **'Read guide'**
+  String get readGuide;
+
   /// No description provided for @seeFullDetails.
   ///
   /// In en, this message translates to:

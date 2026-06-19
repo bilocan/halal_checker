@@ -1,0 +1,20 @@
+{
+  "natural flavour": ["gida-aromalarinda-alkol"],
+  "flavouring": [
+    "gida-aromalarinda-alkol",
+    "mono-propylene-glycol-halal-alternative"
+  ],
+  "e120": ["carmine-e120"],
+  "carmine": ["carmine-e120"],
+  "cochineal": ["carmine-e120"],
+  "gelatin": ["what-is-gelatin"],
+  "e441": ["what-is-gelatin"],
+  "e920": ["e-numbers-guide"],
+  "l-cysteine": ["e-numbers-guide"],
+  "e322": ["e-numbers-guide"],
+  "e471": ["e-numbers-guide"],
+  "e472": ["e-numbers-guide"],
+  "e473": ["e-numbers-guide"],
+  "e927": ["e-numbers-guide"],
+  "glycerol": ["e-numbers-guide"]
+}

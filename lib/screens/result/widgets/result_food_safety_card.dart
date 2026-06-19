@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../../../constants/ingredient_guides.dart';
 import '../../../localization/app_localizations.dart';
+import '../../../models/product.dart';
+import 'ingredient_guide_link_row.dart';
 
 class ResultFoodSafetyCard extends StatelessWidget {
   const ResultFoodSafetyCard({
@@ -12,6 +15,8 @@ class ResultFoodSafetyCard extends StatelessWidget {
     required this.suspiciousIngredients,
     required this.haramAdditives,
     required this.suspiciousAdditives,
+    required this.product,
+    required this.languageCode,
     required this.loc,
     this.initiallyExpanded = false,
   });
@@ -23,6 +28,8 @@ class ResultFoodSafetyCard extends StatelessWidget {
   final List<String> suspiciousIngredients;
   final List<String> haramAdditives;
   final List<String> suspiciousAdditives;
+  final Product product;
+  final String languageCode;
   final AppLocalizations loc;
   final bool initiallyExpanded;
 
@@ -85,6 +92,16 @@ class ResultFoodSafetyCard extends StatelessWidget {
                   tags: additivesTags,
                   labelFn: _parseAdditiveTag,
                   colorFn: (tag) => _resolveAdditivesColor(tag),
+                  guideLinksForTag: (tag) {
+                    final colors = _resolveAdditivesColor(tag);
+                    if (colors == _neutral) return const [];
+                    return IngredientGuides.linksForTerm(
+                      tag,
+                      languageCode,
+                      storedCanonicals: product.ingredientCanonicals,
+                    );
+                  },
+                  readGuideLabel: loc.readGuide,
                 ),
             ],
           ),
@@ -174,6 +191,8 @@ class _ChipSection extends StatelessWidget {
     required this.tags,
     required this.labelFn,
     required this.colorFn,
+    this.guideLinksForTag,
+    this.readGuideLabel,
   });
 
   final String label;
@@ -181,6 +200,8 @@ class _ChipSection extends StatelessWidget {
   final String Function(String) labelFn;
   final ({Color chipColor, Color chipBorder, Color textColor}) Function(String)
   colorFn;
+  final List<IngredientGuideLink> Function(String tag)? guideLinksForTag;
+  final String? readGuideLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -201,7 +222,8 @@ class _ChipSection extends StatelessWidget {
           runSpacing: 6,
           children: tags.map((tag) {
             final colors = colorFn(tag);
-            return Container(
+            final guides = guideLinksForTag?.call(tag) ?? const [];
+            final chip = Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
                 color: colors.chipColor,
@@ -212,6 +234,21 @@ class _ChipSection extends StatelessWidget {
                 labelFn(tag),
                 style: TextStyle(fontSize: 12, color: colors.textColor),
               ),
+            );
+
+            if (guides.isEmpty || readGuideLabel == null) return chip;
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                chip,
+                IngredientGuideLinkRow(
+                  guides: guides,
+                  readLabel: readGuideLabel!,
+                  linkColor: colors.textColor,
+                ),
+              ],
             );
           }).toList(),
         ),

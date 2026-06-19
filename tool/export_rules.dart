@@ -10,6 +10,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:halal_checker/constants/ingredient_guides.dart';
 import 'package:halal_checker/constants/ingredient_keywords.dart';
 
 void main(List<String> args) {
@@ -32,6 +33,9 @@ void main(List<String> args) {
               IngredientKeywords.suspiciousByLang[e.key] ??
               <String, List<String>>{},
         },
+    },
+    'guides': {
+      for (final e in IngredientGuides.byCanonical.entries) e.key: e.value,
     },
   });
 

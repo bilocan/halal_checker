@@ -476,6 +476,8 @@
   "additives": "Katkı maddeleri",
   "mayContain": "İz içerebilir",
   "findings": "Bulgular",
+  "relatedGuides": "İlgili rehberler",
+  "readGuide": "Rehberi oku",
   "seeFullDetails": "Tüm detayları gör",
   "fullDetailsTitle": "Tam Detaylar"
 }

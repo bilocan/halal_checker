@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../app_colors.dart';
 import '../config.dart';
+import '../constants/ingredient_guides.dart';
 import '../localization/app_localizations.dart';
 import '../models/product.dart';
 import '../models/product_analysis.dart';
@@ -31,6 +32,7 @@ import 'result/widgets/result_hero_card.dart';
 import 'result/widgets/result_ingredients_section.dart';
 import 'result/widgets/result_not_found_body.dart';
 import 'result/widgets/result_note_card.dart';
+import 'result/widgets/result_related_guides.dart';
 import 'result/widgets/result_product_images.dart';
 import 'result/widgets/result_food_safety_card.dart';
 import 'result/widgets/result_transparency_card.dart';
@@ -523,6 +525,14 @@ class _ResultScreenState extends State<ResultScreen> {
                   const SizedBox(height: 16),
                   // Tier 2 — one tap to expand
                   _buildTier2(product, loc, languageCode),
+                  if (IngredientGuides.slugsForProduct(product).isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    ResultRelatedGuides(
+                      product: product,
+                      languageCode: languageCode,
+                      loc: loc,
+                    ),
+                  ],
                   const SizedBox(height: 16),
                   // Tier 3 — full details in bottom sheet
                   _buildSeeFullDetailsButton(
@@ -725,6 +735,12 @@ class _ResultScreenState extends State<ResultScreen> {
                     loc: loc,
                   ),
                   const SizedBox(height: 16),
+                  ResultRelatedGuides(
+                    product: product,
+                    languageCode: languageCode,
+                    loc: loc,
+                  ),
+                  const SizedBox(height: 16),
                   ResultFoodSafetyCard(
                     allergensTags: product.allergensTags,
                     tracesTags: product.tracesTags,
@@ -733,6 +749,8 @@ class _ResultScreenState extends State<ResultScreen> {
                     suspiciousIngredients: product.suspiciousIngredients,
                     haramAdditives: product.haramAdditives,
                     suspiciousAdditives: product.suspiciousAdditives,
+                    product: product,
+                    languageCode: languageCode,
                     loc: loc,
                     initiallyExpanded: true,
                   ),

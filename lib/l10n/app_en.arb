@@ -631,6 +631,8 @@
   "additives": "Additives",
   "mayContain": "May contain",
   "findings": "Findings",
+  "relatedGuides": "Related guides",
+  "readGuide": "Read guide",
   "seeFullDetails": "See full details",
   "fullDetailsTitle": "Full Details"
 }

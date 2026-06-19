@@ -1543,6 +1543,12 @@ class AppLocalizationsTr extends AppLocalizations {
   String get findings => 'Bulgular';
 
   @override
+  String get relatedGuides => 'İlgili rehberler';
+
+  @override
+  String get readGuide => 'Rehberi oku';
+
+  @override
   String get seeFullDetails => 'Tüm detayları gör';
 
   @override
