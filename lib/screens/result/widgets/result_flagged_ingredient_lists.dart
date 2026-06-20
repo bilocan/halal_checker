@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 
+import '../../../constants/ingredient_guides.dart';
 import '../../../constants/ingredient_keywords.dart';
 import '../../../localization/app_localizations.dart';
 import '../../../models/product.dart';
 import '../ingredient_display.dart';
+import 'ingredient_guide_link_row.dart';
 
 class ResultFlaggedIngredientLists extends StatelessWidget {
   const ResultFlaggedIngredientLists({
@@ -56,6 +58,7 @@ class ResultFlaggedIngredientLists extends StatelessWidget {
               loc: loc,
               fallbackWarning: loc.foundInIngredients,
               icon: const Icon(Icons.error, color: Colors.red),
+              linkColor: Colors.red.shade700,
             ),
           ),
         ],
@@ -83,6 +86,7 @@ class ResultFlaggedIngredientLists extends StatelessWidget {
               loc: loc,
               fallbackWarning: loc.mayBeAnimalDerivedNote,
               icon: Icon(Icons.warning, color: Colors.orange.shade600),
+              linkColor: Colors.orange.shade800,
             ),
           ),
         ],
@@ -141,6 +145,7 @@ class _FlaggedListTile extends StatelessWidget {
     required this.loc,
     required this.fallbackWarning,
     required this.icon,
+    this.linkColor,
   });
 
   final String ingredient;
@@ -151,6 +156,7 @@ class _FlaggedListTile extends StatelessWidget {
   final AppLocalizations loc;
   final String fallbackWarning;
   final Widget icon;
+  final Color? linkColor;
 
   @override
   Widget build(BuildContext context) {
@@ -168,6 +174,11 @@ class _FlaggedListTile extends StatelessWidget {
           languageCode: languageCode,
           loc: loc,
         );
+    final guides = IngredientGuides.linksForTerm(
+      ingredient,
+      languageCode,
+      storedCanonicals: product.ingredientCanonicals,
+    );
 
     return ListTile(
       leading: icon,
@@ -177,7 +188,18 @@ class _FlaggedListTile extends StatelessWidget {
         showTranslated: showTranslated,
         languageCode: languageCode,
       ),
-      subtitle: SelectableText(displayWarning),
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SelectableText(displayWarning),
+          if (guides.isNotEmpty)
+            IngredientGuideLinkRow(
+              guides: guides,
+              readLabel: loc.readGuide,
+              linkColor: linkColor,
+            ),
+        ],
+      ),
       dense: true,
     );
   }

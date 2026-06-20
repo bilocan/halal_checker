@@ -122,6 +122,14 @@
       "pipeline": false
     },
     {
+      "area": "Result related ingredient guides (inline Read guide links)",
+      "screens": ["ResultScreen"],
+      "ui_e2e": false,
+      "widget": false,
+      "pipeline": true,
+      "notes": "Unit-tested via test/constants/ingredient_guides_test.dart"
+    },
+    {
       "area": "SCN-004 not found UI",
       "screens": ["ResultScreen"],
       "ui_e2e": false,

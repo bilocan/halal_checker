@@ -1568,6 +1568,12 @@ class AppLocalizationsDe extends AppLocalizations {
   String get findings => 'Befunde';
 
   @override
+  String get relatedGuides => 'Passende Ratgeber';
+
+  @override
+  String get readGuide => 'Ratgeber lesen';
+
+  @override
   String get seeFullDetails => 'Alle Details anzeigen';
 
   @override

@@ -476,6 +476,8 @@
   "additives": "Zusatzstoffe",
   "mayContain": "Kann Spuren enthalten von",
   "findings": "Befunde",
+  "relatedGuides": "Passende Ratgeber",
+  "readGuide": "Ratgeber lesen",
   "seeFullDetails": "Alle Details anzeigen",
   "fullDetailsTitle": "Vollständige Details"
 }

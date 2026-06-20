@@ -1542,6 +1542,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get findings => 'Findings';
 
   @override
+  String get relatedGuides => 'Related guides';
+
+  @override
+  String get readGuide => 'Read guide';
+
+  @override
   String get seeFullDetails => 'See full details';
 
   @override
