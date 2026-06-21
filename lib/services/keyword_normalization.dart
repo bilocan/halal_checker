@@ -81,6 +81,37 @@ class KeywordNormalization {
     return entries.map((e) => '${e.key}: ${e.value}').join('\n');
   }
 
+  static final RegExp _guideSlugPattern = RegExp(r'^[a-z0-9]+(-[a-z0-9]+)*$');
+
+  /// Parses `guide_slugs` from Supabase (text array).
+  static List<String> parseGuideSlugs(dynamic raw) {
+    if (raw is! List) return const [];
+    return normalizeGuideSlugsList(raw.map((e) => e.toString()).toList());
+  }
+
+  /// Parses admin/UI text: comma- or newline-separated blog slugs.
+  static List<String> parseGuideSlugsText(String raw) {
+    if (raw.trim().isEmpty) return const [];
+    return normalizeGuideSlugsList(
+      raw.split(RegExp(r'[,\n]')).map((e) => e.trim()).toList(),
+    );
+  }
+
+  /// Lowercases, deduplicates, and drops empty slugs (preserves first-seen order).
+  static List<String> normalizeGuideSlugsList(List<String> slugs) {
+    final seen = <String>{};
+    final out = <String>[];
+    for (final raw in slugs) {
+      final slug = raw.trim().toLowerCase();
+      if (slug.isEmpty || !seen.add(slug)) continue;
+      out.add(slug);
+    }
+    return out;
+  }
+
+  static bool isValidGuideSlug(String slug) =>
+      _guideSlugPattern.hasMatch(slug.trim().toLowerCase());
+
   /// Returns true if [alias] matches canonical, any variant, or translation value.
   static bool ruleContainsAlias(Map<String, dynamic> rule, String alias) {
     final a = alias.trim().toLowerCase();

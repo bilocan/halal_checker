@@ -17,6 +17,7 @@ class _RuleEditorSheetState extends State<_RuleEditorSheet> {
   final _reasonCtrl = TextEditingController();
   final _variantsCtrl = TextEditingController();
   final _translationsCtrl = TextEditingController();
+  final _guideSlugsCtrl = TextEditingController();
   String _category = 'haram';
   bool _submitting = false;
 
@@ -41,6 +42,12 @@ class _RuleEditorSheetState extends State<_RuleEditorSheet> {
           translations,
         );
       }
+      final guideSlugs = KeywordNormalization.parseGuideSlugs(
+        widget.rule!['guide_slugs'],
+      );
+      if (guideSlugs.isNotEmpty) {
+        _guideSlugsCtrl.text = guideSlugs.join(', ');
+      }
     }
   }
 
@@ -50,6 +57,7 @@ class _RuleEditorSheetState extends State<_RuleEditorSheet> {
     _reasonCtrl.dispose();
     _variantsCtrl.dispose();
     _translationsCtrl.dispose();
+    _guideSlugsCtrl.dispose();
     super.dispose();
   }
 
@@ -63,15 +71,34 @@ class _RuleEditorSheetState extends State<_RuleEditorSheet> {
         .toList();
   }
 
+  List<String> _parseGuideSlugs() =>
+      KeywordNormalization.parseGuideSlugsText(_guideSlugsCtrl.text);
+
+  String? _validateGuideSlugs(String? _) {
+    final raw = _guideSlugsCtrl.text.trim();
+    if (raw.isEmpty) return null;
+    for (final part in raw.split(RegExp(r'[,\n]'))) {
+      final slug = part.trim();
+      if (slug.isEmpty) continue;
+      if (!KeywordNormalization.isValidGuideSlug(slug)) {
+        return AppLocalizations.of(context).guideSlugInvalid;
+      }
+    }
+    return null;
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _submitting = true);
 
     final service = KeywordService();
+    final guideLinkService = IngredientGuideLinkService();
     final variants = _parseVariants();
     final translations = KeywordNormalization.parseTranslationsText(
       _translationsCtrl.text,
     );
+    final guideSlugs = _parseGuideSlugs();
+    final canonical = _canonicalCtrl.text.trim().toLowerCase();
     bool ok;
 
     if (_isEditing) {
@@ -96,15 +123,7 @@ class _RuleEditorSheetState extends State<_RuleEditorSheet> {
     if (!mounted) return;
     setState(() => _submitting = false);
     final loc = AppLocalizations.of(context);
-    if (ok) {
-      Navigator.pop(context, true);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(_isEditing ? loc.ruleUpdated : loc.ruleCreated),
-          backgroundColor: kGreen,
-        ),
-      );
-    } else {
+    if (!ok) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -113,7 +132,29 @@ class _RuleEditorSheetState extends State<_RuleEditorSheet> {
           backgroundColor: Colors.red,
         ),
       );
+      return;
     }
+
+    final guidesOk = await guideLinkService.upsertGuideLinks(
+      canonical: canonical,
+      guideSlugs: guideSlugs,
+    );
+    if (guidesOk) {
+      await ProductService().refreshGuideLinks();
+    }
+
+    if (!mounted) return;
+    Navigator.pop(context, true);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          guidesOk
+              ? (_isEditing ? loc.ruleUpdated : loc.ruleCreated)
+              : loc.guideLinksUpdateFailed,
+        ),
+        backgroundColor: guidesOk ? kGreen : Colors.orange,
+      ),
+    );
   }
 
   @override
@@ -216,6 +257,19 @@ class _RuleEditorSheetState extends State<_RuleEditorSheet> {
                   helperMaxLines: 3,
                 ),
                 maxLines: 4,
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _guideSlugsCtrl,
+                decoration: InputDecoration(
+                  labelText: loc.guideSlugsLabel,
+                  hintText: loc.guideSlugsHint,
+                  border: const OutlineInputBorder(),
+                  helperText: loc.guideSlugsHelperText,
+                  helperMaxLines: 3,
+                ),
+                maxLines: 2,
+                validator: _validateGuideSlugs,
               ),
               const SizedBox(height: 20),
               FilledButton(

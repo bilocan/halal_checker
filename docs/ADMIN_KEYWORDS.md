@@ -44,6 +44,8 @@ Supported locale codes for translations (same as built-in keywords): `en`, `de`,
 
 Migration: `supabase/migrations/20260520000008_keyword_translations.sql`.
 
+**Guide links** are stored separately in **`ingredient_guide_links`** (not on `keywords`). See [INGREDIENT_GUIDES.md](INGREDIENT_GUIDES.md).
+
 ---
 
 ## Admin panel workflow
@@ -77,7 +79,10 @@ Open **Admin panel → Rules** (three tabs: Built-in, Custom, Suggestions).
      tr: domuz
      fr: porc
      ```
+   - **Related guide slugs** (optional) — saved to **`ingredient_guide_links`**, not the keyword row. Comma-separated halalscan.at slugs; merged with built-in guides (union).
 3. Save. The app normalizes everything to lowercase and deduplicates.
+
+**Built-in tab:** use the book icon on a rule to edit guide slugs for that canonical without changing matching logic.
 
 ---
 

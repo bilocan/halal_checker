@@ -1027,6 +1027,30 @@ class AppLocalizationsDe extends AppLocalizations {
       'Eine Zeile pro Eintrag: Sprachcode und Begriff (de, tr, fr, es, it, nl, sr, hu, cs). Für Abgleich und Anzeige.';
 
   @override
+  String get guideSlugsLabel => 'Verwandte Blog-Leitfäden';
+
+  @override
+  String get guideSlugsHint => 'e-numbers-guide, what-is-gelatin';
+
+  @override
+  String get guideSlugsHelperText =>
+      'Kommagetrennte Blog-Slugs auf halalscan.at (ohne Sprachpräfix). Mit eingebauten Leitfäden für dasselbe Canonical zusammengeführt.';
+
+  @override
+  String get guideSlugInvalid =>
+      'Ungültiger Slug — nur Kleinbuchstaben, Ziffern und Bindestriche';
+
+  @override
+  String get editGuideLinks => 'Leitfaden-Links bearbeiten';
+
+  @override
+  String get guideLinksUpdated => 'Leitfaden-Links aktualisiert';
+
+  @override
+  String get guideLinksUpdateFailed =>
+      'Leitfaden-Links konnten nicht aktualisiert werden.';
+
+  @override
   String get mergeKeywordTitle => 'Mit bestehender Regel zusammenführen?';
 
   @override

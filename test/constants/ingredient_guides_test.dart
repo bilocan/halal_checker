@@ -88,7 +88,35 @@ void main() {
         'gida-aromalarinda-alkol',
         'de',
       );
-      expect(link?.url, 'https://halalscan.at/de/blog/gida-aromalarinda-alkol');
+      expect(link.url, 'https://halalscan.at/de/blog/gida-aromalarinda-alkol');
+    });
+
+    test('union merges built-in and runtime slugs without duplicates', () {
+      IngredientGuides.resetRuntimeGuides();
+      addTearDown(IngredientGuides.resetRuntimeGuides);
+
+      IngredientGuides.registerRuntimeGuides({
+        'e471': ['custom-extra-guide', 'e-numbers-guide'],
+      });
+
+      expect(IngredientGuides.slugsForCanonical('e471'), [
+        'e-numbers-guide',
+        'custom-extra-guide',
+      ]);
+    });
+
+    test('runtime-only slug uses fallback title when copy is missing', () {
+      IngredientGuides.resetRuntimeGuides();
+      addTearDown(IngredientGuides.resetRuntimeGuides);
+
+      IngredientGuides.registerRuntimeGuides({
+        'custom-ingredient': ['my-new-guide'],
+      });
+
+      final link = IngredientGuides.linkForSlug('my-new-guide', 'en');
+      expect(link.title, 'My New Guide');
+      expect(link.description, isEmpty);
+      expect(link.url, 'https://halalscan.at/en/blog/my-new-guide');
     });
 
     test('linksForTerm returns localized copy for carmine guide', () {

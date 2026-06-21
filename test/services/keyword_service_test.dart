@@ -450,6 +450,7 @@ void main() {
       ).createRule(canonical: 'lard', category: 'haram', reason: 'r');
       expect(body!['variants'], ['lard']);
       expect(body!['translations'], isEmpty);
+      expect(body!.containsKey('guide_slugs'), isFalse);
     });
 
     test('merges canonical when variants list is empty', () async {
@@ -567,6 +568,7 @@ void main() {
       ).updateRule(id: 'r', canonical: 'lard', category: 'haram', reason: 'r');
       expect(body!['variants'], ['lard']);
       expect(body!['translations'], isEmpty);
+      expect(body!.containsKey('guide_slugs'), isFalse);
     });
 
     test('PATCHes to URL with id filter', () async {

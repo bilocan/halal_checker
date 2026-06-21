@@ -1924,6 +1924,48 @@ abstract class AppLocalizations {
   /// **'One per line: locale code and term (de, tr, fr, es, it, nl, sr, hu, cs). Used for matching and UI labels.'**
   String get translationsHelperText;
 
+  /// No description provided for @guideSlugsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Related guide slugs'**
+  String get guideSlugsLabel;
+
+  /// No description provided for @guideSlugsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e-numbers-guide, what-is-gelatin'**
+  String get guideSlugsHint;
+
+  /// No description provided for @guideSlugsHelperText.
+  ///
+  /// In en, this message translates to:
+  /// **'Comma-separated blog slugs on halalscan.at (no locale prefix). Merged with built-in guides for the same canonical.'**
+  String get guideSlugsHelperText;
+
+  /// No description provided for @guideSlugInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid slug — use lowercase letters, numbers, and hyphens only'**
+  String get guideSlugInvalid;
+
+  /// No description provided for @editGuideLinks.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit guide links'**
+  String get editGuideLinks;
+
+  /// No description provided for @guideLinksUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Guide links updated'**
+  String get guideLinksUpdated;
+
+  /// No description provided for @guideLinksUpdateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not update guide links. Please try again.'**
+  String get guideLinksUpdateFailed;
+
   /// No description provided for @mergeKeywordTitle.
   ///
   /// In en, this message translates to:

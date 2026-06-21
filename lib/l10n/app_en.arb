@@ -386,6 +386,13 @@
   "translationsLabel": "Translations by locale",
   "translationsHint": "de: schwein\ntr: domuz",
   "translationsHelperText": "One per line: locale code and term (de, tr, fr, es, it, nl, sr, hu, cs). Used for matching and UI labels.",
+  "guideSlugsLabel": "Related guide slugs",
+  "guideSlugsHint": "e-numbers-guide, what-is-gelatin",
+  "guideSlugsHelperText": "Comma-separated blog slugs on halalscan.at (no locale prefix). Merged with built-in guides for the same canonical.",
+  "guideSlugInvalid": "Invalid slug — use lowercase letters, numbers, and hyphens only",
+  "editGuideLinks": "Edit guide links",
+  "guideLinksUpdated": "Guide links updated",
+  "guideLinksUpdateFailed": "Could not update guide links. Please try again.",
   "mergeKeywordTitle": "Merge with existing rule?",
   "mergeKeywordMessage": "\"{alias}\" matches the existing rule \"{canonical}\". Merge aliases into that rule instead of creating a duplicate?",
   "@mergeKeywordMessage": {
