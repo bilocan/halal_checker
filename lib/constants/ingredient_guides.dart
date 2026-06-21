@@ -1,5 +1,3 @@
-import 'package:flutter/foundation.dart';
-
 import '../models/product.dart';
 import '../services/halal_rules_engine.dart';
 import 'site_urls.dart';
@@ -142,8 +140,7 @@ class IngredientGuides {
 
   static Map<String, List<String>> _runtimeByCanonical = {};
 
-  /// DB-provided slugs from [ingredient_guide_links], merged with [byCanonical] at lookup.
-  @visibleForTesting
+  /// Clears DB-provided slugs (tests and [ProductService.resetForTesting]).
   static void resetRuntimeGuides() {
     _runtimeByCanonical = {};
   }
