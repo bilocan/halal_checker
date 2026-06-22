@@ -1015,6 +1015,42 @@ class AppLocalizationsTr extends AppLocalizations {
       'Satır başına bir tane: dil kodu ve terim (de, tr, fr, es, it, nl, sr, hu, cs). Eşleştirme ve arayüz için.';
 
   @override
+  String get guideSlugsLabel => 'İlgili rehber slug\'ları';
+
+  @override
+  String get guideSlugsHint => 'e-numbers-guide, what-is-gelatin';
+
+  @override
+  String get guideSlugsHelperText =>
+      'halalscan.at blog slug\'ları, virgülle ayrılmış (dil öneki yok). Aynı canonical için yerleşik rehberlerle birleştirilir.';
+
+  @override
+  String get guideSlugInvalid =>
+      'Geçersiz slug — yalnızca küçük harf, rakam ve tire kullanın';
+
+  @override
+  String get editGuideLinks => 'Rehber linklerini düzenle';
+
+  @override
+  String get guideLinksUpdated => 'Rehber linkleri güncellendi';
+
+  @override
+  String get guideLinksUpdateFailed => 'Rehber linkleri güncellenemedi.';
+
+  @override
+  String guideSlugCardDescriptionLabel(String slug) {
+    return 'Kart açıklaması ($slug)';
+  }
+
+  @override
+  String get guideSlugCardDescriptionHint =>
+      'Tarama sonucu kartında gösterilen kısa özet';
+
+  @override
+  String get guideSlugCardDescriptionHelper =>
+      'Sonuç kartlarında gösterilen İngilizce metin. Gerekirse DE/TR çevirileri veritabanında ekleyin.';
+
+  @override
   String get mergeKeywordTitle => 'Mevcut kurala birleştirilsin mi?';
 
   @override

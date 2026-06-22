@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import '../app_colors.dart';
+import '../constants/ingredient_guides.dart';
 import '../constants/ingredient_keywords.dart';
 import '../localization/app_localizations.dart';
 import '../localization/format_relative_time.dart';
+import '../services/ingredient_guide_link_service.dart';
 import '../services/keyword_normalization.dart';
 import '../services/keyword_service.dart';
+import '../services/product_service.dart';
 
 part 'rules/rules_editor_sheet.dart';
+part 'rules/rules_guide_links_editor_sheet.dart';
 
 class RulesManagementScreen extends StatefulWidget {
   const RulesManagementScreen({super.key});
@@ -18,9 +22,12 @@ class RulesManagementScreen extends StatefulWidget {
 class _RulesManagementScreenState extends State<RulesManagementScreen>
     with SingleTickerProviderStateMixin {
   final _service = KeywordService();
+  final _guideLinkService = IngredientGuideLinkService();
   late final TabController _tabCtrl;
 
   List<Map<String, dynamic>> _customRules = [];
+  Map<String, List<String>> _guideLinksByCanonical = {};
+  Map<String, IngredientGuideCopy> _slugMetadataBySlug = {};
   List<Map<String, dynamic>> _suggestions = [];
   bool _loadingRules = true;
   bool _loadingSuggestions = true;
@@ -32,6 +39,7 @@ class _RulesManagementScreenState extends State<RulesManagementScreen>
     super.initState();
     _tabCtrl = TabController(length: 3, vsync: this);
     _loadRules();
+    _loadGuideLinks();
     _loadSuggestions();
   }
 
@@ -40,6 +48,27 @@ class _RulesManagementScreenState extends State<RulesManagementScreen>
     _tabCtrl.dispose();
     super.dispose();
   }
+
+  Future<void> _loadGuideLinks() async {
+    final linksFuture = _guideLinkService.fetchAllByCanonical();
+    final metaFuture = _guideLinkService.fetchSlugMetadata();
+    final links = await linksFuture;
+    final meta = await metaFuture;
+    if (!mounted) return;
+    setState(() {
+      _guideLinksByCanonical = links;
+      _slugMetadataBySlug = meta;
+    });
+  }
+
+  List<String> _effectiveGuideSlugs(String canonical) =>
+      IngredientGuides.unionSlugsForCanonical(
+        canonical,
+        _guideLinksByCanonical,
+      );
+
+  List<String> _dbGuideSlugs(String canonical) =>
+      _guideLinksByCanonical[canonical] ?? const [];
 
   Future<void> _loadRules() async {
     setState(() => _loadingRules = true);
@@ -197,15 +226,37 @@ class _RulesManagementScreenState extends State<RulesManagementScreen>
   }
 
   void _openRuleEditor({Map<String, dynamic>? rule}) async {
+    final enrichedRule = rule == null
+        ? null
+        : {...rule, 'guide_slugs': _dbGuideSlugs(rule['canonical'] as String)};
     final result = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (_) => _RuleEditorSheet(rule: rule),
+      builder: (_) => _RuleEditorSheet(rule: enrichedRule),
     );
-    if (result == true) _loadRules();
+    if (result == true) {
+      await _loadRules();
+      await _loadGuideLinks();
+    }
+  }
+
+  void _openGuideLinksEditor(String canonical) async {
+    final result = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => _GuideLinksEditorSheet(
+        canonical: canonical,
+        initialDbSlugs: _dbGuideSlugs(canonical),
+        initialSlugMetadata: _slugMetadataBySlug,
+      ),
+    );
+    if (result == true) await _loadGuideLinks();
   }
 
   @override
@@ -301,7 +352,10 @@ class _RulesManagementScreenState extends State<RulesManagementScreen>
                   ),
                 )
               : RefreshIndicator(
-                  onRefresh: _loadRules,
+                  onRefresh: () async {
+                    await _loadRules();
+                    await _loadGuideLinks();
+                  },
                   child: ListView.builder(
                     padding: const EdgeInsets.only(bottom: 80),
                     itemCount: _filteredCustom.length,
@@ -368,6 +422,7 @@ class _RulesManagementScreenState extends State<RulesManagementScreen>
     final translations = KeywordNormalization.parseTranslations(
       rule['translations'],
     );
+    final guideSlugs = _effectiveGuideSlugs(canonical);
     final isHaram = category == 'haram';
 
     return Card(
@@ -430,12 +485,23 @@ class _RulesManagementScreenState extends State<RulesManagementScreen>
                 overflow: TextOverflow.ellipsis,
               ),
             ],
+            if (guideSlugs.isNotEmpty) ...[
+              const SizedBox(height: 2),
+              Text(
+                '${loc.guideSlugsLabel}: ${guideSlugs.join(', ')}',
+                style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
           ],
         ),
         trailing: PopupMenuButton<String>(
           onSelected: (action) {
             if (action == 'edit') {
               _openRuleEditor(rule: rule);
+            } else if (action == 'guides') {
+              _openGuideLinksEditor(canonical);
             } else if (action == 'delete') {
               _deleteRule(rule);
             }
@@ -448,6 +514,16 @@ class _RulesManagementScreenState extends State<RulesManagementScreen>
                   const Icon(Icons.edit, size: 18),
                   const SizedBox(width: 8),
                   Text(loc.editRule),
+                ],
+              ),
+            ),
+            PopupMenuItem(
+              value: 'guides',
+              child: Row(
+                children: [
+                  const Icon(Icons.menu_book_outlined, size: 18),
+                  const SizedBox(width: 8),
+                  Text(loc.editGuideLinks),
                 ],
               ),
             ),
@@ -493,6 +569,7 @@ class _RulesManagementScreenState extends State<RulesManagementScreen>
         final variants = isHaram
             ? IngredientKeywords.haramVariants[e.key]
             : IngredientKeywords.suspiciousVariants[e.key];
+        final guideSlugs = _effectiveGuideSlugs(e.key);
         return ListTile(
           leading: CircleAvatar(
             backgroundColor: isHaram
@@ -543,9 +620,25 @@ class _RulesManagementScreenState extends State<RulesManagementScreen>
                   overflow: TextOverflow.ellipsis,
                 ),
               ],
+              if (guideSlugs.isNotEmpty) ...[
+                const SizedBox(height: 2),
+                Text(
+                  '${loc.guideSlugsLabel}: ${guideSlugs.join(', ')}',
+                  style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
             ],
           ),
-          isThreeLine: variants != null && variants.isNotEmpty,
+          trailing: IconButton(
+            icon: const Icon(Icons.menu_book_outlined),
+            tooltip: loc.editGuideLinks,
+            onPressed: () => _openGuideLinksEditor(e.key),
+          ),
+          isThreeLine:
+              (variants != null && variants.isNotEmpty) ||
+              guideSlugs.isNotEmpty,
         );
       },
     );

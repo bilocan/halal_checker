@@ -52,4 +52,20 @@ fr: porc
       expect(KeywordNormalization.ruleContainsAlias(rule, 'beef'), isFalse);
     });
   });
+
+  group('KeywordNormalization guide slugs', () {
+    test('parseGuideSlugsText normalizes and dedupes', () {
+      expect(
+        KeywordNormalization.parseGuideSlugsText(
+          'E-Numbers-Guide, e-numbers-guide\nwhat-is-gelatin',
+        ),
+        ['e-numbers-guide', 'what-is-gelatin'],
+      );
+    });
+
+    test('isValidGuideSlug accepts lowercase hyphenated slugs', () {
+      expect(KeywordNormalization.isValidGuideSlug('e-numbers-guide'), isTrue);
+      expect(KeywordNormalization.isValidGuideSlug('bad slug'), isFalse);
+    });
+  });
 }

@@ -4,10 +4,12 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../config.dart';
 import '../constants/food_categories.dart';
+import '../constants/ingredient_guides.dart';
 import '../constants/ingredient_keywords.dart';
 import '../models/product.dart';
 import 'cache_service.dart';
 import 'halal_rules_engine.dart';
+import 'ingredient_guide_link_service.dart';
 import 'ingredient_resolution.dart';
 import 'keyword_multi_source.dart';
 import 'off_fetcher.dart';
@@ -54,15 +56,20 @@ class ProductService {
     _customHaramVariants.clear();
     _customSuspiciousVariants.clear();
     _customDisplayNames.clear();
+    _runtimeGuideSlugs.clear();
+    IngredientGuides.resetRuntimeGuides();
   }
 
   final CacheService _cache = CacheService();
   final KeywordService _keywordService = KeywordService();
+  final IngredientGuideLinkService _guideLinkService =
+      IngredientGuideLinkService();
 
   final Map<String, String> _customHaramKeywords = {};
   final Map<String, String> _customSuspiciousKeywords = {};
   final Map<String, List<String>> _customHaramVariants = {};
   final Map<String, List<String>> _customSuspiciousVariants = {};
+  final Map<String, List<String>> _runtimeGuideSlugs = {};
   static final Map<String, Map<String, String>> _customDisplayNames = {};
   Future<void>? _customKeywordsFuture;
 
@@ -76,11 +83,12 @@ class ProductService {
   HalalRulesEngine? _cachedCustomEngine;
 
   Future<void> _loadCustomKeywords() async {
-    _customKeywordsFuture ??= _doLoadCustomKeywords();
+    _customKeywordsFuture ??= _loadKeywordRules();
     await _customKeywordsFuture;
+    await refreshGuideLinks();
   }
 
-  Future<void> _doLoadCustomKeywords() async {
+  Future<void> _loadKeywordRules() async {
     List<Map<String, dynamic>> entries;
     try {
       entries = await _keywordService.fetchCustomKeywords();
@@ -120,6 +128,22 @@ class ProductService {
         suspiciousVariants: _customSuspiciousVariants,
       ),
     );
+  }
+
+  /// Refreshes DB guide links and slug card copy (every lookup; also after admin edits).
+  Future<void> refreshGuideLinks() async {
+    if (!_hasSupabase) return;
+    try {
+      final linksFuture = _guideLinkService.fetchAllByCanonical();
+      final copyFuture = _guideLinkService.fetchSlugMetadata();
+      _runtimeGuideSlugs
+        ..clear()
+        ..addAll(await linksFuture);
+      IngredientGuides.registerRuntimeGuides(_runtimeGuideSlugs);
+      IngredientGuides.registerRuntimeSlugCopy(await copyFuture);
+    } catch (e, st) {
+      debugPrint('[ProductService] refreshGuideLinks failed: $e\n$st');
+    }
   }
 
   static String canonicalDisplay(String canonical, String locale) {

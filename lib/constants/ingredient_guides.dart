@@ -138,6 +138,30 @@ class IngredientGuides {
 
   static const _engine = HalalRulesEngine();
 
+  static Map<String, List<String>> _runtimeByCanonical = {};
+  static Map<String, IngredientGuideCopy> _runtimeCopyBySlug = {};
+
+  /// Clears DB-provided slugs and slug copy (tests and [ProductService.resetForTesting]).
+  static void resetRuntimeGuides() {
+    _runtimeByCanonical = {};
+    _runtimeCopyBySlug = {};
+  }
+
+  static void registerRuntimeGuides(Map<String, List<String>> fromDb) {
+    _runtimeByCanonical = {
+      for (final entry in fromDb.entries)
+        entry.key: List.unmodifiable(entry.value),
+    };
+  }
+
+  static void registerRuntimeSlugCopy(Map<String, IngredientGuideCopy> fromDb) {
+    _runtimeCopyBySlug = Map.unmodifiable(fromDb);
+  }
+
+  /// Built-in [copyBySlug] first, then DB [ingredient_guide_slug_metadata].
+  static IngredientGuideCopy? copyForSlug(String slug) =>
+      copyBySlug[slug] ?? _runtimeCopyBySlug[slug];
+
   static String normalizeFlaggedTerm(String term) {
     var s = term.trim();
     final colon = s.indexOf(':');
@@ -147,8 +171,41 @@ class IngredientGuides {
     return s.replaceAll('-', ' ').trim();
   }
 
-  static List<String> slugsForCanonical(String canonical) =>
-      List.unmodifiable(byCanonical[canonical] ?? const []);
+  /// Built-in slugs first, then DB slugs; deduped (union, not override).
+  static List<String> slugsForCanonical(String canonical) => unionSlugLists(
+    byCanonical[canonical] ?? const [],
+    _runtimeByCanonical[canonical] ?? const [],
+  );
+
+  /// Union helper for admin UI before runtime registration is refreshed.
+  static List<String> unionSlugsForCanonical(
+    String canonical,
+    Map<String, List<String>> dbByCanonical,
+  ) => unionSlugLists(
+    byCanonical[canonical] ?? const [],
+    dbByCanonical[canonical] ?? const [],
+  );
+
+  static List<String> unionSlugLists(
+    List<String> builtIn,
+    List<String> dbSlugs,
+  ) {
+    if (builtIn.isEmpty && dbSlugs.isEmpty) return const [];
+    final seen = <String>{};
+    final merged = <String>[];
+    for (final slug in [...builtIn, ...dbSlugs]) {
+      if (seen.add(slug)) merged.add(slug);
+    }
+    return List.unmodifiable(merged);
+  }
+
+  static String fallbackTitleForSlug(String slug) {
+    return slug
+        .split('-')
+        .where((part) => part.isNotEmpty)
+        .map((part) => '${part[0].toUpperCase()}${part.substring(1)}')
+        .join(' ');
+  }
 
   static String? canonicalForTerm(
     String term, {
@@ -203,29 +260,26 @@ class IngredientGuides {
     );
     if (canonical == null) return const [];
 
-    return slugsForCanonical(canonical)
-        .map((slug) => linkForSlug(slug, locale))
-        .whereType<IngredientGuideLink>()
-        .toList(growable: false);
+    return slugsForCanonical(
+      canonical,
+    ).map((slug) => linkForSlug(slug, locale)).toList(growable: false);
   }
 
   static List<IngredientGuideLink> linksForProduct(
     Product product,
     String locale,
   ) {
-    return slugsForProduct(product)
-        .map((slug) => linkForSlug(slug, locale))
-        .whereType<IngredientGuideLink>()
-        .toList(growable: false);
+    return slugsForProduct(
+      product,
+    ).map((slug) => linkForSlug(slug, locale)).toList(growable: false);
   }
 
-  static IngredientGuideLink? linkForSlug(String slug, String locale) {
-    final copy = copyBySlug[slug];
-    if (copy == null) return null;
+  static IngredientGuideLink linkForSlug(String slug, String locale) {
+    final copy = copyForSlug(slug);
     return IngredientGuideLink(
       slug: slug,
-      title: copy.titleFor(locale),
-      description: copy.descriptionFor(locale),
+      title: copy?.titleFor(locale) ?? fallbackTitleForSlug(slug),
+      description: copy?.descriptionFor(locale) ?? '',
       url: SiteUrls.blogGuide(locale, slug),
     );
   }

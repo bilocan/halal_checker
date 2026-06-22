@@ -88,7 +88,56 @@ void main() {
         'gida-aromalarinda-alkol',
         'de',
       );
-      expect(link?.url, 'https://halalscan.at/de/blog/gida-aromalarinda-alkol');
+      expect(link.url, 'https://halalscan.at/de/blog/gida-aromalarinda-alkol');
+    });
+
+    test('union merges built-in and runtime slugs without duplicates', () {
+      IngredientGuides.resetRuntimeGuides();
+      addTearDown(IngredientGuides.resetRuntimeGuides);
+
+      IngredientGuides.registerRuntimeGuides({
+        'e471': ['custom-extra-guide', 'e-numbers-guide'],
+      });
+
+      expect(IngredientGuides.slugsForCanonical('e471'), [
+        'e-numbers-guide',
+        'custom-extra-guide',
+      ]);
+    });
+
+    test('runtime-only slug uses fallback title when copy is missing', () {
+      IngredientGuides.resetRuntimeGuides();
+      addTearDown(IngredientGuides.resetRuntimeGuides);
+
+      IngredientGuides.registerRuntimeGuides({
+        'custom-ingredient': ['my-new-guide'],
+      });
+
+      final link = IngredientGuides.linkForSlug('my-new-guide', 'en');
+      expect(link.title, 'My New Guide');
+      expect(link.description, isEmpty);
+      expect(link.url, 'https://halalscan.at/en/blog/my-new-guide');
+    });
+
+    test('runtime slug copy from DB supplies card description', () {
+      IngredientGuides.resetRuntimeGuides();
+      addTearDown(IngredientGuides.resetRuntimeGuides);
+
+      IngredientGuides.registerRuntimeSlugCopy({
+        'mono-ve-digliseridler': IngredientGuideCopy(
+          titleEn: 'Mono and diglycerides (E471)',
+          descriptionEn: 'What E471 is and why source matters for halal.',
+          titleDe: 'Mono- und Diglyceride (E471)',
+          descriptionDe: 'Was E471 ist und warum die Quelle wichtig ist.',
+        ),
+      });
+
+      final en = IngredientGuides.linkForSlug('mono-ve-digliseridler', 'en');
+      expect(en.title, 'Mono and diglycerides (E471)');
+      expect(en.description, contains('E471'));
+
+      final de = IngredientGuides.linkForSlug('mono-ve-digliseridler', 'de');
+      expect(de.description, contains('Quelle'));
     });
 
     test('linksForTerm returns localized copy for carmine guide', () {

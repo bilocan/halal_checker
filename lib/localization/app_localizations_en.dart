@@ -1015,6 +1015,43 @@ class AppLocalizationsEn extends AppLocalizations {
       'One per line: locale code and term (de, tr, fr, es, it, nl, sr, hu, cs). Used for matching and UI labels.';
 
   @override
+  String get guideSlugsLabel => 'Related guide slugs';
+
+  @override
+  String get guideSlugsHint => 'e-numbers-guide, what-is-gelatin';
+
+  @override
+  String get guideSlugsHelperText =>
+      'Comma-separated blog slugs on halalscan.at (no locale prefix). Merged with built-in guides for the same canonical.';
+
+  @override
+  String get guideSlugInvalid =>
+      'Invalid slug — use lowercase letters, numbers, and hyphens only';
+
+  @override
+  String get editGuideLinks => 'Edit guide links';
+
+  @override
+  String get guideLinksUpdated => 'Guide links updated';
+
+  @override
+  String get guideLinksUpdateFailed =>
+      'Could not update guide links. Please try again.';
+
+  @override
+  String guideSlugCardDescriptionLabel(String slug) {
+    return 'Card description ($slug)';
+  }
+
+  @override
+  String get guideSlugCardDescriptionHint =>
+      'Short summary shown on the scan result card';
+
+  @override
+  String get guideSlugCardDescriptionHelper =>
+      'English text shown on result cards. Add DE/TR translations in the database if needed.';
+
+  @override
   String get mergeKeywordTitle => 'Merge with existing rule?';
 
   @override

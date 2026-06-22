@@ -4,27 +4,51 @@ When a scan result flags ingredients, the app can show **Related guides** and op
 
 Full cross-project workflow (web + mobile + blog): see **`halal-checker-web/docs/ingredient-guides.md`**.
 
+## Sources
+
+| Source | Where | When used |
+|--------|--------|-----------|
+| Built-in map | `IngredientGuides.byCanonical` in Dart | Offline fallback; CI/web contract |
+| DB overlay | `ingredient_guide_links` in Supabase | Loaded on lookup; admin-editable |
+| Card copy (built-in) | `IngredientGuides.copyBySlug` in Dart | Known slugs in app bundle |
+| Card copy (DB) | `ingredient_guide_slug_metadata` in Supabase | Slugs added via admin/DB without app release |
+
+**Merge rule:** `effectiveSlugs(canonical) = dedupe(builtIn + db)` — union, not override. Built-in slugs come first.
+
 ## Files
 
 | File | Purpose |
 |------|---------|
-| `lib/constants/ingredient_guides.dart` | Canonical → blog slug map, localized card copy, resolver |
+| `lib/constants/ingredient_guides.dart` | Built-in map, card copy, runtime merge |
+| `lib/services/ingredient_guide_link_service.dart` | Fetch/upsert links + slug metadata |
+| `lib/services/product_service.dart` | Loads guide links + slug copy on each lookup |
 | `lib/constants/site_urls.dart` | `https://halalscan.at/{locale}/blog/{slug}` |
-| `lib/screens/result/widgets/result_related_guides.dart` | UI on scan result + full-details sheet |
-| `tool/export_rules.dart` | Adds `guides` to `keyword-rules.json` for web/Storage |
+| `supabase/migrations/20260621130000_ingredient_guide_links.sql` | Table + seed + moves off `keywords` |
+| `supabase/migrations/20260622120000_ingredient_guide_slug_metadata.sql` | Slug card title/description (EN/DE/TR) |
+| `tool/export_rules.dart` | Exports built-in `guides` to `keyword-rules.json` for web |
 
-## Add a new link
+## Admin workflow
 
-1. Write the blog post in **halal-checker-web** (`content/blog/<slug>.mdx`).
-2. Update **`IngredientGuides.byCanonical`** and **`IngredientGuides.copyBySlug`** in `lib/constants/ingredient_guides.dart`.
-3. Mirror the same canonical keys in **halal-checker-web** `lib/ingredient-guides.ts`.
-4. Run `flutter test test/constants/ingredient_guides_test.dart`.
-5. Re-export rules: `dart run tool/export_rules.dart keyword-rules.json` (CI uploads to Supabase on push).
+**Built-in tab:** tap the book icon → edit slugs for that canonical (e.g. `e471`). For slugs without built-in copy, fill in the **card description** field (saved to `ingredient_guide_slug_metadata`).
+
+**Custom tab:** edit rule as usual; guide slugs field saves to `ingredient_guide_links`, not `keywords`.
+
+No app release needed for new slugs or card copy once migrations are applied (app must fetch metadata on lookup — ship a build that includes this feature).
+
+## Add a built-in link in code (still needed for new canonicals)
+
+1. Blog post in **halal-checker-web** (`content/blog/<slug>.mdx`).
+2. Update **`IngredientGuides.byCanonical`** and **`copyBySlug`** in Dart.
+3. Mirror in **halal-checker-web** `lib/ingredient-guides.ts`.
+4. Add seed row in a migration (or admin UI after deploy).
+5. Re-export: `dart run tool/export_rules.dart keyword-rules.json`.
 
 ## Tests
 
 ```bash
 flutter test test/constants/ingredient_guides_test.dart
+flutter test test/services/ingredient_guide_link_service_test.dart
+flutter test test/services/keyword_service_test.dart
 ```
 
-`test/fixtures/ingredient_guides_canonical_map.json` is the cross-project contract — keep it aligned with **halal-checker-web** `lib/ingredient-guides.ts` (web CI should verify the same fixture).
+`test/fixtures/ingredient_guides_canonical_map.json` remains the cross-project contract for the **built-in** map.
