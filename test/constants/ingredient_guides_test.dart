@@ -119,6 +119,27 @@ void main() {
       expect(link.url, 'https://halalscan.at/en/blog/my-new-guide');
     });
 
+    test('runtime slug copy from DB supplies card description', () {
+      IngredientGuides.resetRuntimeGuides();
+      addTearDown(IngredientGuides.resetRuntimeGuides);
+
+      IngredientGuides.registerRuntimeSlugCopy({
+        'mono-ve-digliseridler': IngredientGuideCopy(
+          titleEn: 'Mono and diglycerides (E471)',
+          descriptionEn: 'What E471 is and why source matters for halal.',
+          titleDe: 'Mono- und Diglyceride (E471)',
+          descriptionDe: 'Was E471 ist und warum die Quelle wichtig ist.',
+        ),
+      });
+
+      final en = IngredientGuides.linkForSlug('mono-ve-digliseridler', 'en');
+      expect(en.title, 'Mono and diglycerides (E471)');
+      expect(en.description, contains('E471'));
+
+      final de = IngredientGuides.linkForSlug('mono-ve-digliseridler', 'de');
+      expect(de.description, contains('Quelle'));
+    });
+
     test('linksForTerm returns localized copy for carmine guide', () {
       final links = IngredientGuides.linksForTerm('carmine', 'de');
       expect(links, hasLength(1));

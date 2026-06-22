@@ -62,6 +62,61 @@ void main() {
     });
   });
 
+  group('IngredientGuideLinkService.fetchSlugMetadata', () {
+    test('returns map keyed by slug on HTTP 200', () async {
+      final client = MockClient(
+        (_) async => http.Response(
+          jsonEncode([
+            {
+              'slug': 'mono-ve-digliseridler',
+              'title_en': 'Mono and diglycerides (E471)',
+              'description_en': 'What E471 is.',
+              'title_de': 'Mono- und Diglyceride',
+              'description_de': 'Was E471 ist.',
+              'title_tr': null,
+              'description_tr': null,
+            },
+          ]),
+          200,
+        ),
+      );
+
+      final result = await _svc(client).fetchSlugMetadata();
+      expect(
+        result['mono-ve-digliseridler']?.titleEn,
+        'Mono and diglycerides (E471)',
+      );
+      expect(result['mono-ve-digliseridler']?.descriptionEn, 'What E471 is.');
+      expect(result['mono-ve-digliseridler']?.descriptionDe, 'Was E471 ist.');
+    });
+  });
+
+  group('IngredientGuideLinkService.upsertSlugMetadata', () {
+    setUp(() => AuthService.setCurrentUserForTesting(_fakeUser));
+    tearDown(AuthService.resetForTesting);
+
+    test('POSTs slug metadata on upsert', () async {
+      Map<String, dynamic>? body;
+      final client = MockClient((req) async {
+        body = jsonDecode(req.body) as Map<String, dynamic>;
+        expect(req.method, 'POST');
+        expect(req.url.path, '/rest/v1/ingredient_guide_slug_metadata');
+        return http.Response('', 201);
+      });
+
+      expect(
+        await _svc(client).upsertSlugMetadata(
+          slug: 'mono-ve-digliseridler',
+          descriptionEn: 'What E471 is.',
+          titleEn: 'Mono and diglycerides (E471)',
+        ),
+        isTrue,
+      );
+      expect(body!['slug'], 'mono-ve-digliseridler');
+      expect(body!['description_en'], 'What E471 is.');
+    });
+  });
+
   group('IngredientGuideLinkService.upsertGuideLinks', () {
     setUp(() => AuthService.setCurrentUserForTesting(_fakeUser));
     tearDown(AuthService.resetForTesting);

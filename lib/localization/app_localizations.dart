@@ -1966,6 +1966,24 @@ abstract class AppLocalizations {
   /// **'Could not update guide links. Please try again.'**
   String get guideLinksUpdateFailed;
 
+  /// No description provided for @guideSlugCardDescriptionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Card description ({slug})'**
+  String guideSlugCardDescriptionLabel(String slug);
+
+  /// No description provided for @guideSlugCardDescriptionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Short summary shown on the scan result card'**
+  String get guideSlugCardDescriptionHint;
+
+  /// No description provided for @guideSlugCardDescriptionHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'English text shown on result cards. Add DE/TR translations in the database if needed.'**
+  String get guideSlugCardDescriptionHelper;
+
   /// No description provided for @mergeKeywordTitle.
   ///
   /// In en, this message translates to:

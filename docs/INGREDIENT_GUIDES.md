@@ -10,7 +10,8 @@ Full cross-project workflow (web + mobile + blog): see **`halal-checker-web/docs
 |--------|--------|-----------|
 | Built-in map | `IngredientGuides.byCanonical` in Dart | Offline fallback; CI/web contract |
 | DB overlay | `ingredient_guide_links` in Supabase | Loaded on lookup; admin-editable |
-| Card copy | `IngredientGuides.copyBySlug` in Dart | Known slugs; unknown slugs use a generic title |
+| Card copy (built-in) | `IngredientGuides.copyBySlug` in Dart | Known slugs in app bundle |
+| Card copy (DB) | `ingredient_guide_slug_metadata` in Supabase | Slugs added via admin/DB without app release |
 
 **Merge rule:** `effectiveSlugs(canonical) = dedupe(builtIn + db)` — union, not override. Built-in slugs come first.
 
@@ -19,19 +20,20 @@ Full cross-project workflow (web + mobile + blog): see **`halal-checker-web/docs
 | File | Purpose |
 |------|---------|
 | `lib/constants/ingredient_guides.dart` | Built-in map, card copy, runtime merge |
-| `lib/services/ingredient_guide_link_service.dart` | Fetch/upsert `ingredient_guide_links` |
-| `lib/services/product_service.dart` | Loads guide links with custom keywords |
+| `lib/services/ingredient_guide_link_service.dart` | Fetch/upsert links + slug metadata |
+| `lib/services/product_service.dart` | Loads guide links + slug copy on each lookup |
 | `lib/constants/site_urls.dart` | `https://halalscan.at/{locale}/blog/{slug}` |
 | `supabase/migrations/20260621130000_ingredient_guide_links.sql` | Table + seed + moves off `keywords` |
+| `supabase/migrations/20260622120000_ingredient_guide_slug_metadata.sql` | Slug card title/description (EN/DE/TR) |
 | `tool/export_rules.dart` | Exports built-in `guides` to `keyword-rules.json` for web |
 
 ## Admin workflow
 
-**Built-in tab:** tap the book icon → edit slugs for that canonical (e.g. `e471`).
+**Built-in tab:** tap the book icon → edit slugs for that canonical (e.g. `e471`). For slugs without built-in copy, fill in the **card description** field (saved to `ingredient_guide_slug_metadata`).
 
 **Custom tab:** edit rule as usual; guide slugs field saves to `ingredient_guide_links`, not `keywords`.
 
-No app release needed for new or updated slugs once the migration is applied.
+No app release needed for new slugs or card copy once migrations are applied (app must fetch metadata on lookup — ship a build that includes this feature).
 
 ## Add a built-in link in code (still needed for new canonicals)
 

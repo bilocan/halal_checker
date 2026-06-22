@@ -57,7 +57,7 @@ class ProductService {
     _customSuspiciousVariants.clear();
     _customDisplayNames.clear();
     _runtimeGuideSlugs.clear();
-    IngredientGuides.registerRuntimeGuides({});
+    IngredientGuides.resetRuntimeGuides();
   }
 
   final CacheService _cache = CacheService();
@@ -130,14 +130,17 @@ class ProductService {
     );
   }
 
-  /// Refreshes DB guide links (every lookup; also after admin edits).
+  /// Refreshes DB guide links and slug card copy (every lookup; also after admin edits).
   Future<void> refreshGuideLinks() async {
     if (!_hasSupabase) return;
     try {
+      final linksFuture = _guideLinkService.fetchAllByCanonical();
+      final copyFuture = _guideLinkService.fetchSlugMetadata();
       _runtimeGuideSlugs
         ..clear()
-        ..addAll(await _guideLinkService.fetchAllByCanonical());
+        ..addAll(await linksFuture);
       IngredientGuides.registerRuntimeGuides(_runtimeGuideSlugs);
+      IngredientGuides.registerRuntimeSlugCopy(await copyFuture);
     } catch (e, st) {
       debugPrint('[ProductService] refreshGuideLinks failed: $e\n$st');
     }

@@ -5,10 +5,12 @@ part of '../rules_management_screen.dart';
 class _GuideLinksEditorSheet extends StatefulWidget {
   final String canonical;
   final List<String> initialDbSlugs;
+  final Map<String, IngredientGuideCopy> initialSlugMetadata;
 
   const _GuideLinksEditorSheet({
     required this.canonical,
     required this.initialDbSlugs,
+    this.initialSlugMetadata = const {},
   });
 
   @override
@@ -18,6 +20,7 @@ class _GuideLinksEditorSheet extends StatefulWidget {
 class _GuideLinksEditorSheetState extends State<_GuideLinksEditorSheet> {
   final _formKey = GlobalKey<FormState>();
   final _guideSlugsCtrl = TextEditingController();
+  final Map<String, TextEditingController> _descriptionCtrls = {};
   bool _submitting = false;
 
   @override
@@ -26,11 +29,41 @@ class _GuideLinksEditorSheetState extends State<_GuideLinksEditorSheet> {
     if (widget.initialDbSlugs.isNotEmpty) {
       _guideSlugsCtrl.text = widget.initialDbSlugs.join(', ');
     }
+    _guideSlugsCtrl.addListener(_syncDescriptionFields);
+    _syncDescriptionFields();
+  }
+
+  List<String> _slugsNeedingCardCopy() {
+    return KeywordNormalization.parseGuideSlugsText(
+      _guideSlugsCtrl.text,
+    ).where((slug) => IngredientGuides.copyBySlug[slug] == null).toList();
+  }
+
+  void _syncDescriptionFields() {
+    final needed = _slugsNeedingCardCopy().toSet();
+    for (final slug in needed) {
+      _descriptionCtrls.putIfAbsent(
+        slug,
+        () => TextEditingController(
+          text: widget.initialSlugMetadata[slug]?.descriptionEn ?? '',
+        ),
+      );
+    }
+    for (final slug in _descriptionCtrls.keys.toList()) {
+      if (!needed.contains(slug)) {
+        _descriptionCtrls.remove(slug)?.dispose();
+      }
+    }
+    if (mounted) setState(() {});
   }
 
   @override
   void dispose() {
+    _guideSlugsCtrl.removeListener(_syncDescriptionFields);
     _guideSlugsCtrl.dispose();
+    for (final ctrl in _descriptionCtrls.values) {
+      ctrl.dispose();
+    }
     super.dispose();
   }
 
@@ -54,15 +87,35 @@ class _GuideLinksEditorSheetState extends State<_GuideLinksEditorSheet> {
     final slugs = KeywordNormalization.parseGuideSlugsText(
       _guideSlugsCtrl.text,
     );
-    final ok = await IngredientGuideLinkService().upsertGuideLinks(
+    final service = IngredientGuideLinkService();
+    final ok = await service.upsertGuideLinks(
       canonical: widget.canonical,
       guideSlugs: slugs,
     );
 
+    var metadataOk = true;
+    if (ok) {
+      for (final slug in _slugsNeedingCardCopy()) {
+        final desc = _descriptionCtrls[slug]?.text.trim() ?? '';
+        if (desc.isEmpty) continue;
+        final existing = widget.initialSlugMetadata[slug];
+        final saved = await service.upsertSlugMetadata(
+          slug: slug,
+          descriptionEn: desc,
+          titleEn: existing?.titleEn,
+          titleDe: existing?.titleDe,
+          descriptionDe: existing?.descriptionDe,
+          titleTr: existing?.titleTr,
+          descriptionTr: existing?.descriptionTr,
+        );
+        if (!saved) metadataOk = false;
+      }
+    }
+
     if (!mounted) return;
     setState(() => _submitting = false);
     final loc = AppLocalizations.of(context);
-    if (ok) {
+    if (ok && metadataOk) {
       await ProductService().refreshGuideLinks();
       if (!mounted) return;
       Navigator.pop(context, true);
@@ -139,6 +192,20 @@ class _GuideLinksEditorSheetState extends State<_GuideLinksEditorSheet> {
                 maxLines: 3,
                 validator: _validateGuideSlugs,
               ),
+              for (final slug in _slugsNeedingCardCopy()) ...[
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _descriptionCtrls[slug],
+                  decoration: InputDecoration(
+                    labelText: loc.guideSlugCardDescriptionLabel(slug),
+                    hintText: loc.guideSlugCardDescriptionHint,
+                    border: const OutlineInputBorder(),
+                    helperText: loc.guideSlugCardDescriptionHelper,
+                    helperMaxLines: 2,
+                  ),
+                  maxLines: 3,
+                ),
+              ],
               const SizedBox(height: 20),
               FilledButton(
                 onPressed: _submitting ? null : _submit,

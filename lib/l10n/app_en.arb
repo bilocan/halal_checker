@@ -393,6 +393,14 @@
   "editGuideLinks": "Edit guide links",
   "guideLinksUpdated": "Guide links updated",
   "guideLinksUpdateFailed": "Could not update guide links. Please try again.",
+  "guideSlugCardDescriptionLabel": "Card description ({slug})",
+  "@guideSlugCardDescriptionLabel": {
+    "placeholders": {
+      "slug": { "type": "String" }
+    }
+  },
+  "guideSlugCardDescriptionHint": "Short summary shown on the scan result card",
+  "guideSlugCardDescriptionHelper": "English text shown on result cards. Add DE/TR translations in the database if needed.",
   "mergeKeywordTitle": "Merge with existing rule?",
   "mergeKeywordMessage": "\"{alias}\" matches the existing rule \"{canonical}\". Merge aliases into that rule instead of creating a duplicate?",
   "@mergeKeywordMessage": {

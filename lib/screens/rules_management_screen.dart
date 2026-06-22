@@ -27,6 +27,7 @@ class _RulesManagementScreenState extends State<RulesManagementScreen>
 
   List<Map<String, dynamic>> _customRules = [];
   Map<String, List<String>> _guideLinksByCanonical = {};
+  Map<String, IngredientGuideCopy> _slugMetadataBySlug = {};
   List<Map<String, dynamic>> _suggestions = [];
   bool _loadingRules = true;
   bool _loadingSuggestions = true;
@@ -49,9 +50,15 @@ class _RulesManagementScreenState extends State<RulesManagementScreen>
   }
 
   Future<void> _loadGuideLinks() async {
-    final links = await _guideLinkService.fetchAllByCanonical();
+    final linksFuture = _guideLinkService.fetchAllByCanonical();
+    final metaFuture = _guideLinkService.fetchSlugMetadata();
+    final links = await linksFuture;
+    final meta = await metaFuture;
     if (!mounted) return;
-    setState(() => _guideLinksByCanonical = links);
+    setState(() {
+      _guideLinksByCanonical = links;
+      _slugMetadataBySlug = meta;
+    });
   }
 
   List<String> _effectiveGuideSlugs(String canonical) =>
@@ -246,6 +253,7 @@ class _RulesManagementScreenState extends State<RulesManagementScreen>
       builder: (_) => _GuideLinksEditorSheet(
         canonical: canonical,
         initialDbSlugs: _dbGuideSlugs(canonical),
+        initialSlugMetadata: _slugMetadataBySlug,
       ),
     );
     if (result == true) await _loadGuideLinks();

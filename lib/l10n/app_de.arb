@@ -321,6 +321,14 @@
   "editGuideLinks": "Leitfaden-Links bearbeiten",
   "guideLinksUpdated": "Leitfaden-Links aktualisiert",
   "guideLinksUpdateFailed": "Leitfaden-Links konnten nicht aktualisiert werden.",
+  "guideSlugCardDescriptionLabel": "Kartentext ({slug})",
+  "@guideSlugCardDescriptionLabel": {
+    "placeholders": {
+      "slug": { "type": "String" }
+    }
+  },
+  "guideSlugCardDescriptionHint": "Kurze Zusammenfassung auf der Ergebniskarte",
+  "guideSlugCardDescriptionHelper": "Englischer Text auf Ergebniskarten. DE/TR-Übersetzungen bei Bedarf in der Datenbank pflegen.",
   "mergeKeywordTitle": "Mit bestehender Regel zusammenführen?",
   "mergeKeywordMessage": "\"{alias}\" passt zur bestehenden Regel \"{canonical}\". Aliase dort zusammenführen statt eine Duplikat-Regel anzulegen?",
   "mergeKeywordConfirm": "Zusammenführen",

@@ -1051,6 +1051,19 @@ class AppLocalizationsDe extends AppLocalizations {
       'Leitfaden-Links konnten nicht aktualisiert werden.';
 
   @override
+  String guideSlugCardDescriptionLabel(String slug) {
+    return 'Kartentext ($slug)';
+  }
+
+  @override
+  String get guideSlugCardDescriptionHint =>
+      'Kurze Zusammenfassung auf der Ergebniskarte';
+
+  @override
+  String get guideSlugCardDescriptionHelper =>
+      'Englischer Text auf Ergebniskarten. DE/TR-Übersetzungen bei Bedarf in der Datenbank pflegen.';
+
+  @override
   String get mergeKeywordTitle => 'Mit bestehender Regel zusammenführen?';
 
   @override

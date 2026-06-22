@@ -321,6 +321,14 @@
   "editGuideLinks": "Rehber linklerini düzenle",
   "guideLinksUpdated": "Rehber linkleri güncellendi",
   "guideLinksUpdateFailed": "Rehber linkleri güncellenemedi.",
+  "guideSlugCardDescriptionLabel": "Kart açıklaması ({slug})",
+  "@guideSlugCardDescriptionLabel": {
+    "placeholders": {
+      "slug": { "type": "String" }
+    }
+  },
+  "guideSlugCardDescriptionHint": "Tarama sonucu kartında gösterilen kısa özet",
+  "guideSlugCardDescriptionHelper": "Sonuç kartlarında gösterilen İngilizce metin. Gerekirse DE/TR çevirileri veritabanında ekleyin.",
   "mergeKeywordTitle": "Mevcut kurala birleştirilsin mi?",
   "mergeKeywordMessage": "\"{alias}\", mevcut \"{canonical}\" kuralıyla eşleşiyor. Yinelenen kural yerine bu kurala birleştirilsin mi?",
   "mergeKeywordConfirm": "Birleştir",

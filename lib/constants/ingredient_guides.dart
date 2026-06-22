@@ -139,10 +139,12 @@ class IngredientGuides {
   static const _engine = HalalRulesEngine();
 
   static Map<String, List<String>> _runtimeByCanonical = {};
+  static Map<String, IngredientGuideCopy> _runtimeCopyBySlug = {};
 
-  /// Clears DB-provided slugs (tests and [ProductService.resetForTesting]).
+  /// Clears DB-provided slugs and slug copy (tests and [ProductService.resetForTesting]).
   static void resetRuntimeGuides() {
     _runtimeByCanonical = {};
+    _runtimeCopyBySlug = {};
   }
 
   static void registerRuntimeGuides(Map<String, List<String>> fromDb) {
@@ -151,6 +153,14 @@ class IngredientGuides {
         entry.key: List.unmodifiable(entry.value),
     };
   }
+
+  static void registerRuntimeSlugCopy(Map<String, IngredientGuideCopy> fromDb) {
+    _runtimeCopyBySlug = Map.unmodifiable(fromDb);
+  }
+
+  /// Built-in [copyBySlug] first, then DB [ingredient_guide_slug_metadata].
+  static IngredientGuideCopy? copyForSlug(String slug) =>
+      copyBySlug[slug] ?? _runtimeCopyBySlug[slug];
 
   static String normalizeFlaggedTerm(String term) {
     var s = term.trim();
@@ -265,7 +275,7 @@ class IngredientGuides {
   }
 
   static IngredientGuideLink linkForSlug(String slug, String locale) {
-    final copy = copyBySlug[slug];
+    final copy = copyForSlug(slug);
     return IngredientGuideLink(
       slug: slug,
       title: copy?.titleFor(locale) ?? fallbackTitleForSlug(slug),

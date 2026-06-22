@@ -1038,6 +1038,19 @@ class AppLocalizationsTr extends AppLocalizations {
   String get guideLinksUpdateFailed => 'Rehber linkleri güncellenemedi.';
 
   @override
+  String guideSlugCardDescriptionLabel(String slug) {
+    return 'Kart açıklaması ($slug)';
+  }
+
+  @override
+  String get guideSlugCardDescriptionHint =>
+      'Tarama sonucu kartında gösterilen kısa özet';
+
+  @override
+  String get guideSlugCardDescriptionHelper =>
+      'Sonuç kartlarında gösterilen İngilizce metin. Gerekirse DE/TR çevirileri veritabanında ekleyin.';
+
+  @override
   String get mergeKeywordTitle => 'Mevcut kurala birleştirilsin mi?';
 
   @override

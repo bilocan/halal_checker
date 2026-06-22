@@ -1039,6 +1039,19 @@ class AppLocalizationsEn extends AppLocalizations {
       'Could not update guide links. Please try again.';
 
   @override
+  String guideSlugCardDescriptionLabel(String slug) {
+    return 'Card description ($slug)';
+  }
+
+  @override
+  String get guideSlugCardDescriptionHint =>
+      'Short summary shown on the scan result card';
+
+  @override
+  String get guideSlugCardDescriptionHelper =>
+      'English text shown on result cards. Add DE/TR translations in the database if needed.';
+
+  @override
   String get mergeKeywordTitle => 'Merge with existing rule?';
 
   @override
