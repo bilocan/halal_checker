@@ -494,5 +494,7 @@
   "relatedGuides": "Passende Ratgeber",
   "readGuide": "Ratgeber lesen",
   "seeFullDetails": "Alle Details anzeigen",
-  "fullDetailsTitle": "Vollständige Details"
+  "fullDetailsTitle": "Vollständige Details",
+  "shareAnalysis": "Teilen",
+  "linkCopied": "Link kopiert"
 }

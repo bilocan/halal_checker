@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../app_colors.dart';
 import '../config.dart';
@@ -107,6 +108,14 @@ class _ResultScreenState extends State<ResultScreen> {
         duration: const Duration(seconds: 1),
       ),
     );
+  }
+
+  void _shareProduct() {
+    final locale = Localizations.localeOf(context).languageCode;
+    final url = 'https://halalscan.at/$locale/products/${widget.barcode}';
+    final name = widget.product?.name;
+    final text = name != null && name.isNotEmpty ? '$name\n$url' : url;
+    Share.share(text, subject: name);
   }
 
   Future<void> _saveNote() async {
@@ -570,6 +579,7 @@ class _ResultScreenState extends State<ResultScreen> {
                     onScanAnother: () => Navigator.pop(context, 'scan_another'),
                     onFeedback: () => _onFeedbackTap(context),
                     onReport: () => _showReportDialog(context, product),
+                    onShare: _shareProduct,
                   ),
                   const SizedBox(height: 24),
                 ],

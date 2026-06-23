@@ -1589,4 +1589,10 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get fullDetailsTitle => 'Tam Detaylar';
+
+  @override
+  String get shareAnalysis => 'Paylaş';
+
+  @override
+  String get linkCopied => 'Bağlantı kopyalandı';
 }

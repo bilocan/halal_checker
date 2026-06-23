@@ -10,12 +10,14 @@ class ResultFooterActions extends StatelessWidget {
     required this.onScanAnother,
     required this.onFeedback,
     required this.onReport,
+    required this.onShare,
   });
 
   final AppLocalizations loc;
   final VoidCallback onScanAnother;
   final VoidCallback onFeedback;
   final VoidCallback onReport;
+  final VoidCallback onShare;
 
   @override
   Widget build(BuildContext context) {
@@ -54,20 +56,37 @@ class ResultFooterActions extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 8),
-        SizedBox(
-          width: double.infinity,
-          child: TextButton.icon(
-            style: TextButton.styleFrom(
-              foregroundColor: Colors.orange.shade700,
-              padding: const EdgeInsets.symmetric(vertical: 10),
+        Row(
+          children: [
+            Expanded(
+              child: TextButton.icon(
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.grey.shade700,
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                ),
+                onPressed: onShare,
+                icon: const Icon(Icons.share_outlined, size: 18),
+                label: Text(
+                  loc.shareAnalysis,
+                  style: const TextStyle(fontSize: 14),
+                ),
+              ),
             ),
-            onPressed: onReport,
-            icon: const Icon(Icons.flag_outlined, size: 18),
-            label: Text(
-              loc.reportWrongResult,
-              style: const TextStyle(fontSize: 14),
+            Expanded(
+              child: TextButton.icon(
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.orange.shade700,
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                ),
+                onPressed: onReport,
+                icon: const Icon(Icons.flag_outlined, size: 18),
+                label: Text(
+                  loc.reportWrongResult,
+                  style: const TextStyle(fontSize: 14),
+                ),
+              ),
             ),
-          ),
+          ],
         ),
       ],
     );

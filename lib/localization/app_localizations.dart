@@ -2937,6 +2937,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Full Details'**
   String get fullDetailsTitle;
+
+  /// No description provided for @shareAnalysis.
+  ///
+  /// In en, this message translates to:
+  /// **'Share'**
+  String get shareAnalysis;
+
+  /// No description provided for @linkCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Link copied'**
+  String get linkCopied;
 }
 
 class _AppLocalizationsDelegate

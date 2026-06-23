@@ -649,5 +649,7 @@
   "relatedGuides": "Related guides",
   "readGuide": "Read guide",
   "seeFullDetails": "See full details",
-  "fullDetailsTitle": "Full Details"
+  "fullDetailsTitle": "Full Details",
+  "shareAnalysis": "Share",
+  "linkCopied": "Link copied"
 }
