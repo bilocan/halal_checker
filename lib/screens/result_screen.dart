@@ -110,12 +110,12 @@ class _ResultScreenState extends State<ResultScreen> {
     );
   }
 
-  void _shareProduct() {
+  void _shareProduct(Rect? sharePositionOrigin) {
     final locale = Localizations.localeOf(context).languageCode;
     final url = 'https://halalscan.at/$locale/products/${widget.barcode}';
     final name = widget.product?.name;
     final text = name != null && name.isNotEmpty ? '$name\n$url' : url;
-    Share.share(text, subject: name);
+    Share.share(text, subject: name, sharePositionOrigin: sharePositionOrigin);
   }
 
   Future<void> _saveNote() async {

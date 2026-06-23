@@ -17,7 +17,7 @@ class ResultFooterActions extends StatelessWidget {
   final VoidCallback onScanAnother;
   final VoidCallback onFeedback;
   final VoidCallback onReport;
-  final VoidCallback onShare;
+  final void Function(Rect? sharePositionOrigin) onShare;
 
   @override
   Widget build(BuildContext context) {
@@ -59,16 +59,24 @@ class ResultFooterActions extends StatelessWidget {
         Row(
           children: [
             Expanded(
-              child: TextButton.icon(
-                style: TextButton.styleFrom(
-                  foregroundColor: Colors.grey.shade700,
-                  padding: const EdgeInsets.symmetric(vertical: 10),
-                ),
-                onPressed: onShare,
-                icon: const Icon(Icons.share_outlined, size: 18),
-                label: Text(
-                  loc.shareAnalysis,
-                  style: const TextStyle(fontSize: 14),
+              child: Builder(
+                builder: (btnCtx) => TextButton.icon(
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.grey.shade700,
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                  ),
+                  onPressed: () {
+                    final box = btnCtx.findRenderObject() as RenderBox?;
+                    final origin = box != null
+                        ? box.localToGlobal(Offset.zero) & box.size
+                        : null;
+                    onShare(origin);
+                  },
+                  icon: const Icon(Icons.share_outlined, size: 18),
+                  label: Text(
+                    loc.shareAnalysis,
+                    style: const TextStyle(fontSize: 14),
+                  ),
                 ),
               ),
             ),
