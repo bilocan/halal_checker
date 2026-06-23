@@ -4,9 +4,11 @@ import 'dart:ui' show PlatformDispatcher;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:app_links/app_links.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'config.dart';
 import 'localization/app_localizations.dart';
+import 'screens/deep_link_product_screen.dart';
 import 'screens/start_screen.dart';
 import 'services/auth_service.dart';
 import 'widgets/username_setup_listener.dart';
@@ -91,11 +93,41 @@ class HalalCheckerApp extends StatefulWidget {
 
 class HalalCheckerAppState extends State<HalalCheckerApp> {
   late Locale _locale;
+  final _navigatorKey = GlobalKey<NavigatorState>();
+  StreamSubscription<Uri>? _linkSub;
 
   @override
   void initState() {
     super.initState();
     _locale = widget.initialLocale;
+    _initDeepLinks();
+  }
+
+  void _initDeepLinks() {
+    final appLinks = AppLinks();
+    _linkSub = appLinks.uriLinkStream.listen(_handleDeepLink);
+    appLinks.getInitialLink().then((uri) {
+      if (uri == null) return;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _handleDeepLink(uri));
+    });
+  }
+
+  void _handleDeepLink(Uri uri) {
+    final segments = uri.pathSegments;
+    // Match /{locale}/products/{barcode}
+    if (segments.length >= 3 && segments[1] == 'products') {
+      _navigatorKey.currentState?.push(
+        MaterialPageRoute(
+          builder: (_) => DeepLinkProductScreen(barcode: segments[2]),
+        ),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _linkSub?.cancel();
+    super.dispose();
   }
 
   void setLocale(Locale locale) async {
@@ -107,6 +139,7 @@ class HalalCheckerAppState extends State<HalalCheckerApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: _navigatorKey,
       title: 'HalalScan',
       debugShowCheckedModeBanner: false,
       locale: _locale,
