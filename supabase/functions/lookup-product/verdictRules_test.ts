@@ -151,6 +151,32 @@ Deno.test('computeVerdict — animal product with halal label → no cert flag',
   assertEquals(result.requiresHalalCert, false)
 })
 
+// Regression: barcode 9002600768916 — chicken product with no matching OFF category or name term
+// was passing as halal because neither the category nor name path triggered requiresHalalCert.
+// The ingredient-level detection in applyHalalCertRequirement now catches this.
+Deno.test('computeVerdict — chicken in ingredients, generic category, plain name → requiresHalalCert', async () => {
+  const result = await computeVerdict(baseCtx({
+    barcode: '9002600768916',
+    name: 'Classic Soup',
+    rawCategories: ['en:soups', 'en:canned-foods'],
+    ingredients: ['water', 'chicken', 'salt', 'vegetables'],
+  }))
+  assertEquals(result.requiresHalalCert, true)
+  assertEquals(result.isHalal, false)
+  assertEquals(result.isUnknown, false)
+})
+
+Deno.test('computeVerdict — chicken in ingredients, generic category, halal cert → no cert flag', async () => {
+  const result = await computeVerdict(baseCtx({
+    barcode: '9002600768916',
+    name: 'Classic Soup',
+    rawCategories: ['en:soups'],
+    ingredients: ['water', 'chicken', 'salt'],
+    labels: ['halal certified'],
+  }))
+  assertEquals(result.requiresHalalCert, false)
+})
+
 Deno.test('computeVerdict — haram category blocks cert and forces not halal', async () => {
   const result = await computeVerdict(baseCtx({
     haramCategory: 'alcoholic beverages',

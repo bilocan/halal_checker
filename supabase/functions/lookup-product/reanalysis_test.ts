@@ -9,8 +9,8 @@ const cors = { 'Access-Control-Allow-Origin': '*' }
 function storedRow(overrides: Record<string, unknown> = {}) {
   return {
     barcode: '1234567890',
-    name: 'Test Chicken',
-    ingredients: ['chicken', 'salt'],
+    name: 'Test Product',
+    ingredients: ['water', 'salt'],
     ingredient_source: 'off',
     is_halal: true,
     is_unknown: false,

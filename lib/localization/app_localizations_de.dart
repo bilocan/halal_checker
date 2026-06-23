@@ -1615,4 +1615,10 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get fullDetailsTitle => 'Vollständige Details';
+
+  @override
+  String get shareAnalysis => 'Teilen';
+
+  @override
+  String get linkCopied => 'Link kopiert';
 }

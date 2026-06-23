@@ -1589,4 +1589,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get fullDetailsTitle => 'Full Details';
+
+  @override
+  String get shareAnalysis => 'Share';
+
+  @override
+  String get linkCopied => 'Link copied';
 }
