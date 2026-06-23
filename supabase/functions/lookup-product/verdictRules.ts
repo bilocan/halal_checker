@@ -7,6 +7,7 @@ import type { KeywordEntry, KeywordResult } from './keyword.ts'
 import type { IngredientAnalysisSource } from './ingredientResolution.ts'
 import {
   ANIMAL_PRODUCT_CATEGORIES, HALAL_CERT_LABELS, ANIMAL_PRODUCT_NAME_TERMS,
+  ANIMAL_INGREDIENT_TERMS,
 } from './categories.ts'
 import {
   analyzeWithGemini, analyzeWithClaude, analyzeWithClaudeVision, type AiVerdict,
@@ -609,7 +610,11 @@ function applyHalalCertRequirement(
   const nameIsAnimalProduct = [...ANIMAL_PRODUCT_NAME_TERMS].some(term =>
     ctx.name.toLowerCase().includes(term)
   )
-  const isAnimalProduct = categoryIsAnimalProduct || nameIsAnimalProduct
+  const ingredientIsAnimalProduct = ctx.ingredients.some(ingredient => {
+    const lower = ingredient.toLowerCase()
+    return [...ANIMAL_INGREDIENT_TERMS].some(term => lower.includes(term))
+  })
+  const isAnimalProduct = categoryIsAnimalProduct || nameIsAnimalProduct || ingredientIsAnimalProduct
   const hasHalalCert = ctx.labels.some(l => HALAL_CERT_LABELS.has(l.toLowerCase()))
   const requiresHalalCert = isAnimalProduct && !hasHalalCert && !ctx.isNonFood &&
     !ctx.haramCategory && !ctx.isHalalByCategory &&

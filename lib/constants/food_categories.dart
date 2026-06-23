@@ -161,19 +161,25 @@ class FoodCategories {
   // as a fallback when OFf category data is absent or marked unknown.
   // Only distinctive multi-character terms — avoids single ambiguous words.
   static const Set<String> animalProductNameTerms = {
-    // German / Austrian
+    // German / Austrian compound terms
     'fleisch', 'faschiertes', 'hackfleisch', 'geschnetzeltes',
     'schnitzel', 'gulasch', 'braten', 'würstchen', 'geflügel',
     'rindfleisch', 'kalbfleisch', 'lammfleisch', 'hähnchenfleisch',
     'putenfleisch', 'frikadelle', 'frikadellen',
-    // English
+    // German standalone animal terms
+    'hähnchen', 'hühnchen', 'pute', 'ente', 'rind', 'kalb', 'lamm', 'hammel',
+    // English compound terms
     'minced meat', 'ground beef', 'ground chicken', 'ground turkey',
     'chicken breast', 'chicken thigh', 'beef steak', 'lamb chop',
+    // English standalone animal terms
+    'chicken', 'turkey', 'beef', 'lamb', 'veal', 'duck', 'goose', 'mutton',
     // French
-    'viande', 'poulet haché', 'bœuf haché',
-    // Turkish
+    'viande', 'poulet haché', 'bœuf haché', 'poulet', 'dinde', 'bœuf', 'agneau',
+    // Turkish compound terms
     'kıyma', 'tavuk göğsü', 'kuzu eti', 'dana eti', 'sığır eti',
     'tavuk but', 'tavuk kanat', 'köfte', 'sucuk', 'kavurma',
+    // Turkish standalone animal terms
+    'tavuk', 'hindi', 'sığır', 'dana', 'kuzu',
   };
 
   // Categories where the product is inherently halal even with no ingredient list.

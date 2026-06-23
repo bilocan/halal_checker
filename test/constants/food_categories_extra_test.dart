@@ -323,15 +323,21 @@ void main() {
         isTrue,
       );
     });
-    test(
-      'does not contain plain "chicken" (too generic, handled by category)',
-      () {
-        expect(
-          FoodCategories.animalProductNameTerms.contains('chicken'),
-          isFalse,
-        );
-      },
-    );
+    test('contains standalone English term "chicken"', () {
+      expect(FoodCategories.animalProductNameTerms.contains('chicken'), isTrue);
+    });
+    test('contains standalone English term "beef"', () {
+      expect(FoodCategories.animalProductNameTerms.contains('beef'), isTrue);
+    });
+    test('contains standalone German term "hähnchen"', () {
+      expect(
+        FoodCategories.animalProductNameTerms.contains('hähnchen'),
+        isTrue,
+      );
+    });
+    test('contains standalone Turkish term "tavuk"', () {
+      expect(FoodCategories.animalProductNameTerms.contains('tavuk'), isTrue);
+    });
   });
 
   // ── cross-set integrity: label sets ──────────────────────────────────────
