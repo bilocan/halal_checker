@@ -28,7 +28,7 @@ export const HARAM_ENTRIES: KeywordEntry[] = [
    'свинско', 'свински', 'свинска', 'свинско месо', 'свинска месо'],
   ['lard',       'Contains pork fat',
    'lard', 'schmalz', 'schweineschmalz', 'saindoux', 'strutto',
-   'manteca', 'domuz yağı', 'banha'],
+   'manteca de cerdo', 'domuz yağı', 'banha'],
   ['bacon',      'Contains pork product',
    'bacon', 'speck', 'lardons', 'pancetta', 'domuz pastırması'],
   ['ham',        'Contains pork product',
@@ -82,6 +82,8 @@ export const SUSPICIOUS_ENTRIES: KeywordEntry[] = [
    'enzymes', 'enzyme', 'enzimi', 'enzimas', 'enzim', 'enzymen'],
   ['glycerol', 'Glycerol may be animal-derived',
    'glycerol', 'glycerin', 'glycérol', 'glicerina', 'gliserin', 'glycerine'],
+  ['manteca', 'Fat source unspecified — likely animal fat if not labelled "vegetal" or "de cacao"',
+   'manteca', 'manteca animal'],
 ]
 
 const ALCOHOL_FAMILY = new Set([
@@ -90,6 +92,10 @@ const ALCOHOL_FAMILY = new Set([
 ])
 
 const FATTY_ALCOHOL_PREFIX = /\b(cetyl|stearyl|behenyl|lauryl|myristyl|arachidyl|oleyl|cetostearyl|lanolin|isostearyl|octyldodecyl|decyl)\s+/i
+
+// Plant-derived "manteca" phrases — not suspicious (cocoa butter, shea butter, etc.).
+// Uses wPre/wPost instead of \b because trailing non-ASCII chars (é in karité) are not \w.
+const SAFE_MANTECA_CONTEXT = /(?<![a-zA-Z\dÀ-ɏß])manteca\s+(?:de\s+(?:cacao|kar[ií]t[eé]|coco)|vegetal)(?![a-zA-Z\dÀ-ɏß])/i
 
 // EU marketing labels that allow trace alcohol up to <0,5% — not halal-safe.
 const EU_ALCOHOL_FREE_LABEL = /\b(?:alkoholfrei|alkohol[-\s]?frei|alcool[-\s]?frei|alcohol[-\s]?free|alcoholfree|alcoholvrij|alkols[üu]z|analcolic[oa]|non[-\s]?alcoholic)\b/i
@@ -158,6 +164,7 @@ function matchesVariant(ingredient: string, variant: string): boolean {
     if (hasDeclaredNonZeroAlcohol(ingredient)) return true
     return new RegExp(`${wPre}${escape(variant)}${wPost}`, 'i').test(ingredient)
   }
+  if (variant === 'manteca' && SAFE_MANTECA_CONTEXT.test(ingredient)) return false
   return new RegExp(`${wPre}${escape(variant)}${wPost}`, 'i').test(ingredient)
 }
 
