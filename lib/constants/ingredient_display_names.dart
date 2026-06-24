@@ -94,7 +94,7 @@ class IngredientDisplayNames {
       'de': 'Schmalz',
       'tr': 'domuz yağı',
       'fr': 'saindoux',
-      'es': 'manteca',
+      'es': 'manteca de cerdo',
       'it': 'strutto',
       'sr': 'svinjska mast',
       'hu': 'sertészsír',

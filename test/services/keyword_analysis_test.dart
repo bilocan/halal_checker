@@ -263,6 +263,62 @@ void main() {
       expect(r.haram, contains('lard'));
     });
 
+    test('manteca de cerdo (Spanish pork lard) is haram', () {
+      final r = ProductService.analyzeWithKeywords([
+        'harina',
+        'manteca de cerdo',
+        'sal',
+      ]);
+      expect(r.isHalal, isFalse);
+      expect(r.haram, isNotEmpty);
+    });
+
+    test('manteca de cacao (cocoa butter) is halal — not flagged', () {
+      final r = ProductService.analyzeWithKeywords([
+        'azúcar',
+        'manteca de cacao',
+        'leche en polvo',
+      ]);
+      expect(r.haram, isEmpty);
+      expect(r.suspicious, isEmpty);
+    });
+
+    test('manteca vegetal (vegetable fat) is halal — not flagged', () {
+      final r = ProductService.analyzeWithKeywords([
+        'harina',
+        'manteca vegetal',
+        'sal',
+      ]);
+      expect(r.haram, isEmpty);
+      expect(r.suspicious, isEmpty);
+    });
+
+    test('manteca de karité (shea butter) is halal — not flagged', () {
+      final r = ProductService.analyzeWithKeywords(['manteca de karité']);
+      expect(r.haram, isEmpty);
+      expect(r.suspicious, isEmpty);
+    });
+
+    test('bare manteca (unlabelled) is suspicious', () {
+      final r = ProductService.analyzeWithKeywords([
+        'harina',
+        'manteca',
+        'sal',
+      ]);
+      expect(r.haram, isEmpty);
+      expect(r.suspicious, isNotEmpty);
+    });
+
+    test('manteca animal (animal fat) is suspicious', () {
+      final r = ProductService.analyzeWithKeywords([
+        'harina',
+        'manteca animal',
+        'sal',
+      ]);
+      expect(r.haram, isEmpty);
+      expect(r.suspicious, isNotEmpty);
+    });
+
     test('product with bacon is haram', () {
       final r = ProductService.analyzeWithKeywords(['pasta', 'bacon', 'cream']);
       expect(r.isHalal, isFalse);

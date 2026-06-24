@@ -176,6 +176,10 @@ class HalalRulesEngine {
         caseSensitive: false,
       ).hasMatch(value);
     }
+    if (variant == 'manteca' &&
+        IngredientKeywords.isSafeMantecaContext(value)) {
+      return false;
+    }
     return RegExp(
       '${IngredientKeywords.wPre}$escaped${IngredientKeywords.wPost}',
       caseSensitive: false,

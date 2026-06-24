@@ -62,6 +62,8 @@ class IngredientKeywords {
         'Aroma / flavouring — source may be animal-derived or extracted with alcohol.',
     'enzymes': 'Enzymes may be extracted from animal sources',
     'glycerol': 'Glycerol may be animal-derived',
+    'manteca':
+        'Fat source unspecified — likely animal fat if not labelled "vegetal" or "de cacao"',
   };
 
   // Multilingual variants per canonical keyword (EN / DE / TR / FR / IT / ES / NL / SR / HU / CS)
@@ -115,7 +117,12 @@ class IngredientKeywords {
       'свинско', 'свински', 'свинска', 'свинско месо', 'свинска месо', // BG
     ],
     'lard': [
-      'lard', 'schmalz', 'schweineschmalz', 'saindoux', 'strutto', 'manteca',
+      'lard',
+      'schmalz',
+      'schweineschmalz',
+      'saindoux',
+      'strutto',
+      'manteca de cerdo',
       'domuz yağı', 'banha',
       'svinjska mast', // SR
       'sertészsír', // HU
@@ -207,6 +214,7 @@ class IngredientKeywords {
       'glycerine',
       'glicerol', // SR
     ],
+    'manteca': ['manteca', 'manteca animal'],
   };
 
   // Per-language display labels, keyed by canonical → BCP-47 lang → list of display terms.
@@ -334,7 +342,7 @@ class IngredientKeywords {
       'fr': ['saindoux'],
       'it': ['strutto'],
       'tr': ['domuz yağı'],
-      'es': ['manteca'],
+      'es': ['manteca de cerdo'],
       'sr': ['svinjska mast'],
       'hu': ['sertészsír'],
       'cs': ['sádlo'],
@@ -598,6 +606,17 @@ class IngredientKeywords {
     'etanolo',
     'etanol',
   };
+
+  // Plant-derived "manteca" phrases — not suspicious (cocoa butter, shea butter, etc.).
+  // Uses wPost instead of \b at the end because trailing non-ASCII chars (é in karité)
+  // are not \w, so \b never fires there.
+  static final RegExp safeMantecaContext = RegExp(
+    r'(?<![a-zA-Z\dÀ-ɏß])manteca\s+(?:de\s+(?:cacao|kar[ií]t[eé]|coco)|vegetal)(?![a-zA-Z\dÀ-ɏß])',
+    caseSensitive: false,
+  );
+
+  static bool isSafeMantecaContext(String text) =>
+      safeMantecaContext.hasMatch(text);
 
   // Fatty alcohol prefixes — NOT haram (cosmetic/food emulsifiers).
   static final RegExp fattyAlcoholPrefix = RegExp(
