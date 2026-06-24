@@ -167,19 +167,35 @@ class FoodCategories {
     'rindfleisch', 'kalbfleisch', 'lammfleisch', 'hähnchenfleisch',
     'putenfleisch', 'frikadelle', 'frikadellen',
     // German standalone animal terms
-    'hähnchen', 'hühnchen', 'pute', 'ente', 'rind', 'kalb', 'lamm', 'hammel',
+    'hähnchen',
+    'hühnchen',
+    'pute',
+    'ente',
+    'rind',
+    'kalb',
+    'lamm',
+    'hammel',
     // English compound terms
     'minced meat', 'ground beef', 'ground chicken', 'ground turkey',
     'chicken breast', 'chicken thigh', 'beef steak', 'lamb chop',
     // English standalone animal terms
-    'chicken', 'turkey', 'beef', 'lamb', 'veal', 'duck', 'goose', 'mutton',
+    'chicken',
+    'broiler',
+    'fryer',
+    'turkey',
+    'beef',
+    'lamb',
+    'veal',
+    'duck',
+    'goose',
+    'mutton',
     // French
     'viande', 'poulet haché', 'bœuf haché', 'poulet', 'dinde', 'bœuf', 'agneau',
     // Turkish compound terms
     'kıyma', 'tavuk göğsü', 'kuzu eti', 'dana eti', 'sığır eti',
     'tavuk but', 'tavuk kanat', 'köfte', 'sucuk', 'kavurma',
     // Turkish standalone animal terms
-    'tavuk', 'hindi', 'sığır', 'dana', 'kuzu',
+    'tavuk', 'piliç', 'hindi', 'sığır', 'dana', 'kuzu',
   };
 
   // Categories where the product is inherently halal even with no ingredient list.
