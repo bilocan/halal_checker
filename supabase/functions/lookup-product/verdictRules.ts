@@ -135,6 +135,11 @@ export async function computeVerdict(ctx: VerdictContext): Promise<VerdictResult
   return toVerdictResult(state)
 }
 
+/** Strip placeholder tokens that are not real ingredients (e.g. stored "unknown." from OFF). */
+function stripPlaceholderIngredients(ingredients: string[]): string[] {
+  return ingredients.filter(i => !/^unknown[.!?,;:]*$/i.test(i.trim()))
+}
+
 function runInitialKeywordAnalysis(ctx: VerdictContext): KeywordResult {
   if (ctx.analyzeSources && ctx.analyzeSources.length > 0) {
     return keywordAnalysisFromSources(
@@ -173,8 +178,10 @@ function deduplicateLabels(labels: string[]): string[] {
 }
 
 function createInitialState(ctx: VerdictContext): VerdictState {
-  const { ingredients, isNonFood, isHalalByCategory } = ctx
-  const kwFirst = runInitialKeywordAnalysis(ctx)
+  const ingredients = stripPlaceholderIngredients(ctx.ingredients)
+  const ctx2 = ingredients.length !== ctx.ingredients.length ? { ...ctx, ingredients } : ctx
+  const { isNonFood, isHalalByCategory } = ctx2
+  const kwFirst = runInitialKeywordAnalysis(ctx2)
   const kwLabelsRaw = keywordAnalysis(deduplicateLabels(ctx.labels), ctx.customHaramEntries, ctx.customSuspiciousEntries)
   const kwLabels = {
     ...kwLabelsRaw,
@@ -209,7 +216,7 @@ function createInitialState(ctx: VerdictContext): VerdictState {
   }
   const halalByCategoryNoIngredients = isHalalByCategory && ingredients.length === 0
   return {
-    ctx,
+    ctx: ctx2,
     ingredients,
     kwFirst,
     kwLabels,

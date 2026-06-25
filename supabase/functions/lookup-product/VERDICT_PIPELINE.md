@@ -84,7 +84,7 @@ Do not use a state machine — each step reads the snapshot left by the previous
 
 | Step | Function | Notes |
 |------|----------|--------|
-| 0a | `createInitialState` | `keywordAnalysis(ingredients)` → `kwFirst`; `deduplicateLabels(labels)` then `keywordAnalysis` → `kwLabels` |
+| 0a | `createInitialState` | Strips placeholder tokens (`/^unknown[.!?,;:]*$/i`) from `ctx.ingredients`; `keywordAnalysis(ingredients)` → `kwFirst`; `deduplicateLabels(labels)` then `keywordAnalysis` → `kwLabels` |
 | 0b | Initial snapshot | Non-food / halal-by-category-empty-ingredients shortcuts; else `kwFirst` verdict; `haramLabels`/`suspiciousLabels` seeded from `kwLabels` |
 
 `kwFirst` and `kwLabels` are both frozen for the whole run — post-rules use them for **keyword safety override** even after AI changes the snapshot.

@@ -48,11 +48,17 @@ final _cjkLetter = RegExp(
 );
 final _eNumber = RegExp(r'\be-?\s?\d{3,4}\b', caseSensitive: false);
 
+/// Placeholder tokens that are not real ingredients (e.g. "UNKNOWN.").
+final _placeholderIngredient = RegExp(
+  r'^unknown[.!?,;:]*$',
+  caseSensitive: false,
+);
+
 List<String> splitIngredientText(String text) {
   return text
       .split(RegExp(r'[,;]'))
       .map((s) => s.trim())
-      .where((s) => s.isNotEmpty)
+      .where((s) => s.isNotEmpty && !_placeholderIngredient.hasMatch(s))
       .toList();
 }
 

@@ -39,11 +39,14 @@ const ARABIC_LETTER = /[\u0600-\u06FF]/u
 const CJK_LETTER = /[\u4E00-\u9FFF\u3040-\u30FF\uAC00-\uD7AF]/u
 const E_NUMBER = /\be-?\s?\d{3,4}\b/i
 
+/** Matches placeholder tokens that are not real ingredients (e.g. "UNKNOWN."). */
+const PLACEHOLDER_INGREDIENT = /^unknown[.!?,;:]*$/i
+
 export function splitIngredientText(text: string): string[] {
   return text
     .split(/[,;]/)
     .map(s => s.trim())
-    .filter(s => s.length > 0)
+    .filter(s => s.length > 0 && !PLACEHOLDER_INGREDIENT.test(s))
 }
 
 // deno-lint-ignore no-explicit-any
