@@ -23,6 +23,16 @@ Deno.test('splitIngredientText — splits on commas', () => {
   assertEquals(splitIngredientText('water, salt, sugar'), ['water', 'salt', 'sugar'])
 })
 
+Deno.test('splitIngredientText — filters UNKNOWN placeholder', () => {
+  assertEquals(splitIngredientText('unknown'), [])
+  assertEquals(splitIngredientText('UNKNOWN.'), [])
+  assertEquals(splitIngredientText('unknown!'), [])
+})
+
+Deno.test('splitIngredientText — keeps UNKNOWN mixed with real ingredients', () => {
+  assertEquals(splitIngredientText('water, unknown., sugar'), ['water', 'sugar'])
+})
+
 Deno.test('resolveOffIngredientAnalysis — Bulgarian primary + English fallback', () => {
   const resolved = resolveOffIngredientAnalysis({
     ingredients_lc: 'bg',

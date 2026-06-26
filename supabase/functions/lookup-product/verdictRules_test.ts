@@ -58,6 +58,22 @@ function aiSaysHalalSnapshot(overrides: Partial<VerdictSnapshot> = {}): VerdictS
 
 // ── computeVerdict (no API keys → AI skipped) ────────────────────────────────
 
+Deno.test('computeVerdict — UNKNOWN. ingredient placeholder → isUnknown, not halal', async () => {
+  // OFF sometimes stores "UNKNOWN." as ingredients_text. It is not a real ingredient
+  // and must not cause a Halal verdict.
+  const result = await computeVerdict(baseCtx({ ingredients: ['unknown.'] }))
+  assertEquals(result.isHalal, false)
+  assertEquals(result.isUnknown, true)
+  assertEquals(result.ingredients, [])
+})
+
+Deno.test('computeVerdict — UNKNOWN placeholder mixed with real ingredients → real ingredients analyzed', async () => {
+  const result = await computeVerdict(baseCtx({ ingredients: ['water', 'unknown.', 'sugar'] }))
+  assertEquals(result.isHalal, true)
+  assertEquals(result.isUnknown, false)
+  assertEquals(result.ingredients, ['water', 'sugar'])
+})
+
 Deno.test('computeVerdict — skipAi skips tiered AI when set', async () => {
   const result = await computeVerdict(baseCtx({
     ingredients: ['water', 'sugar'],
