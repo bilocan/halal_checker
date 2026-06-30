@@ -1,3 +1,5 @@
 <!-- User-facing release note bullets for the next version.
      Add one `- bullet` per item. Remove HTML comments before merging.
      Copy wording to de.md, tr.md, and ar.md when the change is user-visible. -->
+
+- **Fewer false suspicious flags on named flavors** — hyphenated flavor names like Vanille-Aroma are no longer flagged as generic unspecified flavoring.

@@ -147,6 +147,13 @@ function escape(s: string) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') }
 const wPre = '(?<![a-zA-Z\\dÀ-ɏß])'
 const wPost = '(?![a-zA-Z\\dÀ-ɏß])'
 
+// Variants that commonly appear as the tail of a hyphenated German/French compound
+// (e.g. "Vanille-Aroma", "Erdbeer-Aroma"). They must not match when immediately
+// preceded by a hyphen; other keywords (alcohol, pork, …) still match after a
+// hyphen so that OFF-style slugs like "contains-alcohol" are caught correctly.
+const COMPOUND_TAIL_VARIANTS = new Set(['aroma', 'arôme', 'smaakstof'])
+const wPreNoHyphen = '(?<![a-zA-Z\\dÀ-ɏß-])'
+
 function isZeroPercentAlcoholDeclaration(text: string, variant: string): boolean {
   const v = escape(variant)
   return new RegExp(
@@ -165,6 +172,9 @@ function matchesVariant(ingredient: string, variant: string): boolean {
     return new RegExp(`${wPre}${escape(variant)}${wPost}`, 'i').test(ingredient)
   }
   if (variant === 'manteca' && SAFE_MANTECA_CONTEXT.test(ingredient)) return false
+  if (COMPOUND_TAIL_VARIANTS.has(variant)) {
+    return new RegExp(`${wPreNoHyphen}${escape(variant)}${wPost}`, 'i').test(ingredient)
+  }
   return new RegExp(`${wPre}${escape(variant)}${wPost}`, 'i').test(ingredient)
 }
 

@@ -666,6 +666,19 @@ class IngredientKeywords {
   static const String wPre = '(?<![a-zA-Z\\dÀ-ɏß])';
   static const String wPost = '(?![a-zA-Z\\dÀ-ɏß])';
 
+  // Stricter pre-boundary that also excludes hyphens — used only for variants
+  // that appear as the tail of German/French hyphenated compounds (e.g. "Vanille-Aroma").
+  static const String wPreNoHyphen = '(?<![a-zA-Z\\dÀ-ɏß-])';
+
+  // Variants that must not match when immediately preceded by a hyphen.
+  // Other keywords (alcohol, pork, …) still match after a hyphen so that
+  // OFF slugs like "contains-alcohol" are caught correctly.
+  static const Set<String> compoundTailVariants = {
+    'aroma',
+    'arôme',
+    'smaakstof',
+  };
+
   // Localized versions of selected ingredient reasons, keyed by
   // canonical keyword → BCP-47 language tag → translated reason.
   // Falls back to the English reason in [suspicious] / [haram] when the

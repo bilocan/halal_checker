@@ -180,6 +180,12 @@ class HalalRulesEngine {
         IngredientKeywords.isSafeMantecaContext(value)) {
       return false;
     }
+    if (IngredientKeywords.compoundTailVariants.contains(variant)) {
+      return RegExp(
+        '${IngredientKeywords.wPreNoHyphen}$escaped${IngredientKeywords.wPost}',
+        caseSensitive: false,
+      ).hasMatch(value);
+    }
     return RegExp(
       '${IngredientKeywords.wPre}$escaped${IngredientKeywords.wPost}',
       caseSensitive: false,
