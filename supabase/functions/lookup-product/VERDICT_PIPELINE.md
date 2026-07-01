@@ -12,6 +12,7 @@ deno test --allow-env supabase/functions/lookup-product/
 | HTTP / cache / OFF / Gemini ingredients | `handler.ts`, `index.ts`, helpers below | [Request orchestration](#request-orchestration-handlerts) |
 | Halal verdict steps (AI, keywords, overrides) | `verdictRules.ts` | [Verdict pipeline](#verdict-pipeline-verdictrulests) |
 | Stale DB re-analysis only | `reanalysis.ts` | [Stored re-analysis](#stored-re-analysis) |
+| Bulk retest of stored products | `../retest-products/` | [Bulk retest tool](#bulk-retest-tool-retest-products) |
 | Empty-OFF Gemini ingredient fetch | `ingredientResolver.ts` | [Ingredient resolution](#ingredient-resolution-before-verdict) |
 | Keyword lists | `keyword.ts` (+ app `product_service.dart`) | [Keyword source](#keyword-source) |
 | Post-rule order / cert / name fallback | `POST_ANALYSIS_RULES` in `verdictRules.ts` | [Post-analysis rules](#post-analysis-rules-fixed-order) |
@@ -147,10 +148,30 @@ Categories for cert: `categories.ts` (`ANIMAL_PRODUCT_CATEGORIES`, `HALAL_CERT_L
 
 ### Stored re-analysis
 
-`reanalysis.ts` → reads `existing.categories_tags` → `computeVerdict({ …, skipAi: true, rawCategories: <stored>, haramCategory: <derived>, isHalalByCategory: <derived> })`.
+`reanalysis.ts` → `computeStoredReanalysis` reads `existing.categories_tags` → `computeVerdict({ …, skipAi: true, rawCategories: <stored>, haramCategory: <derived>, isHalalByCategory: <derived> })`.
 
 - No OFF refetch, no text AI, no vision.
 - Full post-analysis rules **do** run (cert, suspicious-only, keyword safety).
+- `runStoredProductReanalysis` (live lookup path) calls `computeStoredReanalysis` then persists via `persistLookupAndRespond`. It only runs for one barcode at a time, lazily, when that product is next looked up (stale/force) — adding a keyword does **not** retroactively touch rows already sitting in Supabase.
+- **Bulk retest tool** (`../retest-products/`): reuses the same `computeStoredReanalysis` across every stored product to preview keyword/rule changes before writing them back. See below.
+
+---
+
+## Bulk retest tool (`retest-products/`)
+
+Admin-only tool (web admin → **Retest** tab) for previewing keyword/custom-rule changes against products already sitting in Supabase, since they're otherwise only re-analysed lazily per-barcode. Sibling function, reuses `computeStoredReanalysis` from `reanalysis.ts` — never duplicates verdict logic.
+
+| Action | What it does |
+|--------|--------------|
+| `scan` | Batches through `products_full` (ordered by barcode, cursor-paginated), recomputes each non-managed product's verdict, and — only when it differs from the stored one — upserts a row into `product_retest_diffs` (`old_snapshot`, `new_snapshot`, `apply_payload`). Call repeatedly with the returned `nextCursor`/`runId` until `done`. Progress (`cursor`, `done`, running `scanned`/`changed` totals) is persisted per `run_id` in `product_retest_runs`; if the caller passes a `runId` without a `cursor` (e.g. after a page reload), it resumes from the persisted cursor instead of rescanning the catalog from the start. |
+| `list` | Paginated diffs for a `runId`, for the review UI. |
+| `apply` | Persists `apply_payload` (`{ product, analysis }`, the exact `ProductRow`/`AnalysisRow` from `computeStoredReanalysis`) via `upsertProduct`/`upsertAnalysis` for selected barcodes (or all pending), marks them `applied`. |
+| `discard` | Deletes unapplied diff rows for a run, and drops its `product_retest_runs` progress row — a discarded run is not resumable or restorable. |
+| `latest` | Finds the most recently updated run in `product_retest_runs` that's still worth surfacing — not fully scanned yet, or fully scanned but with diffs the admin hasn't applied/discarded — so the web UI can restore an in-progress/reviewable run after a refresh instead of starting from a blank page. Returns `{ runId: null }` when there's nothing to restore. |
+
+`old_snapshot`/`new_snapshot` are compact `RetestSnapshot`s (`retestDiff.ts`) — `isHalal`, `isUnknown`, haram/suspicious ingredient+label+additive lists, `requiresHalalCert`, `explanation` — compared order-insensitively (`snapshotsEqual`) so only real verdict changes are staged.
+
+Auth: `profiles.role` = `superadmin` only (web admin panel gates the same way, matching the Gemini probe tool). Tables `product_retest_diffs` / `product_retest_runs` have RLS enabled with no client policies — only the service-role edge function touches them.
 
 ---
 
@@ -200,7 +221,7 @@ Production default: **Open Food Facts + keywords + post-rules**; AI tiers option
 | `fetch_test.ts` | OFF parsers + `fetchOpenFactsProduct` (mocked HTTP) |
 | `requestParser_test.ts` | `parseRequest` validation |
 | `ingredientResolver_test.ts` | `resolveGeminiIngredients` (mocked Gemini HTTP) |
-| `reanalysis_test.ts` | `runStoredProductReanalysis`, `jsonManagedProduct` |
+| `reanalysis_test.ts` | `computeStoredReanalysis`, `runStoredProductReanalysis`, `jsonManagedProduct` |
 | `ai_test.ts` | `parseIngredientList` |
 | `ai_api_test.ts` | `analyzeWithGemini/Claude/Vision`, `geminiIngredientLookup` (mocked HTTP + shared request body) |
 | `_shared/gemini_ingredient_lookup_test.ts` | `buildGeminiIngredientLookupRequest` snapshot (zero token cost) |

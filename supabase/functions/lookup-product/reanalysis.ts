@@ -12,18 +12,24 @@ import {
   type ProductRow,
 } from './persistence.ts'
 
+export interface StoredReanalysisResult {
+  productRow: ProductRow
+  analysisRow: AnalysisRow
+  responseRow: Record<string, unknown>
+}
+
 /**
- * Re-run keyword + post rules on stored product data (no OFF refetch, no AI).
- * Used when source data is stale or caller requested force refresh.
+ * Re-run keyword + post rules on stored product data (no OFF refetch, no AI,
+ * no persistence). Pure compute step shared by the live re-analysis path
+ * (`runStoredProductReanalysis`) and the bulk `retest-products` admin tool.
  */
-export async function runStoredProductReanalysis(
+export async function computeStoredReanalysis(
   supabase: SupabaseClient,
   existing: HalalScanProduct,
   barcode: string,
   customHaramEntries: KeywordEntry[],
   customSuspiciousEntries: KeywordEntry[],
-  corsHeaders: Record<string, string>,
-): Promise<Response> {
+): Promise<StoredReanalysisResult> {
   const communityIngredients = await getApprovedContribution(supabase, barcode)
   const storedIngredients: string[] = communityIngredients
     ?? (Array.isArray(existing.ingredients) ? existing.ingredients as string[] : [])
@@ -165,6 +171,25 @@ export async function runStoredProductReanalysis(
     gemini_web_ingredient_lookup_name_key: productRow.geminiNameKey ?? null,
   }
 
+  return { productRow, analysisRow, responseRow }
+}
+
+/**
+ * Re-run keyword + post rules on stored product data (no OFF refetch, no AI)
+ * and persist the result. Used when source data is stale or caller requested
+ * force refresh.
+ */
+export async function runStoredProductReanalysis(
+  supabase: SupabaseClient,
+  existing: HalalScanProduct,
+  barcode: string,
+  customHaramEntries: KeywordEntry[],
+  customSuspiciousEntries: KeywordEntry[],
+  corsHeaders: Record<string, string>,
+): Promise<Response> {
+  const { productRow, analysisRow, responseRow } = await computeStoredReanalysis(
+    supabase, existing, barcode, customHaramEntries, customSuspiciousEntries,
+  )
   return persistLookupAndRespond(supabase, corsHeaders, productRow, analysisRow, responseRow)
 }
 
