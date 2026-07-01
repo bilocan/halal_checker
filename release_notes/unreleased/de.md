@@ -9,3 +9,5 @@
 - **Verdächtige Zusatzstoffe/Kennzeichnungen nicht mehr pauschal als "nicht halal" angezeigt** — Produkte, die nur durch einen verdächtigen Zusatzstoff oder eine verdächtige Kennzeichnung auffallen (z. B. ein möglicherweise tierisches Emulgiermittel), werden jetzt korrekt als verdächtig statt als nicht halal angezeigt.
 
 - **Genauere Zertifikatsprüfung** — ein Fehler behoben, bei dem eine Verwechslung zwischen Sprachen ein Produkt fälschlich als zertifizierungspflichtig markieren konnte; die Analyse-Transparenz zeigt jetzt, welches Schlüsselwort und welche Sprache den Hinweis ausgelöst haben.
+
+- **Zertifikat-Badge korrigiert** — bestätigt tierische Produkte zeigen jetzt korrekt `Halal-Zertifikat erforderlich` statt `Verdächtig`, auch wenn zusätzlich ein unabhängiger verdächtiger Inhaltsstoff, ein Label oder ein Zusatzstoff markiert ist.

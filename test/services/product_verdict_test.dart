@@ -203,6 +203,36 @@ void main() {
       );
     });
 
+    test('noCert beats suspicious ingredient', () {
+      expect(
+        ProductVerdict.outcome(
+          base(requiresHalalCert: true, suspicious: const ['e471']),
+        ),
+        ProductOutcome.noCert,
+      );
+    });
+
+    test('noCert beats suspicious label', () {
+      expect(
+        ProductVerdict.outcome(
+          base(
+            requiresHalalCert: true,
+            suspiciousLabels: const ['en:may-contain-pork'],
+          ),
+        ),
+        ProductOutcome.noCert,
+      );
+    });
+
+    test('noCert beats suspicious additive', () {
+      expect(
+        ProductVerdict.outcome(
+          base(requiresHalalCert: true, suspiciousAdditives: const ['e471']),
+        ),
+        ProductOutcome.noCert,
+      );
+    });
+
     test('halal when isHalal and no blockers', () {
       expect(ProductVerdict.outcome(base(isHalal: true)), ProductOutcome.halal);
     });

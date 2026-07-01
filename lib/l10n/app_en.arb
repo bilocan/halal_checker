@@ -292,6 +292,12 @@
   "noCert": "⚠️ NO CERT",
   "explanationUnknown": "No ingredient data was found for this product. Halal status cannot be determined — check the packaging directly.",
   "explanationNoCert": "This is an animal-derived food product without a verified halal certification. Halal slaughter cannot be confirmed — check the packaging for a halal label.",
+  "explanationNoCertWithSuspicious": "This is an animal-derived food product without a verified halal certification. Halal slaughter cannot be confirmed — check the packaging for a halal label. It also contains {ingredients}, which may be animal-derived.",
+  "@explanationNoCertWithSuspicious": {
+    "placeholders": {
+      "ingredients": { "type": "String" }
+    }
+  },
   "nonFood": "ℹ️ NOT FOOD",
   "explanationNonFood": "This is a non-food product. Islamic dietary rules do not apply.",
   "about": "About",

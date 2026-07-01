@@ -718,6 +718,11 @@ class AppLocalizationsEn extends AppLocalizations {
       'This is an animal-derived food product without a verified halal certification. Halal slaughter cannot be confirmed — check the packaging for a halal label.';
 
   @override
+  String explanationNoCertWithSuspicious(String ingredients) {
+    return 'This is an animal-derived food product without a verified halal certification. Halal slaughter cannot be confirmed — check the packaging for a halal label. It also contains $ingredients, which may be animal-derived.';
+  }
+
+  @override
   String get nonFood => 'ℹ️ NOT FOOD';
 
   @override

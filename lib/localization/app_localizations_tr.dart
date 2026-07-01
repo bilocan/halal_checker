@@ -718,6 +718,11 @@ class AppLocalizationsTr extends AppLocalizations {
       'Bu ürün hayvansal kaynaklı bir gıdadır ancak doğrulanmış bir helal sertifikası bulunmamaktadır. Helal kesim teyit edilemez — ambalajda helal etiketi olup olmadığını kontrol edin.';
 
   @override
+  String explanationNoCertWithSuspicious(String ingredients) {
+    return 'Bu ürün hayvansal kaynaklı bir gıdadır ancak doğrulanmış bir helal sertifikası bulunmamaktadır. Helal kesim teyit edilemez — ambalajda helal etiketi olup olmadığını kontrol edin. Ayrıca hayvansal kaynaklı olabilecek $ingredients içeriyor.';
+  }
+
+  @override
   String get nonFood => 'ℹ️ GIDA DEĞİL';
 
   @override

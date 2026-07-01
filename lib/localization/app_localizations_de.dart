@@ -724,6 +724,11 @@ class AppLocalizationsDe extends AppLocalizations {
       'Dies ist ein tierisches Lebensmittelprodukt ohne geprüfte Halal-Zertifizierung. Eine islamkonforme Schlachtung kann nicht bestätigt werden — prüfen Sie die Verpackung auf ein Halal-Siegel.';
 
   @override
+  String explanationNoCertWithSuspicious(String ingredients) {
+    return 'Dies ist ein tierisches Lebensmittelprodukt ohne geprüfte Halal-Zertifizierung. Eine islamkonforme Schlachtung kann nicht bestätigt werden — prüfen Sie die Verpackung auf ein Halal-Siegel. Außerdem enthält es $ingredients, was tierischen Ursprungs sein könnte.';
+  }
+
+  @override
   String get nonFood => 'ℹ️ KEIN LEBENSMITTEL';
 
   @override
