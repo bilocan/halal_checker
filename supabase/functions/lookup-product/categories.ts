@@ -60,36 +60,65 @@ export const VEGAN_ONLY_LABELS = new Set([
   'vegan', 'vegan certified', 'en:vegan',
 ])
 
-export const ANIMAL_PRODUCT_NAME_TERMS = new Set([
-  // German / Austrian
-  'fleisch', 'faschiertes', 'hackfleisch', 'geschnetzeltes', 'schnitzel',
-  'gulasch', 'braten', 'würstchen', 'geflügel', 'rindfleisch', 'kalbfleisch',
-  'lammfleisch', 'hähnchenfleisch', 'putenfleisch', 'frikadelle', 'frikadellen',
-  // German standalone animal terms
-  'hähnchen', 'hühnchen', 'broiler', 'pute', 'ente', 'rind', 'kalb', 'lamm', 'hammel',
-  // English compound terms
-  'minced meat', 'ground beef', 'ground chicken', 'ground turkey',
-  'chicken breast', 'chicken thigh', 'beef steak', 'lamb chop',
-  // English standalone animal terms
-  'chicken', 'broiler', 'fryer', 'turkey', 'beef', 'lamb', 'veal', 'duck', 'goose', 'mutton',
-  // French
-  'viande', 'poulet haché', 'bœuf haché', 'poulet', 'dinde', 'bœuf', 'agneau',
-  // Turkish compound terms
-  'kıyma', 'tavuk göğsü', 'kuzu eti', 'dana eti', 'sığır eti',
-  'tavuk but', 'tavuk kanat', 'köfte', 'sucuk', 'kavurma',
-  // Turkish standalone animal terms
-  'tavuk', 'piliç', 'hindi', 'sığır', 'dana', 'kuzu',
+/** Term → source language (ISO 639-1). Values are display-only (match-transparency), never used for matching. */
+function taggedTerms(entries: Array<[string, string[]]>): Map<string, string> {
+  const map = new Map<string, string>()
+  for (const [lang, terms] of entries) {
+    for (const term of terms) map.set(term, lang)
+  }
+  return map
+}
+
+export const ANIMAL_PRODUCT_NAME_TERMS = taggedTerms([
+  ['de', [
+    // German / Austrian compound terms
+    'fleisch', 'faschiertes', 'hackfleisch', 'geschnetzeltes', 'schnitzel',
+    'gulasch', 'braten', 'würstchen', 'geflügel', 'rindfleisch', 'kalbfleisch',
+    'lammfleisch', 'hähnchenfleisch', 'putenfleisch', 'frikadelle', 'frikadellen',
+    // German standalone animal terms
+    'hähnchen', 'hühnchen', 'pute', 'ente', 'rind', 'kalb', 'lamm', 'hammel',
+  ]],
+  ['en', [
+    // English compound terms
+    'minced meat', 'ground beef', 'ground chicken', 'ground turkey',
+    'chicken breast', 'chicken thigh', 'beef steak', 'lamb chop',
+    // English standalone animal terms
+    'broiler', 'chicken', 'fryer', 'turkey', 'beef', 'lamb', 'veal', 'duck', 'goose', 'mutton',
+  ]],
+  ['fr', [
+    'viande', 'poulet haché', 'bœuf haché', 'poulet', 'dinde', 'bœuf', 'agneau',
+  ]],
+  ['tr', [
+    // Turkish compound terms
+    'kıyma', 'tavuk göğsü', 'kuzu eti', 'dana eti', 'sığır eti',
+    'tavuk but', 'tavuk kanat', 'köfte', 'sucuk', 'kavurma',
+    // Turkish standalone animal terms
+    'tavuk', 'piliç', 'hindi', 'sığır', 'dana', 'kuzu',
+  ]],
 ])
 
 /** Ingredient-level animal terms — triggers halal cert requirement when found in the ingredient list. */
-export const ANIMAL_INGREDIENT_TERMS = new Set([
-  // English
-  'chicken', 'broiler', 'fryer', 'turkey', 'beef', 'lamb', 'veal', 'duck', 'goose', 'mutton',
-  // German
-  'hähnchen', 'hühnchen', 'pute', 'ente', 'rind', 'rindfleisch',
-  'kalb', 'kalbfleisch', 'lamm', 'lammfleisch', 'geflügel',
-  // Turkish
-  'tavuk', 'piliç', 'hindi', 'sığır', 'dana', 'kuzu',
-  // French
-  'poulet', 'dinde', 'bœuf', 'agneau',
+export const ANIMAL_INGREDIENT_TERMS = taggedTerms([
+  ['en', ['chicken', 'broiler', 'fryer', 'turkey', 'beef', 'lamb', 'veal', 'duck', 'goose', 'mutton']],
+  ['de', [
+    'hähnchen', 'hühnchen', 'pute', 'ente', 'rind', 'rindfleisch',
+    'kalb', 'kalbfleisch', 'lamm', 'lammfleisch', 'geflügel',
+  ]],
+  ['tr', ['tavuk', 'piliç', 'hindi', 'sığır', 'dana', 'kuzu']],
+  ['fr', ['poulet', 'dinde', 'bœuf', 'agneau']],
 ])
+
+// Unicode-aware word boundaries covering basic Latin + extended Latin (À-ɏ, U+00C0-U+024F).
+// Mirrors wPre/wPost in keyword.ts — without these, short terms like "ente" (German for
+// duck) or "dana" (Turkish for veal) match as substrings inside unrelated words (e.g. the
+// Spanish "preferentemente"), producing false halal-cert-required flags.
+const wPre = '(?<![a-zA-Z\\dÀ-ɏß])'
+const wPost = '(?![a-zA-Z\\dÀ-ɏß])'
+function escapeRegex(s: string) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+/** Word-boundary-aware match for an animal-product name/ingredient term against free text. */
+export function matchesAnimalTerm(text: string, term: string): boolean {
+  return new RegExp(`${wPre}${escapeRegex(term)}${wPost}`, 'i').test(text)
+}

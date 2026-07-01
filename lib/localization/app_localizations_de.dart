@@ -453,6 +453,30 @@ class AppLocalizationsDe extends AppLocalizations {
   String get transparentMatchOrigins => 'Treffer-Herkunft';
 
   @override
+  String get transparentMatchLanguages => 'Treffer-Sprachen';
+
+  @override
+  String get transparentMatchLanguageTooltip =>
+      'Sprache des gefundenen Schlüsselworts — weicht sie von der Sprache des Zutatentexts ab, könnte dieser Treffer ein Fehlalarm sein.';
+
+  @override
+  String get transparentCertMatchTooltip =>
+      'Kategorie, Produktname oder Zutat, die die Zertifikatspflicht ausgelöst hat.';
+
+  @override
+  String get transparentCertMatch => 'Zertifikatspflicht ausgelöst durch';
+
+  @override
+  String transparentCertMatchValue(String term, String lang) {
+    return '\"$term\" ($lang)';
+  }
+
+  @override
+  String transparentCertMatchMismatch(String matchLang, String analyzeLang) {
+    return 'Dies traf auf einen $matchLang-Begriff zu, während der Zutatentext als $analyzeLang analysiert wurde — möglicherweise ein Fehlalarm, bitte prüfen.';
+  }
+
+  @override
   String get transparentDisplayLanguage => 'Etikettensprache';
 
   @override

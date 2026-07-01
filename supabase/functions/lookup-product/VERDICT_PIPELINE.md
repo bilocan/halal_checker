@@ -141,10 +141,18 @@ Applied in `applyPostAnalysisRules` — **must not reorder** without updating te
 | 7 | `applyAdditivesHaramOverride` | Merges haram additive keyword matches into snapshot |
 | 8 | `applyAdditivesSuspiciousOverride` | Merges suspicious additive keyword matches into snapshot |
 | 9 | `applyVeganFlavouringAdjustment` | When vegan label evidence (`en:vegan`, etc.): rewrites `flavouring` / `natural flavour` warnings and suspicious-only explanation — non-animal per certification, alcohol extraction still unclear. Does not change `isHalal`. Vegetarian labels do not qualify. |
-| 10 | `applyHalalCertRequirement` | Animal product without halal label → `requiresHalalCert`, not halal; skipped if `haramLabels` non-empty |
+| 10 | `applyHalalCertRequirement` | Animal product without halal label → `requiresHalalCert`, not halal; skipped if `haramLabels` non-empty; overwrites `explanation` with the matched category/name/ingredient reason |
 | 11 | `applySuspiciousNotHalal` | Suspicious only (no haram ingredients or labels) → `isHalal = false` |
 
-Categories for cert: `categories.ts` (`ANIMAL_PRODUCT_CATEGORIES`, `HALAL_CERT_LABELS`, `ANIMAL_PRODUCT_NAME_TERMS`).
+Categories for cert: `categories.ts` (`ANIMAL_PRODUCT_CATEGORIES`, `HALAL_CERT_LABELS`, `ANIMAL_PRODUCT_NAME_TERMS`, `ANIMAL_INGREDIENT_TERMS`). Name/ingredient term matching uses `matchesAnimalTerm` (word-boundary regex, mirrors `keyword.ts`'s `wPre`/`wPost`) — plain substring matching would false-positive on short terms like `ente` (German "duck") inside unrelated words (e.g. Spanish "preferentemente").
+
+### Match-language transparency
+
+Every keyword/term match carries its source language, purely for debugging cross-language false positives (e.g. barcode 20289119: `ente` matched inside Spanish `preferentemente`) — never used in matching logic itself.
+
+- **`ANIMAL_PRODUCT_NAME_TERMS` / `ANIMAL_INGREDIENT_TERMS`** (`categories.ts`) are `Map<term, lang>`, not `Set<term>`. `applyHalalCertRequirement` looks up the matched term's language, compares it against `ctx.analyzeLang ?? ctx.displayLang` (the language the ingredient text was actually analyzed in), and appends a mismatch note to `explanation` when they differ. Category matches (`en:`/`de:`/`tr:` prefix) aren't compared — OFF category tags are frequently in a different language than the ingredient list, so a mismatch there is expected, not suspicious. Result fields: `halalCertMatchTerm`, `halalCertMatchLang`.
+- **`HARAM_ENTRIES` / `SUSPICIOUS_ENTRIES`** (`keyword.ts`) — each variant string is tagged in `VARIANT_LANGUAGE`. E-number variants (`e441`, `e-441`, …) are language-neutral and omitted (detected via `E_NUMBER_VARIANT`, not looked up). Exposed per-match via `KeywordResult.keywordMatchLanguages` (ingredient/label/additive token → lang), merged from `kwFirst` + `kwLabels` + `kwAdditives` once in `createInitialState` and carried through the post-rule pipeline unchanged (`VerdictSnapshot.keywordMatchLanguages`).
+- Persisted on `product_analysis` (`keyword_match_languages jsonb`, `halal_cert_match_term text`, `halal_cert_match_lang text`), exposed via `products_full`. Surfaced in the Flutter result screen's transparency card (`result_transparency_card.dart`) and the admin retest tool (`halal-checker-web/app/admin/retest/RetestProductsClient.tsx`) plus the public product page.
 
 ### Stored re-analysis
 

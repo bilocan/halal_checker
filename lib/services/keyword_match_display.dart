@@ -45,4 +45,19 @@ abstract final class KeywordMatchDisplay {
         .map((e) => '${e.key} → ${sourceLabel(loc, e.value)}')
         .join('\n');
   }
+
+  /// Flagged ingredient/label/additive token → source language of the matched keyword
+  /// (e.g. "gélatine → FR"). Transparency only — E-number matches have no language and
+  /// are omitted (see `variantLanguage` in the edge function's keyword.ts).
+  static String languageSummary(
+    AppLocalizations loc,
+    Map<String, String> languages,
+  ) {
+    if (languages.isEmpty) {
+      return loc.transparentNoMatches;
+    }
+    return languages.entries
+        .map((e) => '${e.key} → ${e.value.toUpperCase()}')
+        .join('\n');
+  }
 }

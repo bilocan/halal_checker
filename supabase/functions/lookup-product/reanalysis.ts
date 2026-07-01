@@ -181,6 +181,9 @@ export async function computeStoredReanalysis(
     analyzedByAI: false,
     keywordMatchSource: verdict.keywordMatchSource,
     keywordMatchOrigins: verdict.keywordMatchOrigins,
+    keywordMatchLanguages: verdict.keywordMatchLanguages,
+    halalCertMatchTerm: verdict.halalCertMatchTerm,
+    halalCertMatchLang: verdict.halalCertMatchLang,
     analyzeLang: verdict.analyzeLang,
   }
 
@@ -211,6 +214,9 @@ export async function computeStoredReanalysis(
     requires_halal_cert: requiresHalalCert,
     keyword_match_source: verdict.keywordMatchSource ?? null,
     keyword_match_origins: verdict.keywordMatchOrigins ?? {},
+    keyword_match_languages: verdict.keywordMatchLanguages ?? {},
+    halal_cert_match_term: verdict.halalCertMatchTerm ?? null,
+    halal_cert_match_lang: verdict.halalCertMatchLang ?? null,
     analyze_lang: verdict.analyzeLang ?? null,
     display_lang: verdict.displayLang ?? null,
     is_managed: existing.is_managed,

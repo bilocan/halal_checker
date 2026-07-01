@@ -44,6 +44,9 @@ export interface AnalysisRow {
   analyzedByAI: boolean
   keywordMatchSource?: string
   keywordMatchOrigins?: Record<string, string>
+  keywordMatchLanguages?: Record<string, string>
+  halalCertMatchTerm?: string
+  halalCertMatchLang?: string | null
   analyzeLang?: string | null
 }
 
@@ -114,9 +117,12 @@ export async function upsertAnalysis(supabase: SupabaseClient, row: AnalysisRow)
     additive_warnings:      row.additiveWarnings,
     explanation:            row.explanation,
     analyzed_by_ai:         row.analyzedByAI,
-    keyword_match_source:   row.keywordMatchSource ?? null,
-    keyword_match_origins:  row.keywordMatchOrigins ?? {},
-    analyze_lang:           row.analyzeLang ?? null,
+    keyword_match_source:    row.keywordMatchSource ?? null,
+    keyword_match_origins:   row.keywordMatchOrigins ?? {},
+    keyword_match_languages: row.keywordMatchLanguages ?? {},
+    halal_cert_match_term:   row.halalCertMatchTerm ?? null,
+    halal_cert_match_lang:   row.halalCertMatchLang ?? null,
+    analyze_lang:            row.analyzeLang ?? null,
     analyzed_at:            new Date().toISOString(),
   })
   if (error) console.error(`[${row.barcode}] product_analysis upsert error`, error)

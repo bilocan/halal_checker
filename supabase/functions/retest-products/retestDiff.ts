@@ -12,6 +12,12 @@ export interface RetestSnapshot {
   suspiciousAdditives: string[]
   requiresHalalCert: boolean
   explanation: string
+  /** Category/name/ingredient term that triggered requiresHalalCert, when set. */
+  halalCertMatchTerm: string | null
+  /** Source language of halalCertMatchTerm (e.g. "de") — lets admins spot cross-language false positives. */
+  halalCertMatchLang: string | null
+  /** Flagged ingredient/label/additive token → source language of the matched keyword. */
+  keywordMatchLanguages: Record<string, string>
 }
 
 function asStringArray(value: unknown): string[] {
@@ -31,6 +37,9 @@ export function snapshotFromStoredRow(row: Record<string, unknown>): RetestSnaps
     suspiciousAdditives: asStringArray(row.suspicious_additives),
     requiresHalalCert: !!row.requires_halal_cert,
     explanation: typeof row.explanation === 'string' ? row.explanation : '',
+    halalCertMatchTerm: typeof row.halal_cert_match_term === 'string' ? row.halal_cert_match_term : null,
+    halalCertMatchLang: typeof row.halal_cert_match_lang === 'string' ? row.halal_cert_match_lang : null,
+    keywordMatchLanguages: (row.keyword_match_languages ?? {}) as Record<string, string>,
   }
 }
 
@@ -47,11 +56,18 @@ export function snapshotFromComputed(productRow: ProductRow, analysisRow: Analys
     suspiciousAdditives: analysisRow.suspiciousAdditives,
     requiresHalalCert: productRow.requiresHalalCert,
     explanation: analysisRow.explanation,
+    halalCertMatchTerm: analysisRow.halalCertMatchTerm ?? null,
+    halalCertMatchLang: analysisRow.halalCertMatchLang ?? null,
+    keywordMatchLanguages: analysisRow.keywordMatchLanguages ?? {},
   }
 }
 
 function sortedJson(values: string[]): string {
   return JSON.stringify([...values].sort())
+}
+
+function sortedMapJson(map: Record<string, string>): string {
+  return JSON.stringify(Object.entries(map).sort(([a], [b]) => a.localeCompare(b)))
 }
 
 /** True when two snapshots represent the same verdict (order-insensitive on lists). */
@@ -61,11 +77,14 @@ export function snapshotsEqual(a: RetestSnapshot, b: RetestSnapshot): boolean {
     a.isUnknown === b.isUnknown &&
     a.requiresHalalCert === b.requiresHalalCert &&
     a.explanation === b.explanation &&
+    a.halalCertMatchTerm === b.halalCertMatchTerm &&
+    a.halalCertMatchLang === b.halalCertMatchLang &&
     sortedJson(a.haramIngredients) === sortedJson(b.haramIngredients) &&
     sortedJson(a.suspiciousIngredients) === sortedJson(b.suspiciousIngredients) &&
     sortedJson(a.haramLabels) === sortedJson(b.haramLabels) &&
     sortedJson(a.suspiciousLabels) === sortedJson(b.suspiciousLabels) &&
     sortedJson(a.haramAdditives) === sortedJson(b.haramAdditives) &&
-    sortedJson(a.suspiciousAdditives) === sortedJson(b.suspiciousAdditives)
+    sortedJson(a.suspiciousAdditives) === sortedJson(b.suspiciousAdditives) &&
+    sortedMapJson(a.keywordMatchLanguages) === sortedMapJson(b.keywordMatchLanguages)
   )
 }
