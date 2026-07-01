@@ -679,6 +679,20 @@ function applyHalalCertRequirement(
     ? ` This matched a ${matchLang} term while the ingredient text was analyzed as ${analyzedTextLang} — verify this isn't a false positive.`
     : ''
 
+  // requiresHalalCert (confirmed animal, cert unresolved) and "suspicious"
+  // (uncertain animal-or-plant) are independent signals that can both be true
+  // for the same product (e.g. a confirmed-meat category plus an unrelated
+  // suspicious additive). Don't let this overwrite silently drop the
+  // suspicious note the earlier post-rules already attached.
+  const alsoSuspicious = [
+    ...snapshot.suspiciousIngredients,
+    ...snapshot.suspiciousLabels,
+    ...snapshot.suspiciousAdditives,
+  ]
+  const suspiciousNote = alsoSuspicious.length > 0
+    ? ` It also contains ${[...new Set(alsoSuspicious)].join(', ')}, which may be animal-derived.`
+    : ''
+
   return {
     requiresHalalCert: true,
     snapshot: {
@@ -687,7 +701,7 @@ function applyHalalCertRequirement(
       isUnknown: false,
       explanation:
         `This product appears to be an animal product (${reason}) with no halal certification on file. ` +
-        `Halal slaughter cannot be confirmed.${mismatchNote}`,
+        `Halal slaughter cannot be confirmed.${suspiciousNote}${mismatchNote}`,
       halalCertMatchTerm: matchedCategory ?? matchedNameTerm ?? matchedIngredientTerm,
       halalCertMatchLang: matchLang,
     },

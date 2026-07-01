@@ -16,6 +16,18 @@ String localizedProductExplanation({
   if (product.isNonFood) return loc.explanationNonFood;
 
   if (product.requiresHalalCert && outcome == ProductOutcome.noCert) {
+    // requiresHalalCert (confirmed animal, cert unresolved) and "suspicious"
+    // (uncertain animal-or-plant) are independent signals — noCert decides
+    // the badge, but a suspicious ingredient/label/additive found alongside
+    // it is still worth surfacing rather than silently dropped.
+    final suspicious = [
+      ...product.suspiciousIngredients,
+      ...product.suspiciousLabels,
+      ...product.suspiciousAdditives,
+    ];
+    if (suspicious.isNotEmpty) {
+      return loc.explanationNoCertWithSuspicious(suspicious.join(', '));
+    }
     return loc.explanationNoCert;
   }
 

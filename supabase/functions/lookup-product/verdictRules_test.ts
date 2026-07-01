@@ -160,6 +160,22 @@ Deno.test('computeVerdict — animal product without halal label → requiresHal
   assertEquals(result.halalCertMatchLang, 'en')
 })
 
+// requiresHalalCert (confirmed animal, cert unresolved) and "suspicious" (uncertain
+// animal-or-plant) are independent signals that can both fire for the same product.
+// The cert explanation must not silently drop the unrelated suspicious ingredient.
+Deno.test('computeVerdict — animal product without halal label + unrelated suspicious ingredient → cert explanation mentions both', async () => {
+  const result = await computeVerdict(baseCtx({
+    name: 'Chicken Breast Fillets',
+    rawCategories: ['en:chicken'],
+    ingredients: ['chicken', 'salt', 'e471'],
+  }))
+  assertEquals(result.requiresHalalCert, true)
+  assertEquals(result.isHalal, false)
+  assertEquals(result.suspiciousIngredients, ['e471'])
+  assertMatch(result.explanation, /category "en:chicken"/)
+  assertMatch(result.explanation, /also contains e471, which may be animal-derived/)
+})
+
 Deno.test('computeVerdict — animal product with halal label → no cert flag', async () => {
   const result = await computeVerdict(baseCtx({
     name: 'Halal Chicken',

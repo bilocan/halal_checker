@@ -213,6 +213,7 @@
   "noCert": "⚠️ KEIN ZERTIFIKAT",
   "explanationUnknown": "Für dieses Produkt wurden keine Zutatendaten gefunden. Der Halal-Status kann nicht bestimmt werden — bitte prüfen Sie die Verpackung direkt.",
   "explanationNoCert": "Dies ist ein tierisches Lebensmittelprodukt ohne geprüfte Halal-Zertifizierung. Eine islamkonforme Schlachtung kann nicht bestätigt werden — prüfen Sie die Verpackung auf ein Halal-Siegel.",
+  "explanationNoCertWithSuspicious": "Dies ist ein tierisches Lebensmittelprodukt ohne geprüfte Halal-Zertifizierung. Eine islamkonforme Schlachtung kann nicht bestätigt werden — prüfen Sie die Verpackung auf ein Halal-Siegel. Außerdem enthält es {ingredients}, was tierischen Ursprungs sein könnte.",
   "nonFood": "ℹ️ KEIN LEBENSMITTEL",
   "explanationNonFood": "Dies ist kein Lebensmittelprodukt. Islamische Ernährungsregeln gelten nicht für dieses Produkt.",
   "about": "Über",
