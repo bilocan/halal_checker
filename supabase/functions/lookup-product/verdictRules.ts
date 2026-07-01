@@ -7,7 +7,7 @@ import type { KeywordEntry, KeywordResult } from './keyword.ts'
 import type { IngredientAnalysisSource } from './ingredientResolution.ts'
 import {
   ANIMAL_PRODUCT_CATEGORIES, HALAL_CERT_LABELS, ANIMAL_PRODUCT_NAME_TERMS,
-  ANIMAL_INGREDIENT_TERMS,
+  ANIMAL_INGREDIENT_TERMS, matchesAnimalTerm,
 } from './categories.ts'
 import {
   analyzeWithGemini, analyzeWithClaude, analyzeWithClaudeVision, type AiVerdict,
@@ -56,6 +56,12 @@ export interface VerdictResult {
   ingredients: string[]
   keywordMatchSource?: string
   keywordMatchOrigins?: Record<string, string>
+  /** Flagged ingredient/label/additive token → source language of the matched keyword (e.g. "de"). Transparency only. */
+  keywordMatchLanguages?: Record<string, string>
+  /** Category/name/ingredient term that triggered `requiresHalalCert`, when set. */
+  halalCertMatchTerm?: string
+  /** Source language of `halalCertMatchTerm` (category tag prefix, or the term's tagged language). */
+  halalCertMatchLang?: string | null
   analyzeLang?: string | null
   displayLang?: string
 }
@@ -76,6 +82,9 @@ export interface VerdictSnapshot {
   explanation: string
   keywordMatchSource?: string
   keywordMatchOrigins?: Record<string, string>
+  keywordMatchLanguages?: Record<string, string>
+  halalCertMatchTerm?: string
+  halalCertMatchLang?: string | null
   analyzeLang?: string | null
 }
 
@@ -242,6 +251,11 @@ function createInitialState(ctx: VerdictContext): VerdictState {
             : kwFirst.explanation),
       keywordMatchSource: kwFirst.keywordMatchSource,
       keywordMatchOrigins: kwFirst.keywordMatchOrigins,
+      keywordMatchLanguages: {
+        ...kwFirst.keywordMatchLanguages,
+        ...kwLabels.keywordMatchLanguages,
+        ...kwAdditives.keywordMatchLanguages,
+      },
       analyzeLang: kwFirst.analyzeLang,
     },
   }
@@ -607,29 +621,76 @@ function applySuspiciousNotHalal(snapshot: VerdictSnapshot, { ctx }: PostRuleCon
   return { ...snapshot, isHalal: false }
 }
 
+/** OFF category tag language prefix, e.g. "de:hähnchenfleisch" → "de". */
+function categoryLanguage(category: string): string | null {
+  const colon = category.indexOf(':')
+  return colon > 0 ? category.slice(0, colon).toLowerCase() : null
+}
+
 function applyHalalCertRequirement(
   snapshot: VerdictSnapshot,
   ctx: VerdictContext,
 ): { snapshot: VerdictSnapshot; requiresHalalCert: boolean } {
-  const categoryIsAnimalProduct = ctx.rawCategories.some(c =>
-    ANIMAL_PRODUCT_CATEGORIES.has(c.toLowerCase())
+  const matchedCategory = ctx.rawCategories.find(c => ANIMAL_PRODUCT_CATEGORIES.has(c.toLowerCase()))
+  const matchedNameTerm = [...ANIMAL_PRODUCT_NAME_TERMS.keys()].find(term =>
+    matchesAnimalTerm(ctx.name.toLowerCase(), term)
   )
-  const nameIsAnimalProduct = [...ANIMAL_PRODUCT_NAME_TERMS].some(term =>
-    ctx.name.toLowerCase().includes(term)
-  )
-  const ingredientIsAnimalProduct = ctx.ingredients.some(ingredient => {
+  let matchedIngredient: string | undefined
+  let matchedIngredientTerm: string | undefined
+  for (const ingredient of ctx.ingredients) {
     const lower = ingredient.toLowerCase()
-    return [...ANIMAL_INGREDIENT_TERMS].some(term => lower.includes(term))
-  })
-  const isAnimalProduct = categoryIsAnimalProduct || nameIsAnimalProduct || ingredientIsAnimalProduct
+    matchedIngredientTerm = [...ANIMAL_INGREDIENT_TERMS.keys()].find(term => matchesAnimalTerm(lower, term))
+    if (matchedIngredientTerm) {
+      matchedIngredient = ingredient
+      break
+    }
+  }
+  const isAnimalProduct = !!matchedCategory || !!matchedNameTerm || !!matchedIngredientTerm
   const hasHalalCert = ctx.labels.some(l => HALAL_CERT_LABELS.has(l.toLowerCase()))
   const requiresHalalCert = isAnimalProduct && !hasHalalCert && !ctx.isNonFood &&
     !ctx.haramCategory && !ctx.isHalalByCategory &&
     snapshot.haramIngredients.length === 0 && snapshot.haramLabels.length === 0
   if (!requiresHalalCert) return { snapshot, requiresHalalCert: false }
+
+  const matchLang = matchedCategory
+    ? categoryLanguage(matchedCategory)
+    : matchedNameTerm
+    ? ANIMAL_PRODUCT_NAME_TERMS.get(matchedNameTerm) ?? null
+    : matchedIngredientTerm
+    ? ANIMAL_INGREDIENT_TERMS.get(matchedIngredientTerm) ?? null
+    : null
+
+  const reason = matchedCategory
+    ? `category "${matchedCategory}"`
+    : matchedNameTerm
+    ? `product name (matched "${matchedNameTerm}", ${matchLang} term)`
+    : `ingredient "${matchedIngredient}" (matched "${matchedIngredientTerm}", ${matchLang} term)`
+
+  // Flag when the matched term's language doesn't match the language the ingredient
+  // text was actually analyzed in — e.g. a German term matching inside Spanish text is
+  // usually a substring collision, not a real translation (see barcode 20289119: "ente"
+  // matched inside Spanish "preferentemente"). Category/name matches aren't checked —
+  // OFF category tags and product names are frequently in a different language than the
+  // ingredient list, so a mismatch there is expected, not suspicious.
+  const analyzedTextLang = ctx.analyzeLang ?? ctx.displayLang ?? null
+  const possibleMismatch = !!matchedIngredientTerm && !!matchLang && !!analyzedTextLang &&
+    matchLang !== analyzedTextLang
+  const mismatchNote = possibleMismatch
+    ? ` This matched a ${matchLang} term while the ingredient text was analyzed as ${analyzedTextLang} — verify this isn't a false positive.`
+    : ''
+
   return {
     requiresHalalCert: true,
-    snapshot: { ...snapshot, isHalal: false, isUnknown: false },
+    snapshot: {
+      ...snapshot,
+      isHalal: false,
+      isUnknown: false,
+      explanation:
+        `This product appears to be an animal product (${reason}) with no halal certification on file. ` +
+        `Halal slaughter cannot be confirmed.${mismatchNote}`,
+      halalCertMatchTerm: matchedCategory ?? matchedNameTerm ?? matchedIngredientTerm,
+      halalCertMatchLang: matchLang,
+    },
   }
 }
 
@@ -639,14 +700,15 @@ function toVerdictResult(state: VerdictState): VerdictResult {
     isHalal, isUnknown, haramIngredients, suspiciousIngredients,
     ingredientWarnings, haramLabels, suspiciousLabels, labelWarnings,
     haramAdditives, suspiciousAdditives, additiveWarnings,
-    explanation, keywordMatchSource, keywordMatchOrigins, analyzeLang,
+    explanation, keywordMatchSource, keywordMatchOrigins, keywordMatchLanguages,
+    halalCertMatchTerm, halalCertMatchLang, analyzeLang,
   } = snapshot
   console.log(
     `[${ctx.barcode}] verdict: isHalal=${isHalal} isUnknown=${isUnknown} analyzedByAI=${analyzedByAI} ` +
     `requiresHalalCert=${requiresHalalCert} haram=[${haramIngredients.join(', ')}] suspicious=[${suspiciousIngredients.join(', ')}] ` +
     `haramLabels=[${haramLabels.join(', ')}] suspiciousLabels=[${suspiciousLabels.join(', ')}] ` +
     `haramAdditives=[${haramAdditives.join(', ')}] suspiciousAdditives=[${suspiciousAdditives.join(', ')}] ` +
-    `keywordMatchSource=${keywordMatchSource ?? 'n/a'}`,
+    `keywordMatchSource=${keywordMatchSource ?? 'n/a'} halalCertMatch=${halalCertMatchTerm ?? 'n/a'}(${halalCertMatchLang ?? 'n/a'})`,
   )
   return {
     isHalal, isUnknown, haramIngredients, suspiciousIngredients,
@@ -656,6 +718,9 @@ function toVerdictResult(state: VerdictState): VerdictResult {
     ingredients,
     keywordMatchSource,
     keywordMatchOrigins,
+    keywordMatchLanguages,
+    halalCertMatchTerm,
+    halalCertMatchLang,
     analyzeLang,
     displayLang: ctx.displayLang,
   }

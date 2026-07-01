@@ -149,6 +149,120 @@ export const SUSPICIOUS_ENTRIES: KeywordEntry[] = [
    'manteca', 'manteca animal'],
 ]
 
+/** E-number codes (e.g. "e441", "e-441") are language-neutral — never tagged. */
+const E_NUMBER_VARIANT = /^e-?\d+$/i
+
+/**
+ * Source language of each HARAM_ENTRIES / SUSPICIOUS_ENTRIES variant string, keyed by the
+ * exact (lowercase) variant text. Used only for match-transparency display (e.g. "matched
+ * via German term 'ente'") — never for matching logic. E-number variants are omitted; look
+ * them up via `E_NUMBER_VARIANT` instead of this map (they carry no language).
+ */
+const VARIANT_LANGUAGE: Record<string, string> = {
+  // — alcohol —
+  alcohol: 'en', alkohol: 'de', alcool: 'fr', alcol: 'it', alkol: 'tr', álcool: 'pt',
+  ethanol: 'en', äthanol: 'de', éthanol: 'fr', etanolo: 'it', etanol: 'es',
+  wine: 'en', wein: 'de', vin: 'fr', vino: 'it', şarap: 'tr', wijn: 'nl', vinho: 'pt',
+  beer: 'en', bier: 'de', bière: 'fr', birra: 'it', cerveza: 'es', bira: 'tr', cerveja: 'pt',
+  budweiser: 'en', heineken: 'en', corona: 'en', 'stella artois': 'en', carlsberg: 'en',
+  cognac: 'fr', kognak: 'de',
+  brandy: 'en', branntwein: 'de', brandewijn: 'nl',
+  whisky: 'en', whiskey: 'en', whiskie: 'en', viski: 'tr',
+  vodka: 'en', wodka: 'de',
+  rum: 'en', rhum: 'fr', ron: 'es',
+  gin: 'en',
+  liqueur: 'fr', likör: 'de', licor: 'es', likeur: 'nl', liquore: 'it',
+  schnapps: 'en', schnaps: 'de',
+  champagne: 'fr', sekt: 'de', cava: 'es', spumante: 'it',
+  prosecco: 'it',
+  bourbon: 'en',
+  sake: 'en', saké: 'fr',
+  // — pork family —
+  pork: 'en', schwein: 'de', schweinefleisch: 'de', porc: 'fr', maiale: 'it', cerdo: 'es',
+  domuz: 'tr', varkens: 'nl', varkensvlees: 'nl', porco: 'pt',
+  свинско: 'bg', свински: 'bg', свинска: 'bg', 'свинско месо': 'bg', 'свинска месо': 'bg',
+  lard: 'en', schmalz: 'de', schweineschmalz: 'de', saindoux: 'fr', strutto: 'it',
+  'manteca de cerdo': 'es', 'domuz yağı': 'tr', banha: 'pt',
+  bacon: 'en', speck: 'de', lardons: 'fr', pancetta: 'it', 'domuz pastırması': 'tr',
+  ham: 'en', schinken: 'de', jambon: 'fr', prosciutto: 'it', jamón: 'es', presunto: 'pt',
+  pepperoni: 'it', salami: 'it', salame: 'it', chorizo: 'es',
+  // — carmine / cochineal —
+  carmine: 'en', karmin: 'de', carmín: 'es', karmín: 'cs', carmin: 'fr',
+  cochineal: 'en', cochenille: 'fr', cocciniglia: 'it', cochinilla: 'es', koşnil: 'tr',
+  // — gelatin —
+  gelatin: 'en', gelatine: 'de', gelatina: 'it', jelatin: 'tr', gélatine: 'fr',
+  želatina: 'sr', zselatin: 'hu',
+  // — E-number word variants (E474–E495) —
+  sucroglycerides: 'en', zuckerglyceride: 'de', 'şeker gliseridleri': 'tr',
+  sucroglycérides: 'fr', sucrogliceridi: 'it', sucroglicéridos: 'es', sucroglyceriden: 'nl',
+  'polyglycerol esters of fatty acids': 'en', 'polyglycerinester von speisefettsäuren': 'de',
+  'yağ asitlerinin poligliserol esterleri': 'tr', "esters polyglycériques d'acides gras": 'fr',
+  'esteri poliglicerici degli acidi grassi': 'it', 'ésteres poliglicéridos de ácidos grasos': 'es',
+  'polyglycerolesters van vetzuren': 'nl',
+  'polyglycerol polyricinoleate': 'en', polyglycerinpolyricinoleat: 'de',
+  'poligliserol poliricinoleat': 'tr', 'polyricinoléate de polyglycérol': 'fr',
+  'poliricinoleato di poliglicerolo': 'it', 'poliricinoleato de poliglicerol': 'es',
+  polyglycerolpolyricinoleaat: 'nl',
+  'propylene glycol esters of fatty acids': 'en', 'propylenglycolester von speisefettsäuren': 'de',
+  'yağ asitlerinin propilen glikol esterleri': 'tr', "esters de propylène glycol d'acides gras": 'fr',
+  'esteri del glicole propilenico degli acidi grassi': 'it',
+  'ésteres de propano-1,2-diol de ácidos grasos': 'es', 'propaan-1,2-diolesters van vetzuren': 'nl',
+  'stearyl tartrate': 'en', stearyltartrat: 'de', 'stearil tartarat': 'tr',
+  'tartrate de stéaryle': 'fr', 'tartrato di stearile': 'it', 'tartrato de estearilo': 'es',
+  stearyltartraat: 'nl',
+  'polyoxyethylene stearate': 'en', polyoxyethylenstearat: 'de', 'polioksietilen stearat': 'tr',
+  'stéarate de polyoxyéthylène': 'fr', 'stearato di poliossietilene': 'it',
+  'estearato de polioxietileno': 'es', polyoxyethyleenstearaat: 'nl',
+  'polysorbate 20': 'en', 'polysorbat 20': 'de', 'polisorbat 20': 'tr', 'polisorbato 20': 'it',
+  'polysorbaat 20': 'nl',
+  'polysorbate 80': 'en', 'polysorbat 80': 'de', 'polisorbat 80': 'tr', 'polisorbato 80': 'it',
+  'polysorbaat 80': 'nl',
+  'polysorbate 40': 'en', 'polysorbat 40': 'de', 'polisorbat 40': 'tr', 'polisorbato 40': 'it',
+  'polysorbaat 40': 'nl',
+  'polysorbate 60': 'en', 'polysorbat 60': 'de', 'polisorbat 60': 'tr', 'polisorbato 60': 'it',
+  'polysorbaat 60': 'nl',
+  'polysorbate 65': 'en', 'polysorbat 65': 'de', 'polisorbat 65': 'tr', 'polisorbato 65': 'it',
+  'polysorbaat 65': 'nl',
+  'sorbitan monostearate': 'en', sorbitanmonostearat: 'de', 'sorbitan monostearat': 'tr',
+  'monostéarate de sorbitane': 'fr', 'sorbitan monostearato': 'it', 'monoestearato de sorbitán': 'es',
+  sorbitaanmonostearaat: 'nl',
+  'sorbitan tristearate': 'en', sorbitantristearat: 'de', 'sorbitan tristearat': 'tr',
+  'tristéarate de sorbitane': 'fr', 'sorbitan tristearato': 'it', 'triestearato de sorbitán': 'es',
+  sorbitaantristearaat: 'nl',
+  'sorbitan monolaurate': 'en', sorbitanmonolaurat: 'de', 'sorbitan monolaurat': 'tr',
+  'monolaurate de sorbitane': 'fr', 'sorbitan monolaurato': 'it', 'monolaurato de sorbitán': 'es',
+  sorbitaanmonolauraat: 'nl',
+  'sorbitan monooleate': 'en', sorbitanmonooleat: 'de', 'sorbitan monooleat': 'tr',
+  'monooléate de sorbitane': 'fr', 'sorbitan monooleato': 'it', 'monooleato de sorbitán': 'es',
+  'sorbitaanmono-oleaat': 'nl',
+  'sorbitan monopalmitate': 'en', sorbitanmonopalmitat: 'de', 'sorbitan monopalmitat': 'tr',
+  'monopalmitate de sorbitane': 'fr', 'sorbitan monopalmitato': 'it', 'monopalmitato de sorbitán': 'es',
+  sorbitaanmonopalmitaat: 'nl',
+  'l-cystine': 'en', 'l-cystin': 'de', 'l-sistin': 'tr', 'l-cistina': 'it',
+  // — lanolin / rennet / whey / cysteine —
+  lanolin: 'en', wollwachs: 'de', lanoline: 'fr', lanolina: 'it',
+  rennet: 'en', lab: 'de', labferment: 'de', présure: 'fr', caglio: 'it', cuajo: 'es',
+  'peynir mayası': 'tr', stremsel: 'nl',
+  whey: 'en', molke: 'de', lactosérum: 'fr', 'siero di latte': 'it', 'suero de leche': 'es',
+  'peynir suyu': 'tr', wei: 'nl',
+  'l-cysteine': 'en', 'l-cystein': 'de', 'l-cystéine': 'fr', 'l-cisteina': 'it', 'l-sistein': 'tr',
+  // — flavourings / enzymes / glycerol / manteca —
+  'natural flavour': 'en', 'natural flavor': 'en', 'natürliches aroma': 'de',
+  'natürliche aromen': 'de', 'arôme naturel': 'fr', 'aroma naturale': 'it', 'aroma natural': 'es',
+  'doğal aroma': 'tr', 'natuurlijk aroma': 'nl',
+  flavouring: 'en', flavoring: 'en', aroma: 'de', arôme: 'fr', smaakstof: 'nl',
+  enzymes: 'en', enzyme: 'de', enzimi: 'it', enzimas: 'es', enzim: 'tr', enzymen: 'nl',
+  glycerol: 'en', glycerin: 'de', glycérol: 'fr', glicerina: 'it', gliserin: 'tr',
+  glycerine: 'nl',
+  manteca: 'es', 'manteca animal': 'es',
+}
+
+/** Source language of a matched variant — `null` for E-number codes (language-neutral). */
+function variantLanguage(variant: string): string | null {
+  if (E_NUMBER_VARIANT.test(variant)) return null
+  return VARIANT_LANGUAGE[variant] ?? null
+}
+
 const ALCOHOL_FAMILY = new Set([
   'alcohol','alkohol','alcool','alcol','alkol','álcool',
   'ethanol','äthanol','éthanol','etanolo','etanol',
@@ -290,6 +404,8 @@ export interface KeywordResult {
   keywordMatchSource?: string
   /** Flagged ingredient token → source key that matched it. */
   keywordMatchOrigins?: Record<string, string>
+  /** Flagged ingredient token → source language of the matched keyword variant (e.g. "de"). Omitted for language-neutral matches (E-numbers). */
+  keywordMatchLanguages?: Record<string, string>
   /** OFF language field used when display text was not keyword-analyzable. */
   analyzeLang?: string | null
 }
@@ -300,6 +416,7 @@ interface SinglePassResult {
   warnings: Record<string, string>
   canonicals: Record<string, string>
   origins: Record<string, string>
+  languages: Record<string, string>
 }
 
 function keywordSinglePass(
@@ -313,6 +430,7 @@ function keywordSinglePass(
   const haram: string[] = []
   const suspicious: string[] = []
   const origins: Record<string, string> = {}
+  const languages: Record<string, string> = {}
 
   for (const ing of ingredients) {
     const lower = ing.toLowerCase()
@@ -323,6 +441,8 @@ function keywordSinglePass(
         warnings[ing] = entry[1]
         haram.push(ing)
         origins[ing] = sourceKey
+        const lang = variantLanguage(matchedVariant)
+        if (lang) languages[ing] = lang
         foundHaram = true
         break
       }
@@ -342,12 +462,14 @@ function keywordSinglePass(
         canonicals[ing] = entry[0]
         suspicious.push(ing)
         origins[ing] = sourceKey
+        const lang = variantLanguage(matchedVariant)
+        if (lang) languages[ing] = lang
         break
       }
     }
   }
 
-  return { haram, suspicious, warnings, canonicals, origins }
+  return { haram, suspicious, warnings, canonicals, origins, languages }
 }
 
 function buildKeywordExplanation(
@@ -404,6 +526,7 @@ export function keywordAnalysisFromSources(
   const warnings: Record<string, string> = {}
   const canonicals: Record<string, string> = {}
   const matchOrigins: Record<string, string> = {}
+  const matchLanguages: Record<string, string> = {}
   const matchedSourceKeys: string[] = []
 
   const seenHaram = new Set<string>()
@@ -427,6 +550,7 @@ export function keywordAnalysisFromSources(
       }
       matchOrigins[ing] = pass.origins[ing] ?? source.key
       warnings[ing] = pass.warnings[ing] ?? warnings[ing] ?? ''
+      if (pass.languages[ing]) matchLanguages[ing] = pass.languages[ing]
     }
     for (const ing of pass.suspicious) {
       const key = ing.toLowerCase()
@@ -437,6 +561,7 @@ export function keywordAnalysisFromSources(
       matchOrigins[ing] = pass.origins[ing] ?? source.key
       warnings[ing] = pass.warnings[ing] ?? warnings[ing] ?? ''
       if (pass.canonicals[ing]) canonicals[ing] = pass.canonicals[ing]
+      if (pass.languages[ing]) matchLanguages[ing] = pass.languages[ing]
     }
   }
 
@@ -478,6 +603,7 @@ export function keywordAnalysisFromSources(
     explanation,
     keywordMatchSource,
     keywordMatchOrigins: Object.keys(matchOrigins).length > 0 ? matchOrigins : undefined,
+    keywordMatchLanguages: Object.keys(matchLanguages).length > 0 ? matchLanguages : undefined,
     analyzeLang,
   }
 }

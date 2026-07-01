@@ -457,7 +457,8 @@ async function saveFullLookup(
     ingredientWarnings, haramLabels, suspiciousLabels, labelWarnings,
     haramAdditives, suspiciousAdditives, additiveWarnings,
     explanation, analyzedByAI, requiresHalalCert,
-    keywordMatchSource, keywordMatchOrigins, analyzeLang, displayLang,
+    keywordMatchSource, keywordMatchOrigins, keywordMatchLanguages,
+    halalCertMatchTerm, halalCertMatchLang, analyzeLang, displayLang,
   } = verdict
 
   const productRow: ProductRow = {
@@ -500,6 +501,9 @@ async function saveFullLookup(
     analyzedByAI,
     keywordMatchSource,
     keywordMatchOrigins,
+    keywordMatchLanguages,
+    halalCertMatchTerm,
+    halalCertMatchLang,
     analyzeLang,
   }
 
@@ -530,6 +534,9 @@ async function saveFullLookup(
     requires_halal_cert: requiresHalalCert,
     keyword_match_source: keywordMatchSource ?? null,
     keyword_match_origins: keywordMatchOrigins ?? {},
+    keyword_match_languages: keywordMatchLanguages ?? {},
+    halal_cert_match_term: halalCertMatchTerm ?? null,
+    halal_cert_match_lang: halalCertMatchLang ?? null,
     analyze_lang: analyzeLang ?? null,
     display_lang: displayLang || null,
     last_analysed_at: new Date().toISOString(),

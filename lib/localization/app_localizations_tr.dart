@@ -449,6 +449,30 @@ class AppLocalizationsTr extends AppLocalizations {
   String get transparentMatchOrigins => 'Eşleşme kaynakları';
 
   @override
+  String get transparentMatchLanguages => 'Eşleşme dilleri';
+
+  @override
+  String get transparentMatchLanguageTooltip =>
+      'Eşleşen anahtar kelimenin dili — içerik metninin dilinden farklıysa bu eşleşme yanlış pozitif olabilir.';
+
+  @override
+  String get transparentCertMatchTooltip =>
+      'Sertifika gerekliliğini tetikleyen kategori, ürün adı veya içerik terimi.';
+
+  @override
+  String get transparentCertMatch => 'Sertifika gerekliliğini tetikleyen';
+
+  @override
+  String transparentCertMatchValue(String term, String lang) {
+    return '\"$term\" ($lang)';
+  }
+
+  @override
+  String transparentCertMatchMismatch(String matchLang, String analyzeLang) {
+    return 'Bu, $matchLang dilinde bir terimle eşleşti ancak içerik metni $analyzeLang olarak analiz edildi — yanlış pozitif olabilir, lütfen kontrol edin.';
+  }
+
+  @override
   String get transparentDisplayLanguage => 'Etiket dili';
 
   @override

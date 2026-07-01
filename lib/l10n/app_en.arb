@@ -165,6 +165,24 @@
     }
   },
   "transparentMatchOrigins": "Match origins",
+  "transparentMatchLanguages": "Match languages",
+  "transparentMatchLanguageTooltip": "Language of the matched keyword — if it differs from the ingredient text's language, this match may be a false positive.",
+  "transparentCertMatchTooltip": "Category, product name, or ingredient term that triggered the halal-certificate requirement.",
+  "transparentCertMatch": "Cert requirement matched",
+  "transparentCertMatchValue": "\"{term}\" ({lang})",
+  "@transparentCertMatchValue": {
+    "placeholders": {
+      "term": { "type": "String" },
+      "lang": { "type": "String" }
+    }
+  },
+  "transparentCertMatchMismatch": "This matched a {matchLang} term while the ingredient text was analyzed as {analyzeLang} — may be a false positive, please verify.",
+  "@transparentCertMatchMismatch": {
+    "placeholders": {
+      "matchLang": { "type": "String" },
+      "analyzeLang": { "type": "String" }
+    }
+  },
   "transparentDisplayLanguage": "Label language",
   "transparentLabelsChecked": "Labels checked",
   "transparentFlaggedLabels": "Flagged labels",

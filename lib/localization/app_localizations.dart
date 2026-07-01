@@ -904,6 +904,42 @@ abstract class AppLocalizations {
   /// **'Match origins'**
   String get transparentMatchOrigins;
 
+  /// No description provided for @transparentMatchLanguages.
+  ///
+  /// In en, this message translates to:
+  /// **'Match languages'**
+  String get transparentMatchLanguages;
+
+  /// No description provided for @transparentMatchLanguageTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Language of the matched keyword — if it differs from the ingredient text\'s language, this match may be a false positive.'**
+  String get transparentMatchLanguageTooltip;
+
+  /// No description provided for @transparentCertMatchTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Category, product name, or ingredient term that triggered the halal-certificate requirement.'**
+  String get transparentCertMatchTooltip;
+
+  /// No description provided for @transparentCertMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Cert requirement matched'**
+  String get transparentCertMatch;
+
+  /// No description provided for @transparentCertMatchValue.
+  ///
+  /// In en, this message translates to:
+  /// **'\"{term}\" ({lang})'**
+  String transparentCertMatchValue(String term, String lang);
+
+  /// No description provided for @transparentCertMatchMismatch.
+  ///
+  /// In en, this message translates to:
+  /// **'This matched a {matchLang} term while the ingredient text was analyzed as {analyzeLang} — may be a false positive, please verify.'**
+  String transparentCertMatchMismatch(String matchLang, String analyzeLang);
+
   /// No description provided for @transparentDisplayLanguage.
   ///
   /// In en, this message translates to:

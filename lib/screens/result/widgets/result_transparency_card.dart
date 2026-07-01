@@ -45,9 +45,21 @@ class ResultTransparencyCard extends StatelessWidget {
       loc,
       product.keywordMatchOrigins,
     );
+    final matchLanguagesText = KeywordMatchDisplay.languageSummary(
+      loc,
+      product.keywordMatchLanguages,
+    );
     final displayLangText = product.displayLang?.isNotEmpty == true
         ? product.displayLang!.toUpperCase()
         : loc.transparentNoMatches;
+    final certMatchTerm = product.halalCertMatchTerm;
+    final certMatchLang = product.halalCertMatchLang;
+    final analyzedTextLang = product.analyzeLang ?? product.displayLang;
+    final certMatchMismatch =
+        product.requiresHalalCert &&
+        certMatchLang != null &&
+        analyzedTextLang != null &&
+        certMatchLang != analyzedTextLang;
 
     return Card(
       margin: EdgeInsets.zero,
@@ -119,6 +131,36 @@ class ResultTransparencyCard extends StatelessWidget {
                     label: loc.transparentMatchOrigins,
                     value: matchOriginsText,
                     color: Colors.blueGrey.shade700,
+                  ),
+                if (product.keywordMatchLanguages.isNotEmpty)
+                  Tooltip(
+                    message: loc.transparentMatchLanguageTooltip,
+                    child: _SummaryRow(
+                      icon: Icons.language,
+                      label: loc.transparentMatchLanguages,
+                      value: matchLanguagesText,
+                      color: Colors.blueGrey.shade700,
+                    ),
+                  ),
+                if (certMatchTerm != null)
+                  Tooltip(
+                    message: loc.transparentCertMatchTooltip,
+                    child: _SummaryRow(
+                      icon: certMatchMismatch
+                          ? Icons.report_problem_outlined
+                          : Icons.verified_outlined,
+                      label: loc.transparentCertMatch,
+                      value: certMatchMismatch
+                          ? '${loc.transparentCertMatchValue(certMatchTerm, certMatchLang.toUpperCase())}\n'
+                                '${loc.transparentCertMatchMismatch(certMatchLang.toUpperCase(), analyzedTextLang.toUpperCase())}'
+                          : loc.transparentCertMatchValue(
+                              certMatchTerm,
+                              (certMatchLang ?? '').toUpperCase(),
+                            ),
+                      color: certMatchMismatch
+                          ? Colors.orange.shade700
+                          : Colors.blueGrey.shade700,
+                    ),
                   ),
                 _SummaryRow(
                   icon: Icons.error_outline,

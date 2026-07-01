@@ -448,6 +448,30 @@ class AppLocalizationsEn extends AppLocalizations {
   String get transparentMatchOrigins => 'Match origins';
 
   @override
+  String get transparentMatchLanguages => 'Match languages';
+
+  @override
+  String get transparentMatchLanguageTooltip =>
+      'Language of the matched keyword — if it differs from the ingredient text\'s language, this match may be a false positive.';
+
+  @override
+  String get transparentCertMatchTooltip =>
+      'Category, product name, or ingredient term that triggered the halal-certificate requirement.';
+
+  @override
+  String get transparentCertMatch => 'Cert requirement matched';
+
+  @override
+  String transparentCertMatchValue(String term, String lang) {
+    return '\"$term\" ($lang)';
+  }
+
+  @override
+  String transparentCertMatchMismatch(String matchLang, String analyzeLang) {
+    return 'This matched a $matchLang term while the ingredient text was analyzed as $analyzeLang — may be a false positive, please verify.';
+  }
+
+  @override
   String get transparentDisplayLanguage => 'Label language';
 
   @override

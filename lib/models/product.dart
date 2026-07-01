@@ -65,6 +65,17 @@ class Product {
   /// Flagged ingredient → source key that matched it.
   final Map<String, String> keywordMatchOrigins;
 
+  /// Flagged ingredient/label/additive token → source language of the matched keyword
+  /// (e.g. "de"). Transparency only — lets admins spot a keyword matching in a language
+  /// different from where the text came from.
+  final Map<String, String> keywordMatchLanguages;
+
+  /// Category/name/ingredient term that triggered [requiresHalalCert], when set.
+  final String? halalCertMatchTerm;
+
+  /// Source language of [halalCertMatchTerm] (e.g. "de" for German "ente").
+  final String? halalCertMatchLang;
+
   /// OFF language used for analysis when the displayed label was not keyword-analyzable.
   final String? analyzeLang;
 
@@ -148,6 +159,9 @@ class Product {
     this.lastAnalysedAt,
     this.keywordMatchSource,
     this.keywordMatchOrigins = const {},
+    this.keywordMatchLanguages = const {},
+    this.halalCertMatchTerm,
+    this.halalCertMatchLang,
     this.analyzeLang,
     this.displayLang,
     this.geminiWebIngredientLookupAttemptedForName = false,
@@ -193,6 +207,9 @@ class Product {
     DateTime? lastAnalysedAt,
     String? keywordMatchSource,
     Map<String, String>? keywordMatchOrigins,
+    Map<String, String>? keywordMatchLanguages,
+    String? halalCertMatchTerm,
+    String? halalCertMatchLang,
     String? analyzeLang,
     String? displayLang,
     bool? geminiWebIngredientLookupAttemptedForName,
@@ -237,6 +254,9 @@ class Product {
     lastAnalysedAt: lastAnalysedAt ?? this.lastAnalysedAt,
     keywordMatchSource: keywordMatchSource ?? this.keywordMatchSource,
     keywordMatchOrigins: keywordMatchOrigins ?? this.keywordMatchOrigins,
+    keywordMatchLanguages: keywordMatchLanguages ?? this.keywordMatchLanguages,
+    halalCertMatchTerm: halalCertMatchTerm ?? this.halalCertMatchTerm,
+    halalCertMatchLang: halalCertMatchLang ?? this.halalCertMatchLang,
     analyzeLang: analyzeLang ?? this.analyzeLang,
     displayLang: displayLang ?? this.displayLang,
     geminiWebIngredientLookupAttemptedForName:
@@ -288,6 +308,10 @@ class Product {
     if (keywordMatchSource != null) 'keywordMatchSource': keywordMatchSource,
     if (keywordMatchOrigins.isNotEmpty)
       'keywordMatchOrigins': keywordMatchOrigins,
+    if (keywordMatchLanguages.isNotEmpty)
+      'keywordMatchLanguages': keywordMatchLanguages,
+    if (halalCertMatchTerm != null) 'halalCertMatchTerm': halalCertMatchTerm,
+    if (halalCertMatchLang != null) 'halalCertMatchLang': halalCertMatchLang,
     if (analyzeLang != null) 'analyzeLang': analyzeLang,
     if (displayLang != null) 'displayLang': displayLang,
     'geminiWebIngredientLookupAttemptedForName':
@@ -360,6 +384,11 @@ class Product {
     keywordMatchOrigins: json['keywordMatchOrigins'] != null
         ? Map<String, String>.from(json['keywordMatchOrigins'] as Map)
         : const {},
+    keywordMatchLanguages: json['keywordMatchLanguages'] != null
+        ? Map<String, String>.from(json['keywordMatchLanguages'] as Map)
+        : const {},
+    halalCertMatchTerm: json['halalCertMatchTerm'] as String?,
+    halalCertMatchLang: json['halalCertMatchLang'] as String?,
     analyzeLang: json['analyzeLang'] as String?,
     displayLang: json['displayLang'] as String?,
     geminiWebIngredientLookupAttemptedForName:

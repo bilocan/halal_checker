@@ -155,6 +155,9 @@ Deno.test('computeVerdict — animal product without halal label → requiresHal
   assertEquals(result.requiresHalalCert, true)
   assertEquals(result.isHalal, false)
   assertEquals(result.isUnknown, false)
+  assertMatch(result.explanation, /category "en:chicken"/)
+  assertEquals(result.halalCertMatchTerm, 'en:chicken')
+  assertEquals(result.halalCertMatchLang, 'en')
 })
 
 Deno.test('computeVerdict — animal product with halal label → no cert flag', async () => {
@@ -180,6 +183,50 @@ Deno.test('computeVerdict — chicken in ingredients, generic category, plain na
   assertEquals(result.requiresHalalCert, true)
   assertEquals(result.isHalal, false)
   assertEquals(result.isUnknown, false)
+  assertMatch(result.explanation, /ingredient "chicken" \(matched "chicken", en term\)/)
+  assertEquals(result.halalCertMatchTerm, 'chicken')
+  assertEquals(result.halalCertMatchLang, 'en')
+})
+
+Deno.test('computeVerdict — suspicious keyword match reports source language', async () => {
+  const result = await computeVerdict(baseCtx({ ingredients: ['gélatine', 'water'] }))
+  assertEquals(result.suspiciousIngredients, ['gélatine'])
+  assertEquals(result.keywordMatchLanguages?.['gélatine'], 'fr')
+})
+
+Deno.test('computeVerdict — E-number keyword match omits language (neutral)', async () => {
+  const result = await computeVerdict(baseCtx({ ingredients: ['e471', 'water'] }))
+  assertEquals(result.suspiciousIngredients, ['e471'])
+  assertEquals(result.keywordMatchLanguages?.['e471'], undefined)
+})
+
+Deno.test('computeVerdict — cross-language term match flags a possible false positive in explanation', async () => {
+  // Regression: barcode 20289119 — "ente" (German for duck) matched a substring inside
+  // the Spanish word "preferentemente". Word-boundary matching (verdictRules_test.ts
+  // above) already prevents the false flag; this test locks in the mismatch-note wording
+  // for the (rarer) case of a genuine German-labelled word appearing in non-German text.
+  const result = await computeVerdict(baseCtx({
+    name: 'Mystery Product',
+    rawCategories: ['en:snacks'],
+    ingredients: ['water', 'ente', 'sugar'],
+    analyzeLang: 'es',
+  }))
+  assertEquals(result.requiresHalalCert, true)
+  assertMatch(result.explanation, /matched "ente", de term/)
+  assertMatch(result.explanation, /analyzed as es — verify this isn't a false positive/)
+})
+
+// Regression: barcode 20289119 (multivitamin) — "ente" (German for duck) matched as a
+// plain substring inside the unrelated Spanish word "preferentemente", wrongly flagging
+// requiresHalalCert. Word-boundary matching must reject this.
+Deno.test('computeVerdict — animal term substring inside unrelated word → no false positive', async () => {
+  const result = await computeVerdict(baseCtx({
+    name: 'Effervescent MultiVitamin',
+    rawCategories: ['en:dietary-supplements', 'en:vitamin-supplements'],
+    ingredients: ['citric acid', 'consumir preferentemente antes de la fecha', 'vitamin c'],
+  }))
+  assertEquals(result.requiresHalalCert, false)
+  assertEquals(result.isHalal, true)
 })
 
 Deno.test('computeVerdict — chicken in ingredients, generic category, halal cert → no cert flag', async () => {
