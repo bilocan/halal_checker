@@ -18,6 +18,47 @@ export interface StoredReanalysisResult {
   responseRow: Record<string, unknown>
 }
 
+function asStringArray(value: unknown): string[] {
+  return Array.isArray(value) ? (value as unknown[]).map(String) : []
+}
+
+function sortedJson(values: string[]): string {
+  return JSON.stringify([...values].sort())
+}
+
+/**
+ * True when the freshly recomputed verdict fields match what's already
+ * stored (ignoring explanation text). `computeVerdict({ skipAi: true })`
+ * always produces a generic keyword-only explanation — when the verdict
+ * itself hasn't actually changed, we keep the existing explanation (which
+ * may have been written by AI, back when this row was first analyzed)
+ * instead of silently downgrading it to the generic fallback text.
+ */
+function verdictUnchanged(
+  existing: HalalScanProduct,
+  isHalal: boolean,
+  isUnknown: boolean,
+  haramIngredients: string[],
+  suspiciousIngredients: string[],
+  haramLabels: string[],
+  suspiciousLabels: string[],
+  haramAdditives: string[],
+  suspiciousAdditives: string[],
+  requiresHalalCert: boolean,
+): boolean {
+  return (
+    !!existing.is_halal === isHalal &&
+    !!existing.is_unknown === isUnknown &&
+    !!existing.requires_halal_cert === requiresHalalCert &&
+    sortedJson(asStringArray(existing.haram_ingredients)) === sortedJson(haramIngredients) &&
+    sortedJson(asStringArray(existing.suspicious_ingredients)) === sortedJson(suspiciousIngredients) &&
+    sortedJson(asStringArray(existing.haram_labels)) === sortedJson(haramLabels) &&
+    sortedJson(asStringArray(existing.suspicious_labels)) === sortedJson(suspiciousLabels) &&
+    sortedJson(asStringArray(existing.haram_additives)) === sortedJson(haramAdditives) &&
+    sortedJson(asStringArray(existing.suspicious_additives)) === sortedJson(suspiciousAdditives)
+  )
+}
+
 /**
  * Re-run keyword + post rules on stored product data (no OFF refetch, no AI,
  * no persistence). Pure compute step shared by the live re-analysis path
@@ -87,8 +128,16 @@ export async function computeStoredReanalysis(
     isHalal, isUnknown, haramIngredients, suspiciousIngredients,
     ingredientWarnings, haramLabels, suspiciousLabels, labelWarnings,
     haramAdditives, suspiciousAdditives, additiveWarnings,
-    explanation, requiresHalalCert,
+    requiresHalalCert,
   } = verdict
+
+  const existingExplanation = typeof existing.explanation === 'string' ? existing.explanation : ''
+  const explanation = existingExplanation.trim().length > 0 && verdictUnchanged(
+    existing, isHalal, isUnknown, haramIngredients, suspiciousIngredients,
+    haramLabels, suspiciousLabels, haramAdditives, suspiciousAdditives, requiresHalalCert,
+  )
+    ? existingExplanation
+    : verdict.explanation
 
   const productRow: ProductRow = {
     barcode,

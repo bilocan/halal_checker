@@ -24,8 +24,18 @@ abstract final class ProductVerdict {
   static ProductOutcome outcome(Product product) {
     if (product.isNonFood) return ProductOutcome.nonFood;
     if (product.isUnknown) return ProductOutcome.unknown;
-    if (product.haramIngredients.isNotEmpty) return ProductOutcome.haram;
-    if (product.suspiciousIngredients.isNotEmpty) {
+    // Haram/suspicious can also come from labels or additives, not just the
+    // ingredient list — check all three sources before falling back to the
+    // collapsed isHalal flag, so e.g. a suspicious-only additive (may be
+    // animal-derived, not confirmed haram) shows as suspicious, not haram.
+    if (product.haramIngredients.isNotEmpty ||
+        product.haramLabels.isNotEmpty ||
+        product.haramAdditives.isNotEmpty) {
+      return ProductOutcome.haram;
+    }
+    if (product.suspiciousIngredients.isNotEmpty ||
+        product.suspiciousLabels.isNotEmpty ||
+        product.suspiciousAdditives.isNotEmpty) {
       return ProductOutcome.suspicious;
     }
     if (product.requiresHalalCert) return ProductOutcome.noCert;

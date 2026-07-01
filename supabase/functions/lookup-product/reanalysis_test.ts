@@ -58,6 +58,47 @@ Deno.test('runStoredProductReanalysis — skipAi keyword path (no OFF categories
   assertEquals(body.product.requiresHalalCert, false)
 })
 
+Deno.test('runStoredProductReanalysis — preserves existing explanation when the verdict is unchanged', async () => {
+  const row = storedRow({
+    ingredients: ['gurken'],
+    is_halal: true,
+    haram_ingredients: [],
+    suspicious_ingredients: [],
+    explanation: "The ingredient 'gurken' (cucumbers) is a vegetable and is considered halal. "
+      + 'There are no haram or suspicious ingredients present.',
+  })
+  const supabase = mockSupabase({ productsFullRow: null })
+
+  const res = await runStoredProductReanalysis(supabase, row, row.barcode as string, [], [], cors)
+  const body = await res.json()
+  assertEquals(body.product.isHalal, true)
+  assertEquals(
+    body.product.explanation,
+    "The ingredient 'gurken' (cucumbers) is a vegetable and is considered halal. "
+      + 'There are no haram or suspicious ingredients present.',
+  )
+})
+
+Deno.test('runStoredProductReanalysis — replaces stale explanation when the verdict actually changes', async () => {
+  const row = storedRow({
+    ingredients: ['gelatin'],
+    is_halal: true,
+    haram_ingredients: [],
+    suspicious_ingredients: [],
+    explanation: 'stale explanation from before gelatin was flagged',
+  })
+  const supabase = mockSupabase({ productsFullRow: null })
+
+  const res = await runStoredProductReanalysis(supabase, row, row.barcode as string, [], [], cors)
+  const body = await res.json()
+  assertEquals(body.product.isHalal, false)
+  assertEquals(body.product.suspiciousIngredients.includes('gelatin'), true)
+  assertEquals(
+    body.product.explanation.includes('stale explanation from before gelatin was flagged'),
+    false,
+  )
+})
+
 Deno.test('runStoredProductReanalysis — community ingredients override stored OFF list', async () => {
   const row = storedRow({ ingredients: ['pork'], is_halal: false })
   const fallback = {
