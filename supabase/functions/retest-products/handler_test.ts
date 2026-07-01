@@ -124,6 +124,62 @@ Deno.test('handleScan — reuses provided runId and paginates via nextCursor', a
   assertEquals(body.done, false)
 })
 
+Deno.test('handleScan — reports filtered=false when no scan filter is given', async () => {
+  const supabase = mockRetestSupabase({ productsFullRows: [storedRow()] })
+  const res = await handleScan(supabase, undefined, undefined, 10)
+  const body = await res.json()
+  assertEquals(body.filtered, false)
+})
+
+Deno.test('handleScan — new run with a scan filter reports filtered=true', async () => {
+  const supabase = mockRetestSupabase({ productsFullRows: [storedRow()] })
+  const res = await handleScan(supabase, undefined, undefined, 10, { nameQuery: 'chip' })
+  const body = await res.json()
+  assertEquals(body.filtered, true)
+})
+
+Deno.test('handleScan — resuming a run uses its persisted filter, ignoring the request filter', async () => {
+  const supabase = mockRetestSupabase({
+    productsFullRows: [storedRow({ barcode: '3333333333' })],
+    runRow: {
+      run_id: 'run-1',
+      cursor: null,
+      done: false,
+      scanned: 5,
+      changed: 1,
+      filter_barcodes: null,
+      filter_name_query: 'chip',
+      filter_analyzed_before: null,
+      filter_analyzed_after: null,
+    },
+  })
+  // Caller passes an empty filter — the persisted "chip" name filter should win.
+  const res = await handleScan(supabase, 'run-1', undefined, 10, {})
+  const body = await res.json()
+  assertEquals(body.filtered, true)
+})
+
+Deno.test('handleLatestRun — returns the persisted scan filter', async () => {
+  const supabase = mockRetestSupabase({
+    runRow: {
+      run_id: 'run-1',
+      done: false,
+      scanned: 5,
+      changed: 1,
+      filter_barcodes: ['1111111111', '2222222222'],
+      filter_name_query: null,
+      filter_analyzed_before: null,
+      filter_analyzed_after: null,
+    },
+    discardCount: 1,
+  })
+  const res = await handleLatestRun(supabase)
+  const body = await res.json()
+  assertEquals(body.runId, 'run-1')
+  assertEquals(body.filter.barcodes, ['1111111111', '2222222222'])
+  assertEquals(body.filter.nameQuery, undefined)
+})
+
 Deno.test('handleList — returns diffs with total/hasMore from count', async () => {
   const supabase = mockRetestSupabase({
     diffListResult: {

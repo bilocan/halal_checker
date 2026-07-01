@@ -2,7 +2,9 @@
 // import handlers without triggering Deno.serve).
 //
 // Body: { action: 'scan' | 'list' | 'apply' | 'discard' | 'latest', ... }
-//   scan:    { runId?: string, cursor?: string, limit?: number }
+//   scan:    { runId?: string, cursor?: string, limit?: number,
+//              barcodes?: string[], nameQuery?: string,
+//              analyzedBefore?: string, analyzedAfter?: string }
 //   list:    { runId: string, offset?: number, limit?: number }
 //   apply:   { runId: string, barcodes?: string[] }   // omit barcodes to apply all
 //   discard: { runId: string }
@@ -11,7 +13,11 @@
 // Scan progress (cursor + running totals) is persisted per run in
 // `product_retest_runs` so a scan can resume across page reloads instead of
 // re-scanning the whole catalog from the start, and so `latest` can restore
-// an in-progress/reviewable run in the UI after a refresh.
+// an in-progress/reviewable run in the UI after a refresh. `scan` filters
+// (barcodes / nameQuery / analyzedBefore / analyzedAfter) are only read from
+// the request when *starting* a new run — once a run exists, its persisted
+// filter is authoritative, so resuming never silently switches from a
+// scoped scan to scanning the whole catalog.
 
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { computeStoredReanalysis } from '../lookup-product/reanalysis.ts'
@@ -39,18 +45,47 @@ interface ApplyPayload {
   analysis: AnalysisRow
 }
 
+/** Optional scan scope — omit all fields to scan the whole catalog. */
+export interface ScanFilter {
+  barcodes?: string[]
+  nameQuery?: string
+  /** ISO timestamp — only products last analyzed before this. */
+  analyzedBefore?: string
+  /** ISO timestamp — only products last analyzed after this. */
+  analyzedAfter?: string
+}
+
 interface RunRow {
   run_id: string
   cursor: string | null
   done: boolean
   scanned: number
   changed: number
+  filter_barcodes: string[] | null
+  filter_name_query: string | null
+  filter_analyzed_before: string | null
+  filter_analyzed_after: string | null
+}
+
+function isFilterEmpty(filter: ScanFilter): boolean {
+  return !filter.barcodes?.length && !filter.nameQuery && !filter.analyzedBefore && !filter.analyzedAfter
+}
+
+function filterFromRunRow(run: RunRow): ScanFilter {
+  return {
+    barcodes: run.filter_barcodes ?? undefined,
+    nameQuery: run.filter_name_query ?? undefined,
+    analyzedBefore: run.filter_analyzed_before ?? undefined,
+    analyzedAfter: run.filter_analyzed_after ?? undefined,
+  }
 }
 
 async function getRunRow(adminClient: SupabaseClient, runId: string): Promise<RunRow | null> {
   const { data } = await adminClient
     .from('product_retest_runs')
-    .select('run_id, cursor, done, scanned, changed')
+    .select(
+      'run_id, cursor, done, scanned, changed, filter_barcodes, filter_name_query, filter_analyzed_before, filter_analyzed_after',
+    )
     .eq('run_id', runId)
     .maybeSingle()
   return (data as RunRow | null) ?? null
@@ -64,6 +99,7 @@ async function saveRunProgress(
   done: boolean,
   scannedDelta: number,
   changedDelta: number,
+  filter: ScanFilter,
 ): Promise<void> {
   const { error } = await adminClient.from('product_retest_runs').upsert({
     run_id: runId,
@@ -71,6 +107,10 @@ async function saveRunProgress(
     done,
     scanned: (existing?.scanned ?? 0) + scannedDelta,
     changed: (existing?.changed ?? 0) + changedDelta,
+    filter_barcodes: filter.barcodes?.length ? filter.barcodes : null,
+    filter_name_query: filter.nameQuery || null,
+    filter_analyzed_before: filter.analyzedBefore || null,
+    filter_analyzed_after: filter.analyzedAfter || null,
     updated_at: new Date().toISOString(),
   })
   if (error) console.error(`[retest-products] run progress upsert failed for ${runId}`, error)
@@ -81,19 +121,31 @@ export async function handleScan(
   runId: string | undefined,
   cursor: string | undefined,
   limit: number,
+  requestedFilter: ScanFilter = {},
 ): Promise<Response> {
   const effectiveRunId = runId ?? crypto.randomUUID()
 
   // Resume from the persisted cursor when the caller doesn't supply one
   // (e.g. the page was reloaded mid-scan) instead of rescanning from the start.
+  // Once a run exists, its persisted filter is authoritative — a filter in
+  // the request only takes effect when *creating* a new run.
   let existingRun: RunRow | null = null
   let effectiveCursor = cursor
+  let effectiveFilter = requestedFilter
   if (runId) {
     existingRun = await getRunRow(adminClient, runId)
     if (existingRun?.done) {
-      return json({ runId: effectiveRunId, scanned: 0, changed: 0, nextCursor: null, done: true })
+      return json({
+        runId: effectiveRunId,
+        scanned: 0,
+        changed: 0,
+        nextCursor: null,
+        done: true,
+        filtered: !isFilterEmpty(filterFromRunRow(existingRun)),
+      })
     }
     if (effectiveCursor === undefined) effectiveCursor = existingRun?.cursor ?? undefined
+    if (existingRun) effectiveFilter = filterFromRunRow(existingRun)
   }
 
   const { haram, suspicious } = await loadCustomKeywords(adminClient)
@@ -104,12 +156,23 @@ export async function handleScan(
     .order('barcode', { ascending: true })
     .limit(limit)
   if (effectiveCursor) query = query.gt('barcode', effectiveCursor)
+  if (effectiveFilter.barcodes?.length) query = query.in('barcode', effectiveFilter.barcodes)
+  if (effectiveFilter.nameQuery) query = query.ilike('name', `%${effectiveFilter.nameQuery}%`)
+  if (effectiveFilter.analyzedBefore) query = query.lt('last_analysed_at', effectiveFilter.analyzedBefore)
+  if (effectiveFilter.analyzedAfter) query = query.gt('last_analysed_at', effectiveFilter.analyzedAfter)
 
   const { data: rows, error } = await query
   if (error) return json({ error: 'Failed to fetch products' }, 500)
   if (!rows?.length) {
-    await saveRunProgress(adminClient, effectiveRunId, existingRun, effectiveCursor ?? null, true, 0, 0)
-    return json({ runId: effectiveRunId, scanned: 0, changed: 0, nextCursor: null, done: true })
+    await saveRunProgress(adminClient, effectiveRunId, existingRun, effectiveCursor ?? null, true, 0, 0, effectiveFilter)
+    return json({
+      runId: effectiveRunId,
+      scanned: 0,
+      changed: 0,
+      nextCursor: null,
+      done: true,
+      filtered: !isFilterEmpty(effectiveFilter),
+    })
   }
 
   let changed = 0
@@ -140,7 +203,7 @@ export async function handleScan(
   const lastBarcode = (rows[rows.length - 1] as Record<string, unknown>).barcode as string
   const done = rows.length < limit
   const nextCursor = done ? null : lastBarcode
-  await saveRunProgress(adminClient, effectiveRunId, existingRun, nextCursor, done, rows.length, changed)
+  await saveRunProgress(adminClient, effectiveRunId, existingRun, nextCursor, done, rows.length, changed, effectiveFilter)
 
   return json({
     runId: effectiveRunId,
@@ -148,6 +211,7 @@ export async function handleScan(
     changed,
     nextCursor,
     done,
+    filtered: !isFilterEmpty(effectiveFilter),
   })
 }
 
@@ -222,12 +286,15 @@ export async function handleDiscard(adminClient: SupabaseClient, runId: string):
 /** Most recent run still worth restoring in the UI: not fully scanned yet, or
  * fully scanned but still has diffs the admin hasn't applied/discarded. */
 export async function handleLatestRun(adminClient: SupabaseClient): Promise<Response> {
-  const { data: run } = await adminClient
+  const { data } = await adminClient
     .from('product_retest_runs')
-    .select('run_id, done, scanned, changed')
+    .select(
+      'run_id, done, scanned, changed, filter_barcodes, filter_name_query, filter_analyzed_before, filter_analyzed_after',
+    )
     .order('updated_at', { ascending: false })
     .limit(1)
     .maybeSingle()
+  const run = data as RunRow | null
 
   if (!run) return json({ runId: null })
 
@@ -246,6 +313,7 @@ export async function handleLatestRun(adminClient: SupabaseClient): Promise<Resp
     scanned: run.scanned,
     changed: run.changed,
     pending,
+    filter: filterFromRunRow(run),
   })
 }
 
@@ -261,11 +329,20 @@ export async function handleRetestRequest(req: Request, adminClient: SupabaseCli
 
   if (action === 'scan') {
     const limit = typeof body.limit === 'number' ? Math.min(Math.max(1, body.limit), 500) : DEFAULT_SCAN_LIMIT
+    const filter: ScanFilter = {
+      barcodes: Array.isArray(body.barcodes) && body.barcodes.length > 0
+        ? body.barcodes.map(String)
+        : undefined,
+      nameQuery: typeof body.nameQuery === 'string' && body.nameQuery.trim() ? body.nameQuery.trim() : undefined,
+      analyzedBefore: typeof body.analyzedBefore === 'string' ? body.analyzedBefore : undefined,
+      analyzedAfter: typeof body.analyzedAfter === 'string' ? body.analyzedAfter : undefined,
+    }
     return handleScan(
       adminClient,
       typeof body.runId === 'string' ? body.runId : undefined,
       typeof body.cursor === 'string' ? body.cursor : undefined,
       limit,
+      filter,
     )
   }
 
