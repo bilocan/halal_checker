@@ -4,7 +4,7 @@ export const HARAM_ENTRIES: KeywordEntry[] = [
   ['alcohol',    'Contains alcohol or alcohol-derived ingredient',
    'alcohol', 'alkohol', 'alcool', 'alcol', 'alkol', 'álcool'],
   ['ethanol',    'Contains alcohol or alcohol-derived ingredient',
-   'ethanol', 'äthanol', 'éthanol', 'etanolo', 'etanol'],
+   'ethanol', 'äthanol', 'éthanol', 'etanolo', 'etanol', 'e1510', 'e-1510'],
   ['wine',       'Contains alcohol or alcohol-derived ingredient',
    'wine', 'wein', 'vin', 'vino', 'şarap', 'wijn', 'vinho'],
   ['beer',       'Contains alcohol or alcohol-derived ingredient',
@@ -64,6 +64,69 @@ export const SUSPICIOUS_ENTRIES: KeywordEntry[] = [
   ['e572', 'Magnesium stearate may be animal-derived', 'e572', 'e-572'],
   ['e631', 'Disodium inosinate (E631) may be derived from fish or meat', 'e631', 'e-631'],
   ['e635', 'Disodium ribonucleotides (E635) may be derived from fish or meat', 'e635', 'e-635'],
+  ['e474', 'Sucroglycerides (E474) may be animal-derived', 'e474', 'e-474',
+   'sucroglycerides', 'zuckerglyceride', 'şeker gliseridleri',
+   'sucroglycérides', 'sucrogliceridi', 'sucroglicéridos', 'sucroglyceriden'],
+  ['e475', 'Polyglycerol esters of fatty acids (E475) may be animal-derived', 'e475', 'e-475',
+   'polyglycerol esters of fatty acids', 'polyglycerinester von speisefettsäuren',
+   'yağ asitlerinin poligliserol esterleri', 'esters polyglycériques d\'acides gras',
+   'esteri poliglicerici degli acidi grassi', 'ésteres poliglicéridos de ácidos grasos',
+   'polyglycerolesters van vetzuren'],
+  ['e476', 'Polyglycerol polyricinoleate (E476) may be animal-derived', 'e476', 'e-476',
+   'polyglycerol polyricinoleate', 'polyglycerinpolyricinoleat', 'poligliserol poliricinoleat',
+   'polyricinoléate de polyglycérol', 'poliricinoleato di poliglicerolo',
+   'poliricinoleato de poliglicerol', 'polyglycerolpolyricinoleaat'],
+  ['e477', 'Propylene glycol esters of fatty acids (E477) may be animal-derived', 'e477', 'e-477',
+   'propylene glycol esters of fatty acids', 'propylenglycolester von speisefettsäuren',
+   'yağ asitlerinin propilen glikol esterleri', 'esters de propylène glycol d\'acides gras',
+   'esteri del glicole propilenico degli acidi grassi',
+   'ésteres de propano-1,2-diol de ácidos grasos', 'propaan-1,2-diolesters van vetzuren'],
+  ['e478', 'Lactylated fatty acid esters (E478) may be animal-derived', 'e478', 'e-478'],
+  ['e483', 'Stearyl tartrate (E483) may be animal-derived', 'e483', 'e-483',
+   'stearyl tartrate', 'stearyltartrat', 'stearil tartarat', 'tartrate de stéaryle',
+   'tartrato di stearile', 'tartrato de estearilo', 'stearyltartraat'],
+  ['e430', 'Polyoxyethylene stearate (E430) may be animal-derived', 'e430', 'e-430',
+   'polyoxyethylene stearate', 'polyoxyethylenstearat', 'polioksietilen stearat',
+   'stéarate de polyoxyéthylène', 'stearato di poliossietilene',
+   'estearato de polioxietileno', 'polyoxyethyleenstearaat'],
+  ['e431', 'Polyoxyethylene stearate (E431) may be animal-derived', 'e431', 'e-431',
+   'polyoxyethylene stearate', 'polyoxyethylenstearat', 'polioksietilen stearat',
+   'stéarate de polyoxyéthylène', 'stearato di poliossietilene',
+   'estearato de polioxietileno', 'polyoxyethyleenstearaat'],
+  ['e432', 'Polysorbate 20 (E432) may be animal-derived', 'e432', 'e-432',
+   'polysorbate 20', 'polysorbat 20', 'polisorbat 20', 'polisorbato 20', 'polysorbaat 20'],
+  ['e433', 'Polysorbate 80 (E433) may be animal-derived', 'e433', 'e-433',
+   'polysorbate 80', 'polysorbat 80', 'polisorbat 80', 'polisorbato 80', 'polysorbaat 80'],
+  ['e434', 'Polysorbate 40 (E434) may be animal-derived', 'e434', 'e-434',
+   'polysorbate 40', 'polysorbat 40', 'polisorbat 40', 'polisorbato 40', 'polysorbaat 40'],
+  ['e435', 'Polysorbate 60 (E435) may be animal-derived', 'e435', 'e-435',
+   'polysorbate 60', 'polysorbat 60', 'polisorbat 60', 'polisorbato 60', 'polysorbaat 60'],
+  ['e436', 'Polysorbate 65 (E436) may be animal-derived', 'e436', 'e-436',
+   'polysorbate 65', 'polysorbat 65', 'polisorbat 65', 'polisorbato 65', 'polysorbaat 65'],
+  ['e491', 'Sorbitan monostearate (E491) may be animal-derived', 'e491', 'e-491',
+   'sorbitan monostearate', 'sorbitanmonostearat', 'sorbitan monostearat',
+   'monostéarate de sorbitane', 'sorbitan monostearato', 'monoestearato de sorbitán',
+   'sorbitaanmonostearaat'],
+  ['e492', 'Sorbitan tristearate (E492) may be animal-derived', 'e492', 'e-492',
+   'sorbitan tristearate', 'sorbitantristearat', 'sorbitan tristearat',
+   'tristéarate de sorbitane', 'sorbitan tristearato', 'triestearato de sorbitán',
+   'sorbitaantristearaat'],
+  ['e493', 'Sorbitan monolaurate (E493) may be animal-derived', 'e493', 'e-493',
+   'sorbitan monolaurate', 'sorbitanmonolaurat', 'sorbitan monolaurat',
+   'monolaurate de sorbitane', 'sorbitan monolaurato', 'monolaurato de sorbitán',
+   'sorbitaanmonolauraat'],
+  ['e494', 'Sorbitan monooleate (E494) may be animal-derived', 'e494', 'e-494',
+   'sorbitan monooleate', 'sorbitanmonooleat', 'sorbitan monooleat',
+   'monooléate de sorbitane', 'sorbitan monooleato', 'monooleato de sorbitán',
+   'sorbitaanmono-oleaat'],
+  ['e495', 'Sorbitan monopalmitate (E495) may be animal-derived', 'e495', 'e-495',
+   'sorbitan monopalmitate', 'sorbitanmonopalmitat', 'sorbitan monopalmitat',
+   'monopalmitate de sorbitane', 'sorbitan monopalmitato', 'monopalmitato de sorbitán',
+   'sorbitaanmonopalmitaat'],
+  ['e921', 'L-cystine (E921) may be animal-derived, related to L-cysteine', 'e921', 'e-921',
+   'l-cystine', 'l-cystin', 'l-sistin', 'l-cistina'],
+  ['e913', 'Lanolin (E913) is derived from sheep wool grease', 'e913', 'e-913',
+   'lanolin', 'wollwachs', 'lanoline', 'lanolina'],
   ['rennet', 'Rennet may be animal-derived',
    'rennet', 'lab', 'labferment', 'présure', 'caglio', 'cuajo',
    'peynir mayası', 'stremsel'],
@@ -147,6 +210,13 @@ function escape(s: string) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') }
 const wPre = '(?<![a-zA-Z\\dÀ-ɏß])'
 const wPost = '(?![a-zA-Z\\dÀ-ɏß])'
 
+// Variants that commonly appear as the tail of a hyphenated German/French compound
+// (e.g. "Vanille-Aroma", "Erdbeer-Aroma"). They must not match when immediately
+// preceded by a hyphen; other keywords (alcohol, pork, …) still match after a
+// hyphen so that OFF-style slugs like "contains-alcohol" are caught correctly.
+const COMPOUND_TAIL_VARIANTS = new Set(['aroma', 'arôme', 'smaakstof'])
+const wPreNoHyphen = '(?<![a-zA-Z\\dÀ-ɏß-])'
+
 function isZeroPercentAlcoholDeclaration(text: string, variant: string): boolean {
   const v = escape(variant)
   return new RegExp(
@@ -165,6 +235,9 @@ function matchesVariant(ingredient: string, variant: string): boolean {
     return new RegExp(`${wPre}${escape(variant)}${wPost}`, 'i').test(ingredient)
   }
   if (variant === 'manteca' && SAFE_MANTECA_CONTEXT.test(ingredient)) return false
+  if (COMPOUND_TAIL_VARIANTS.has(variant)) {
+    return new RegExp(`${wPreNoHyphen}${escape(variant)}${wPost}`, 'i').test(ingredient)
+  }
   return new RegExp(`${wPre}${escape(variant)}${wPost}`, 'i').test(ingredient)
 }
 

@@ -12,18 +12,65 @@ import {
   type ProductRow,
 } from './persistence.ts'
 
+export interface StoredReanalysisResult {
+  productRow: ProductRow
+  analysisRow: AnalysisRow
+  responseRow: Record<string, unknown>
+}
+
+function asStringArray(value: unknown): string[] {
+  return Array.isArray(value) ? (value as unknown[]).map(String) : []
+}
+
+function sortedJson(values: string[]): string {
+  return JSON.stringify([...values].sort())
+}
+
 /**
- * Re-run keyword + post rules on stored product data (no OFF refetch, no AI).
- * Used when source data is stale or caller requested force refresh.
+ * True when the freshly recomputed verdict fields match what's already
+ * stored (ignoring explanation text). `computeVerdict({ skipAi: true })`
+ * always produces a generic keyword-only explanation — when the verdict
+ * itself hasn't actually changed, we keep the existing explanation (which
+ * may have been written by AI, back when this row was first analyzed)
+ * instead of silently downgrading it to the generic fallback text.
  */
-export async function runStoredProductReanalysis(
+function verdictUnchanged(
+  existing: HalalScanProduct,
+  isHalal: boolean,
+  isUnknown: boolean,
+  haramIngredients: string[],
+  suspiciousIngredients: string[],
+  haramLabels: string[],
+  suspiciousLabels: string[],
+  haramAdditives: string[],
+  suspiciousAdditives: string[],
+  requiresHalalCert: boolean,
+): boolean {
+  return (
+    !!existing.is_halal === isHalal &&
+    !!existing.is_unknown === isUnknown &&
+    !!existing.requires_halal_cert === requiresHalalCert &&
+    sortedJson(asStringArray(existing.haram_ingredients)) === sortedJson(haramIngredients) &&
+    sortedJson(asStringArray(existing.suspicious_ingredients)) === sortedJson(suspiciousIngredients) &&
+    sortedJson(asStringArray(existing.haram_labels)) === sortedJson(haramLabels) &&
+    sortedJson(asStringArray(existing.suspicious_labels)) === sortedJson(suspiciousLabels) &&
+    sortedJson(asStringArray(existing.haram_additives)) === sortedJson(haramAdditives) &&
+    sortedJson(asStringArray(existing.suspicious_additives)) === sortedJson(suspiciousAdditives)
+  )
+}
+
+/**
+ * Re-run keyword + post rules on stored product data (no OFF refetch, no AI,
+ * no persistence). Pure compute step shared by the live re-analysis path
+ * (`runStoredProductReanalysis`) and the bulk `retest-products` admin tool.
+ */
+export async function computeStoredReanalysis(
   supabase: SupabaseClient,
   existing: HalalScanProduct,
   barcode: string,
   customHaramEntries: KeywordEntry[],
   customSuspiciousEntries: KeywordEntry[],
-  corsHeaders: Record<string, string>,
-): Promise<Response> {
+): Promise<StoredReanalysisResult> {
   const communityIngredients = await getApprovedContribution(supabase, barcode)
   const storedIngredients: string[] = communityIngredients
     ?? (Array.isArray(existing.ingredients) ? existing.ingredients as string[] : [])
@@ -81,8 +128,16 @@ export async function runStoredProductReanalysis(
     isHalal, isUnknown, haramIngredients, suspiciousIngredients,
     ingredientWarnings, haramLabels, suspiciousLabels, labelWarnings,
     haramAdditives, suspiciousAdditives, additiveWarnings,
-    explanation, requiresHalalCert,
+    requiresHalalCert,
   } = verdict
+
+  const existingExplanation = typeof existing.explanation === 'string' ? existing.explanation : ''
+  const explanation = existingExplanation.trim().length > 0 && verdictUnchanged(
+    existing, isHalal, isUnknown, haramIngredients, suspiciousIngredients,
+    haramLabels, suspiciousLabels, haramAdditives, suspiciousAdditives, requiresHalalCert,
+  )
+    ? existingExplanation
+    : verdict.explanation
 
   const productRow: ProductRow = {
     barcode,
@@ -165,6 +220,25 @@ export async function runStoredProductReanalysis(
     gemini_web_ingredient_lookup_name_key: productRow.geminiNameKey ?? null,
   }
 
+  return { productRow, analysisRow, responseRow }
+}
+
+/**
+ * Re-run keyword + post rules on stored product data (no OFF refetch, no AI)
+ * and persist the result. Used when source data is stale or caller requested
+ * force refresh.
+ */
+export async function runStoredProductReanalysis(
+  supabase: SupabaseClient,
+  existing: HalalScanProduct,
+  barcode: string,
+  customHaramEntries: KeywordEntry[],
+  customSuspiciousEntries: KeywordEntry[],
+  corsHeaders: Record<string, string>,
+): Promise<Response> {
+  const { productRow, analysisRow, responseRow } = await computeStoredReanalysis(
+    supabase, existing, barcode, customHaramEntries, customSuspiciousEntries,
+  )
   return persistLookupAndRespond(supabase, corsHeaders, productRow, analysisRow, responseRow)
 }
 

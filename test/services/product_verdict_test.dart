@@ -10,6 +10,10 @@ void main() {
     bool isNonFood = false,
     List<String> haram = const [],
     List<String> suspicious = const [],
+    List<String> haramLabels = const [],
+    List<String> suspiciousLabels = const [],
+    List<String> haramAdditives = const [],
+    List<String> suspiciousAdditives = const [],
     bool requiresHalalCert = false,
   }) => Product(
     barcode: '1',
@@ -22,6 +26,10 @@ void main() {
     suspiciousIngredients: suspicious,
     ingredientWarnings: const {},
     labels: const [],
+    haramLabels: haramLabels,
+    suspiciousLabels: suspiciousLabels,
+    haramAdditives: haramAdditives,
+    suspiciousAdditives: suspiciousAdditives,
     requiresHalalCert: requiresHalalCert,
   );
 
@@ -131,6 +139,58 @@ void main() {
       expect(
         ProductVerdict.outcome(
           base(haram: const ['pork'], suspicious: const ['e471']),
+        ),
+        ProductOutcome.haram,
+      );
+    });
+
+    test(
+      'suspicious when only a suspicious additive is flagged (e.g. e471)',
+      () {
+        expect(
+          ProductVerdict.outcome(
+            base(isHalal: false, suspiciousAdditives: const ['e471']),
+          ),
+          ProductOutcome.suspicious,
+        );
+      },
+    );
+
+    test('suspicious when only a suspicious label is flagged', () {
+      expect(
+        ProductVerdict.outcome(
+          base(isHalal: false, suspiciousLabels: const ['en:may-contain-pork']),
+        ),
+        ProductOutcome.suspicious,
+      );
+    });
+
+    test('haram when only a haram additive is flagged (e.g. e120 carmine)', () {
+      expect(
+        ProductVerdict.outcome(
+          base(isHalal: false, haramAdditives: const ['e120']),
+        ),
+        ProductOutcome.haram,
+      );
+    });
+
+    test('haram when only a haram label is flagged', () {
+      expect(
+        ProductVerdict.outcome(
+          base(isHalal: false, haramLabels: const ['en:pork']),
+        ),
+        ProductOutcome.haram,
+      );
+    });
+
+    test('haram additive beats suspicious ingredient', () {
+      expect(
+        ProductVerdict.outcome(
+          base(
+            isHalal: false,
+            suspicious: const ['e471'],
+            haramAdditives: const ['e120'],
+          ),
         ),
         ProductOutcome.haram,
       );
