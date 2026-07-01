@@ -127,6 +127,61 @@ Deno.test('keywordAnalysis — e471 → isHalal false, suspicious populated', ()
   assertEquals(r.haram.length, 0)
 })
 
+// NotebookLM gap-fill — new E-number keywords (2026-07-01)
+for (
+  const canonical of [
+    'e474', 'e475', 'e476', 'e477', 'e478', 'e483',
+    'e430', 'e431', 'e432', 'e433', 'e434', 'e435', 'e436',
+    'e491', 'e492', 'e493', 'e494', 'e495',
+    'e921', 'e913',
+  ]
+) {
+  Deno.test(`keywordAnalysis — ${canonical} → isHalal false, suspicious populated`, () => {
+    const r = keywordAnalysis(['flour', canonical])
+    assertEquals(r.isHalal, false)
+    assertEquals(r.suspicious, [canonical])
+    assertEquals(r.haram.length, 0)
+    assertEquals(r.canonicals?.[canonical], canonical)
+  })
+}
+
+Deno.test('keywordAnalysis — e1510 → haram (ethanol alias)', () => {
+  const r = keywordAnalysis(['flour', 'e1510'])
+  assertEquals(r.isHalal, false)
+  assertEquals(r.haram, ['e1510'])
+})
+
+Deno.test('keywordAnalysis — German polysorbat 80 name variant matches e433', () => {
+  const r = keywordAnalysis(['wasser', 'polysorbat 80'])
+  assertEquals(r.suspicious, ['polysorbat 80'])
+  assertEquals(r.canonicals?.['polysorbat 80'], 'e433')
+})
+
+Deno.test('keywordAnalysis — Turkish şeker gliseridleri name variant matches e474', () => {
+  const r = keywordAnalysis(['un', 'şeker gliseridleri'])
+  assertEquals(r.canonicals?.['şeker gliseridleri'], 'e474')
+})
+
+Deno.test("keywordAnalysis — French esters polyglycériques d'acides gras name variant matches e475", () => {
+  const r = keywordAnalysis(['farine', "esters polyglycériques d'acides gras"])
+  assertEquals(r.canonicals?.["esters polyglycériques d'acides gras"], 'e475')
+})
+
+Deno.test('keywordAnalysis — Dutch sorbitaanmonostearaat name variant matches e491', () => {
+  const r = keywordAnalysis(['bloem', 'sorbitaanmonostearaat'])
+  assertEquals(r.canonicals?.['sorbitaanmonostearaat'], 'e491')
+})
+
+Deno.test('keywordAnalysis — Italian lanolina name variant matches e913', () => {
+  const r = keywordAnalysis(['farina', 'lanolina'])
+  assertEquals(r.canonicals?.['lanolina'], 'e913')
+})
+
+Deno.test('keywordAnalysis — Spanish l-cistina name variant matches e921', () => {
+  const r = keywordAnalysis(['harina', 'l-cistina'])
+  assertEquals(r.canonicals?.['l-cistina'], 'e921')
+})
+
 Deno.test('keywordAnalysis — empty list → isUnknown true', () => {
   const r = keywordAnalysis([])
   assertEquals(r.isUnknown, true)

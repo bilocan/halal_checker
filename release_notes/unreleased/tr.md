@@ -3,3 +3,5 @@
      Kullanıcıya görünen değişikliklerde en.md, de.md ve ar.md dosyalarını da güncelleyin. -->
 
 - **Adlandırılmış aromalarda daha az yanlış şüpheli işareti** — Vanille-Aroma gibi birleşik aroma adları artık belirtilmemiş aroma olarak işaretlenmiyor.
+
+- **Daha fazla katkı maddesi şüpheli olarak işaretleniyor** — polisorbatlar, sorbitan esterleri ve poligliserol esterleri gibi emülgatörler ile lanolin ve L-sistin dahil 19 yeni E numarası 7 dilde tespit edilebiliyor.

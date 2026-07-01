@@ -423,6 +423,89 @@ void main() {
     );
   });
 
+  group('NotebookLM gap-fill — new E-number keywords (2026-07-01)', () {
+    const newSuspiciousCanonicals = <String>[
+      'e474',
+      'e475',
+      'e476',
+      'e477',
+      'e478',
+      'e483',
+      'e430',
+      'e431',
+      'e432',
+      'e433',
+      'e434',
+      'e435',
+      'e436',
+      'e491',
+      'e492',
+      'e493',
+      'e494',
+      'e495',
+      'e921',
+      'e913',
+    ];
+
+    for (final canonical in newSuspiciousCanonicals) {
+      test('$canonical is detected as suspicious via its E-number', () {
+        final result = engine.analyzeIngredients(['flour', canonical]);
+        expect(result.verdict, HalalRuleVerdict.suspicious);
+        expect(result.suspicious, contains(canonical));
+        expect(result.canonicals[canonical], canonical);
+      });
+    }
+
+    test('e1510 is detected as haram (ethanol alias)', () {
+      final result = engine.analyzeIngredients(['flour', 'e1510']);
+      expect(result.verdict, HalalRuleVerdict.haram);
+      expect(result.canonicals['e1510'], 'ethanol');
+    });
+
+    test('German polysorbat 80 name variant matches e433', () {
+      final result = engine.analyzeIngredients(['wasser', 'polysorbat 80']);
+      expect(result.suspicious, contains('polysorbat 80'));
+      expect(result.canonicals['polysorbat 80'], 'e433');
+    });
+
+    test('Turkish şeker gliseridleri name variant matches e474', () {
+      final result = engine.analyzeIngredients(['un', 'şeker gliseridleri']);
+      expect(result.canonicals['şeker gliseridleri'], 'e474');
+    });
+
+    test(
+      "French esters polyglycériques d'acides gras name variant matches e475",
+      () {
+        final result = engine.analyzeIngredients([
+          'farine',
+          "esters polyglycériques d'acides gras",
+        ]);
+        expect(
+          result.canonicals["esters polyglycériques d'acides gras"],
+          'e475',
+        );
+      },
+    );
+
+    test('Dutch sorbitaanmonostearaat name variant matches e491', () {
+      final result = engine.analyzeIngredients([
+        'bloem',
+        'sorbitaanmonostearaat',
+      ]);
+      expect(result.canonicals['sorbitaanmonostearaat'], 'e491');
+    });
+
+    test('Italian lanolina name variant matches e913', () {
+      final result = engine.analyzeIngredients(['farina', 'lanolina']);
+      expect(result.canonicals['lanolina'], 'e913');
+    });
+
+    test('Spanish l-cistina name variant matches e921', () {
+      final result = engine.analyzeIngredients(['harina', 'l-cistina']);
+      expect(result.canonicals['l-cistina'], 'e921');
+    });
+  });
+
   group('verdict priority', () {
     test('haram wins when both haram and suspicious ingredients present', () {
       final result = engine.analyzeIngredients(['pork', 'e471', 'flour']);
