@@ -33,12 +33,17 @@ abstract final class ProductVerdict {
         product.haramAdditives.isNotEmpty) {
       return ProductOutcome.haram;
     }
+    // Cert-required beats merely-suspicious: requiresHalalCert means the
+    // product is *confirmed* animal-derived (category/name/ingredient match)
+    // and just needs slaughter verification, which is more specific than a
+    // "might be animal-derived" suspicious flag from an unrelated signal
+    // (e.g. a suspicious additive on a confirmed-meat product).
+    if (product.requiresHalalCert) return ProductOutcome.noCert;
     if (product.suspiciousIngredients.isNotEmpty ||
         product.suspiciousLabels.isNotEmpty ||
         product.suspiciousAdditives.isNotEmpty) {
       return ProductOutcome.suspicious;
     }
-    if (product.requiresHalalCert) return ProductOutcome.noCert;
     if (product.isHalal) return ProductOutcome.halal;
     return ProductOutcome.haram;
   }

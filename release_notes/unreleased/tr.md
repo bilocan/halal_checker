@@ -9,3 +9,5 @@
 - **Şüpheli katkı maddeleri/etiketler artık doğrudan "helal değil" olarak gösterilmiyor** — yalnızca şüpheli bir katkı maddesi veya etiketle işaretlenen ürünler (örneğin hayvansal kaynaklı olabilecek bir emülgatör) artık "helal değil" yerine doğru şekilde "şüpheli" olarak gösteriliyor.
 
 - **Daha doğru sertifika kontrolleri** — diller arası bir anahtar kelime karışıklığının bir ürünü yanlışlıkla sertifika gerektiriyor olarak işaretleyebildiği bir hata düzeltildi; Analiz Şeffaflığı artık hangi anahtar kelime ve dilin uyarıyı tetiklediğini gösteriyor.
+
+- **Sertifika rozeti düzeltildi** — hayvansal kaynaklı olduğu kesinleşen ürünlerde, ilgisiz şüpheli bir içerik, etiket veya katkı maddesi olsa bile artık doğru şekilde `Helal sertifikası gerekli` gösteriliyor (`Şüpheli` yerine).

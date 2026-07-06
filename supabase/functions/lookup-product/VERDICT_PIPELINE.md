@@ -141,10 +141,12 @@ Applied in `applyPostAnalysisRules` — **must not reorder** without updating te
 | 7 | `applyAdditivesHaramOverride` | Merges haram additive keyword matches into snapshot |
 | 8 | `applyAdditivesSuspiciousOverride` | Merges suspicious additive keyword matches into snapshot |
 | 9 | `applyVeganFlavouringAdjustment` | When vegan label evidence (`en:vegan`, etc.): rewrites `flavouring` / `natural flavour` warnings and suspicious-only explanation — non-animal per certification, alcohol extraction still unclear. Does not change `isHalal`. Vegetarian labels do not qualify. |
-| 10 | `applyHalalCertRequirement` | Animal product without halal label → `requiresHalalCert`, not halal; skipped if `haramLabels` non-empty; overwrites `explanation` with the matched category/name/ingredient reason |
+| 10 | `applyHalalCertRequirement` | Animal product without halal label → `requiresHalalCert`, not halal; skipped if `haramLabels` non-empty; overwrites `explanation` with the matched category/name/ingredient reason, appending a note when suspicious ingredients/labels/additives are also present (see below) |
 | 11 | `applySuspiciousNotHalal` | Suspicious only (no haram ingredients or labels) → `isHalal = false` |
 
 Categories for cert: `categories.ts` (`ANIMAL_PRODUCT_CATEGORIES`, `HALAL_CERT_LABELS`, `ANIMAL_PRODUCT_NAME_TERMS`, `ANIMAL_INGREDIENT_TERMS`). Name/ingredient term matching uses `matchesAnimalTerm` (word-boundary regex, mirrors `keyword.ts`'s `wPre`/`wPost`) — plain substring matching would false-positive on short terms like `ente` (German "duck") inside unrelated words (e.g. Spanish "preferentemente").
+
+`requiresHalalCert` (confirmed animal, cert unresolved) and "suspicious" (uncertain animal-or-plant) are independent signals that can both be true for the same product (e.g. a confirmed-meat category plus an unrelated suspicious additive) — they are not ranked on the same haram > suspicious > halal severity scale. `requiresHalalCert` wins the single outcome/badge (client-side priority in `ProductVerdict.outcome()`, mirrored in `halal-checker-web`'s `getHalalStatus`/`statusFromSnapshot`), but `applyHalalCertRequirement` still appends any suspicious ingredient/label/additive already flagged by the earlier post-rules to `explanation` (" It also contains X, which may be animal-derived.") instead of silently overwriting it away.
 
 ### Match-language transparency
 
