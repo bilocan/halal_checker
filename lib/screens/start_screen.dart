@@ -6,7 +6,6 @@ import 'package:supabase_flutter/supabase_flutter.dart' show AuthState;
 
 import '../app_colors.dart';
 import '../localization/app_localizations.dart';
-import '../main.dart' show HalalCheckerApp;
 import '../services/analysis_service.dart';
 import '../widgets/lazy_indexed_stack.dart';
 import '../services/auth_service.dart';
@@ -109,8 +108,6 @@ class _StartScreenState extends State<StartScreen> {
         return StartHomeTab(
           key: const ValueKey('start_home_tab'),
           canBatchImport: _canBatchImport,
-          onLocaleChanged: (locale) =>
-              HalalCheckerApp.of(context)?.setLocale(locale),
         );
       case 1:
         return const KeywordsScreen();

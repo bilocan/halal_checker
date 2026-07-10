@@ -13,6 +13,7 @@ import 'admin/ingredient_report_tab.dart';
 import 'admin/photo_approval_tab.dart';
 import 'admin/system_settings_tab.dart';
 import 'rules_management_screen.dart';
+import 'start/widgets/start_app_bar_actions.dart';
 
 class AdminPanelScreen extends StatefulWidget {
   const AdminPanelScreen({super.key});
@@ -267,6 +268,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
               icon: const Icon(Icons.refresh),
               onPressed: () => _settingsKey.currentState?.refresh(),
             ),
+          ...StartAppBarActions.build(context),
         ],
       ),
       body: Column(

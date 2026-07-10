@@ -12,6 +12,7 @@ import '../services/beta_program_service.dart';
 import '../services/version_service.dart';
 import '../utils/beta_feedback_mailto.dart';
 import '../widgets/halal_scan_logo.dart';
+import 'start/widgets/start_app_bar_actions.dart';
 
 class AboutScreen extends StatefulWidget {
   const AboutScreen({super.key});
@@ -208,6 +209,7 @@ class _AboutScreenState extends State<AboutScreen> {
         title: Text(loc.about),
         backgroundColor: kGreen,
         foregroundColor: Colors.white,
+        actions: StartAppBarActions.build(context),
       ),
       body: ListView(
         padding: const EdgeInsets.all(20),

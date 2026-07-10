@@ -7,7 +7,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show AuthState;
 
 import '../../../app_colors.dart';
-import '../../../config.dart';
 import '../../../integration_test_keys.dart';
 import '../../../localization/app_localizations.dart';
 import '../../../models/product.dart';
@@ -25,7 +24,7 @@ import '../../batch_scan_screen.dart';
 import '../../home_screen.dart';
 import '../../result_screen.dart';
 import '../format_scan_date.dart';
-import 'start_auth_app_bar_action.dart';
+import 'start_app_bar_actions.dart';
 import 'start_filter_chip.dart';
 
 /// Loads recent scans for the home tab (override in widget tests).
@@ -36,7 +35,6 @@ class StartHomeTab extends StatefulWidget {
   const StartHomeTab({
     super.key,
     required this.canBatchImport,
-    this.onLocaleChanged,
     ProductService? productService,
     this.loadRecentScans,
     this.enableSwipeToDelete = true,
@@ -45,7 +43,6 @@ class StartHomeTab extends StatefulWidget {
        _betaProgramService = betaProgramService;
 
   final bool canBatchImport;
-  final ValueChanged<Locale>? onLocaleChanged;
   final ProductService? _productService;
   final LoadRecentScans? loadRecentScans;
   final BetaProgramService? _betaProgramService;
@@ -319,47 +316,7 @@ class _StartHomeTabState extends State<StartHomeTab>
         title: Text(loc.startTitle),
         backgroundColor: kGreen,
         foregroundColor: Colors.white,
-        actions: [
-          PopupMenuButton<String>(
-            onSelected: (value) {
-              widget.onLocaleChanged?.call(Locale(value));
-            },
-            itemBuilder: (context) => [
-              PopupMenuItem(
-                value: 'en',
-                child: Row(
-                  children: [
-                    const Text('🇬🇧', style: TextStyle(fontSize: 18)),
-                    const SizedBox(width: 10),
-                    Text(loc.english),
-                  ],
-                ),
-              ),
-              PopupMenuItem(
-                value: 'tr',
-                child: Row(
-                  children: [
-                    const Text('🇹🇷', style: TextStyle(fontSize: 18)),
-                    const SizedBox(width: 10),
-                    Text(loc.turkish),
-                  ],
-                ),
-              ),
-              PopupMenuItem(
-                value: 'de',
-                child: Row(
-                  children: [
-                    const Text('🇩🇪', style: TextStyle(fontSize: 18)),
-                    const SizedBox(width: 10),
-                    Text(loc.german),
-                  ],
-                ),
-              ),
-            ],
-            icon: const Icon(Icons.language),
-          ),
-          if (AppConfig.hasSupabase) const StartAuthAppBarAction(),
-        ],
+        actions: StartAppBarActions.build(context),
       ),
       body: Stack(
         children: [

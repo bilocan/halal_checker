@@ -5,6 +5,7 @@ import '../localization/app_localizations.dart';
 import '../services/auth_service.dart';
 import '../services/keyword_service.dart';
 import '../services/product_service.dart';
+import 'start/widgets/start_app_bar_actions.dart';
 
 class KeywordsScreen extends StatefulWidget {
   const KeywordsScreen({super.key});
@@ -55,6 +56,7 @@ class _KeywordsScreenState extends State<KeywordsScreen> {
           title: Text(loc.keywords),
           backgroundColor: kGreen,
           foregroundColor: Colors.white,
+          actions: StartAppBarActions.build(context),
           bottom: TabBar(
             labelColor: Colors.white,
             unselectedLabelColor: Colors.white70,
