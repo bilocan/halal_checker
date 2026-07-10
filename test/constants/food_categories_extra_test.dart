@@ -63,6 +63,17 @@ void main() {
       );
     });
 
+    test('contains gimdes certification labels', () {
+      expect(
+        FoodCategories.halalCertificationLabels.contains('gimdes'),
+        isTrue,
+      );
+      expect(
+        FoodCategories.halalCertificationLabels.contains('en:gimdes'),
+        isTrue,
+      );
+    });
+
     test('does not contain arbitrary string', () {
       expect(
         FoodCategories.halalCertificationLabels.contains('organic'),
@@ -265,8 +276,11 @@ void main() {
       'isna halal',
       'muis halal',
       'muslim consumer group',
+      'gimdes',
+      'en:gimdes',
+      'gimdes helal',
     };
-    test('all 10 certification labels are present', () {
+    test('all certification labels are present', () {
       expect(FoodCategories.halalCertificationLabels, containsAll(expected));
     });
     test('size matches expected (no silent additions)', () {

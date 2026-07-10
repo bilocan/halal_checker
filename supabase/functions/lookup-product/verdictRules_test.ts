@@ -186,6 +186,16 @@ Deno.test('computeVerdict — animal product with halal label → no cert flag',
   assertEquals(result.requiresHalalCert, false)
 })
 
+Deno.test('computeVerdict — animal product with GIMDES label → no cert flag', async () => {
+  const result = await computeVerdict(baseCtx({
+    name: 'GIMDES Beef',
+    rawCategories: ['en:beef'],
+    ingredients: ['beef', 'salt'],
+    labels: ['en:gimdes'],
+  }))
+  assertEquals(result.requiresHalalCert, false)
+})
+
 // Regression: barcode 9002600768916 — chicken product with no matching OFF category or name term
 // was passing as halal because neither the category nor name path triggered requiresHalalCert.
 // The ingredient-level detection in applyHalalCertRequirement now catches this.
