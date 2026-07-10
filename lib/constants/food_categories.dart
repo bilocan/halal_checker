@@ -136,6 +136,9 @@ class FoodCategories {
     'isna halal',
     'muis halal',
     'muslim consumer group',
+    'gimdes',
+    'en:gimdes',
+    'gimdes helal',
   };
 
   static const Set<String> veganOrVegetarianLabels = {

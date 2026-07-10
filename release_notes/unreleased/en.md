@@ -2,6 +2,8 @@
      Add one `- bullet` per item. Remove HTML comments before merging.
      Copy wording to de.md, tr.md, and ar.md when the change is user-visible. -->
 
+- **GIMDES halal certification recognized** — Products with GIMDES labels on pack (e.g. gimdes, en:gimdes) now clear the needs-halal-certificate flag on animal products, same as other recognized halal cert bodies.
+
 - **Fewer false suspicious flags on named flavors** — hyphenated flavor names like Vanille-Aroma are no longer flagged as generic unspecified flavoring.
 
 - **More additives flagged as suspicious** — added detection for 19 more E-numbers (emulsifiers like polysorbates, sorbitan esters, and polyglycerol esters, plus lanolin and L-cystine) across 7 languages.

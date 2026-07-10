@@ -53,6 +53,7 @@ export const HALAL_CERT_LABELS = new Set([
   'halal', 'halal certified', 'halal certificate', 'certified halal',
   'hfa halal', 'halal hfa', 'ifanca', 'isna halal', 'muis halal',
   'muslim consumer group',
+  'gimdes', 'en:gimdes', 'gimdes helal',
 ])
 
 /** Vegan-only OFF labels — vegetarian does not waive animal-derived suspicion. */
