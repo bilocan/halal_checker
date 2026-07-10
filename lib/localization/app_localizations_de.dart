@@ -736,7 +736,7 @@ class AppLocalizationsDe extends AppLocalizations {
       'Dies ist kein Lebensmittelprodukt. Islamische Ernährungsregeln gelten nicht für dieses Produkt.';
 
   @override
-  String get about => 'Über';
+  String get about => 'Community';
 
   @override
   String get version => 'Version';
@@ -758,6 +758,61 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get privacyPolicy => 'Datenschutzrichtlinie';
+
+  @override
+  String get aboutCommunityTitle => 'Community beitreten';
+
+  @override
+  String get aboutCommunityBlurb =>
+      'HalalScan ist kostenlos, Open Source und gemeinsam aufgebaut. Tragen Sie in der App beim Scannen bei oder helfen Sie im Web und auf GitHub.';
+
+  @override
+  String get aboutVisitWebsite => 'halalscan.at besuchen';
+
+  @override
+  String get aboutVisitWebsiteSubtitle =>
+      'Produkte, Zutaten-Ratgeber und Community-Tools durchsuchen';
+
+  @override
+  String get aboutSuggestKeyword => 'Keyword vorschlagen';
+
+  @override
+  String get aboutSuggestKeywordSubtitle =>
+      'Haram- oder verdächtige Zutaten zur Prüfung vorschlagen';
+
+  @override
+  String get aboutReportVerdict => 'Falsches Urteil melden';
+
+  @override
+  String get aboutReportVerdictSubtitle =>
+      'Produkt melden, dessen Halal-Status falsch wirkt';
+
+  @override
+  String get aboutSourceCode => 'Quellcode auf GitHub';
+
+  @override
+  String get aboutSourceCodeSubtitle =>
+      'Logik einsehen, Issues öffnen oder Pull Requests einreichen';
+
+  @override
+  String get aboutHowToContribute => 'Entwickler-Leitfaden';
+
+  @override
+  String get aboutHowToContributeSubtitle =>
+      'Projekt lokal einrichten und Code beitragen';
+
+  @override
+  String get aboutContact => 'Team kontaktieren';
+
+  @override
+  String get aboutContactSubtitle =>
+      'Fragen, Ideen oder Partnerschaftsanfragen';
+
+  @override
+  String get contributePrompt => 'Open Source & gemeinsam aufgebaut.';
+
+  @override
+  String get contributePromptAction => 'Mitmachen';
 
   @override
   String get latest => 'Neueste';

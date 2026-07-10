@@ -53,7 +53,7 @@ class ResultBottomNav extends StatelessWidget {
             label: loc.adminPanel,
           ),
         BottomNavigationBarItem(
-          icon: const Icon(Icons.info_outline),
+          icon: const Icon(Icons.groups_outlined),
           label: loc.about,
         ),
       ],

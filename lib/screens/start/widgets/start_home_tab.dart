@@ -20,6 +20,7 @@ import '../../../services/ocr_service.dart';
 import '../../../services/product_service.dart';
 import '../../../utils/image_crop_helper.dart';
 import '../../../widgets/closed_beta_banner.dart';
+import '../../../widgets/community_contribute_prompt.dart';
 import '../../batch_scan_screen.dart';
 import '../../home_screen.dart';
 import '../../result_screen.dart';
@@ -371,6 +372,8 @@ class _StartHomeTabState extends State<StartHomeTab>
                   ClosedBetaBanner(onDismiss: _dismissBetaBanner),
                   const SizedBox(height: 16),
                 ],
+                const CommunityContributePrompt(),
+                const SizedBox(height: 16),
                 Text(
                   loc.lastResults,
                   style: const TextStyle(

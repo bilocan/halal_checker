@@ -16,6 +16,7 @@ import '../services/auth_service.dart';
 import '../utils/image_crop_helper.dart';
 import '../services/feedback_service.dart';
 import '../services/product_image_service.dart';
+import '../widgets/community_contribute_prompt.dart';
 import '../widgets/feedback_dialog.dart';
 import '../widgets/report_sheets.dart';
 import '../widgets/sign_in_sheet.dart';
@@ -440,14 +441,25 @@ class _ResultScreenState extends State<ResultScreen> {
           backgroundColor: kGreen,
           foregroundColor: Colors.white,
         ),
-        body: ResultNotFoundBody(
-          barcode: barcode,
-          loc: loc,
-          onCopyBarcode: () => _copyToClipboard(barcode, loc.barcodeLabel),
-          onScanAgain: () => Navigator.pop(context, 'scan_another'),
-          onSubmitPackPhotos: AppConfig.hasSupabase
-              ? _openMissingProductPhotoFlow
-              : null,
+        body: Column(
+          children: [
+            const Padding(
+              padding: EdgeInsets.fromLTRB(20, 12, 20, 0),
+              child: CommunityContributePrompt(),
+            ),
+            Expanded(
+              child: ResultNotFoundBody(
+                barcode: barcode,
+                loc: loc,
+                onCopyBarcode: () =>
+                    _copyToClipboard(barcode, loc.barcodeLabel),
+                onScanAgain: () => Navigator.pop(context, 'scan_another'),
+                onSubmitPackPhotos: AppConfig.hasSupabase
+                    ? _openMissingProductPhotoFlow
+                    : null,
+              ),
+            ),
+          ],
         ),
         bottomNavigationBar: _buildBottomNav(loc),
       );
@@ -561,6 +573,8 @@ class _ResultScreenState extends State<ResultScreen> {
                     onOpenAnalysis: _openDeepAnalysis,
                     onOpenDiscussion: _openDiscussion,
                   ),
+                  const SizedBox(height: 12),
+                  const CommunityContributePrompt(),
                   const SizedBox(height: 16),
                   ResultNoteCard(
                     loc: loc,

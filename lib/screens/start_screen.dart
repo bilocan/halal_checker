@@ -165,8 +165,8 @@ class _StartScreenState extends State<StartScreen> {
               label: loc.adminPanel,
             ),
           BottomNavigationBarItem(
-            icon: const Icon(Icons.info_outline),
-            activeIcon: const Icon(Icons.info),
+            icon: const Icon(Icons.groups_outlined),
+            activeIcon: const Icon(Icons.groups),
             label: loc.about,
           ),
         ],
