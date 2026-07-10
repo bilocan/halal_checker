@@ -11,3 +11,7 @@
 - **Daha doğru sertifika kontrolleri** — diller arası bir anahtar kelime karışıklığının bir ürünü yanlışlıkla sertifika gerektiriyor olarak işaretleyebildiği bir hata düzeltildi; Analiz Şeffaflığı artık hangi anahtar kelime ve dilin uyarıyı tetiklediğini gösteriyor.
 
 - **Sertifika rozeti düzeltildi** — hayvansal kaynaklı olduğu kesinleşen ürünlerde, ilgisiz şüpheli bir içerik, etiket veya katkı maddesi olsa bile artık doğru şekilde `Helal sertifikası gerekli` gösteriliyor (`Şüpheli` yerine).
+
+- **Uygulamada topluluk merkezi** — Topluluk sekmesi (eski Hakkında) halalscan.at, anahtar kelime önerileri, karar bildirimleri, GitHub kaynak kodu, geliştirici rehberi ve ekip iletişimine bağlanır. Ana sayfa ve sonuçtaki Katkıda bulun istemi aynı merkezi açar.
+
+- **Her sekmede dil ve hesap** — Dil seçici ve giriş/hesap menüsü artık yalnızca Ana Sayfa'da değil, Anahtar Kelimeler, Helal Rehberi, Topluluk ve Yönetici sekmelerinde de görünüyor.

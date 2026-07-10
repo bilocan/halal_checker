@@ -11,3 +11,7 @@
 - **Genauere Zertifikatsprüfung** — ein Fehler behoben, bei dem eine Verwechslung zwischen Sprachen ein Produkt fälschlich als zertifizierungspflichtig markieren konnte; die Analyse-Transparenz zeigt jetzt, welches Schlüsselwort und welche Sprache den Hinweis ausgelöst haben.
 
 - **Zertifikat-Badge korrigiert** — bestätigt tierische Produkte zeigen jetzt korrekt `Halal-Zertifikat erforderlich` statt `Verdächtig`, auch wenn zusätzlich ein unabhängiger verdächtiger Inhaltsstoff, ein Label oder ein Zusatzstoff markiert ist.
+
+- **Community-Hub in der App** — Der Tab Community (früher Über) verlinkt halalscan.at, Keyword-Vorschläge, Urteils-Meldungen, GitHub-Quellcode, den Entwickler-Leitfaden und Team-Kontakt. Ein Mitmachen-Hinweis auf Start und Ergebnis öffnet denselben Hub.
+
+- **Sprache und Konto auf jedem Tab** — Sprachauswahl und Anmelde-/Kontomenü erscheinen jetzt in der App-Leiste auf den Tabs Stichwörter, Halal-Verzeichnis, Community und Admin, nicht nur auf Start.

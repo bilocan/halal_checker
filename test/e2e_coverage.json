@@ -82,7 +82,7 @@
       "pipeline": true
     },
     {
-      "area": "Start tabs: Keywords, Directory, About, Admin",
+      "area": "Start tabs: Keywords, Directory, Community, Admin",
       "screens": [
         "KeywordsScreen",
         "DirectoryScreen",

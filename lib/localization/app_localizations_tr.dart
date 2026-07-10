@@ -730,7 +730,7 @@ class AppLocalizationsTr extends AppLocalizations {
       'Bu bir gıda ürünü değildir. İslami beslenme kuralları bu ürün için geçerli değildir.';
 
   @override
-  String get about => 'Hakkında';
+  String get about => 'Topluluk';
 
   @override
   String get version => 'Versiyon';
@@ -752,6 +752,61 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get privacyPolicy => 'Gizlilik Politikası';
+
+  @override
+  String get aboutCommunityTitle => 'Topluluğa katılın';
+
+  @override
+  String get aboutCommunityBlurb =>
+      'HalalScan ücretsiz, açık kaynaklı ve birlikte inşa ediliyor. Tarama sırasında uygulama içinde katkıda bulunun veya web ve GitHub üzerinden yardım edin.';
+
+  @override
+  String get aboutVisitWebsite => 'halalscan.at\'ı ziyaret edin';
+
+  @override
+  String get aboutVisitWebsiteSubtitle =>
+      'Ürünleri, içerik rehberlerini ve topluluk araçlarını keşfedin';
+
+  @override
+  String get aboutSuggestKeyword => 'Anahtar kelime öner';
+
+  @override
+  String get aboutSuggestKeywordSubtitle =>
+      'İnceleme için haram veya şüpheli içerikler önerin';
+
+  @override
+  String get aboutReportVerdict => 'Yanlış kararı bildir';
+
+  @override
+  String get aboutReportVerdictSubtitle =>
+      'Helal durumu yanlış görünen bir ürünü işaretleyin';
+
+  @override
+  String get aboutSourceCode => 'GitHub\'da kaynak kodu';
+
+  @override
+  String get aboutSourceCodeSubtitle =>
+      'Mantığı inceleyin, sorun bildirin veya pull request gönderin';
+
+  @override
+  String get aboutHowToContribute => 'Geliştirici rehberi';
+
+  @override
+  String get aboutHowToContributeSubtitle =>
+      'Projeyi yerelde kurun ve koda katkıda bulunun';
+
+  @override
+  String get aboutContact => 'Ekiple iletişime geçin';
+
+  @override
+  String get aboutContactSubtitle =>
+      'Sorular, fikirler veya iş birliği talepleri';
+
+  @override
+  String get contributePrompt => 'Açık kaynak ve topluluk odaklı.';
+
+  @override
+  String get contributePromptAction => 'Katkıda bulun';
 
   @override
   String get latest => 'En Son';

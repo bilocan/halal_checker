@@ -6,11 +6,13 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../app_colors.dart';
+import '../constants/site_urls.dart';
 import '../localization/app_localizations.dart';
 import '../services/beta_program_service.dart';
 import '../services/version_service.dart';
 import '../utils/beta_feedback_mailto.dart';
 import '../widgets/halal_scan_logo.dart';
+import 'start/widgets/start_app_bar_actions.dart';
 
 class AboutScreen extends StatefulWidget {
   const AboutScreen({super.key});
@@ -87,9 +89,118 @@ class _AboutScreenState extends State<AboutScreen> {
     return updateAvailable ? loc.updateAvailable : 'v$_version';
   }
 
+  Future<void> _launchExternal(Uri uri) async {
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
+
+  Widget _communityLinkTile({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return ListTile(
+      leading: Icon(icon, color: kGreenDark),
+      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+      subtitle: Text(
+        subtitle,
+        style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+      ),
+      trailing: Icon(Icons.open_in_new, size: 18, color: Colors.grey.shade400),
+      onTap: onTap,
+    );
+  }
+
+  Widget _buildCommunitySection(AppLocalizations loc, String languageCode) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          loc.aboutCommunityTitle,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: Colors.grey.shade800,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          loc.aboutCommunityBlurb,
+          style: TextStyle(
+            color: Colors.grey.shade600,
+            fontSize: 13,
+            height: 1.45,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Card(
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(color: Colors.grey.shade200),
+          ),
+          child: Column(
+            children: [
+              _communityLinkTile(
+                icon: Icons.language_outlined,
+                title: loc.aboutVisitWebsite,
+                subtitle: loc.aboutVisitWebsiteSubtitle,
+                onTap: () =>
+                    _launchExternal(Uri.parse(SiteUrls.webHome(languageCode))),
+              ),
+              Divider(height: 1, color: Colors.grey.shade200),
+              _communityLinkTile(
+                icon: Icons.edit_note_outlined,
+                title: loc.aboutSuggestKeyword,
+                subtitle: loc.aboutSuggestKeywordSubtitle,
+                onTap: () => _launchExternal(
+                  Uri.parse(SiteUrls.webSuggest(languageCode)),
+                ),
+              ),
+              Divider(height: 1, color: Colors.grey.shade200),
+              _communityLinkTile(
+                icon: Icons.flag_outlined,
+                title: loc.aboutReportVerdict,
+                subtitle: loc.aboutReportVerdictSubtitle,
+                onTap: () => _launchExternal(
+                  Uri.parse(SiteUrls.webReport(languageCode)),
+                ),
+              ),
+              Divider(height: 1, color: Colors.grey.shade200),
+              _communityLinkTile(
+                icon: Icons.code_outlined,
+                title: loc.aboutSourceCode,
+                subtitle: loc.aboutSourceCodeSubtitle,
+                onTap: () => _launchExternal(Uri.parse(SiteUrls.githubAppRepo)),
+              ),
+              Divider(height: 1, color: Colors.grey.shade200),
+              _communityLinkTile(
+                icon: Icons.menu_book_outlined,
+                title: loc.aboutHowToContribute,
+                subtitle: loc.aboutHowToContributeSubtitle,
+                onTap: () =>
+                    _launchExternal(Uri.parse(SiteUrls.githubContributing)),
+              ),
+              Divider(height: 1, color: Colors.grey.shade200),
+              _communityLinkTile(
+                icon: Icons.mail_outline,
+                title: loc.aboutContact,
+                subtitle: loc.aboutContactSubtitle,
+                onTap: () => _launchExternal(
+                  SiteUrls.contactMailto(subject: 'HalalScan'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context);
+    final languageCode = Localizations.localeOf(context).languageCode;
     final updateAvailable = _storeInfo?.status == UpdateStatus.updateAvailable;
     final isSupported = Platform.isAndroid || Platform.isIOS;
 
@@ -98,6 +209,7 @@ class _AboutScreenState extends State<AboutScreen> {
         title: Text(loc.about),
         backgroundColor: kGreen,
         foregroundColor: Colors.white,
+        actions: StartAppBarActions.build(context),
       ),
       body: ListView(
         padding: const EdgeInsets.all(20),
@@ -145,7 +257,9 @@ class _AboutScreenState extends State<AboutScreen> {
           ),
           const SizedBox(height: 16),
           Center(child: _buildVersionTable(loc, updateAvailable)),
-          const SizedBox(height: 28),
+          const SizedBox(height: 24),
+          _buildCommunitySection(loc, languageCode),
+          const SizedBox(height: 24),
           if (isSupported)
             ElevatedButton.icon(
               onPressed: _checkingUpdate
@@ -184,7 +298,7 @@ class _AboutScreenState extends State<AboutScreen> {
               onPressed: () async {
                 final uri = await buildBetaFeedbackMailto();
                 if (!context.mounted) return;
-                await launchUrl(uri, mode: LaunchMode.externalApplication);
+                await _launchExternal(uri);
               },
               icon: const Icon(Icons.mail_outline),
               label: Text(loc.sendBetaFeedback),
@@ -199,24 +313,7 @@ class _AboutScreenState extends State<AboutScreen> {
             ),
           if (_betaFeedbackEnabled) const SizedBox(height: 8),
           TextButton(
-            onPressed: () => launchUrl(
-              Uri.parse(
-                'mailto:bilalgunay@gmail.com?subject=HalalScan%20Support',
-              ),
-              mode: LaunchMode.externalApplication,
-            ),
-            child: Text(
-              'bilalgunay@gmail.com',
-              style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
-            ),
-          ),
-          TextButton(
-            onPressed: () => launchUrl(
-              Uri.parse(
-                'https://gist.github.com/bilocan/b61ebb96d2b847aa6964262d506d6143',
-              ),
-              mode: LaunchMode.externalApplication,
-            ),
+            onPressed: () => _launchExternal(Uri.parse(SiteUrls.privacyPolicy)),
             child: Text(
               loc.privacyPolicy,
               style: TextStyle(color: Colors.grey.shade500, fontSize: 13),

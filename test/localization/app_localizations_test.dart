@@ -87,8 +87,8 @@ void main() {
       expect(l10n.keywords, 'Keywords');
     });
 
-    test('about returns About', () {
-      expect(l10n.about, 'About');
+    test('about returns Community', () {
+      expect(l10n.about, 'Community');
     });
 
     test('signIn returns Sign in', () {

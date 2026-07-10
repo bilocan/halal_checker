@@ -9,6 +9,7 @@ import '../models/halal_store.dart';
 import '../services/directory_service.dart';
 import 'add_brand_screen.dart';
 import 'add_store_screen.dart';
+import 'start/widgets/start_app_bar_actions.dart';
 
 class DirectoryScreen extends StatefulWidget {
   const DirectoryScreen({super.key});
@@ -148,6 +149,7 @@ class _DirectoryScreenState extends State<DirectoryScreen>
         title: const Text('Halal Directory'),
         backgroundColor: kGreen,
         foregroundColor: Colors.white,
+        actions: StartAppBarActions.build(context),
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: Colors.white,

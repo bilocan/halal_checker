@@ -730,7 +730,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'This is a non-food product. Islamic dietary rules do not apply.';
 
   @override
-  String get about => 'About';
+  String get about => 'Community';
 
   @override
   String get version => 'Version';
@@ -752,6 +752,61 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get privacyPolicy => 'Privacy Policy';
+
+  @override
+  String get aboutCommunityTitle => 'Join the community';
+
+  @override
+  String get aboutCommunityBlurb =>
+      'HalalScan is free, open source, and built together. Contribute in the app when you scan, or help on the web and GitHub.';
+
+  @override
+  String get aboutVisitWebsite => 'Visit halalscan.at';
+
+  @override
+  String get aboutVisitWebsiteSubtitle =>
+      'Browse products, ingredient guides, and community tools';
+
+  @override
+  String get aboutSuggestKeyword => 'Suggest a keyword';
+
+  @override
+  String get aboutSuggestKeywordSubtitle =>
+      'Propose haram or suspicious ingredients for review';
+
+  @override
+  String get aboutReportVerdict => 'Report a wrong verdict';
+
+  @override
+  String get aboutReportVerdictSubtitle =>
+      'Flag a product whose halal status looks incorrect';
+
+  @override
+  String get aboutSourceCode => 'Source code on GitHub';
+
+  @override
+  String get aboutSourceCodeSubtitle =>
+      'Inspect the logic, open issues, or submit pull requests';
+
+  @override
+  String get aboutHowToContribute => 'Developer guide';
+
+  @override
+  String get aboutHowToContributeSubtitle =>
+      'Set up the project locally and contribute code';
+
+  @override
+  String get aboutContact => 'Contact the team';
+
+  @override
+  String get aboutContactSubtitle =>
+      'Questions, ideas, or partnership inquiries';
+
+  @override
+  String get contributePrompt => 'Open source & community-driven.';
+
+  @override
+  String get contributePromptAction => 'Contribute';
 
   @override
   String get latest => 'Latest';

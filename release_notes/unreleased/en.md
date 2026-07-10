@@ -11,3 +11,7 @@
 - **More accurate certificate checks** — fixed a bug where a cross-language keyword mix-up could wrongly flag a product as needing halal certification; Analysis Transparency now shows which keyword and language triggered a flag.
 
 - **Fixed certificate-required badge** — products confirmed as animal-derived now correctly show `Needs halal certificate` instead of `Suspicious` when an unrelated suspicious ingredient, label, or additive is also flagged.
+
+- **Community hub in app** — The Community tab (formerly About) links to halalscan.at, keyword suggestions, verdict reports, GitHub source code, the developer guide, and team contact. A Contribute prompt on Home and Result opens the same hub.
+
+- **Language and account on every tab** — The language picker and sign-in/account menu now appear in the app bar on Keywords, Halal Directory, Community, and Admin tabs, not just Home.

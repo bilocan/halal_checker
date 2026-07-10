@@ -1369,7 +1369,7 @@ abstract class AppLocalizations {
   /// No description provided for @about.
   ///
   /// In en, this message translates to:
-  /// **'About'**
+  /// **'Community'**
   String get about;
 
   /// No description provided for @version.
@@ -1413,6 +1413,102 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Privacy Policy'**
   String get privacyPolicy;
+
+  /// No description provided for @aboutCommunityTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Join the community'**
+  String get aboutCommunityTitle;
+
+  /// No description provided for @aboutCommunityBlurb.
+  ///
+  /// In en, this message translates to:
+  /// **'HalalScan is free, open source, and built together. Contribute in the app when you scan, or help on the web and GitHub.'**
+  String get aboutCommunityBlurb;
+
+  /// No description provided for @aboutVisitWebsite.
+  ///
+  /// In en, this message translates to:
+  /// **'Visit halalscan.at'**
+  String get aboutVisitWebsite;
+
+  /// No description provided for @aboutVisitWebsiteSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Browse products, ingredient guides, and community tools'**
+  String get aboutVisitWebsiteSubtitle;
+
+  /// No description provided for @aboutSuggestKeyword.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggest a keyword'**
+  String get aboutSuggestKeyword;
+
+  /// No description provided for @aboutSuggestKeywordSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Propose haram or suspicious ingredients for review'**
+  String get aboutSuggestKeywordSubtitle;
+
+  /// No description provided for @aboutReportVerdict.
+  ///
+  /// In en, this message translates to:
+  /// **'Report a wrong verdict'**
+  String get aboutReportVerdict;
+
+  /// No description provided for @aboutReportVerdictSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Flag a product whose halal status looks incorrect'**
+  String get aboutReportVerdictSubtitle;
+
+  /// No description provided for @aboutSourceCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Source code on GitHub'**
+  String get aboutSourceCode;
+
+  /// No description provided for @aboutSourceCodeSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Inspect the logic, open issues, or submit pull requests'**
+  String get aboutSourceCodeSubtitle;
+
+  /// No description provided for @aboutHowToContribute.
+  ///
+  /// In en, this message translates to:
+  /// **'Developer guide'**
+  String get aboutHowToContribute;
+
+  /// No description provided for @aboutHowToContributeSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Set up the project locally and contribute code'**
+  String get aboutHowToContributeSubtitle;
+
+  /// No description provided for @aboutContact.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact the team'**
+  String get aboutContact;
+
+  /// No description provided for @aboutContactSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Questions, ideas, or partnership inquiries'**
+  String get aboutContactSubtitle;
+
+  /// No description provided for @contributePrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Open source & community-driven.'**
+  String get contributePrompt;
+
+  /// No description provided for @contributePromptAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Contribute'**
+  String get contributePromptAction;
 
   /// No description provided for @latest.
   ///
