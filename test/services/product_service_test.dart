@@ -1190,6 +1190,7 @@ void main() {
       final p = await ProductService().getProduct('1000000067');
       expect(p!.isHalal, isFalse);
       expect(p.suspiciousAdditives, isNotEmpty);
+      expect(p.requiresHalalCert, isTrue);
     });
 
     test(

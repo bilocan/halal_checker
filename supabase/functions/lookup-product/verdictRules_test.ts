@@ -278,6 +278,49 @@ Deno.test('computeVerdict — haram category blocks cert and forces not halal', 
   assertMatch(result.explanation, /not permissible/i)
 })
 
+Deno.test('computeVerdict — L-cysteine without halal label → requiresHalalCert', async () => {
+  const result = await computeVerdict(baseCtx({
+    name: 'Billa Thunfisch Wrap',
+    ingredients: [
+      'Weizentortilla 33% (WEIZENMEHL, Mehlbehandlungsmittel: L-Cystein)',
+    ],
+  }))
+  assertEquals(result.requiresHalalCert, true)
+  assertEquals(result.isHalal, false)
+  assertEquals(result.suspiciousIngredients.length > 0, true)
+  assertMatch(result.explanation, /L-cysteine \(E920\)/i)
+})
+
+Deno.test('computeVerdict — L-cysteine with halal label → cert waived', async () => {
+  const result = await computeVerdict(baseCtx({
+    name: 'Certified Wrap',
+    ingredients: ['wheat tortilla (L-cysteine)', 'salt'],
+    labels: ['halal'],
+  }))
+  assertEquals(result.requiresHalalCert, false)
+  assertEquals(result.suspiciousIngredients.some(i => /cystein/i.test(i)), false)
+})
+
+Deno.test('computeVerdict — e920 additive without cert → requiresHalalCert', async () => {
+  const result = await computeVerdict(baseCtx({
+    name: 'Flour mix',
+    ingredients: ['wheat flour', 'water'],
+    additivesTags: ['en:e920'],
+  }))
+  assertEquals(result.requiresHalalCert, true)
+  assertEquals(result.isHalal, false)
+})
+
+Deno.test('computeVerdict — e471 stays suspicious and does not set cert', async () => {
+  const result = await computeVerdict(baseCtx({
+    name: 'Crackers',
+    ingredients: ['flour', 'e471', 'salt'],
+  }))
+  assertEquals(result.requiresHalalCert, false)
+  assertEquals(result.suspiciousIngredients.length > 0, true)
+  assertEquals(result.isHalal, false)
+})
+
 // ── applyPostAnalysisRules (keyword safety + post rules) ───────────────────
 
 Deno.test('postRules — keyword haram override wins over AI halal snapshot', () => {

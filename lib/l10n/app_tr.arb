@@ -214,6 +214,7 @@
   "explanationUnknown": "Bu ürün için içerik bilgisi bulunamadı. Helal durumu belirlenemiyor — lütfen ambalajı doğrudan kontrol edin.",
   "explanationNoCert": "Bu ürün hayvansal kaynaklı bir gıdadır ancak doğrulanmış bir helal sertifikası bulunmamaktadır. Helal kesim teyit edilemez — ambalajda helal etiketi olup olmadığını kontrol edin.",
   "explanationNoCertWithSuspicious": "Bu ürün hayvansal kaynaklı bir gıdadır ancak doğrulanmış bir helal sertifikası bulunmamaktadır. Helal kesim teyit edilemez — ambalajda helal etiketi olup olmadığını kontrol edin. Ayrıca hayvansal kaynaklı olabilecek {ingredients} içeriyor.",
+  "explanationNoCertCysteine": "Bu üründe L-sistein (E920) vardır ve doğrulanmış bir helal sertifika gerekir. Ticari L-sistein sıklıkla saç, tüy veya domuz kılından üretilir; mikrobiyal veya sentetik kaynaklar mevcuttur ancak etikette nadiren belirtilir. Ambalajda güvenilir bir helal işareti olup olmadığını kontrol edin.",
   "nonFood": "ℹ️ GIDA DEĞİL",
   "explanationNonFood": "Bu bir gıda ürünü değildir. İslami beslenme kuralları bu ürün için geçerli değildir.",
   "about": "Topluluk",

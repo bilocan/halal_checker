@@ -729,6 +729,10 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
+  String get explanationNoCertCysteine =>
+      'Dieses Produkt enthält L-Cystein (E920) und benötigt ein geprüftes Halal-Zertifikat. Handelsübliches L-Cystein stammt oft aus Haaren, Federn oder Schweineborsten; mikrobielle oder synthetische Quellen gibt es, werden auf der Packung aber selten angegeben. Prüfen Sie die Verpackung auf ein vertrauenswürdiges Halal-Siegel.';
+
+  @override
   String get nonFood => 'ℹ️ KEIN LEBENSMITTEL';
 
   @override

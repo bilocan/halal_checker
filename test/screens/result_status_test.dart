@@ -130,4 +130,24 @@ void main() {
 
     expect(status.explanation, loc.explanationUnanalyzableLanguage);
   });
+
+  test('L-cysteine without cert uses cysteine needs-cert explanation', () {
+    final loc = AppLocalizationsEn();
+    final product = Product(
+      barcode: '9010437058612',
+      name: 'Billa Thunfisch Wrap',
+      ingredients: const ['Weizentortilla (L-Cystein)'],
+      isHalal: false,
+      haramIngredients: const [],
+      suspiciousIngredients: const ['Weizentortilla (L-Cystein)'],
+      ingredientWarnings: const {},
+      labels: const [],
+      requiresHalalCert: true,
+    );
+
+    final status = ResultStatus.from(product, loc);
+
+    expect(status.resultLabel, loc.noCert);
+    expect(status.explanation, loc.explanationNoCertCysteine);
+  });
 }

@@ -40,7 +40,8 @@ class IngredientKeywords {
         'Gelatin source often unspecified — predominantly pork-derived in Western products',
     'e441':
         'Gelatin (E441), source often unspecified — predominantly pork-derived',
-    'e920': 'L-cysteine may be animal-derived',
+    'e920':
+        'L-cysteine (E920) needs a halal certificate — source is often hair, feathers, or pig bristles unless certified microbial/synthetic',
     'e322': 'Lecithin may be animal-derived',
     'e471': 'Mono- and diglycerides may be animal-derived',
     'e472': 'Emulsifiers may be animal-derived',
@@ -76,7 +77,8 @@ class IngredientKeywords {
     'e913': 'Lanolin (E913) is derived from sheep wool grease',
     'rennet': 'Rennet may be animal-derived',
     'whey': 'Whey is a dairy ingredient — source verification recommended.',
-    'l-cysteine': 'L-cysteine may be animal-derived',
+    'l-cysteine':
+        'L-cysteine (E920) needs a halal certificate — source is often hair, feathers, or pig bristles unless certified microbial/synthetic',
     'natural flavour':
         'Natural flavour may include animal-derived extracts or be extracted with alcohol.',
     'flavouring':
@@ -1061,6 +1063,22 @@ class IngredientKeywords {
           'Die Herkunft von Gelatine ist auf der Verpackung häufig nicht angegeben. In westlichen Märkten stammt sie überwiegend vom Schwein und ist daher nicht halal, sofern sie nicht ausdrücklich als Fischgelatine, Rindergelatine aus halal-geschlachtetem Tier oder pflanzliche Alternative deklariert ist. Achten Sie auf ein Halal-Zertifizierungszeichen oder die Angabe „Rindergelatine" / „Fischgelatine"; besonders strenge Verbraucher können die Herkunft beim Hersteller erfragen.',
       'tr':
           'Jelatin kaynağı ambalajda çoğunlukla belirtilmez. Batı pazarlarında jelatin büyük ölçüde domuzdan elde edilmekte olup açıkça balık jelatini, helal kesimli sığır jelatini veya bitkisel alternatif olarak etiketlenmediği sürece helal değildir. Helal sertifika logosunu veya "sığır jelatini" / "balık jelatini" ibaresini arayın; daha titiz tüketiciler kaynağı üreticiden teyit etmek isteyebilir.',
+    },
+    'l-cysteine': {
+      'en':
+          'L-cysteine (E920) needs a verified halal certificate. Commercial L-cysteine is often made from hair, feathers, or pig bristles; microbial or synthetic sources exist but are rarely labelled. Check the pack for a trusted halal mark.',
+      'de':
+          'L-Cystein (E920) braucht ein geprüftes Halal-Zertifikat. Handelsübliches L-Cystein stammt oft aus Haaren, Federn oder Schweineborsten; mikrobielle oder synthetische Quellen gibt es, stehen auf der Packung aber selten. Achten Sie auf ein vertrauenswürdiges Halal-Siegel.',
+      'tr':
+          'L-sistein (E920) için doğrulanmış helal sertifika gerekir. Ticari L-sistein sıklıkla saç, tüy veya domuz kılından üretilir; mikrobiyal veya sentetik kaynaklar mevcuttur ancak etikette nadiren belirtilir. Ambalajda güvenilir bir helal işareti arayın.',
+    },
+    'e920': {
+      'en':
+          'L-cysteine (E920) needs a verified halal certificate. Commercial L-cysteine is often made from hair, feathers, or pig bristles; microbial or synthetic sources exist but are rarely labelled. Check the pack for a trusted halal mark.',
+      'de':
+          'L-Cystein (E920) braucht ein geprüftes Halal-Zertifikat. Handelsübliches L-Cystein stammt oft aus Haaren, Federn oder Schweineborsten; mikrobielle oder synthetische Quellen gibt es, stehen auf der Packung aber selten. Achten Sie auf ein vertrauenswürdiges Halal-Siegel.',
+      'tr':
+          'L-sistein (E920) için doğrulanmış helal sertifika gerekir. Ticari L-sistein sıklıkla saç, tüy veya domuz kılından üretilir; mikrobiyal veya sentetik kaynaklar mevcuttur ancak etikette nadiren belirtilir. Ambalajda güvenilir bir helal işareti arayın.',
     },
     'whey': {
       'en':

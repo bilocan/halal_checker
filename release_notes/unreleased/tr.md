@@ -1,3 +1,1 @@
-<!-- Sonraki sürüm için kullanıcıya yönelik maddeler.
-     Her madde için bir `- madde` satırı ekleyin. Merge öncesi HTML yorumlarını kaldırın.
-     Kullanıcıya görünen değişikliklerde en.md, de.md ve ar.md dosyalarını da güncelleyin. -->
+- **L-sistein / E920** — güvenilir bir helal işareti yoksa genel şüpheli yerine sertifika gerekir olarak işaretlenir.

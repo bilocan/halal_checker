@@ -9,6 +9,7 @@ import '../models/product.dart';
 import '../services/database_service.dart';
 import '../services/ingredient_sanitizer.dart';
 import '../services/ocr_service.dart';
+import '../services/needs_cert_rule.dart';
 import '../services/product_service.dart';
 import '../services/product_verdict.dart';
 import 'result_screen.dart';
@@ -76,19 +77,22 @@ class _IngredientOcrScreenState extends State<IngredientOcrScreen> {
       final analysis = ProductService.analyzeWithKeywords(ingredients);
       final barcode = 'photo_${DateTime.now().millisecondsSinceEpoch}';
 
-      final product = Product(
-        barcode: barcode,
-        name: loc.photoAnalysisProductName,
-        ingredients: ingredients,
-        isHalal: analysis.isHalal,
-        haramIngredients: analysis.haram,
-        suspiciousIngredients: analysis.suspicious,
-        ingredientWarnings: analysis.warnings,
-        ingredientTranslations: analysis.translations,
-        labels: const [],
-        explanation: analysis.explanation,
-        analyzedByAI: false,
-        analysisMethod: 'keyword',
+      final product = NeedsCertRule.applyToProduct(
+        Product(
+          barcode: barcode,
+          name: loc.photoAnalysisProductName,
+          ingredients: ingredients,
+          isHalal: analysis.isHalal,
+          haramIngredients: analysis.haram,
+          suspiciousIngredients: analysis.suspicious,
+          ingredientWarnings: analysis.warnings,
+          ingredientTranslations: analysis.translations,
+          ingredientCanonicals: analysis.canonicals,
+          labels: const [],
+          explanation: analysis.explanation,
+          analyzedByAI: false,
+          analysisMethod: 'keyword',
+        ),
       );
 
       await DatabaseService.instance.insertScan(

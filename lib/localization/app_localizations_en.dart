@@ -723,6 +723,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get explanationNoCertCysteine =>
+      'This product contains L-cysteine (E920), which needs a verified halal certificate. Commercial L-cysteine is often made from hair, feathers, or pig bristles; microbial or synthetic sources exist but are rarely labelled. Check the packaging for a trusted halal mark.';
+
+  @override
   String get nonFood => 'ℹ️ NOT FOOD';
 
   @override

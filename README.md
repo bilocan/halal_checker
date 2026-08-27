@@ -46,7 +46,7 @@ If the Edge Function is unavailable or Claude fails, the app falls back to `Hala
 | Animal-derived | gelatin, carmine, cochineal |
 | E-numbers | E120, E441, E542, E904 |
 
-**Verdict rules** (highest priority first): **haram** if any haram ingredient matches; **suspicious** if any suspicious ingredient matches (product is not halal until source is verified); **needs cert** for animal-derived foods without halal certification; **halal** only when none of the above apply.
+**Verdict rules** (highest priority first): **haram** if any haram ingredient matches; **suspicious** if any suspicious ingredient matches (product is not halal until source is verified); **needs cert** for animal-derived foods without halal certification, **or for L-cysteine / E920** unless a trusted halal mark is on the pack; **halal** only when none of the above apply.
 
 **Suspicious keywords** flag ingredients that need source verification (product is not marked halal):
 
@@ -56,7 +56,7 @@ If the Edge Function is unavailable or Claude fails, the app falls back to `Hala
 | rennet | May be animal-derived |
 | E471, E472, E473 | Mono/diglycerides; may be animal fat |
 | E322 | Lecithin; may be animal-derived |
-| E920, L-cysteine | May be animal-derived |
+| E920, L-cysteine | Needs a trusted halal certificate (source often hair/feathers/pig bristles) |
 | natural flavour, flavouring | Source unspecified |
 | enzymes | May be extracted from animal sources |
 | glycerol, E422 | May be animal-derived |

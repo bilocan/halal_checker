@@ -203,6 +203,33 @@ void main() {
       );
     });
 
+    test(
+      'noCert when L-cysteine is the only suspicious flag and cert required',
+      () {
+        expect(
+          ProductVerdict.outcome(
+            base(requiresHalalCert: true, suspicious: const ['L-Cystein']),
+          ),
+          ProductOutcome.noCert,
+        );
+      },
+    );
+
+    test(
+      'suspicious beats noCert when L-cysteine sits with other doubtful ingredients',
+      () {
+        expect(
+          ProductVerdict.outcome(
+            base(
+              requiresHalalCert: true,
+              suspicious: const ['e471', 'L-Cystein'],
+            ),
+          ),
+          ProductOutcome.suspicious,
+        );
+      },
+    );
+
     test('noCert beats suspicious ingredient', () {
       expect(
         ProductVerdict.outcome(

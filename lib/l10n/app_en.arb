@@ -298,6 +298,7 @@
       "ingredients": { "type": "String" }
     }
   },
+  "explanationNoCertCysteine": "This product contains L-cysteine (E920), which needs a verified halal certificate. Commercial L-cysteine is often made from hair, feathers, or pig bristles; microbial or synthetic sources exist but are rarely labelled. Check the packaging for a trusted halal mark.",
   "nonFood": "ℹ️ NOT FOOD",
   "explanationNonFood": "This is a non-food product. Islamic dietary rules do not apply.",
   "about": "Community",

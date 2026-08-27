@@ -2,7 +2,7 @@
  * Halal verdict pipeline (bootstrap → AI tiers → post-rules).
  * Documented step-by-step in VERDICT_PIPELINE.md — update that file when changing order or skip logic.
  */
-import { keywordAnalysis, keywordAnalysisFromSources } from './keyword.ts'
+import { keywordAnalysis, keywordAnalysisFromSources, itemIsNeedsCert } from './keyword.ts'
 import type { KeywordEntry, KeywordResult } from './keyword.ts'
 import type { IngredientAnalysisSource } from './ingredientResolution.ts'
 import {
@@ -435,7 +435,7 @@ export function applyPostAnalysisRules(
     (s, rule) => rule(s, ruleCtx),
     snapshot,
   )
-  const { snapshot: afterCert, requiresHalalCert } = applyHalalCertRequirement(afterCore, ctx)
+  const { snapshot: afterCert, requiresHalalCert } = applyHalalCertRequirement(afterCore, ctx, ruleCtx)
   return {
     requiresHalalCert,
     snapshot: applySuspiciousNotHalal(afterCert, ruleCtx),
@@ -627,9 +627,13 @@ function categoryLanguage(category: string): string | null {
   return colon > 0 ? category.slice(0, colon).toLowerCase() : null
 }
 
+const CYSTEINE_CERT_EXPLANATION =
+  'This product contains L-cysteine (E920), which needs a verified halal certificate. Commercial L-cysteine is often made from hair, feathers, or pig bristles; microbial or synthetic sources exist but are rarely labelled. Check the packaging for a trusted halal mark.'
+
 function applyHalalCertRequirement(
   snapshot: VerdictSnapshot,
   ctx: VerdictContext,
+  { kwFirst, kwAdditives }: PostRuleContext,
 ): { snapshot: VerdictSnapshot; requiresHalalCert: boolean } {
   const matchedCategory = ctx.rawCategories.find(c => ANIMAL_PRODUCT_CATEGORIES.has(c.toLowerCase()))
   const matchedNameTerm = [...ANIMAL_PRODUCT_NAME_TERMS.keys()].find(term =>
@@ -647,9 +651,46 @@ function applyHalalCertRequirement(
   }
   const isAnimalProduct = !!matchedCategory || !!matchedNameTerm || !!matchedIngredientTerm
   const hasHalalCert = ctx.labels.some(l => HALAL_CERT_LABELS.has(l.toLowerCase()))
-  const requiresHalalCert = isAnimalProduct && !hasHalalCert && !ctx.isNonFood &&
+
+  const canonicals = { ...(kwFirst.canonicals ?? {}), ...(kwAdditives.canonicals ?? {}) }
+  const isNeeds = (item: string) => itemIsNeedsCert(item, canonicals)
+  const certSuspicious = snapshot.suspiciousIngredients.filter(isNeeds)
+  const otherSuspicious = snapshot.suspiciousIngredients.filter(ing => !isNeeds(ing))
+  const certAdditives = snapshot.suspiciousAdditives.filter(isNeeds)
+  const otherAdditives = snapshot.suspiciousAdditives.filter(ing => !isNeeds(ing))
+  const cysteineFound = certSuspicious.length > 0 || certAdditives.length > 0
+
+  if (cysteineFound && hasHalalCert) {
+    const cleared = {
+      ...snapshot,
+      suspiciousIngredients: otherSuspicious,
+      suspiciousAdditives: otherAdditives,
+    }
+    const shouldBeHalal = cleared.haramIngredients.length === 0 &&
+      cleared.haramLabels.length === 0 &&
+      cleared.haramAdditives.length === 0 &&
+      otherSuspicious.length === 0 &&
+      otherAdditives.length === 0 &&
+      cleared.suspiciousLabels.length === 0
+    return {
+      requiresHalalCert: false,
+      snapshot: shouldBeHalal
+        ? {
+          ...cleared,
+          isHalal: true,
+          isUnknown: false,
+          explanation: 'No haram or suspicious ingredients detected. Assessed by keyword matching.',
+        }
+        : cleared,
+    }
+  }
+
+  const animalRequiresCert = isAnimalProduct && !hasHalalCert && !ctx.isNonFood &&
     !ctx.haramCategory && !ctx.isHalalByCategory &&
     snapshot.haramIngredients.length === 0 && snapshot.haramLabels.length === 0
+  const cysteineRequiresCert = cysteineFound && !hasHalalCert &&
+    snapshot.haramIngredients.length === 0 && snapshot.haramLabels.length === 0
+  const requiresHalalCert = animalRequiresCert || cysteineRequiresCert
   if (!requiresHalalCert) return { snapshot, requiresHalalCert: false }
 
   const matchLang = matchedCategory
@@ -693,17 +734,22 @@ function applyHalalCertRequirement(
     ? ` It also contains ${[...new Set(alsoSuspicious)].join(', ')}, which may be animal-derived.`
     : ''
 
+  const explanation = cysteineRequiresCert && !animalRequiresCert
+    ? CYSTEINE_CERT_EXPLANATION
+    : `This product appears to be an animal product (${reason}) with no halal certification on file. ` +
+      `Halal slaughter cannot be confirmed.${suspiciousNote}${mismatchNote}`
+
   return {
     requiresHalalCert: true,
     snapshot: {
       ...snapshot,
       isHalal: false,
       isUnknown: false,
-      explanation:
-        `This product appears to be an animal product (${reason}) with no halal certification on file. ` +
-        `Halal slaughter cannot be confirmed.${suspiciousNote}${mismatchNote}`,
-      halalCertMatchTerm: matchedCategory ?? matchedNameTerm ?? matchedIngredientTerm,
-      halalCertMatchLang: matchLang,
+      explanation,
+      halalCertMatchTerm: animalRequiresCert
+        ? matchedCategory ?? matchedNameTerm ?? matchedIngredientTerm
+        : undefined,
+      halalCertMatchLang: animalRequiresCert ? matchLang : undefined,
     },
   }
 }
