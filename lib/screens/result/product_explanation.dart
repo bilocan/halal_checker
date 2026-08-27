@@ -48,11 +48,7 @@ String localizedProductExplanation({
       _isHalalInherentCategory(product)
           ? loc.explanationHalalInherentCategory
           : loc.explanationClean,
-    ProductOutcome.noCert =>
-      NeedsCertRule.foundOn(product) &&
-              !NeedsCertRule.hasAnimalProductSignal(product)
-          ? loc.explanationNoCertCysteine
-          : loc.explanationNoCert,
+    ProductOutcome.noCert => loc.explanationNoCert,
   };
 }
 

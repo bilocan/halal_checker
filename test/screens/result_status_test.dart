@@ -175,4 +175,28 @@ void main() {
     );
     expect(status.explanation, isNot(loc.explanationNoCertCysteine));
   });
+
+  test(
+    'animal product without extra flags uses animal no-cert explanation',
+    () {
+      final loc = AppLocalizationsEn();
+      final product = Product(
+        barcode: '5',
+        name: 'Chicken wrap',
+        ingredients: const ['chicken'],
+        isHalal: false,
+        haramIngredients: const [],
+        suspiciousIngredients: const [],
+        ingredientWarnings: const {},
+        labels: const [],
+        categoriesTags: const ['en:chicken'],
+        requiresHalalCert: true,
+      );
+
+      final status = ResultStatus.from(product, loc);
+
+      expect(status.resultLabel, loc.noCert);
+      expect(status.explanation, loc.explanationNoCert);
+    },
+  );
 }
