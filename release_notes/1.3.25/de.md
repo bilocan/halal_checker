@@ -1,0 +1,1 @@
+- **L-Cystein / E920** — gilt jetzt als Zertifikat nötig (nicht nur verdächtig), solange kein anerkanntes Halal-Siegel auf der Packung steht.
