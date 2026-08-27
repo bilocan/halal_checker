@@ -1,4 +1,5 @@
 import '../models/product.dart';
+import 'needs_cert_rule.dart';
 
 /// Display / storage outcome for a product scan.
 enum ProductOutcome { nonFood, unknown, haram, suspicious, noCert, halal }
@@ -33,12 +34,16 @@ abstract final class ProductVerdict {
         product.haramAdditives.isNotEmpty) {
       return ProductOutcome.haram;
     }
-    // Cert-required beats merely-suspicious: requiresHalalCert means the
-    // product is *confirmed* animal-derived (category/name/ingredient match)
-    // and just needs slaughter verification, which is more specific than a
-    // "might be animal-derived" suspicious flag from an unrelated signal
-    // (e.g. a suspicious additive on a confirmed-meat product).
-    if (product.requiresHalalCert) return ProductOutcome.noCert;
+    // Cert-required beats merely-suspicious for confirmed animal products.
+    // L-cysteine is the exception: if other doubtful items remain, keep the
+    // suspicious headline (needs-cert cysteine plus e.g. E471).
+    if (product.requiresHalalCert) {
+      if (NeedsCertRule.foundOn(product) &&
+          !NeedsCertRule.onlyNeedsCertFlags(product)) {
+        return ProductOutcome.suspicious;
+      }
+      return ProductOutcome.noCert;
+    }
     if (product.suspiciousIngredients.isNotEmpty ||
         product.suspiciousLabels.isNotEmpty ||
         product.suspiciousAdditives.isNotEmpty) {

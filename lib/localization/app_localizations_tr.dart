@@ -723,6 +723,10 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String get explanationNoCertCysteine =>
+      'Bu üründe L-sistein (E920) vardır ve doğrulanmış bir helal sertifika gerekir. Ticari L-sistein sıklıkla saç, tüy veya domuz kılından üretilir; mikrobiyal veya sentetik kaynaklar mevcuttur ancak etikette nadiren belirtilir. Ambalajda güvenilir bir helal işareti olup olmadığını kontrol edin.';
+
+  @override
   String get nonFood => 'ℹ️ GIDA DEĞİL';
 
   @override

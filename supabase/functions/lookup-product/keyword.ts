@@ -51,7 +51,8 @@ export const SUSPICIOUS_ENTRIES: KeywordEntry[] = [
    'gelatin', 'gelatine', 'gelatina', 'jelatin', 'gélatine', 'želatina', 'zselatin'],
   ['e441', 'Gelatin (E441), source often unspecified — predominantly pork-derived',
    'e441', 'e-441'],
-  ['e920', 'L-cysteine may be animal-derived',          'e920', 'e-920'],
+  ['e920', 'L-cysteine (E920) needs a halal certificate — source is often hair, feathers, or pig bristles unless certified microbial/synthetic',
+   'e920', 'e-920'],
   ['e322', 'Lecithin may be animal-derived',            'e322', 'e-322'],
   ['e471', 'Mono- and diglycerides may be animal-derived','e471','e-471'],
   ['e472', 'Emulsifiers may be animal-derived',         'e472', 'e-472'],
@@ -133,7 +134,7 @@ export const SUSPICIOUS_ENTRIES: KeywordEntry[] = [
   ['whey', 'Whey is a dairy ingredient — source verification recommended.',
    'whey', 'molke', 'lactosérum', 'siero di latte',
    'suero de leche', 'peynir suyu', 'wei'],
-  ['l-cysteine', 'L-cysteine may be animal-derived',
+  ['l-cysteine', 'L-cysteine (E920) needs a halal certificate — source is often hair, feathers, or pig bristles unless certified microbial/synthetic',
    'l-cysteine', 'l-cystein', 'l-cystéine', 'l-cisteina', 'l-sistein'],
   ['natural flavour', 'Natural flavour may include animal-derived extracts or be extracted with alcohol.',
    'natural flavour', 'natural flavor', 'natürliches aroma',
@@ -261,6 +262,25 @@ const VARIANT_LANGUAGE: Record<string, string> = {
 function variantLanguage(variant: string): string | null {
   if (E_NUMBER_VARIANT.test(variant)) return null
   return VARIANT_LANGUAGE[variant] ?? null
+}
+
+/** Canonicals that require a trusted halal certificate rather than a generic suspicious flag. */
+export const NEEDS_CERT_CANONICALS = new Set(['e920', 'l-cysteine'])
+
+const NEEDS_CERT_RE =
+  /(?<![a-zA-Z\dÀ-ɏß])(?:l-cysteine|l-cystein|l-cystéine|l-cisteina|l-sistein|l-cistein|l-cisztein|e-?920)(?![a-zA-Z\dÀ-ɏß])/i
+
+export function looksLikeNeedsCert(text: string): boolean {
+  return NEEDS_CERT_RE.test(text)
+}
+
+export function itemIsNeedsCert(
+  item: string,
+  canonicals?: Record<string, string>,
+): boolean {
+  const canonical = canonicals?.[item]
+  if (canonical && NEEDS_CERT_CANONICALS.has(canonical)) return true
+  return looksLikeNeedsCert(item)
 }
 
 const ALCOHOL_FAMILY = new Set([

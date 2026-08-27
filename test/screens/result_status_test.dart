@@ -130,4 +130,73 @@ void main() {
 
     expect(status.explanation, loc.explanationUnanalyzableLanguage);
   });
+
+  test('L-cysteine without cert uses cysteine needs-cert explanation', () {
+    final loc = AppLocalizationsEn();
+    final product = Product(
+      barcode: '9010437058612',
+      name: 'Billa Thunfisch Wrap',
+      ingredients: const ['Weizentortilla (L-Cystein)'],
+      isHalal: false,
+      haramIngredients: const [],
+      suspiciousIngredients: const ['Weizentortilla (L-Cystein)'],
+      ingredientWarnings: const {},
+      labels: const [],
+      requiresHalalCert: true,
+    );
+
+    final status = ResultStatus.from(product, loc);
+
+    expect(status.resultLabel, loc.noCert);
+    expect(status.explanation, loc.explanationNoCertCysteine);
+  });
+
+  test('animal product with L-cysteine keeps animal no-cert explanation', () {
+    final loc = AppLocalizationsEn();
+    final product = Product(
+      barcode: '4',
+      name: 'Chicken wrap',
+      ingredients: const ['chicken', 'L-Cystein'],
+      isHalal: false,
+      haramIngredients: const [],
+      suspiciousIngredients: const ['L-Cystein'],
+      ingredientWarnings: const {},
+      labels: const [],
+      categoriesTags: const ['en:chicken'],
+      requiresHalalCert: true,
+    );
+
+    final status = ResultStatus.from(product, loc);
+
+    expect(status.resultLabel, loc.noCert);
+    expect(
+      status.explanation,
+      loc.explanationNoCertWithSuspicious('L-Cystein'),
+    );
+    expect(status.explanation, isNot(loc.explanationNoCertCysteine));
+  });
+
+  test(
+    'animal product without extra flags uses animal no-cert explanation',
+    () {
+      final loc = AppLocalizationsEn();
+      final product = Product(
+        barcode: '5',
+        name: 'Chicken wrap',
+        ingredients: const ['chicken'],
+        isHalal: false,
+        haramIngredients: const [],
+        suspiciousIngredients: const [],
+        ingredientWarnings: const {},
+        labels: const [],
+        categoriesTags: const ['en:chicken'],
+        requiresHalalCert: true,
+      );
+
+      final status = ResultStatus.from(product, loc);
+
+      expect(status.resultLabel, loc.noCert);
+      expect(status.explanation, loc.explanationNoCert);
+    },
+  );
 }

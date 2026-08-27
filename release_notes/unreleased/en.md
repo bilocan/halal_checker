@@ -1,3 +1,1 @@
-<!-- User-facing release note bullets for the next version.
-     Add one `- bullet` per item. Remove HTML comments before merging.
-     Copy wording to de.md, tr.md, and ar.md when the change is user-visible. -->
+- **L-cysteine / E920** — now flagged as needs a halal certificate (not generic suspicious) unless a trusted halal mark is on the pack.

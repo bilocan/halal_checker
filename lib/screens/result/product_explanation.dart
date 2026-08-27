@@ -2,6 +2,7 @@ import '../../constants/food_categories.dart';
 import '../../constants/ingredient_keywords.dart';
 import '../../localization/app_localizations.dart';
 import '../../models/product.dart';
+import '../../services/needs_cert_rule.dart';
 import '../../services/product_verdict.dart';
 
 /// User-facing verdict explanation in the active app locale.
@@ -16,6 +17,10 @@ String localizedProductExplanation({
   if (product.isNonFood) return loc.explanationNonFood;
 
   if (product.requiresHalalCert && outcome == ProductOutcome.noCert) {
+    if (NeedsCertRule.foundOn(product) &&
+        !NeedsCertRule.hasAnimalProductSignal(product)) {
+      return loc.explanationNoCertCysteine;
+    }
     // requiresHalalCert (confirmed animal, cert unresolved) and "suspicious"
     // (uncertain animal-or-plant) are independent signals — noCert decides
     // the badge, but a suspicious ingredient/label/additive found alongside

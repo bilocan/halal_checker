@@ -27,7 +27,9 @@ Respond with a raw JSON object only — no markdown, no prose outside the JSON:
 
 Haram: pork and derivatives (lard, bacon, ham, pepperoni, salami, chorizo, prosciutto, pork gelatin), alcohol (ethanol, wine, beer), blood, carnivorous animals, insects (carmine, cochineal, E120).
 
-Suspicious: gelatin (source unspecified), L-cysteine (E920), mono- and diglycerides (E471), rennet (non-microbial), enzymes (source unspecified), natural flavors (source unspecified), emulsifiers that may be animal-derived.
+Suspicious: gelatin (source unspecified), mono- and diglycerides (E471), rennet (non-microbial), enzymes (source unspecified), natural flavors (source unspecified), emulsifiers that may be animal-derived.
+
+L-cysteine / E920: not a generic suspicious flag — treat as needing a trusted halal certificate (commercial sources are often hair, feathers, or pig bristles). Put it in suspiciousIngredients with a certificate warning so post-rules can set requiresHalalCert.
 
 If the ingredients list is empty, set isHalal to false, isUnknown to true, and explanation to "No ingredient data found. Halal status cannot be determined — check the packaging directly."`;
 

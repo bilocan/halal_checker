@@ -134,14 +134,14 @@ Applied in `applyPostAnalysisRules` — **must not reorder** without updating te
 |-------|------|--------|
 | 1 | `applyKeywordHaramOverride` | If `kwFirst` has haram and snapshot still `isHalal` → force not halal, merge lists |
 | 2 | `applyKeywordSuspiciousOverride` | Same for suspicious |
-| 3 | `applyHaramCategoryOverride` | `ctx.haramCategory` wins over AI |
+| 3 | `applyHaramCategoryOverride` | `ctx.haramCategory` wins over AI and over suspicious-only snapshots; does not overwrite haram ingredient/label copy |
 | 4 | `applyNameFallback` | If `isUnknown`, keyword-scan product name |
 | 5 | `applyLabelHaramOverride` | If `kwLabels` has haram → force not halal, populate `haramLabels`/`labelWarnings`; explanation = label text when no ingredient haram, else ingredient explanation + label note appended |
 | 6 | `applyLabelSuspiciousOverride` | Always merges `suspiciousLabels`/`labelWarnings` from `kwLabels`; if snapshot still `isHalal` → force not halal, set label-based explanation (defers when ingredient flags present); if already not halal → appends suspicious-label note to existing explanation |
 | 7 | `applyAdditivesHaramOverride` | Merges haram additive keyword matches into snapshot |
 | 8 | `applyAdditivesSuspiciousOverride` | Merges suspicious additive keyword matches into snapshot |
-| 9 | `applyVeganFlavouringAdjustment` | When vegan label evidence (`en:vegan`, etc.): rewrites `flavouring` / `natural flavour` warnings and suspicious-only explanation — non-animal per certification, alcohol extraction still unclear. Does not change `isHalal`. Vegetarian labels do not qualify. |
-| 10 | `applyHalalCertRequirement` | Animal product without halal label → `requiresHalalCert`, not halal; skipped if `haramLabels` non-empty; overwrites `explanation` with the matched category/name/ingredient reason, appending a note when suspicious ingredients/labels/additives are also present (see below) |
+| 9 | `applyVeganFlavouringAdjustment` | When vegan label evidence (`en:vegan`, etc.): rewrites `flavouring` / `natural flavour` warnings and suspicious-only explanation — non-animal per certification, alcohol extraction still unclear. Does not change `isHalal`. Vegetarian labels do not qualify. Skipped when `haramCategory` is set so category copy is not overwritten. |
+| 10 | `applyHalalCertRequirement` | Animal product without halal label → `requiresHalalCert`, not halal; skipped if `haramLabels` non-empty; overwrites `explanation` with the matched category/name/ingredient reason, appending a note when suspicious ingredients/labels/additives are also present (see below). **L-cysteine / E920** without a halal label also sets `requiresHalalCert` (kept on the suspicious list for display) unless the product is non-food, haram-by-category, or already blocked by haram ingredients/labels. A recognised halal label waives L-cysteine but must not upgrade a haram-category product to halal. Animal-product copy wins when both animal cert and cysteine apply. |
 | 11 | `applySuspiciousNotHalal` | Suspicious only (no haram ingredients or labels) → `isHalal = false` |
 
 Categories for cert: `categories.ts` (`ANIMAL_PRODUCT_CATEGORIES`, `HALAL_CERT_LABELS`, `ANIMAL_PRODUCT_NAME_TERMS`, `ANIMAL_INGREDIENT_TERMS`). Name/ingredient term matching uses `matchesAnimalTerm` (word-boundary regex, mirrors `keyword.ts`'s `wPre`/`wPost`) — plain substring matching would false-positive on short terms like `ente` (German "duck") inside unrelated words (e.g. Spanish "preferentemente").

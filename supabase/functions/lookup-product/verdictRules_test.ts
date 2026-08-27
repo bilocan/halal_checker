@@ -278,6 +278,85 @@ Deno.test('computeVerdict — haram category blocks cert and forces not halal', 
   assertMatch(result.explanation, /not permissible/i)
 })
 
+Deno.test('computeVerdict — L-cysteine without halal label → requiresHalalCert', async () => {
+  const result = await computeVerdict(baseCtx({
+    name: 'Billa Thunfisch Wrap',
+    ingredients: [
+      'Weizentortilla 33% (WEIZENMEHL, Mehlbehandlungsmittel: L-Cystein)',
+    ],
+  }))
+  assertEquals(result.requiresHalalCert, true)
+  assertEquals(result.isHalal, false)
+  assertEquals(result.suspiciousIngredients.length > 0, true)
+  assertMatch(result.explanation, /L-cysteine \(E920\)/i)
+})
+
+Deno.test('computeVerdict — L-cysteine with halal label → cert waived', async () => {
+  const result = await computeVerdict(baseCtx({
+    name: 'Certified Wrap',
+    ingredients: ['wheat tortilla (L-cysteine)', 'salt'],
+    labels: ['halal'],
+  }))
+  assertEquals(result.requiresHalalCert, false)
+  assertEquals(result.suspiciousIngredients.some(i => /cystein/i.test(i)), false)
+})
+
+Deno.test('computeVerdict — e920 additive without cert → requiresHalalCert', async () => {
+  const result = await computeVerdict(baseCtx({
+    name: 'Flour mix',
+    ingredients: ['wheat flour', 'water'],
+    additivesTags: ['en:e920'],
+  }))
+  assertEquals(result.requiresHalalCert, true)
+  assertEquals(result.isHalal, false)
+})
+
+Deno.test('computeVerdict — e471 stays suspicious and does not set cert', async () => {
+  const result = await computeVerdict(baseCtx({
+    name: 'Crackers',
+    ingredients: ['flour', 'e471', 'salt'],
+  }))
+  assertEquals(result.requiresHalalCert, false)
+  assertEquals(result.suspiciousIngredients.length > 0, true)
+  assertEquals(result.isHalal, false)
+})
+
+Deno.test('computeVerdict — haram category plus L-cysteine does not set cert', async () => {
+  const result = await computeVerdict(baseCtx({
+    haramCategory: 'alcoholic beverages',
+    name: 'Beer',
+    rawCategories: ['en:beers'],
+    ingredients: ['water', 'L-cysteine'],
+  }))
+  assertEquals(result.requiresHalalCert, false)
+  assertEquals(result.isHalal, false)
+  assertMatch(result.explanation, /not permissible/i)
+})
+
+Deno.test('computeVerdict — chicken plus L-cysteine keeps animal cert explanation', async () => {
+  const result = await computeVerdict(baseCtx({
+    name: 'Chicken wrap',
+    rawCategories: ['en:chicken'],
+    ingredients: ['chicken', 'L-cysteine'],
+  }))
+  assertEquals(result.requiresHalalCert, true)
+  assertEquals(result.isHalal, false)
+  assertMatch(result.explanation, /animal product/i)
+  assertEquals(/L-cysteine \(E920\)/i.test(result.explanation), false)
+})
+
+Deno.test('computeVerdict — L-cysteine with halal label does not upgrade haram category', async () => {
+  const result = await computeVerdict(baseCtx({
+    haramCategory: 'alcoholic beverages',
+    name: 'Beer',
+    rawCategories: ['en:beers'],
+    ingredients: ['water', 'L-cysteine'],
+    labels: ['halal'],
+  }))
+  assertEquals(result.isHalal, false)
+  assertEquals(result.requiresHalalCert, false)
+})
+
 // ── applyPostAnalysisRules (keyword safety + post rules) ───────────────────
 
 Deno.test('postRules — keyword haram override wins over AI halal snapshot', () => {
@@ -307,6 +386,25 @@ Deno.test('postRules — haram category override wins over AI halal snapshot', (
   const { snapshot } = applyPostAnalysisRules(aiSaysHalalSnapshot(), ctx, kwFirst)
 
   assertEquals(snapshot.isHalal, false)
+  assertMatch(snapshot.explanation, /not permissible: beer/)
+})
+
+Deno.test('postRules — haram category override wins over suspicious-only snapshot', () => {
+  const ctx = baseCtx({ haramCategory: 'beer', ingredients: ['L-cysteine'] })
+  const kwFirst = keywordAnalysis(ctx.ingredients, ctx.customHaramEntries, ctx.customSuspiciousEntries)
+  const { snapshot, requiresHalalCert } = applyPostAnalysisRules(
+    {
+      ...aiSaysHalalSnapshot(),
+      isHalal: false,
+      suspiciousIngredients: kwFirst.suspicious,
+      explanation: 'may be animal-derived: L-cysteine',
+    },
+    ctx,
+    kwFirst,
+  )
+
+  assertEquals(snapshot.isHalal, false)
+  assertEquals(requiresHalalCert, false)
   assertMatch(snapshot.explanation, /not permissible: beer/)
 })
 

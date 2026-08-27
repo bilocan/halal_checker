@@ -1354,6 +1354,12 @@ abstract class AppLocalizations {
   /// **'This is an animal-derived food product without a verified halal certification. Halal slaughter cannot be confirmed — check the packaging for a halal label. It also contains {ingredients}, which may be animal-derived.'**
   String explanationNoCertWithSuspicious(String ingredients);
 
+  /// No description provided for @explanationNoCertCysteine.
+  ///
+  /// In en, this message translates to:
+  /// **'This product contains L-cysteine (E920), which needs a verified halal certificate. Commercial L-cysteine is often made from hair, feathers, or pig bristles; microbial or synthetic sources exist but are rarely labelled. Check the packaging for a trusted halal mark.'**
+  String get explanationNoCertCysteine;
+
   /// No description provided for @nonFood.
   ///
   /// In en, this message translates to:

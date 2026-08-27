@@ -7,6 +7,7 @@ import '../models/product.dart';
 import 'halal_rules_engine.dart';
 import 'ingredient_resolution.dart';
 import 'keyword_multi_source.dart';
+import 'needs_cert_rule.dart';
 import 'product_verdict.dart';
 
 /// Fetches and parses products from OpenFoodFacts, OpenBeautyFacts, and
@@ -342,51 +343,55 @@ class OffFetcher {
         explanation = kwResult.explanation;
       }
 
-      return Product(
-        barcode: barcode,
-        name: name,
-        ingredients: ingredients,
-        isHalal:
-            isHalalByCategory ||
-            (!haramByCategory &&
-                ProductVerdict.isHalalFromFlags(
-                  haramIngredients: haramIngredients,
-                  suspiciousIngredients: suspiciousIngredients,
-                  requiresHalalCert: requiresHalalCert,
-                  isUnknown: isUnknown,
-                )),
-        isUnknown: isUnknown,
-        haramIngredients: haramIngredients,
-        suspiciousIngredients: suspiciousIngredients,
-        ingredientWarnings: ingredientWarnings,
-        ingredientTranslations: {
-          ...kwResult.translations,
-          ...(nameCheck?.translations ?? {}),
-        },
-        ingredientCanonicals: {
-          ...kwResult.canonicals,
-          ...(nameCheck?.canonicals ?? {}),
-        },
-        labels: labels,
-        imageUrl: imageUrl,
-        imageFrontUrl: imageFrontUrl,
-        imageIngredientsUrl: imageIngredientsUrl,
-        imageNutritionUrl: imageNutritionUrl,
-        explanation: explanation,
-        analyzedByAI: false,
-        ingredientSource: 'off',
-        requiresHalalCert: requiresHalalCert,
-        keywordMatchSource: kwResult.keywordMatchSource,
-        keywordMatchOrigins: kwResult.keywordMatchOrigins,
-        analyzeLang: kwResult.analyzeLang,
-        displayLang: resolved.displayLang.isEmpty ? null : resolved.displayLang,
-        brand: brand,
-        quantity: quantity,
-        categoriesTags: categoriesTags,
-        additivesTags: additivesTags,
-        allergensTags: allergensTags,
-        tracesTags: tracesTags,
-        tagsPopulated: true,
+      return NeedsCertRule.applyToProduct(
+        Product(
+          barcode: barcode,
+          name: name,
+          ingredients: ingredients,
+          isHalal:
+              isHalalByCategory ||
+              (!haramByCategory &&
+                  ProductVerdict.isHalalFromFlags(
+                    haramIngredients: haramIngredients,
+                    suspiciousIngredients: suspiciousIngredients,
+                    requiresHalalCert: requiresHalalCert,
+                    isUnknown: isUnknown,
+                  )),
+          isUnknown: isUnknown,
+          haramIngredients: haramIngredients,
+          suspiciousIngredients: suspiciousIngredients,
+          ingredientWarnings: ingredientWarnings,
+          ingredientTranslations: {
+            ...kwResult.translations,
+            ...(nameCheck?.translations ?? {}),
+          },
+          ingredientCanonicals: {
+            ...kwResult.canonicals,
+            ...(nameCheck?.canonicals ?? {}),
+          },
+          labels: labels,
+          imageUrl: imageUrl,
+          imageFrontUrl: imageFrontUrl,
+          imageIngredientsUrl: imageIngredientsUrl,
+          imageNutritionUrl: imageNutritionUrl,
+          explanation: explanation,
+          analyzedByAI: false,
+          ingredientSource: 'off',
+          requiresHalalCert: requiresHalalCert,
+          keywordMatchSource: kwResult.keywordMatchSource,
+          keywordMatchOrigins: kwResult.keywordMatchOrigins,
+          analyzeLang: kwResult.analyzeLang,
+          displayLang: resolved.displayLang.isEmpty
+              ? null
+              : resolved.displayLang,
+          brand: brand,
+          quantity: quantity,
+          categoriesTags: categoriesTags,
+          additivesTags: additivesTags,
+          allergensTags: allergensTags,
+          tracesTags: tracesTags,
+          tagsPopulated: true,
+        ),
       );
     } catch (_) {
       return null;

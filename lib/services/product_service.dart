@@ -13,6 +13,7 @@ import 'ingredient_guide_link_service.dart';
 import 'ingredient_resolution.dart';
 import 'keyword_multi_source.dart';
 import 'off_fetcher.dart';
+import 'needs_cert_rule.dart';
 import 'product_verdict.dart';
 import 'keyword_normalization.dart';
 import 'keyword_service.dart';
@@ -342,45 +343,53 @@ class ProductService {
       } else {
         explanation = veganFlavouring?.explanation ?? kwCheck.explanation;
       }
-      return product.copyWith(
-        isHalal: false,
-        haramIngredients: allHaram,
-        suspiciousIngredients: allSuspicious,
-        ingredientWarnings: veganFlavouring?.warnings ?? allWarnings,
-        ingredientTranslations: allTranslations,
-        ingredientCanonicals: allCanonicals,
-        haramAdditives: allHaramAdditives,
-        suspiciousAdditives: allSuspiciousAdditives,
-        additiveWarnings: allAdditiveWarnings,
-        explanation: explanation.isNotEmpty ? explanation : product.explanation,
+      return NeedsCertRule.applyToProduct(
+        product.copyWith(
+          isHalal: false,
+          haramIngredients: allHaram,
+          suspiciousIngredients: allSuspicious,
+          ingredientWarnings: veganFlavouring?.warnings ?? allWarnings,
+          ingredientTranslations: allTranslations,
+          ingredientCanonicals: allCanonicals,
+          haramAdditives: allHaramAdditives,
+          suspiciousAdditives: allSuspiciousAdditives,
+          additiveWarnings: allAdditiveWarnings,
+          explanation: explanation.isNotEmpty
+              ? explanation
+              : product.explanation,
+        ),
       );
     }
     if (allSuspicious.isNotEmpty &&
         product.suspiciousIngredients.length != allSuspicious.length) {
-      return product.copyWith(
-        isHalal: isNowHalal,
-        suspiciousIngredients: allSuspicious,
-        ingredientWarnings: veganFlavouring?.warnings ?? allWarnings,
-        explanation: veganFlavouring?.explanation ?? product.explanation,
-        ingredientTranslations: allTranslations,
-        ingredientCanonicals: allCanonicals,
-        haramAdditives: allHaramAdditives,
-        suspiciousAdditives: allSuspiciousAdditives,
-        additiveWarnings: allAdditiveWarnings,
+      return NeedsCertRule.applyToProduct(
+        product.copyWith(
+          isHalal: isNowHalal,
+          suspiciousIngredients: allSuspicious,
+          ingredientWarnings: veganFlavouring?.warnings ?? allWarnings,
+          explanation: veganFlavouring?.explanation ?? product.explanation,
+          ingredientTranslations: allTranslations,
+          ingredientCanonicals: allCanonicals,
+          haramAdditives: allHaramAdditives,
+          suspiciousAdditives: allSuspiciousAdditives,
+          additiveWarnings: allAdditiveWarnings,
+        ),
       );
     }
     if (allTranslations.isNotEmpty ||
         allCanonicals.isNotEmpty ||
         additivesChanged) {
-      return product.copyWith(
-        ingredientTranslations: allTranslations,
-        ingredientCanonicals: allCanonicals,
-        haramAdditives: allHaramAdditives,
-        suspiciousAdditives: allSuspiciousAdditives,
-        additiveWarnings: allAdditiveWarnings,
+      return NeedsCertRule.applyToProduct(
+        product.copyWith(
+          ingredientTranslations: allTranslations,
+          ingredientCanonicals: allCanonicals,
+          haramAdditives: allHaramAdditives,
+          suspiciousAdditives: allSuspiciousAdditives,
+          additiveWarnings: allAdditiveWarnings,
+        ),
       );
     }
-    return product;
+    return NeedsCertRule.applyToProduct(product);
   }
 
   Future<Product?> refreshProduct(String barcode) async {
@@ -447,29 +456,31 @@ class ProductService {
         !hasHalalCert &&
         allHaram.isEmpty;
 
-    return product.copyWith(
-      isHalal: ProductVerdict.isHalalFromFlags(
+    return NeedsCertRule.applyToProduct(
+      product.copyWith(
+        isHalal: ProductVerdict.isHalalFromFlags(
+          haramIngredients: allHaram,
+          suspiciousIngredients: allSuspicious,
+          requiresHalalCert: requiresHalalCert,
+          isUnknown: kwResult.isUnknown,
+        ),
+        isUnknown: kwResult.isUnknown,
         haramIngredients: allHaram,
         suspiciousIngredients: allSuspicious,
+        ingredientWarnings: {...kwResult.warnings, ...customResult.warnings},
+        ingredientTranslations: {
+          ...kwResult.translations,
+          ...customResult.translations,
+        },
+        ingredientCanonicals: kwResult.canonicals,
+        explanation: kwResult.explanation,
+        analyzedByAI: false,
+        analysisMethod: 'keyword',
         requiresHalalCert: requiresHalalCert,
-        isUnknown: kwResult.isUnknown,
+        keywordMatchSource: kwResult.keywordMatchSource,
+        keywordMatchOrigins: kwResult.keywordMatchOrigins,
+        lastAnalysedAt: DateTime.now().toUtc(),
       ),
-      isUnknown: kwResult.isUnknown,
-      haramIngredients: allHaram,
-      suspiciousIngredients: allSuspicious,
-      ingredientWarnings: {...kwResult.warnings, ...customResult.warnings},
-      ingredientTranslations: {
-        ...kwResult.translations,
-        ...customResult.translations,
-      },
-      ingredientCanonicals: kwResult.canonicals,
-      explanation: kwResult.explanation,
-      analyzedByAI: false,
-      analysisMethod: 'keyword',
-      requiresHalalCert: requiresHalalCert,
-      keywordMatchSource: kwResult.keywordMatchSource,
-      keywordMatchOrigins: kwResult.keywordMatchOrigins,
-      lastAnalysedAt: DateTime.now().toUtc(),
     );
   }
 
