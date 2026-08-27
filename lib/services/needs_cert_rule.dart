@@ -49,6 +49,7 @@ abstract final class NeedsCertRule {
   /// (or there are none). Used so animal-category cert still wins when the
   /// suspicious list is empty.
   static bool onlyNeedsCertFlags(Product product) {
+    if (product.suspiciousLabels.isNotEmpty) return false;
     final items = [
       ...product.suspiciousIngredients,
       ...product.suspiciousAdditives,
@@ -59,17 +60,59 @@ abstract final class NeedsCertRule {
     );
   }
 
+  /// True when category/name would already require a slaughter certificate.
+  /// Cysteine copy must not replace that animal-product explanation.
+  static bool hasAnimalProductSignal(Product product) {
+    if (product.isNonFood) return false;
+    final tags = product.categoriesTags.map((c) => c.toLowerCase());
+    if (tags.any(FoodCategories.haram.contains)) return false;
+    final vegan =
+        product.labels.any(
+          (l) =>
+              FoodCategories.veganOrVegetarianLabels.contains(l.toLowerCase()),
+        ) ||
+        FoodCategories.veganOrVegetarianNameTerms.any(
+          (term) => _wordMatch(product.name, term),
+        );
+    if (vegan) return false;
+    if (tags.any(FoodCategories.animalProduct.contains)) return true;
+    final categoriesUnknown =
+        tags.isEmpty || tags.every((c) => c.contains('unknown'));
+    return categoriesUnknown &&
+        FoodCategories.animalProductNameTerms.any(
+          (term) => _wordMatch(product.name, term),
+        );
+  }
+
+  static bool _wordMatch(String text, String term) {
+    return RegExp(
+      '(?<![a-zA-ZÀ-ɏ])${RegExp.escape(term)}(?![a-zA-ZÀ-ɏ])',
+      caseSensitive: false,
+    ).hasMatch(text);
+  }
+
+  static bool _haramByCategory(Product product) {
+    return product.categoriesTags.any(
+      (c) => FoodCategories.haram.contains(c.toLowerCase()),
+    );
+  }
+
   static Product applyToProduct(Product product) {
     final hasHalalCert = product.labels.any(
       (l) => FoodCategories.halalCertificationLabels.contains(l.toLowerCase()),
     );
+    final haramByCategory = _haramByCategory(product);
+    final hasHaram =
+        product.haramIngredients.isNotEmpty ||
+        product.haramLabels.isNotEmpty ||
+        product.haramAdditives.isNotEmpty ||
+        haramByCategory;
+    final cysteineFound = foundOn(product);
     final applied = apply(
       alreadyRequiresHalalCert: product.requiresHalalCert,
       hasHalalCert: hasHalalCert,
-      hasHaram:
-          product.haramIngredients.isNotEmpty ||
-          product.haramLabels.isNotEmpty ||
-          product.haramAdditives.isNotEmpty,
+      hasHaram: hasHaram,
+      isNonFood: product.isNonFood,
       suspicious: product.suspiciousIngredients,
       suspiciousAdditives: product.suspiciousAdditives,
       canonicals: product.ingredientCanonicals,
@@ -78,15 +121,20 @@ abstract final class NeedsCertRule {
 
     final computedHalal =
         !product.isUnknown &&
+        !product.isNonFood &&
+        !haramByCategory &&
         product.haramIngredients.isEmpty &&
         product.haramLabels.isEmpty &&
         product.haramAdditives.isEmpty &&
         applied.suspicious.isEmpty &&
         applied.suspiciousAdditives.isEmpty &&
+        product.suspiciousLabels.isEmpty &&
         !applied.requiresHalalCert;
-    // Do not turn a category/name haram product into halal. Only a halal label
-    // may clear a cysteine-only not-halal result.
-    final isHalal = computedHalal && (product.isHalal || hasHalalCert);
+    // A trusted mark may only clear a cysteine-only result. Do not upgrade
+    // category/name haram (or other non-cysteine not-halal) to halal.
+    final canClearViaHalalMark =
+        hasHalalCert && cysteineFound && !hasHaram && !product.isNonFood;
+    final isHalal = computedHalal && (product.isHalal || canClearViaHalalMark);
 
     return product.copyWith(
       isHalal: isHalal,
@@ -109,6 +157,7 @@ abstract final class NeedsCertRule {
     required bool alreadyRequiresHalalCert,
     required bool hasHalalCert,
     required bool hasHaram,
+    bool isNonFood = false,
     required List<String> suspicious,
     required List<String> suspiciousAdditives,
     required Map<String, String> canonicals,
@@ -141,9 +190,19 @@ abstract final class NeedsCertRule {
         suspicious: otherSuspicious,
         suspiciousAdditives: otherAdditives,
         warnings: warnings,
-        explanation: waivedAll
+        explanation: waivedAll && !hasHaram && !isNonFood
             ? 'No haram or suspicious ingredients detected. Assessed by keyword matching.'
             : null,
+      );
+    }
+
+    if (isNonFood || hasHaram) {
+      return (
+        requiresHalalCert: alreadyRequiresHalalCert && !hasHalalCert,
+        suspicious: suspicious,
+        suspiciousAdditives: suspiciousAdditives,
+        warnings: warnings,
+        explanation: null,
       );
     }
 
@@ -159,7 +218,8 @@ abstract final class NeedsCertRule {
       suspicious: suspicious,
       suspiciousAdditives: suspiciousAdditives,
       warnings: updatedWarnings,
-      explanation: hasHaram ? null : cysteineExplanation,
+      // Animal-category cert already has its own slaughter explanation.
+      explanation: alreadyRequiresHalalCert ? null : cysteineExplanation,
     );
   }
 }

@@ -230,6 +230,22 @@ void main() {
       },
     );
 
+    test(
+      'suspicious beats noCert when L-cysteine sits with a suspicious label',
+      () {
+        expect(
+          ProductVerdict.outcome(
+            base(
+              requiresHalalCert: true,
+              suspicious: const ['L-Cystein'],
+              suspiciousLabels: const ['en:may-contain-pork'],
+            ),
+          ),
+          ProductOutcome.suspicious,
+        );
+      },
+    );
+
     test('noCert beats suspicious ingredient', () {
       expect(
         ProductVerdict.outcome(

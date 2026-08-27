@@ -17,7 +17,8 @@ String localizedProductExplanation({
   if (product.isNonFood) return loc.explanationNonFood;
 
   if (product.requiresHalalCert && outcome == ProductOutcome.noCert) {
-    if (NeedsCertRule.foundOn(product)) {
+    if (NeedsCertRule.foundOn(product) &&
+        !NeedsCertRule.hasAnimalProductSignal(product)) {
       return loc.explanationNoCertCysteine;
     }
     // requiresHalalCert (confirmed animal, cert unresolved) and "suspicious"
@@ -48,7 +49,8 @@ String localizedProductExplanation({
           ? loc.explanationHalalInherentCategory
           : loc.explanationClean,
     ProductOutcome.noCert =>
-      NeedsCertRule.foundOn(product)
+      NeedsCertRule.foundOn(product) &&
+              !NeedsCertRule.hasAnimalProductSignal(product)
           ? loc.explanationNoCertCysteine
           : loc.explanationNoCert,
   };

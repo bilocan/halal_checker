@@ -150,4 +150,29 @@ void main() {
     expect(status.resultLabel, loc.noCert);
     expect(status.explanation, loc.explanationNoCertCysteine);
   });
+
+  test('animal product with L-cysteine keeps animal no-cert explanation', () {
+    final loc = AppLocalizationsEn();
+    final product = Product(
+      barcode: '4',
+      name: 'Chicken wrap',
+      ingredients: const ['chicken', 'L-Cystein'],
+      isHalal: false,
+      haramIngredients: const [],
+      suspiciousIngredients: const ['L-Cystein'],
+      ingredientWarnings: const {},
+      labels: const [],
+      categoriesTags: const ['en:chicken'],
+      requiresHalalCert: true,
+    );
+
+    final status = ResultStatus.from(product, loc);
+
+    expect(status.resultLabel, loc.noCert);
+    expect(
+      status.explanation,
+      loc.explanationNoCertWithSuspicious('L-Cystein'),
+    );
+    expect(status.explanation, isNot(loc.explanationNoCertCysteine));
+  });
 }

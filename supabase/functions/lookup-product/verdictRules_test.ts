@@ -321,6 +321,42 @@ Deno.test('computeVerdict — e471 stays suspicious and does not set cert', asyn
   assertEquals(result.isHalal, false)
 })
 
+Deno.test('computeVerdict — haram category plus L-cysteine does not set cert', async () => {
+  const result = await computeVerdict(baseCtx({
+    haramCategory: 'alcoholic beverages',
+    name: 'Beer',
+    rawCategories: ['en:beers'],
+    ingredients: ['water', 'L-cysteine'],
+  }))
+  assertEquals(result.requiresHalalCert, false)
+  assertEquals(result.isHalal, false)
+  assertMatch(result.explanation, /not permissible/i)
+})
+
+Deno.test('computeVerdict — chicken plus L-cysteine keeps animal cert explanation', async () => {
+  const result = await computeVerdict(baseCtx({
+    name: 'Chicken wrap',
+    rawCategories: ['en:chicken'],
+    ingredients: ['chicken', 'L-cysteine'],
+  }))
+  assertEquals(result.requiresHalalCert, true)
+  assertEquals(result.isHalal, false)
+  assertMatch(result.explanation, /animal product/i)
+  assertEquals(/L-cysteine \(E920\)/i.test(result.explanation), false)
+})
+
+Deno.test('computeVerdict — L-cysteine with halal label does not upgrade haram category', async () => {
+  const result = await computeVerdict(baseCtx({
+    haramCategory: 'alcoholic beverages',
+    name: 'Beer',
+    rawCategories: ['en:beers'],
+    ingredients: ['water', 'L-cysteine'],
+    labels: ['halal'],
+  }))
+  assertEquals(result.isHalal, false)
+  assertEquals(result.requiresHalalCert, false)
+})
+
 // ── applyPostAnalysisRules (keyword safety + post rules) ───────────────────
 
 Deno.test('postRules — keyword haram override wins over AI halal snapshot', () => {

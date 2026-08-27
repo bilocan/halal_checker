@@ -666,7 +666,8 @@ function applyHalalCertRequirement(
       suspiciousIngredients: otherSuspicious,
       suspiciousAdditives: otherAdditives,
     }
-    const shouldBeHalal = cleared.haramIngredients.length === 0 &&
+    const shouldBeHalal = !ctx.haramCategory && !ctx.isNonFood &&
+      cleared.haramIngredients.length === 0 &&
       cleared.haramLabels.length === 0 &&
       cleared.haramAdditives.length === 0 &&
       otherSuspicious.length === 0 &&
@@ -689,6 +690,7 @@ function applyHalalCertRequirement(
     !ctx.haramCategory && !ctx.isHalalByCategory &&
     snapshot.haramIngredients.length === 0 && snapshot.haramLabels.length === 0
   const cysteineRequiresCert = cysteineFound && !hasHalalCert &&
+    !ctx.isNonFood && !ctx.haramCategory && !ctx.isHalalByCategory &&
     snapshot.haramIngredients.length === 0 && snapshot.haramLabels.length === 0
   const requiresHalalCert = animalRequiresCert || cysteineRequiresCert
   if (!requiresHalalCert) return { snapshot, requiresHalalCert: false }
