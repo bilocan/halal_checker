@@ -389,6 +389,25 @@ Deno.test('postRules — haram category override wins over AI halal snapshot', (
   assertMatch(snapshot.explanation, /not permissible: beer/)
 })
 
+Deno.test('postRules — haram category override wins over suspicious-only snapshot', () => {
+  const ctx = baseCtx({ haramCategory: 'beer', ingredients: ['L-cysteine'] })
+  const kwFirst = keywordAnalysis(ctx.ingredients, ctx.customHaramEntries, ctx.customSuspiciousEntries)
+  const { snapshot, requiresHalalCert } = applyPostAnalysisRules(
+    {
+      ...aiSaysHalalSnapshot(),
+      isHalal: false,
+      suspiciousIngredients: kwFirst.suspicious,
+      explanation: 'may be animal-derived: L-cysteine',
+    },
+    ctx,
+    kwFirst,
+  )
+
+  assertEquals(snapshot.isHalal, false)
+  assertEquals(requiresHalalCert, false)
+  assertMatch(snapshot.explanation, /not permissible: beer/)
+})
+
 Deno.test('postRules — Cyrillic label pork skips empty name fallback', () => {
   const ctx = baseCtx({
     ingredients: ['80% частично финомляно свинско месо', 'вода', 'сол'],

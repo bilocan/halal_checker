@@ -467,7 +467,12 @@ function applyKeywordSuspiciousOverride(snapshot: VerdictSnapshot, { kwFirst }: 
 }
 
 function applyHaramCategoryOverride(snapshot: VerdictSnapshot, { ctx }: PostRuleContext): VerdictSnapshot {
-  if (!ctx.haramCategory || !snapshot.isHalal) return snapshot
+  if (!ctx.haramCategory) return snapshot
+  // Suspicious keywords already set not-halal; still apply category copy.
+  // Do not overwrite a more specific haram ingredient/label finding.
+  if (snapshot.haramIngredients.length > 0 || snapshot.haramLabels.length > 0) {
+    return snapshot
+  }
   return {
     ...snapshot,
     isHalal: false,
@@ -564,7 +569,11 @@ function applyVeganFlavouringAdjustment(
   snapshot: VerdictSnapshot,
   { ctx, kwFirst }: PostRuleContext,
 ): VerdictSnapshot {
-  if (snapshot.haramIngredients.length > 0 || snapshot.suspiciousIngredients.length === 0) {
+  if (
+    ctx.haramCategory ||
+    snapshot.haramIngredients.length > 0 ||
+    snapshot.suspiciousIngredients.length === 0
+  ) {
     return snapshot
   }
   const adjusted = adjustFlavouringForVegan({
