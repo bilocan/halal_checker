@@ -1,0 +1,1 @@
+- **L-cysteine / E920** — now flagged as needs a halal certificate (not generic suspicious) unless a trusted halal mark is on the pack.

@@ -1,0 +1,1 @@
+- **L-sistein / E920** — güvenilir bir helal işareti yoksa genel şüpheli yerine sertifika gerekir olarak işaretlenir.
