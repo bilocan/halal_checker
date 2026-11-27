@@ -4,4 +4,4 @@
 
 - Announcements: HalalScan can now show event announcements (e.g. seminars) when the app starts — tap the image to learn more, or close it and it won't show again.
 
-- Events: a new Events page (About → Events) lists upcoming and past HalalScan seminars and talks, so you can find an announcement again after closing it.
+- Events: a new Events page (Community → Events) lists upcoming and past HalalScan seminars and talks, so you can find an announcement again after closing it.

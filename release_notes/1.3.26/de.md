@@ -4,4 +4,4 @@
 
 - Ankündigungen: HalalScan kann beim App-Start Veranstaltungshinweise (z. B. Seminare) anzeigen – Bild antippen für mehr Infos oder schließen, dann erscheint es nicht erneut.
 
-- Veranstaltungen: Die neue Seite „Veranstaltungen“ (Über → Veranstaltungen) zeigt kommende und vergangene HalalScan-Seminare und Vorträge – so findest du eine Ankündigung auch nach dem Schließen wieder.
+- Veranstaltungen: Die neue Seite „Veranstaltungen“ (Community → Veranstaltungen) zeigt kommende und vergangene HalalScan-Seminare und Vorträge – so findest du eine Ankündigung auch nach dem Schließen wieder.

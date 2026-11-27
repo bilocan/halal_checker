@@ -4,4 +4,4 @@
 
 - Duyurular: HalalScan artık uygulama açılışında etkinlik duyurularını (ör. seminerler) gösterebilir — ayrıntılar için görsele dokunun ya da kapatın, bir daha gösterilmez.
 
-- Etkinlikler: Yeni Etkinlikler sayfası (Hakkında → Etkinlikler) yaklaşan ve geçmiş HalalScan seminerlerini ve sunumlarını listeler; kapattığınız bir duyuruyu tekrar bulabilirsiniz.
+- Etkinlikler: Yeni Etkinlikler sayfası (Topluluk → Etkinlikler) yaklaşan ve geçmiş HalalScan seminerlerini ve sunumlarını listeler; kapattığınız bir duyuruyu tekrar bulabilirsiniz.
