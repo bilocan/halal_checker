@@ -2575,38 +2575,8 @@ abstract class AppLocalizations {
   /// No description provided for @promoSettingsDescription.
   ///
   /// In en, this message translates to:
-  /// **'Show an image on app start (and optionally on halalscan.at). Tapping the image opens the link.'**
+  /// **'Show an event\'s poster on app start (and optionally on halalscan.at). Tapping it opens the event link.'**
   String get promoSettingsDescription;
-
-  /// No description provided for @promoImageUrl.
-  ///
-  /// In en, this message translates to:
-  /// **'Image URL'**
-  String get promoImageUrl;
-
-  /// No description provided for @promoUploadImage.
-  ///
-  /// In en, this message translates to:
-  /// **'Upload image'**
-  String get promoUploadImage;
-
-  /// No description provided for @promoUploading.
-  ///
-  /// In en, this message translates to:
-  /// **'Uploading…'**
-  String get promoUploading;
-
-  /// No description provided for @promoUploadFailed.
-  ///
-  /// In en, this message translates to:
-  /// **'Image upload failed'**
-  String get promoUploadFailed;
-
-  /// No description provided for @promoLinkUrl.
-  ///
-  /// In en, this message translates to:
-  /// **'Link URL'**
-  String get promoLinkUrl;
 
   /// No description provided for @promoShowInApp.
   ///
@@ -2644,17 +2614,83 @@ abstract class AppLocalizations {
   /// **'Promo saved'**
   String get promoSaved;
 
-  /// No description provided for @promoInvalidUrl.
-  ///
-  /// In en, this message translates to:
-  /// **'Enter a valid http(s) URL'**
-  String get promoInvalidUrl;
-
   /// No description provided for @promoResetHint.
   ///
   /// In en, this message translates to:
-  /// **'Changing the image or link shows the popup again to everyone who closed it.'**
+  /// **'Choosing an event with a different poster or link shows the popup again to everyone who closed it.'**
   String get promoResetHint;
+
+  /// No description provided for @eventsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Events'**
+  String get eventsTitle;
+
+  /// No description provided for @eventsMenuSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Seminars and talks with HalalScan'**
+  String get eventsMenuSubtitle;
+
+  /// No description provided for @eventsLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load events'**
+  String get eventsLoadFailed;
+
+  /// No description provided for @eventsRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get eventsRetry;
+
+  /// No description provided for @eventsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No events yet'**
+  String get eventsEmpty;
+
+  /// No description provided for @eventsUpcoming.
+  ///
+  /// In en, this message translates to:
+  /// **'Upcoming'**
+  String get eventsUpcoming;
+
+  /// No description provided for @eventsPast.
+  ///
+  /// In en, this message translates to:
+  /// **'Past events'**
+  String get eventsPast;
+
+  /// No description provided for @eventsOpenLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Details'**
+  String get eventsOpenLink;
+
+  /// No description provided for @promoEvent.
+  ///
+  /// In en, this message translates to:
+  /// **'Popup event'**
+  String get promoEvent;
+
+  /// No description provided for @promoNoEvent.
+  ///
+  /// In en, this message translates to:
+  /// **'None (popup off)'**
+  String get promoNoEvent;
+
+  /// No description provided for @promoEventRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose an event to show the popup'**
+  String get promoEventRequired;
+
+  /// No description provided for @promoManageEventsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Create and edit events at halalscan.at/admin/events.'**
+  String get promoManageEventsHint;
 
   /// No description provided for @batchImportNoBarcodes.
   ///

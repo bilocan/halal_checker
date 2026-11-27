@@ -1,12 +1,14 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 
 import '../../app_colors.dart';
 import '../../localization/app_localizations.dart';
+import '../../services/events_service.dart';
 import '../../services/promo_announcement_service.dart';
+import '../events_screen.dart' show formatEventDates;
 
-/// Superadmin editor for the promo popup ([PromoAnnouncementService]).
+/// Superadmin editor for the promo popup: pick which event is featured.
+/// Events themselves are created/edited in the web admin.
 class PromoSettingsCard extends StatefulWidget {
   const PromoSettingsCard({super.key});
 
@@ -15,12 +17,10 @@ class PromoSettingsCard extends StatefulWidget {
 }
 
 class _PromoSettingsCardState extends State<PromoSettingsCard> {
-  final _formKey = GlobalKey<FormState>();
-  final _imageCtrl = TextEditingController();
-  final _linkCtrl = TextEditingController();
   bool _loading = true;
   bool _saving = false;
-  bool _uploading = false;
+  List<AppEvent> _events = const [];
+  String? _eventId;
   bool _showInApp = false;
   bool _showOnWeb = false;
   DateTime? _endsAt;
@@ -28,25 +28,25 @@ class _PromoSettingsCardState extends State<PromoSettingsCard> {
   @override
   void initState() {
     super.initState();
-    _imageCtrl.addListener(() => setState(() {}));
     _load();
   }
 
-  @override
-  void dispose() {
-    _imageCtrl.dispose();
-    _linkCtrl.dispose();
-    super.dispose();
-  }
-
   Future<void> _load() async {
-    final promo = await PromoAnnouncementService.fetch();
+    final results = await Future.wait([
+      PromoAnnouncementService.fetch(),
+      EventsService.fetchAll(),
+    ]);
     if (!mounted) return;
+    final promo = results[0] as PromoAnnouncement?;
+    final events = (results[1] as List<AppEvent>?) ?? const <AppEvent>[];
+    final split = EventsSplit.from(events, DateTime.now());
     setState(() {
       _loading = false;
+      _events = [...split.upcoming, ...split.past];
       if (promo != null) {
-        _imageCtrl.text = promo.imageUrl ?? '';
-        _linkCtrl.text = promo.linkUrl ?? '';
+        _eventId = _events.any((e) => e.id == promo.eventId)
+            ? promo.eventId
+            : null;
         _showInApp = promo.showInApp;
         _showOnWeb = promo.showOnWeb;
         _endsAt = promo.endsAt?.toLocal();
@@ -54,30 +54,27 @@ class _PromoSettingsCardState extends State<PromoSettingsCard> {
     });
   }
 
-  void _snack(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+  AppEvent? get _selected {
+    for (final e in _events) {
+      if (e.id == _eventId) return e;
+    }
+    return null;
   }
 
-  Future<void> _upload() async {
-    final loc = AppLocalizations.of(context);
-    final picked = await ImagePicker().pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 85,
-    );
-    if (picked == null) return;
-    setState(() => _uploading = true);
-    final bytes = await picked.readAsBytes();
-    final url = await PromoAnnouncementService.uploadImage(
-      bytes: bytes,
-      fileName: picked.name,
-    );
-    if (!mounted) return;
-    setState(() => _uploading = false);
-    if (url == null) {
-      _snack(loc.promoUploadFailed);
-      return;
-    }
-    _imageCtrl.text = url;
+  static DateTime _endOfDay(DateTime d) =>
+      DateTime(d.year, d.month, d.day, 23, 59, 59);
+
+  void _onEventChanged(String? id) {
+    setState(() {
+      _eventId = id;
+      final ev = _selected;
+      // Default "show until" to the last day of the chosen event.
+      if (ev != null) _endsAt = _endOfDay(ev.lastAt.toLocal());
+    });
+  }
+
+  void _snack(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 
   Future<void> _pickEndDate() async {
@@ -90,20 +87,18 @@ class _PromoSettingsCardState extends State<PromoSettingsCard> {
       lastDate: DateTime(now.year + 3),
     );
     if (date == null) return;
-    // Inclusive: show through the end of the selected day (local time).
-    setState(
-      () => _endsAt = DateTime(date.year, date.month, date.day, 23, 59, 59),
-    );
+    setState(() => _endsAt = _endOfDay(date));
   }
 
   Future<void> _save() async {
     final loc = AppLocalizations.of(context);
-    if (!(_formKey.currentState?.validate() ?? false)) return;
+    if (_eventId == null && (_showInApp || _showOnWeb)) {
+      _snack(loc.promoEventRequired);
+      return;
+    }
     setState(() => _saving = true);
-    String? clean(String s) => s.trim().isEmpty ? null : s.trim();
     final ok = await PromoAnnouncementService.update(
-      imageUrl: clean(_imageCtrl.text),
-      linkUrl: clean(_linkCtrl.text),
+      eventId: _eventId,
       showInApp: _showInApp,
       showOnWeb: _showOnWeb,
       endsAt: _endsAt,
@@ -111,18 +106,6 @@ class _PromoSettingsCardState extends State<PromoSettingsCard> {
     if (!mounted) return;
     setState(() => _saving = false);
     _snack(ok ? loc.promoSaved : loc.systemSettingsSaveFailed);
-  }
-
-  String? _validateUrl(String? v, {required bool requiredWhenEnabled}) {
-    final value = v?.trim() ?? '';
-    if (value.isEmpty) {
-      return (requiredWhenEnabled && (_showInApp || _showOnWeb))
-          ? AppLocalizations.of(context).promoInvalidUrl
-          : null;
-    }
-    return PromoAnnouncementService.isValidHttpUrl(value)
-        ? null
-        : AppLocalizations.of(context).promoInvalidUrl;
   }
 
   @override
@@ -136,137 +119,131 @@ class _PromoSettingsCardState extends State<PromoSettingsCard> {
         ),
       );
     }
-    final imageUrl = _imageCtrl.text.trim();
-    final busy = _saving || _uploading;
+    final locale = Localizations.localeOf(context).toLanguageTag();
+    final selected = _selected;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                children: [
-                  Icon(Icons.campaign_outlined, color: Colors.orange.shade800),
-                  const SizedBox(width: 12),
-                  Expanded(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.campaign_outlined, color: Colors.orange.shade800),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    loc.promoSettingsTitle,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              loc.promoSettingsDescription,
+              style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+            ),
+            const SizedBox(height: 12),
+            DropdownButtonFormField<String?>(
+              initialValue: _eventId,
+              isExpanded: true,
+              decoration: InputDecoration(labelText: loc.promoEvent),
+              items: [
+                DropdownMenuItem<String?>(
+                  value: null,
+                  child: Text(loc.promoNoEvent),
+                ),
+                for (final e in _events)
+                  DropdownMenuItem<String?>(
+                    value: e.id,
                     child: Text(
-                      loc.promoSettingsTitle,
-                      style: Theme.of(context).textTheme.titleMedium,
+                      '${e.title} · ${formatEventDates(e, locale)}'
+                      '${e.published ? '' : ' (draft)'}',
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              Text(
-                loc.promoSettingsDescription,
-                style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
-              ),
+              ],
+              onChanged: _saving ? null : _onEventChanged,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              loc.promoManageEventsHint,
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+            ),
+            if (selected?.imageUrl != null) ...[
               const SizedBox(height: 12),
-              if (PromoAnnouncementService.isValidHttpUrl(imageUrl))
-                Center(
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: CachedNetworkImage(
-                      imageUrl: imageUrl,
-                      height: 180,
-                      fit: BoxFit.contain,
-                      errorWidget: (_, _, _) =>
-                          const Icon(Icons.broken_image, size: 48),
-                    ),
+              Center(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: CachedNetworkImage(
+                    imageUrl: selected!.imageUrl!,
+                    height: 180,
+                    fit: BoxFit.contain,
+                    errorWidget: (_, _, _) =>
+                        const Icon(Icons.broken_image, size: 48),
                   ),
                 ),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: _imageCtrl,
-                decoration: InputDecoration(labelText: loc.promoImageUrl),
-                keyboardType: TextInputType.url,
-                validator: (v) => _validateUrl(v, requiredWhenEnabled: true),
-              ),
-              const SizedBox(height: 8),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: OutlinedButton.icon(
-                  onPressed: busy ? null : _upload,
-                  icon: _uploading
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.upload_outlined),
-                  label: Text(
-                    _uploading ? loc.promoUploading : loc.promoUploadImage,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: _linkCtrl,
-                decoration: InputDecoration(labelText: loc.promoLinkUrl),
-                keyboardType: TextInputType.url,
-                validator: (v) => _validateUrl(v, requiredWhenEnabled: true),
-              ),
-              const SizedBox(height: 8),
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                title: Text(loc.promoShowInApp),
-                value: _showInApp,
-                activeThumbColor: kGreen,
-                onChanged: busy ? null : (v) => setState(() => _showInApp = v),
-              ),
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                title: Text(loc.promoShowOnWeb),
-                value: _showOnWeb,
-                activeThumbColor: kGreen,
-                onChanged: busy ? null : (v) => setState(() => _showOnWeb = v),
-              ),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.event_outlined),
-                title: Text(loc.promoEndsAt),
-                subtitle: Text(
-                  _endsAt == null
-                      ? loc.promoNoEndDate
-                      : MaterialLocalizations.of(
-                          context,
-                        ).formatMediumDate(_endsAt!),
-                ),
-                onTap: busy ? null : _pickEndDate,
-                trailing: _endsAt == null
-                    ? null
-                    : IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: busy
-                            ? null
-                            : () => setState(() => _endsAt = null),
-                      ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                loc.promoResetHint,
-                style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-              ),
-              const SizedBox(height: 12),
-              FilledButton.icon(
-                onPressed: busy ? null : _save,
-                style: FilledButton.styleFrom(backgroundColor: kGreen),
-                icon: _saving
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Icon(Icons.save_outlined),
-                label: Text(loc.promoSave),
               ),
             ],
-          ),
+            const SizedBox(height: 8),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text(loc.promoShowInApp),
+              value: _showInApp,
+              activeThumbColor: kGreen,
+              onChanged: _saving ? null : (v) => setState(() => _showInApp = v),
+            ),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text(loc.promoShowOnWeb),
+              value: _showOnWeb,
+              activeThumbColor: kGreen,
+              onChanged: _saving ? null : (v) => setState(() => _showOnWeb = v),
+            ),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.event_outlined),
+              title: Text(loc.promoEndsAt),
+              subtitle: Text(
+                _endsAt == null
+                    ? loc.promoNoEndDate
+                    : MaterialLocalizations.of(
+                        context,
+                      ).formatMediumDate(_endsAt!),
+              ),
+              onTap: _saving ? null : _pickEndDate,
+              trailing: _endsAt == null
+                  ? null
+                  : IconButton(
+                      icon: const Icon(Icons.clear),
+                      onPressed: _saving
+                          ? null
+                          : () => setState(() => _endsAt = null),
+                    ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              loc.promoResetHint,
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+            ),
+            const SizedBox(height: 12),
+            FilledButton.icon(
+              onPressed: _saving ? null : _save,
+              style: FilledButton.styleFrom(backgroundColor: kGreen),
+              icon: _saving
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Icon(Icons.save_outlined),
+              label: Text(loc.promoSave),
+            ),
+          ],
         ),
       ),
     );

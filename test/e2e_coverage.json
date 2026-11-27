@@ -136,6 +136,22 @@
       "widget": "partial",
       "pipeline": false,
       "notes": "Key exists; no default barcode in barcodes_e2e.txt yet"
+    },
+    {
+      "area": "Events list (About → Events)",
+      "screens": ["EventsScreen"],
+      "ui_e2e": false,
+      "widget": true,
+      "pipeline": false,
+      "notes": "test/screens/events_screen_test.dart; data from Supabase events table"
+    },
+    {
+      "area": "Promo popup on app start + admin popup settings",
+      "screens": ["StartScreen", "AdminPanelScreen"],
+      "ui_e2e": false,
+      "widget": false,
+      "pipeline": false,
+      "notes": "Skipped when AppConfig.isE2e; logic unit-tested in test/services/promo_announcement_service_test.dart"
     }
   ]
 }

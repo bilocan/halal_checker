@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:halal_checker/services/promo_announcement_service.dart';
@@ -136,31 +135,6 @@ void main() {
     });
   });
 
-  group('helpers', () {
-    test('isValidHttpUrl', () {
-      expect(
-        PromoAnnouncementService.isValidHttpUrl(
-          'http://helalhayat2026.agdavrupa.org/',
-        ),
-        isTrue,
-      );
-      expect(PromoAnnouncementService.isValidHttpUrl('ftp://x.org'), isFalse);
-      expect(PromoAnnouncementService.isValidHttpUrl('not a url'), isFalse);
-      expect(PromoAnnouncementService.isValidHttpUrl(null), isFalse);
-    });
-
-    test('imageExtension / mimeTypeForExtension', () {
-      expect(PromoAnnouncementService.imageExtension('a.JPEG'), 'jpg');
-      expect(PromoAnnouncementService.imageExtension('a.png'), 'png');
-      expect(PromoAnnouncementService.imageExtension('a.heic'), 'jpg');
-      expect(PromoAnnouncementService.mimeTypeForExtension('png'), 'image/png');
-      expect(
-        PromoAnnouncementService.mimeTypeForExtension('jpg'),
-        'image/jpeg',
-      );
-    });
-  });
-
   group('fetch via Supabase', () {
     test('null when Supabase not configured', () async {
       PromoAnnouncementService.fakeHasSupabase = false;
@@ -174,6 +148,7 @@ void main() {
         expect(req.url.query, contains('id=eq.1'));
         return _json({
           'campaign_id': 'camp',
+          'event_id': 'ev-1',
           'image_url': 'https://x.org/a.jpg',
           'link_url': 'https://x.org',
           'show_in_app': true,
@@ -181,6 +156,7 @@ void main() {
       });
       final promo = await PromoAnnouncementService.fetch();
       expect(promo?.campaignId, 'camp');
+      expect(promo?.eventId, 'ev-1');
       expect(promo?.showInApp, isTrue);
     });
 
@@ -197,8 +173,7 @@ void main() {
 
   group('update', () {
     Future<bool> doUpdate() => PromoAnnouncementService.update(
-      imageUrl: 'https://x.org/a.jpg',
-      linkUrl: 'https://x.org',
+      eventId: 'ev-1',
       showInApp: true,
       showOnWeb: false,
       endsAt: DateTime.utc(2026, 12, 19),
@@ -214,6 +189,8 @@ void main() {
         expect(req.method, 'PATCH');
         expect(req.url.path, '/rest/v1/promo_announcement');
         final body = jsonDecode(req.body) as Map<String, dynamic>;
+        expect(body['event_id'], 'ev-1');
+        expect(body.containsKey('image_url'), isFalse);
         expect(body['show_in_app'], isTrue);
         expect(body['ends_at'], '2026-12-19T00:00:00.000Z');
         return _json([
@@ -231,63 +208,6 @@ void main() {
     test('false on server error', () async {
       _useMockSupabase((_) async => _json({'message': 'boom'}, 500));
       expect(await doUpdate(), isFalse);
-    });
-  });
-
-  group('uploadImage', () {
-    final bytes = Uint8List.fromList([1, 2, 3]);
-
-    test('null when Supabase not configured or bytes empty', () async {
-      PromoAnnouncementService.fakeHasSupabase = false;
-      expect(
-        await PromoAnnouncementService.uploadImage(
-          bytes: bytes,
-          fileName: 'a.png',
-        ),
-        isNull,
-      );
-      _useMockSupabase((_) async => fail('should not call network'));
-      expect(
-        await PromoAnnouncementService.uploadImage(
-          bytes: Uint8List(0),
-          fileName: 'a.png',
-        ),
-        isNull,
-      );
-    });
-
-    test('uploads and returns public URL', () async {
-      _useMockSupabase((req) async {
-        expect(req.method, 'POST');
-        expect(
-          req.url.path,
-          matches(RegExp(r'^/storage/v1/object/promo-images/promo_\d+\.png$')),
-        );
-        return _json({'Key': 'promo-images/x.png'});
-      });
-      final url = await PromoAnnouncementService.uploadImage(
-        bytes: bytes,
-        fileName: 'poster.PNG',
-      );
-      expect(
-        url,
-        matches(
-          RegExp(
-            r'^https://example\.supabase\.co/storage/v1/object/public/promo-images/promo_\d+\.png$',
-          ),
-        ),
-      );
-    });
-
-    test('null on upload error', () async {
-      _useMockSupabase((_) async => _json({'message': 'denied'}, 403));
-      expect(
-        await PromoAnnouncementService.uploadImage(
-          bytes: bytes,
-          fileName: 'a.jpg',
-        ),
-        isNull,
-      );
     });
   });
 }
