@@ -85,15 +85,28 @@ class EventsService {
   static Future<List<AppEvent>?> Function()? fakeFetchAll;
 
   @visibleForTesting
-  static void resetTestOverrides() => fakeFetchAll = null;
+  static bool? fakeHasSupabase;
+
+  @visibleForTesting
+  static SupabaseClient? fakeClient;
+
+  @visibleForTesting
+  static void resetTestOverrides() {
+    fakeFetchAll = null;
+    fakeHasSupabase = null;
+    fakeClient = null;
+  }
+
+  static bool get _hasSupabase => fakeHasSupabase ?? AppConfig.hasSupabase;
+  static SupabaseClient get _db => fakeClient ?? Supabase.instance.client;
 
   /// Events visible to the current user (RLS: published only, superadmins
   /// also get drafts). Returns null on error.
   static Future<List<AppEvent>?> fetchAll() async {
     if (fakeFetchAll != null) return fakeFetchAll!();
-    if (!AppConfig.hasSupabase) return null;
+    if (!_hasSupabase) return null;
     try {
-      final rows = await Supabase.instance.client
+      final rows = await _db
           .from(table)
           .select()
           .order('starts_at', ascending: true)

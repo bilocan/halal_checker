@@ -1,5 +1,36 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:halal_checker/services/events_service.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+/// Routes EventsService's Supabase calls through [handler]. Responses get the
+/// originating request attached (postgrest reads `response.request`).
+void _useMockSupabase(Future<http.Response> Function(http.Request) handler) {
+  EventsService.fakeHasSupabase = true;
+  EventsService.fakeClient = SupabaseClient(
+    'https://example.supabase.co',
+    'test-anon-key',
+    httpClient: MockClient((req) async {
+      final res = await handler(req);
+      return http.Response.bytes(
+        res.bodyBytes,
+        res.statusCode,
+        headers: res.headers,
+        request: req,
+      );
+    }),
+    authOptions: const AuthClientOptions(autoRefreshToken: false),
+  );
+}
+
+http.Response _json(Object body, [int status = 200]) => http.Response(
+  jsonEncode(body),
+  status,
+  headers: {'content-type': 'application/json'},
+);
 
 AppEvent _event(String id, DateTime start, [DateTime? end]) =>
     AppEvent(id: id, title: id, startsAt: start, endsAt: end);
@@ -91,5 +122,44 @@ void main() {
   test('fetchPublished null on failure', () async {
     EventsService.fakeFetchAll = () async => null;
     expect(await EventsService.fetchPublished(), isNull);
+  });
+
+  group('fetchAll via Supabase', () {
+    test('null when Supabase not configured', () async {
+      EventsService.fakeHasSupabase = false;
+      expect(await EventsService.fetchAll(), isNull);
+    });
+
+    test('queries events ordered by start and parses rows', () async {
+      _useMockSupabase((req) async {
+        expect(req.method, 'GET');
+        expect(req.url.path, '/rest/v1/events');
+        expect(req.url.queryParameters['order'], startsWith('starts_at.asc'));
+        return _json([
+          {
+            'id': 'a',
+            'title': 'Seminar',
+            'starts_at': '2026-12-05T18:00:00Z',
+            'ends_at': '2026-12-19T18:00:00Z',
+            'published': true,
+          },
+          {
+            'id': 'b',
+            'title': 'Draft',
+            'starts_at': '2027-01-10T18:00:00Z',
+            'published': false,
+          },
+        ]);
+      });
+      final events = await EventsService.fetchAll();
+      expect(events!.map((e) => e.id), ['a', 'b']);
+      expect(events.first.endsAt, DateTime.utc(2026, 12, 19, 18));
+      expect((await EventsService.fetchPublished())!.map((e) => e.id), ['a']);
+    });
+
+    test('null on server error', () async {
+      _useMockSupabase((_) async => _json({'message': 'boom'}, 500));
+      expect(await EventsService.fetchAll(), isNull);
+    });
   });
 }
