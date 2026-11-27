@@ -15,7 +15,9 @@ jobs:
 
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          # Pinned: CLI v3 rejects [inbucket] in supabase/config.toml (v2 rejects
+          # its replacement [local_smtp]). Bump together with the config change.
+          version: 2.98.2
 
       - name: Link Supabase project
         run: supabase link --project-ref ${{ secrets.SUPABASE_PROJECT_REF }} --yes
