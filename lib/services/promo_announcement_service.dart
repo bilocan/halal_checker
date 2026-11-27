@@ -70,15 +70,19 @@ class PromoAnnouncementService {
   static bool? fakeHasSupabase;
 
   @visibleForTesting
+  static SupabaseClient? fakeClient;
+
+  @visibleForTesting
   static void resetTestOverrides() {
     fakeFetch = null;
     fakeNow = null;
     fakeHasSupabase = null;
+    fakeClient = null;
     _shownThisLaunch = false;
   }
 
   static bool get _hasSupabase => fakeHasSupabase ?? AppConfig.hasSupabase;
-  static SupabaseClient get _db => Supabase.instance.client;
+  static SupabaseClient get _db => fakeClient ?? Supabase.instance.client;
 
   /// Fetches the promo row. Returns null when unavailable or on error.
   static Future<PromoAnnouncement?> fetch() async {
