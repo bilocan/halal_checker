@@ -1391,22 +1391,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get promoSettingsDescription =>
-      'Uygulama açılışında bir görsel gösterir (isteğe bağlı olarak halalscan.at\'te de). Görsele dokunmak bağlantıyı açar.';
-
-  @override
-  String get promoImageUrl => 'Görsel URL\'si';
-
-  @override
-  String get promoUploadImage => 'Görsel yükle';
-
-  @override
-  String get promoUploading => 'Yükleniyor…';
-
-  @override
-  String get promoUploadFailed => 'Görsel yüklenemedi';
-
-  @override
-  String get promoLinkUrl => 'Bağlantı URL\'si';
+      'Uygulama açılışında bir etkinliğin afişini gösterir (isteğe bağlı olarak halalscan.at\'te de). Dokununca etkinlik bağlantısı açılır.';
 
   @override
   String get promoShowInApp => 'Uygulamada göster';
@@ -1427,11 +1412,46 @@ class AppLocalizationsTr extends AppLocalizations {
   String get promoSaved => 'Tanıtım kaydedildi';
 
   @override
-  String get promoInvalidUrl => 'Geçerli bir http(s) URL\'si girin';
+  String get promoResetHint =>
+      'Farklı afiş veya bağlantıya sahip bir etkinlik seçildiğinde, pencereyi kapatmış olanlar dahil herkes tekrar görür.';
 
   @override
-  String get promoResetHint =>
-      'Görsel veya bağlantı değiştirildiğinde, pencereyi kapatmış olanlar dahil herkes tekrar görür.';
+  String get eventsTitle => 'Etkinlikler';
+
+  @override
+  String get eventsMenuSubtitle => 'HalalScan ile seminerler ve sunumlar';
+
+  @override
+  String get eventsLoadFailed => 'Etkinlikler yüklenemedi';
+
+  @override
+  String get eventsRetry => 'Tekrar dene';
+
+  @override
+  String get eventsEmpty => 'Henüz etkinlik yok';
+
+  @override
+  String get eventsUpcoming => 'Yaklaşan';
+
+  @override
+  String get eventsPast => 'Geçmiş etkinlikler';
+
+  @override
+  String get eventsOpenLink => 'Ayrıntılar';
+
+  @override
+  String get promoEvent => 'Açılır pencere etkinliği';
+
+  @override
+  String get promoNoEvent => 'Yok (açılır pencere kapalı)';
+
+  @override
+  String get promoEventRequired =>
+      'Açılır pencereyi göstermek için bir etkinlik seçin';
+
+  @override
+  String get promoManageEventsHint =>
+      'Etkinlikleri halalscan.at/admin/events adresinde oluşturup düzenleyin.';
 
   @override
   String get batchImportNoBarcodes => 'Dosyada geçerli barkod bulunamadı';

@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
-import 'package:path/path.dart' as p;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -11,6 +10,7 @@ import '../config.dart';
 class PromoAnnouncement {
   const PromoAnnouncement({
     required this.campaignId,
+    this.eventId,
     this.imageUrl,
     this.linkUrl,
     this.showInApp = false,
@@ -19,6 +19,9 @@ class PromoAnnouncement {
   });
 
   final String campaignId;
+
+  /// Featured event (`events.id`); image/link are synced from it server-side.
+  final String? eventId;
   final String? imageUrl;
   final String? linkUrl;
   final bool showInApp;
@@ -29,6 +32,7 @@ class PromoAnnouncement {
     final endsRaw = json['ends_at'];
     return PromoAnnouncement(
       campaignId: (json['campaign_id'] ?? '').toString(),
+      eventId: _nonEmpty(json['event_id']),
       imageUrl: _nonEmpty(json['image_url']),
       linkUrl: _nonEmpty(json['link_url']),
       showInApp: json['show_in_app'] == true,
@@ -54,7 +58,6 @@ class PromoAnnouncement {
 /// Loads, dismisses and (for superadmins) edits the promo popup.
 class PromoAnnouncementService {
   static const table = 'promo_announcement';
-  static const bucket = 'promo-images';
   static const dismissedPrefsKey = 'promo_dismissed_campaign_id';
   static const _fetchTimeout = Duration(seconds: 8);
 
@@ -129,9 +132,9 @@ class PromoAnnouncementService {
   // ── Superadmin editing ───────────────────────────────────────────────────
 
   /// Updates the promo row. RLS restricts this to superadmins.
+  /// Image and link are copied from [eventId] by a DB trigger.
   static Future<bool> update({
-    required String? imageUrl,
-    required String? linkUrl,
+    required String? eventId,
     required bool showInApp,
     required bool showOnWeb,
     required DateTime? endsAt,
@@ -141,8 +144,7 @@ class PromoAnnouncementService {
       final rows = await _db
           .from(table)
           .update({
-            'image_url': imageUrl,
-            'link_url': linkUrl,
+            'event_id': eventId,
             'show_in_app': showInApp,
             'show_on_web': showOnWeb,
             'ends_at': endsAt?.toUtc().toIso8601String(),
@@ -155,58 +157,5 @@ class PromoAnnouncementService {
       debugPrint('[PromoAnnouncementService] update failed: $e');
       return false;
     }
-  }
-
-  /// Uploads a poster to the `promo-images` bucket; returns its public URL.
-  static Future<String?> uploadImage({
-    required Uint8List bytes,
-    required String fileName,
-  }) async {
-    if (!_hasSupabase || bytes.isEmpty) return null;
-    try {
-      final ext = imageExtension(fileName);
-      final path = 'promo_${DateTime.now().millisecondsSinceEpoch}.$ext';
-      await _db.storage
-          .from(bucket)
-          .uploadBinary(
-            path,
-            bytes,
-            fileOptions: FileOptions(
-              contentType: mimeTypeForExtension(ext),
-              upsert: true,
-            ),
-          );
-      return _db.storage.from(bucket).getPublicUrl(path);
-    } catch (e) {
-      debugPrint('[PromoAnnouncementService] upload failed: $e');
-      return null;
-    }
-  }
-
-  @visibleForTesting
-  static String imageExtension(String fileName) {
-    final ext = p.extension(fileName).toLowerCase();
-    if (ext.isEmpty) return 'jpg';
-    final bare = ext.substring(1);
-    const allowed = {'jpg', 'jpeg', 'png', 'webp', 'gif'};
-    if (!allowed.contains(bare)) return 'jpg';
-    return bare == 'jpeg' ? 'jpg' : bare;
-  }
-
-  @visibleForTesting
-  static String mimeTypeForExtension(String ext) => switch (ext) {
-    'png' => 'image/png',
-    'webp' => 'image/webp',
-    'gif' => 'image/gif',
-    _ => 'image/jpeg',
-  };
-
-  /// True for absolute http(s) URLs with a host.
-  static bool isValidHttpUrl(String? value) {
-    if (value == null) return false;
-    final uri = Uri.tryParse(value.trim());
-    return uri != null &&
-        (uri.scheme == 'http' || uri.scheme == 'https') &&
-        uri.host.isNotEmpty;
   }
 }

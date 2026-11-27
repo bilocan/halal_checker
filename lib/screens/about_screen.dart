@@ -12,6 +12,7 @@ import '../services/beta_program_service.dart';
 import '../services/version_service.dart';
 import '../utils/beta_feedback_mailto.dart';
 import '../widgets/halal_scan_logo.dart';
+import 'events_screen.dart';
 import 'start/widgets/start_app_bar_actions.dart';
 
 class AboutScreen extends StatefulWidget {
@@ -94,19 +95,26 @@ class _AboutScreenState extends State<AboutScreen> {
   }
 
   Widget _communityLinkTile({
+    Key? key,
     required IconData icon,
     required String title,
     required String subtitle,
     required VoidCallback onTap,
+    bool external = true,
   }) {
     return ListTile(
+      key: key,
       leading: Icon(icon, color: kGreenDark),
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
       subtitle: Text(
         subtitle,
         style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
       ),
-      trailing: Icon(Icons.open_in_new, size: 18, color: Colors.grey.shade400),
+      trailing: Icon(
+        external ? Icons.open_in_new : Icons.chevron_right,
+        size: external ? 18 : 22,
+        color: Colors.grey.shade400,
+      ),
       onTap: onTap,
     );
   }
@@ -141,6 +149,17 @@ class _AboutScreenState extends State<AboutScreen> {
           ),
           child: Column(
             children: [
+              _communityLinkTile(
+                key: const ValueKey('about_events_tile'),
+                icon: Icons.event_outlined,
+                title: loc.eventsTitle,
+                subtitle: loc.eventsMenuSubtitle,
+                external: false,
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(builder: (_) => const EventsScreen()),
+                ),
+              ),
+              Divider(height: 1, color: Colors.grey.shade200),
               _communityLinkTile(
                 icon: Icons.language_outlined,
                 title: loc.aboutVisitWebsite,

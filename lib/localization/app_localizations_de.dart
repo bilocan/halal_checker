@@ -1414,22 +1414,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get promoSettingsDescription =>
-      'Zeigt beim App-Start ein Bild (optional auch auf halalscan.at). Ein Tipp auf das Bild öffnet den Link.';
-
-  @override
-  String get promoImageUrl => 'Bild-URL';
-
-  @override
-  String get promoUploadImage => 'Bild hochladen';
-
-  @override
-  String get promoUploading => 'Wird hochgeladen…';
-
-  @override
-  String get promoUploadFailed => 'Bild-Upload fehlgeschlagen';
-
-  @override
-  String get promoLinkUrl => 'Link-URL';
+      'Zeigt beim App-Start das Plakat einer Veranstaltung (optional auch auf halalscan.at). Ein Tipp darauf öffnet den Link.';
 
   @override
   String get promoShowInApp => 'In der App anzeigen';
@@ -1450,11 +1435,46 @@ class AppLocalizationsDe extends AppLocalizations {
   String get promoSaved => 'Promo gespeichert';
 
   @override
-  String get promoInvalidUrl => 'Gültige http(s)-URL eingeben';
+  String get promoResetHint =>
+      'Eine Veranstaltung mit anderem Plakat oder Link zeigt das Popup allen erneut – auch wer es geschlossen hat.';
 
   @override
-  String get promoResetHint =>
-      'Wenn Bild oder Link geändert werden, sehen alle das Popup erneut – auch wer es geschlossen hat.';
+  String get eventsTitle => 'Veranstaltungen';
+
+  @override
+  String get eventsMenuSubtitle => 'Seminare und Vorträge mit HalalScan';
+
+  @override
+  String get eventsLoadFailed => 'Veranstaltungen konnten nicht geladen werden';
+
+  @override
+  String get eventsRetry => 'Erneut versuchen';
+
+  @override
+  String get eventsEmpty => 'Noch keine Veranstaltungen';
+
+  @override
+  String get eventsUpcoming => 'Demnächst';
+
+  @override
+  String get eventsPast => 'Vergangene Veranstaltungen';
+
+  @override
+  String get eventsOpenLink => 'Details';
+
+  @override
+  String get promoEvent => 'Popup-Veranstaltung';
+
+  @override
+  String get promoNoEvent => 'Keine (Popup aus)';
+
+  @override
+  String get promoEventRequired =>
+      'Wähle eine Veranstaltung, um das Popup anzuzeigen';
+
+  @override
+  String get promoManageEventsHint =>
+      'Veranstaltungen anlegen und bearbeiten unter halalscan.at/admin/events.';
 
   @override
   String get batchImportNoBarcodes =>

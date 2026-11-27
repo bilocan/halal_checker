@@ -1392,22 +1392,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get promoSettingsDescription =>
-      'Show an image on app start (and optionally on halalscan.at). Tapping the image opens the link.';
-
-  @override
-  String get promoImageUrl => 'Image URL';
-
-  @override
-  String get promoUploadImage => 'Upload image';
-
-  @override
-  String get promoUploading => 'Uploading…';
-
-  @override
-  String get promoUploadFailed => 'Image upload failed';
-
-  @override
-  String get promoLinkUrl => 'Link URL';
+      'Show an event\'s poster on app start (and optionally on halalscan.at). Tapping it opens the event link.';
 
   @override
   String get promoShowInApp => 'Show in app';
@@ -1428,11 +1413,45 @@ class AppLocalizationsEn extends AppLocalizations {
   String get promoSaved => 'Promo saved';
 
   @override
-  String get promoInvalidUrl => 'Enter a valid http(s) URL';
+  String get promoResetHint =>
+      'Choosing an event with a different poster or link shows the popup again to everyone who closed it.';
 
   @override
-  String get promoResetHint =>
-      'Changing the image or link shows the popup again to everyone who closed it.';
+  String get eventsTitle => 'Events';
+
+  @override
+  String get eventsMenuSubtitle => 'Seminars and talks with HalalScan';
+
+  @override
+  String get eventsLoadFailed => 'Could not load events';
+
+  @override
+  String get eventsRetry => 'Try again';
+
+  @override
+  String get eventsEmpty => 'No events yet';
+
+  @override
+  String get eventsUpcoming => 'Upcoming';
+
+  @override
+  String get eventsPast => 'Past events';
+
+  @override
+  String get eventsOpenLink => 'Details';
+
+  @override
+  String get promoEvent => 'Popup event';
+
+  @override
+  String get promoNoEvent => 'None (popup off)';
+
+  @override
+  String get promoEventRequired => 'Choose an event to show the popup';
+
+  @override
+  String get promoManageEventsHint =>
+      'Create and edit events at halalscan.at/admin/events.';
 
   @override
   String get batchImportNoBarcodes => 'No valid barcodes found in file';

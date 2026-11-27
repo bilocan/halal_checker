@@ -3,3 +3,5 @@
      Kullanıcıya görünen değişikliklerde en.md, de.md ve ar.md dosyalarını da güncelleyin. -->
 
 - Duyurular: HalalScan artık uygulama açılışında etkinlik duyurularını (ör. seminerler) gösterebilir — ayrıntılar için görsele dokunun ya da kapatın, bir daha gösterilmez.
+
+- Etkinlikler: Yeni Etkinlikler sayfası (Hakkında → Etkinlikler) yaklaşan ve geçmiş HalalScan seminerlerini ve sunumlarını listeler; kapattığınız bir duyuruyu tekrar bulabilirsiniz.
