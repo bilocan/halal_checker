@@ -1387,6 +1387,53 @@ class AppLocalizationsTr extends AppLocalizations {
       'Ayar kaydedilemedi (yalnızca süper yönetici)';
 
   @override
+  String get promoSettingsTitle => 'Tanıtım açılır penceresi';
+
+  @override
+  String get promoSettingsDescription =>
+      'Uygulama açılışında bir görsel gösterir (isteğe bağlı olarak halalscan.at\'te de). Görsele dokunmak bağlantıyı açar.';
+
+  @override
+  String get promoImageUrl => 'Görsel URL\'si';
+
+  @override
+  String get promoUploadImage => 'Görsel yükle';
+
+  @override
+  String get promoUploading => 'Yükleniyor…';
+
+  @override
+  String get promoUploadFailed => 'Görsel yüklenemedi';
+
+  @override
+  String get promoLinkUrl => 'Bağlantı URL\'si';
+
+  @override
+  String get promoShowInApp => 'Uygulamada göster';
+
+  @override
+  String get promoShowOnWeb => 'halalscan.at\'te göster';
+
+  @override
+  String get promoEndsAt => 'Şu tarihe kadar göster';
+
+  @override
+  String get promoNoEndDate => 'Bitiş tarihi yok';
+
+  @override
+  String get promoSave => 'Tanıtımı kaydet';
+
+  @override
+  String get promoSaved => 'Tanıtım kaydedildi';
+
+  @override
+  String get promoInvalidUrl => 'Geçerli bir http(s) URL\'si girin';
+
+  @override
+  String get promoResetHint =>
+      'Görsel veya bağlantı değiştirildiğinde, pencereyi kapatmış olanlar dahil herkes tekrar görür.';
+
+  @override
   String get batchImportNoBarcodes => 'Dosyada geçerli barkod bulunamadı';
 
   @override

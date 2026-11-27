@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../app_colors.dart';
 import '../../localization/app_localizations.dart';
 import '../../services/app_config_admin_service.dart';
+import 'promo_settings_card.dart';
 
 class SystemSettingsTab extends StatefulWidget {
   const SystemSettingsTab({super.key, this.onFlagsChanged});
@@ -263,6 +264,8 @@ class SystemSettingsTabState extends State<SystemSettingsTab> {
                   ),
           ),
         ),
+        const SizedBox(height: 12),
+        const PromoSettingsCard(),
       ],
     );
   }

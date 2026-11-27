@@ -1388,6 +1388,53 @@ class AppLocalizationsEn extends AppLocalizations {
       'Could not save setting (superadmin only)';
 
   @override
+  String get promoSettingsTitle => 'Promo popup';
+
+  @override
+  String get promoSettingsDescription =>
+      'Show an image on app start (and optionally on halalscan.at). Tapping the image opens the link.';
+
+  @override
+  String get promoImageUrl => 'Image URL';
+
+  @override
+  String get promoUploadImage => 'Upload image';
+
+  @override
+  String get promoUploading => 'Uploading…';
+
+  @override
+  String get promoUploadFailed => 'Image upload failed';
+
+  @override
+  String get promoLinkUrl => 'Link URL';
+
+  @override
+  String get promoShowInApp => 'Show in app';
+
+  @override
+  String get promoShowOnWeb => 'Show on halalscan.at';
+
+  @override
+  String get promoEndsAt => 'Show until';
+
+  @override
+  String get promoNoEndDate => 'No end date';
+
+  @override
+  String get promoSave => 'Save promo';
+
+  @override
+  String get promoSaved => 'Promo saved';
+
+  @override
+  String get promoInvalidUrl => 'Enter a valid http(s) URL';
+
+  @override
+  String get promoResetHint =>
+      'Changing the image or link shows the popup again to everyone who closed it.';
+
+  @override
   String get batchImportNoBarcodes => 'No valid barcodes found in file';
 
   @override

@@ -5,10 +5,13 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show AuthState;
 
 import '../app_colors.dart';
+import '../config.dart';
 import '../localization/app_localizations.dart';
 import '../services/analysis_service.dart';
 import '../widgets/lazy_indexed_stack.dart';
+import '../widgets/promo_announcement_dialog.dart';
 import '../services/auth_service.dart';
+import '../services/promo_announcement_service.dart';
 import '../services/version_service.dart';
 import 'about_screen.dart';
 import 'admin_panel_screen.dart';
@@ -46,7 +49,10 @@ class _StartScreenState extends State<StartScreen> {
   void initState() {
     super.initState();
     _checkAdmin();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _checkForUpdate());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkForUpdate();
+      _maybeShowPromo();
+    });
     _authSubscription = AuthService.authStateChanges.listen((_) {
       if (mounted) _checkAdmin();
     });
@@ -98,6 +104,21 @@ class _StartScreenState extends State<StartScreen> {
         ),
       );
     } catch (_) {}
+  }
+
+  /// Admin-configured promo popup (see [PromoAnnouncementService]).
+  /// Delayed slightly so it doesn't collide with the username setup sheet.
+  Future<void> _maybeShowPromo() async {
+    if (AppConfig.isE2e || !AppConfig.hasSupabase) return;
+    try {
+      final promo = await PromoAnnouncementService.promoToShow();
+      if (promo == null) return;
+      await Future<void>.delayed(const Duration(milliseconds: 1500));
+      if (!mounted) return;
+      await showPromoAnnouncementDialog(context, promo);
+    } catch (e) {
+      debugPrint('[StartScreen] promo failed: $e');
+    }
   }
 
   int get _tabCount => _isAdmin ? 5 : 4;

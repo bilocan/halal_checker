@@ -2566,6 +2566,96 @@ abstract class AppLocalizations {
   /// **'Could not save setting (superadmin only)'**
   String get systemSettingsSaveFailed;
 
+  /// No description provided for @promoSettingsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Promo popup'**
+  String get promoSettingsTitle;
+
+  /// No description provided for @promoSettingsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Show an image on app start (and optionally on halalscan.at). Tapping the image opens the link.'**
+  String get promoSettingsDescription;
+
+  /// No description provided for @promoImageUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'Image URL'**
+  String get promoImageUrl;
+
+  /// No description provided for @promoUploadImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload image'**
+  String get promoUploadImage;
+
+  /// No description provided for @promoUploading.
+  ///
+  /// In en, this message translates to:
+  /// **'Uploading…'**
+  String get promoUploading;
+
+  /// No description provided for @promoUploadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Image upload failed'**
+  String get promoUploadFailed;
+
+  /// No description provided for @promoLinkUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'Link URL'**
+  String get promoLinkUrl;
+
+  /// No description provided for @promoShowInApp.
+  ///
+  /// In en, this message translates to:
+  /// **'Show in app'**
+  String get promoShowInApp;
+
+  /// No description provided for @promoShowOnWeb.
+  ///
+  /// In en, this message translates to:
+  /// **'Show on halalscan.at'**
+  String get promoShowOnWeb;
+
+  /// No description provided for @promoEndsAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Show until'**
+  String get promoEndsAt;
+
+  /// No description provided for @promoNoEndDate.
+  ///
+  /// In en, this message translates to:
+  /// **'No end date'**
+  String get promoNoEndDate;
+
+  /// No description provided for @promoSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save promo'**
+  String get promoSave;
+
+  /// No description provided for @promoSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Promo saved'**
+  String get promoSaved;
+
+  /// No description provided for @promoInvalidUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid http(s) URL'**
+  String get promoInvalidUrl;
+
+  /// No description provided for @promoResetHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Changing the image or link shows the popup again to everyone who closed it.'**
+  String get promoResetHint;
+
   /// No description provided for @batchImportNoBarcodes.
   ///
   /// In en, this message translates to:
